@@ -79,7 +79,8 @@ const calls: ReadonlyArray<{
     call: (service) => service.uploadExport('google_drive', { diaryId: 2, format: 'json', includeVisibility: true }),
     request: ['/api/cloud-sync/upload', {
       method: 'POST',
-      body: JSON.stringify({ provider: 'google_drive', diaryId: 2, format: 'json', includeVisibility: true }),
+      // The file is named after the writer's own day
+      body: JSON.stringify({ provider: 'google_drive', diaryId: 2, format: 'json', includeVisibility: true, today: '2026-11-01' }),
     }],
     answer: file,
     data: file,
@@ -123,7 +124,7 @@ const calls: ReadonlyArray<{
   {
     name: 'triggerSync',
     call: (service) => service.triggerSync('google_drive'),
-    request: ['/api/cloud-sync/sync', { method: 'POST', body: JSON.stringify({ provider: 'google_drive' }) }],
+    request: ['/api/cloud-sync/sync', { method: 'POST', body: JSON.stringify({ provider: 'google_drive', today: '2026-11-01' }) }],
     answer: { synced: true, message: 'Synced', file },
     data: { synced: true, message: 'Synced', file },
     fallback: 'cloudSyncError',
@@ -138,9 +139,12 @@ describe('cloudSyncService', () => {
     authFetch = vi.fn();
     service = createCloudSyncService(authFetch as Parameters<typeof createCloudSyncService>[0]);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 10, 1, 12));
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 

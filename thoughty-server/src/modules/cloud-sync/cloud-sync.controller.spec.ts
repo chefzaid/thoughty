@@ -114,10 +114,11 @@ describe('CloudSyncController', () => {
         provider: 'google_drive',
         format: 'txt',
         includeVisibility: true,
+        today: '2026-11-01',
       });
 
       expect(result).toEqual(mockFile);
-      expect(cloudSyncService.uploadExport).toHaveBeenCalledWith(1, 'google_drive', undefined, 'txt', true);
+      expect(cloudSyncService.uploadExport).toHaveBeenCalledWith(1, 'google_drive', undefined, 'txt', true, '2026-11-01');
     });
   });
 
@@ -187,10 +188,10 @@ describe('CloudSyncController', () => {
       };
       cloudSyncService.executeDiffSync.mockResolvedValue(mockResult);
 
-      const result = await controller.triggerSync(mockUser as any, { provider: 'google_drive' });
+      const result = await controller.triggerSync(mockUser as any, { provider: 'google_drive', today: '2026-11-01' });
 
       expect(result).toEqual(mockResult);
-      expect(cloudSyncService.executeDiffSync).toHaveBeenCalledWith(1, 'google_drive');
+      expect(cloudSyncService.executeDiffSync).toHaveBeenCalledWith(1, 'google_drive', '2026-11-01');
     });
 
     it('should return no-changes result when nothing changed', async () => {

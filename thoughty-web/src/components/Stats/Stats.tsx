@@ -25,7 +25,7 @@ import StatsGoalPanel from './StatsGoalPanel';
 import StatsPagination from './StatsPagination';
 import StatsBarChart, { type StatsChartPoint } from './StatsBarChart';
 import { monthName } from '../../utils/calendarNames';
-import { formatEntryDate } from '../../utils/entryDate';
+import { writersToday } from '../../utils/entryDate';
 import { resolveLanguage } from '../../utils/language';
 
 // Register Chart.js components
@@ -119,7 +119,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetada
             const params = new URLSearchParams();
             if (diaryId) params.append('diaryId', diaryId.toString());
             // Writing goals are measured up to the writer's own day
-            params.append('today', formatEntryDate(new Date()));
+            params.append('today', writersToday());
             const response = await authFetch(`/api/stats?${params}`);
             if (!response.ok) throw new Error('Failed to fetch stats');
             const data = await response.json() as StatsData;

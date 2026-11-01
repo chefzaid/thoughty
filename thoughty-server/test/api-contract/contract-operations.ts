@@ -127,6 +127,8 @@ export const CONTRACT_SUITES = {
   ],
   media: ['POST /api/attachments/{id}/poster'],
   rereading: ['PUT /api/entries/{id}/reread-reminder', 'DELETE /api/entries/{id}/reread-reminder'],
+  // The writer's own day (`today`) across Highlights, stats and file names; its routes are listed where they are tested in full
+  'writers-day': [],
   sharing: [
     'GET /api/share-links',
     'POST /api/share-links',

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
+import { writersToday } from '../../utils/entryDate';
 import { createConfigService } from './configService';
 import type { Config } from '../../types';
 
@@ -151,7 +152,7 @@ describe('configService', () => {
         uniqueTags: 3,
         firstEntryYear: 2022,
       });
-      expect(mockAuthFetch).toHaveBeenCalledWith('/api/stats');
+      expect(mockAuthFetch).toHaveBeenCalledWith(`/api/stats?today=${writersToday()}`);
     });
 
     it('handles empty years - uses current year', async () => {
@@ -241,7 +242,8 @@ describe('configService', () => {
       const result = await service.downloadUserData();
 
       expect(result).toBe(true);
-      expect(mockAuthFetch).toHaveBeenCalledWith('/api/config/download-data');
+      // The file is named after the writer's own day
+      expect(mockAuthFetch).toHaveBeenCalledWith(`/api/config/download-data?today=${writersToday()}`);
       expect(mockAnchor.download).toBe('thoughty_data_2024-01-01.json');
       expect(mockAnchor.click).toHaveBeenCalled();
       expect(mockAnchor.isConnected).toBe(false);

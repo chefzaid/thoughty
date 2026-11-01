@@ -32,8 +32,8 @@ describe('MarkdownArchiveService', () => {
     attachments: [],
   };
 
-  async function buildArchive(diaryId?: number): Promise<{ filename: string; zip: JSZip }> {
-    const archive = await service.prepare(7, diaryId);
+  async function buildArchive(diaryId?: number, today = '2026-11-01'): Promise<{ filename: string; zip: JSZip }> {
+    const archive = await service.prepare(7, diaryId, today);
     const chunks: Buffer[] = [];
     await archive.write(async (chunk) => {
       chunks.push(chunk);
@@ -102,7 +102,7 @@ describe('MarkdownArchiveService', () => {
 
     const { filename, zip } = await buildArchive();
 
-    expect(filename).toMatch(/^thoughty_all_diaries_\d{4}-\d{2}-\d{2}\.zip$/);
+    expect(filename).toBe('thoughty_all_diaries_2026-11-01.zip');
     expect(Object.keys(zip.files).sort()).toEqual([
       'Journal/2023/2023-12-31.md',
       'No diary/2024/2024-04-01.md',
@@ -112,7 +112,7 @@ describe('MarkdownArchiveService', () => {
       'Travel- Spain/2024/attachments/2024-03-05-beach-2.jpg',
       'Travel- Spain/2024/attachments/2024-03-05-beach.jpg',
     ]);
-    await expect(zip.file('README.md')!.async('string')).resolves.toContain('4 entries in 3 diaries.');
+    await expect(zip.file('README.md')!.async('string')).resolves.toContain('Exported on 2026-11-01: 4 entries in 3 diaries.');
     await expect(zip.file('Journal/2023/2023-12-31.md')!.async('string')).resolves.toBe(
       '---\ndate: 2023-12-31\ndiary: "Journal"\ntags: ["new-year"]\nvisibility: private\nformat: markdown\n---\n\nLast day of the year.\n',
     );
@@ -142,12 +142,12 @@ describe('MarkdownArchiveService', () => {
     const { filename, zip } = await buildArchive(2);
 
     expect(queryBuilder.andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 2 });
-    expect(filename).toMatch(/^thoughty_Travel__Spain_\d{4}-\d{2}-\d{2}\.zip$/);
+    expect(filename).toBe('thoughty_Travel__Spain_2026-11-01.zip');
     expect(Object.keys(zip.files)).toContain('Travel- Spain/2024/2024-03-05.md');
   });
 
   it('refuses a diary the writer does not own before anything is written', async () => {
-    await expect(service.prepare(7, 99)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.prepare(7, 99, '2026-11-01')).rejects.toBeInstanceOf(NotFoundException);
     expect(queryBuilder.getMany).not.toHaveBeenCalled();
   });
 

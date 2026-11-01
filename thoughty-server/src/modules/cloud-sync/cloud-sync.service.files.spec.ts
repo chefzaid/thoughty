@@ -65,10 +65,10 @@ describe('CloudSyncService', () => {
       const mockFileInfo = { id: '1', name: 'thoughty_export.txt', size: 16, modifiedAt: '2024-01-01' };
       googleDriveProvider.uploadFile.mockResolvedValue(mockFileInfo);
 
-      const result = await service.uploadExport(1, 'google_drive', undefined, 'txt', false);
+      const result = await service.uploadExport(1, 'google_drive', undefined, 'txt', false, '2026-11-01');
 
       expect(result).toEqual(mockFileInfo);
-      expect(ioService.export).toHaveBeenCalledWith(1, undefined, false, 'txt');
+      expect(ioService.export).toHaveBeenCalledWith(1, undefined, false, 'txt', '2026-11-01');
       expect(googleDriveProvider.uploadFile).toHaveBeenCalledWith('access-token', 'thoughty_export.txt', 'exported content', 'text/plain');
     });
   });

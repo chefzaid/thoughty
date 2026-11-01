@@ -179,7 +179,8 @@ function exportBook(state: MockAppState, params: URLSearchParams) {
   return {
     body,
     contentType: BOOK_CONTENT_TYPES[format] ?? "application/octet-stream",
-    filename: `thoughty_book_${book.title.replaceAll(/[^a-zA-Z0-9_-]/g, "_")}_2026-08-01.${format}`,
+    // Named after the writer's day the app sends, as the API names it
+    filename: `thoughty_book_${book.title.replaceAll(/[^a-zA-Z0-9_-]/g, "_")}_${params.get("today")}.${format}`,
   };
 }
 

@@ -139,6 +139,8 @@ describe('CloudSyncService', () => {
       expect(result.message).toBe('Sync completed successfully');
       expect(result.file).toEqual(mockFile);
       expect(googleDriveProvider.uploadFile).toHaveBeenCalled();
+      // The worker's scheduled runs know no writer's day: the file is named by the UTC day
+      expect(ioService.export).toHaveBeenCalledWith(1, undefined, false, expect.any(String), new Date().toISOString().slice(0, 10));
     });
 
     it('should skip upload when content hash matches stored hash', async () => {
@@ -191,10 +193,12 @@ describe('CloudSyncService', () => {
       googleDriveProvider.uploadFile.mockResolvedValue(mockFile);
       settingRepository.upsert.mockResolvedValue({});
 
-      const result = await service.executeDiffSync(1, 'google_drive');
+      const result = await service.executeDiffSync(1, 'google_drive', '2026-11-01');
 
       expect(result.synced).toBe(true);
       expect(result.file).toEqual(mockFile);
+      // Sync now names the file after the writer's day
+      expect(ioService.export).toHaveBeenCalledWith(1, undefined, false, 'txt', '2026-11-01');
     });
   });
 

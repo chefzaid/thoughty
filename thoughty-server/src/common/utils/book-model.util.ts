@@ -51,6 +51,8 @@ export interface BuildBookOptions {
   tags?: string[];
   /** The writer's life eras, for era chapters. */
   eras?: BookEra[];
+  /** The writer's day the book is made on: its date, and the end of an ongoing era. The UTC day without it. */
+  today?: string;
 }
 
 /** The entry's date followed by its time of day when it has one, as books and documents print it. */

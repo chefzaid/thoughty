@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { TranslationFunction } from '../../types';
 import type { CloudFileInfo, CloudProviderType } from '../../services/api/cloudSyncService';
 import { downloadBlob } from '../../utils/downloadFile';
+import { writersToday } from '../../utils/entryDate';
 import { readApiErrorMessage } from '../../services/api/base';
 import { appendBookSourceParams, bookVersionsQuery, isBookSourceReady } from './bookSource';
 import { useBookSourceData } from './useBookSourceData';
@@ -103,6 +104,8 @@ export function useImportExportBook({
         if (options.chapterFraming) params.append('chapterFraming', 'true');
         if (options.embedImages) params.append('embedImages', 'true');
         if (options.coverTheme !== 'classic') params.append('coverTheme', options.coverTheme);
+        // The book's date and file name, and the end of an ongoing life era, are the writer's own day
+        params.append('today', writersToday());
         return params;
     }
 

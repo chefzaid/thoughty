@@ -2,6 +2,7 @@ import { safeJsonParse } from './base';
 import type { Config, ProfileStats } from '../../types';
 import type { components, paths } from '../../generated/openapi';
 import { downloadBlob } from '../../utils/downloadFile';
+import { writersToday } from '../../utils/entryDate';
 
 export type StatsApiResponse = components['schemas']['StatsResponseDto'];
 /** The preferences as the API answers them, every value as text ("16", "true"). */
@@ -70,7 +71,7 @@ export const createConfigService = (authFetch: (url: string, options?: RequestIn
    */
   const fetchProfileStats = async (): Promise<ProfileStats | null> => {
     try {
-      const response = await authFetch('/api/stats');
+      const response = await authFetch(`/api/stats?${new URLSearchParams({ today: writersToday() })}`);
       if (!response) return null;
       const data = await safeJsonParse<StatsApiResponse>(response);
       if (response.ok && data) {
@@ -94,7 +95,7 @@ export const createConfigService = (authFetch: (url: string, options?: RequestIn
    */
   const downloadUserData = async (): Promise<boolean> => {
     try {
-      const response = await authFetch('/api/config/download-data');
+      const response = await authFetch(`/api/config/download-data?${new URLSearchParams({ today: writersToday() })}`);
       if (!response?.ok) return false;
       const blob = await response.blob();
       const disposition = response.headers.get('Content-Disposition') || '';

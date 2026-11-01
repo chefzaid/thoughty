@@ -2,6 +2,7 @@ import { applyDecorators } from '@nestjs/common';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsIn, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { WritersDay } from '@/common/validation';
 
 /**
  * Settings are stored as text. The web sends a few of them as numbers or booleans; those become
@@ -186,3 +187,15 @@ export const USER_CONFIG_KEYS: ReadonlySet<string> = new Set<keyof UpdateConfigD
   'subscriptionPlan',
   'paymentMethodLabel',
 ]);
+
+/** `GET /api/config/download-data`: the writer's day, which names the file. */
+export class DownloadDataQueryDto {
+  @ApiPropertyOptional({
+    example: '2026-10-31',
+    format: 'date',
+    description: 'The writer’s own day (the UTC day or the one before or after it), which names the file; the server’s UTC day when left out',
+  })
+  @IsOptional()
+  @WritersDay()
+  today?: string;
+}

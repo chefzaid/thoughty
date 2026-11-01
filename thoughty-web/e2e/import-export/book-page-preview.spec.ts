@@ -13,6 +13,8 @@ const ENTRIES = [
 
 async function openBookConverter(page: Page) {
   const { state } = await setupMockApp(page, { startAuthenticated: true, initialEntries: ENTRIES });
+  // Books are named after the writer's day
+  await page.clock.setFixedTime(new Date('2026-08-01T12:00:00'));
   await page.goto('/import-export?diary=1&section=book');
   const bookSection = page.locator('#book-section');
   await bookSection.getByLabel('Title').fill('Summer Notes');

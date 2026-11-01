@@ -1,5 +1,6 @@
 import type { ChangeEvent } from 'react';
 import type { ProfileConfig, TranslationFunction } from './types';
+import { formatEntryDate } from '../../utils/entryDate';
 import './SubscriptionSection.css';
 
 type SubscriptionPlan = NonNullable<ProfileConfig['subscriptionPlan']>;
@@ -39,13 +40,13 @@ function getBillingRows(plan: SubscriptionPlan, t: TranslationFunction) {
 
   return [
     {
-      date: currentDate.toISOString().slice(0, 10),
+      date: formatEntryDate(currentDate),
       description: t(PLAN_LABEL_KEYS[plan]),
       amount: details.price,
       status: t(details.historyStatus),
     },
     {
-      date: previousDate.toISOString().slice(0, 10),
+      date: formatEntryDate(previousDate),
       description: t('subscriptionPreviousCycle'),
       amount: details.price,
       status: t(details.historyStatus),

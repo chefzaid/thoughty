@@ -94,6 +94,7 @@ export class BooksService {
       includeUntagged: query.includeUntagged,
       tags: this.parseTagFilter(query.tags),
       eras,
+      today: query.today,
     });
     return { book, source };
   }
@@ -176,7 +177,6 @@ export class BooksService {
     };
 
     const titleLabel = book.title.replaceAll(/[^a-zA-Z0-9_-]/g, '_') || 'book';
-    const dateStr = new Date().toISOString().split('T')[0];
 
     let content: Buffer | string;
     let extension: string;
@@ -214,7 +214,7 @@ export class BooksService {
 
     return {
       content,
-      filename: `thoughty_book_${titleLabel}_${dateStr}.${extension}`,
+      filename: `thoughty_book_${titleLabel}_${book.generatedAt}.${extension}`,
       contentType,
       title: book.title,
       author: book.author,

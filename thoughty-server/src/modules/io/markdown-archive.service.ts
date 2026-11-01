@@ -69,8 +69,11 @@ export class MarkdownArchiveService {
     private readonly timeCapsules: TimeCapsuleService,
   ) {}
 
-  /** Checks the diary and loads the entries before anything is sent, so errors still get a status code. */
-  async prepare(userId: number, diaryId?: number): Promise<MarkdownArchive> {
+  /**
+   * Checks the diary and loads the entries before anything is sent, so errors still get a status code.
+   * `exportedOn` is the writer's own day, which names the archive and dates its README.
+   */
+  async prepare(userId: number, diaryId: number | undefined, exportedOn: string): Promise<MarkdownArchive> {
     const diaries = await this.diaryRepository.find({ where: { userId }, order: { position: 'ASC', id: 'ASC' } });
     const diary = diaryId ? diaries.find((candidate) => candidate.id === diaryId) : undefined;
     if (diaryId && !diary) {
@@ -93,7 +96,6 @@ export class MarkdownArchiveService {
       this.configService.getConfig(userId),
     ]);
     const language: ArchiveLanguage = config.language === 'fr' ? 'fr' : 'en';
-    const exportedOn = new Date().toISOString().slice(0, 10);
     const label = diary ? diary.name.replaceAll(/[^a-zA-Z0-9_-]/g, '_') : 'all_diaries';
 
     return {

@@ -2145,7 +2145,7 @@
             "name": "today",
             "required": false,
             "in": "query",
-            "description": "The writer’s own day, which reread reminders are due by; the server’s UTC day when left out",
+            "description": "The writer’s own day (the UTC day or the one before or after it), which On This Day, `currentDate` and reread reminders are measured by; the server’s UTC day when left out",
             "schema": {
               "format": "date",
               "example": "2026-10-31",
@@ -3778,7 +3778,19 @@
     "/api/config/download-data": {
       "get": {
         "operationId": "ConfigController_downloadData",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "today",
+            "required": false,
+            "in": "query",
+            "description": "The writer’s own day (the UTC day or the one before or after it), which names the file; the server’s UTC day when left out",
+            "schema": {
+              "format": "date",
+              "example": "2026-10-31",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "JSON file with all user data"
@@ -5171,7 +5183,7 @@
             "name": "today",
             "required": false,
             "in": "query",
-            "description": "The writer’s own day, which writing goals and the writing streak are measured up to; the server’s UTC day when left out",
+            "description": "The writer’s own day (the UTC day or the one before or after it), which writing goals and the writing streak are measured up to; the server’s UTC day when left out",
             "schema": {
               "format": "date",
               "example": "2026-10-27",
@@ -5356,7 +5368,7 @@
             "name": "today",
             "required": false,
             "in": "query",
-            "description": "The writer’s own day, which writing goals and the writing streak are measured up to; the server’s UTC day when left out",
+            "description": "The writer’s own day (the UTC day or the one before or after it), which writing goals and the writing streak are measured up to; the server’s UTC day when left out",
             "schema": {
               "format": "date",
               "example": "2026-10-27",
@@ -5595,6 +5607,17 @@
                 "epub",
                 "zip"
               ]
+            }
+          },
+          {
+            "name": "today",
+            "required": false,
+            "in": "query",
+            "description": "The writer’s own day (the UTC day or the one before or after it), which names the file; the server’s UTC day when left out",
+            "schema": {
+              "format": "date",
+              "example": "2026-10-31",
+              "type": "string"
             }
           }
         ],
@@ -6504,6 +6527,17 @@
               "default": false,
               "type": "boolean"
             }
+          },
+          {
+            "name": "today",
+            "required": false,
+            "in": "query",
+            "description": "The writer’s own day (the UTC day or the one before or after it): the book’s date and file name, and the end of an ongoing life era; the server’s UTC day when left out",
+            "schema": {
+              "format": "date",
+              "example": "2026-10-31",
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -6892,6 +6926,17 @@
               "default": false,
               "type": "boolean"
             }
+          },
+          {
+            "name": "today",
+            "required": false,
+            "in": "query",
+            "description": "The writer’s own day (the UTC day or the one before or after it): the book’s date and file name, and the end of an ongoing life era; the server’s UTC day when left out",
+            "schema": {
+              "format": "date",
+              "example": "2026-10-31",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -7175,6 +7220,17 @@
               "default": false,
               "type": "boolean"
             }
+          },
+          {
+            "name": "today",
+            "required": false,
+            "in": "query",
+            "description": "The writer’s own day (the UTC day or the one before or after it): the book’s date and file name, and the end of an ongoing life era; the server’s UTC day when left out",
+            "schema": {
+              "format": "date",
+              "example": "2026-10-31",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -7434,6 +7490,17 @@
             "schema": {
               "default": false,
               "type": "boolean"
+            }
+          },
+          {
+            "name": "today",
+            "required": false,
+            "in": "query",
+            "description": "The writer’s own day (the UTC day or the one before or after it): the book’s date and file name, and the end of an ongoing life era; the server’s UTC day when left out",
+            "schema": {
+              "format": "date",
+              "example": "2026-10-31",
+              "type": "string"
             }
           }
         ],
@@ -7712,6 +7779,17 @@
             "schema": {
               "default": false,
               "type": "boolean"
+            }
+          },
+          {
+            "name": "today",
+            "required": false,
+            "in": "query",
+            "description": "The writer’s own day (the UTC day or the one before or after it): the book’s date and file name, and the end of an ongoing life era; the server’s UTC day when left out",
+            "schema": {
+              "format": "date",
+              "example": "2026-10-31",
+              "type": "string"
             }
           },
           {
@@ -8048,7 +8126,8 @@
                 "diaryId": 1,
                 "format": "txt",
                 "provider": "google_drive",
-                "includeVisibility": false
+                "includeVisibility": false,
+                "today": "2026-10-31"
               }
             }
           }
@@ -8287,7 +8366,8 @@
                 "$ref": "#/components/schemas/TriggerSyncDto"
               },
               "example": {
-                "provider": "google_drive"
+                "provider": "google_drive",
+                "today": "2026-10-31"
               }
             }
           }
@@ -18346,6 +18426,12 @@
             "type": "boolean",
             "description": "Include visibility field",
             "default": false
+          },
+          "today": {
+            "type": "string",
+            "example": "2026-10-31",
+            "format": "date",
+            "description": "The writer’s own day (the UTC day or the one before or after it), which names the file; the server’s UTC day when left out"
           }
         },
         "required": [
@@ -18355,7 +18441,8 @@
           "diaryId": 1,
           "format": "txt",
           "provider": "google_drive",
-          "includeVisibility": false
+          "includeVisibility": false,
+          "today": "2026-10-31"
         }
       },
       "CloudDownloadDto": {
@@ -18569,13 +18656,20 @@
               "onedrive",
               "dropbox"
             ]
+          },
+          "today": {
+            "type": "string",
+            "example": "2026-10-31",
+            "format": "date",
+            "description": "The writer’s own day (the UTC day or the one before or after it), which names the file; the server’s UTC day when left out"
           }
         },
         "required": [
           "provider"
         ],
         "example": {
-          "provider": "google_drive"
+          "provider": "google_drive",
+          "today": "2026-10-31"
         }
       },
       "DiffSyncResponseDto": {

@@ -1,6 +1,6 @@
 import { IsString, IsOptional, IsIn, Matches, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
-import { StrictBoolean, StrictInt } from '@/common/validation';
+import { StrictBoolean, StrictInt, WritersDay } from '@/common/validation';
 import { BookSourceQueryDto, BookVersionSourceDto } from './book-source.dto';
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -142,6 +142,15 @@ export class BookQueryDto extends BookSourceQueryDto {
   @IsOptional()
   @StrictBoolean()
   embedImages?: boolean;
+
+  @ApiPropertyOptional({
+    example: '2026-10-31',
+    format: 'date',
+    description: 'The writer’s own day (the UTC day or the one before or after it): the book’s date and file name, and the end of an ongoing life era; the server’s UTC day when left out',
+  })
+  @IsOptional()
+  @WritersDay()
+  today?: string;
 }
 
 export class BookUploadQueryDto extends BookQueryDto {

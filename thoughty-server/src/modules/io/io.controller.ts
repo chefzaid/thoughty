@@ -38,6 +38,7 @@ import {
 } from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
+import { writersDayOr } from '@/common/utils';
 import { MULTIPART_FIELD_LIMITS } from '@/common/multipart-limits';
 import { RATE_LIMITS, throttleDefault } from '@/common/rate-limit.constants';
 
@@ -81,11 +82,17 @@ export class IoController {
     @Res() res: Response,
   ) {
     if (query.format === 'zip') {
-      await this.sendMarkdownArchive(user.userId, res, query.diaryId);
+      await this.sendMarkdownArchive(user.userId, res, query.diaryId, query.today);
       return;
     }
 
-    const { content, filename, contentType } = await this.ioService.export(user.userId, query.diaryId, query.includeVisibility, query.format);
+    const { content, filename, contentType } = await this.ioService.export(
+      user.userId,
+      query.diaryId,
+      query.includeVisibility,
+      query.format,
+      writersDayOr(query.today),
+    );
 
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -161,8 +168,8 @@ export class IoController {
     return this.appImportService.attachFiles(user.userId, files, dto.entryIds);
   }
 
-  private async sendMarkdownArchive(userId: number, res: Response, diaryId?: number): Promise<void> {
-    const archive = await this.markdownArchiveService.prepare(userId, diaryId);
+  private async sendMarkdownArchive(userId: number, res: Response, diaryId?: number, today?: string): Promise<void> {
+    const archive = await this.markdownArchiveService.prepare(userId, diaryId, writersDayOr(today));
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="${archive.filename}"`);
     try {

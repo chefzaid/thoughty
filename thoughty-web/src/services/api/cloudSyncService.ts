@@ -1,5 +1,6 @@
 import type { components } from '../../generated/openapi';
 import { requestJson, type ServiceResult } from './base';
+import { writersToday } from '../../utils/entryDate';
 
 export type CloudProviderType = 'google_drive' | 'onedrive' | 'dropbox';
 
@@ -55,7 +56,10 @@ export const createCloudSyncService = (authFetch: CloudAuthFetch) => {
     provider: CloudProviderType,
     options?: { diaryId?: number; format?: 'txt' | 'json' | 'md'; includeVisibility?: boolean },
   ): Promise<ServiceResult<CloudFileInfo>> =>
-    requestJson(authFetch('/api/cloud-sync/upload', { method: 'POST', body: JSON.stringify({ provider, ...options }) }), 'cloudUploadError');
+    requestJson(
+      authFetch('/api/cloud-sync/upload', { method: 'POST', body: JSON.stringify({ provider, ...options, today: writersToday() }) }),
+      'cloudUploadError',
+    );
 
   const downloadFile = async (provider: CloudProviderType, fileId: string): Promise<ServiceResult<string>> => {
     const { data, error } = await requestJson<Schemas['CloudDownloadResponseDto']>(
@@ -78,7 +82,7 @@ export const createCloudSyncService = (authFetch: CloudAuthFetch) => {
     requestJson(authFetch(`/api/cloud-sync/schedule?provider=${provider}`, { method: 'DELETE' }), 'cloudScheduleRemoveError');
 
   const triggerSync = (provider: CloudProviderType): Promise<ServiceResult<DiffSyncResult>> =>
-    requestJson(authFetch('/api/cloud-sync/sync', { method: 'POST', body: JSON.stringify({ provider }) }), 'cloudSyncError');
+    requestJson(authFetch('/api/cloud-sync/sync', { method: 'POST', body: JSON.stringify({ provider, today: writersToday() }) }), 'cloudSyncError');
 
   return {
     getStatus,

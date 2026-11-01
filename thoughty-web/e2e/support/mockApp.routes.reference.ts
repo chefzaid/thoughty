@@ -6,6 +6,7 @@ import {
 import { fulfillJson, sortStrings, toEntryResponse, type RouteContext } from './mockApp.route-utils';
 import { isMockSealed, mockOpenedCapsules } from './mockApp.routes.time-capsules';
 import { mockDueRereads } from './mockApp.routes.reread-reminders';
+import { mockCurrentDate, mockOnThisDay } from './mockApp.on-this-day';
 import { buildMockGoals } from './mockApp.goals';
 import { buildMockStreak } from './mockApp.streak';
 
@@ -264,15 +265,15 @@ async function handleEntryReferenceRoutes({ route, pathname, searchParams, state
       : state.entries;
     const sorted = sortEntries(scopedEntries.filter((entry) => !isMockSealed(entry)));
     const randomEntry = sorted[0] ?? null;
-    const onThisDayEntry = sorted.at(-1) ?? null;
-    const now = new Date();
+    // The writer's day the app sends, else the UTC day, as the API reads it
+    const today = searchParams.get('today') ?? new Date().toISOString().slice(0, 10);
 
     await fulfillJson(route, {
       randomEntry: randomEntry ? toEntryResponse(randomEntry, state) : null,
-      onThisDay: onThisDayEntry ? { '1': [toEntryResponse(onThisDayEntry, state)] } : {},
-      currentDate: { month: String(now.getMonth() + 1).padStart(2, '0'), day: String(now.getDate()).padStart(2, '0'), year: now.getFullYear() },
+      onThisDay: mockOnThisDay(scopedEntries, today, state),
+      currentDate: mockCurrentDate(today),
       openedCapsules: mockOpenedCapsules(scopedEntries, state),
-      rereadReminders: mockDueRereads(scopedEntries, searchParams.get('today') ?? now.toISOString().slice(0, 10), state),
+      rereadReminders: mockDueRereads(scopedEntries, today, state),
     });
     return true;
   }

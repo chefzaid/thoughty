@@ -82,12 +82,26 @@ describe('ConfigController', () => {
         send: jest.fn(),
       };
 
-      await controller.downloadData(mockUser as any, res as any);
+      await controller.downloadData(mockUser as any, { today: '2026-11-01' }, res as any);
 
       expect(userDataExportService.downloadData).toHaveBeenCalledWith(1);
       expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/json; charset=utf-8');
-      expect(res.setHeader).toHaveBeenCalledWith('Content-Disposition', expect.stringContaining('thoughty_data_'));
+      expect(res.setHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename="thoughty_data_2026-11-01.json"');
       expect(res.send).toHaveBeenCalledWith(JSON.stringify(mockData, null, 2));
+    });
+
+    it('names the file after the UTC day when the writer’s day is not sent', async () => {
+      jest.useFakeTimers({ now: new Date('2026-10-31T10:30:00Z'), doNotFake: ['nextTick', 'setImmediate'] });
+      userDataExportService.downloadData.mockResolvedValue({});
+      const res = { setHeader: jest.fn(), send: jest.fn() };
+
+      try {
+        await controller.downloadData(mockUser as any, {}, res as any);
+      } finally {
+        jest.useRealTimers();
+      }
+
+      expect(res.setHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename="thoughty_data_2026-10-31.json"');
     });
   });
 });

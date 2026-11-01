@@ -11,6 +11,7 @@ import AutoDismiss from '../AutoDismiss/AutoDismiss';
 import PageHeader from '../PageHeader/PageHeader';
 import { useTransientMessage } from '../../hooks/useTransientMessage';
 import { downloadBlob } from '../../utils/downloadFile';
+import { writersToday } from '../../utils/entryDate';
 import { pluralPhrase } from '../../utils/pluralPhrase';
 import { readApiErrorMessage } from '../../services/api/base';
 import {
@@ -175,6 +176,8 @@ function ImportExport({
             if (exportFormat !== 'txt') {
                 params.append('format', exportFormat);
             }
+            // The file is named after the writer's own day
+            params.append('today', writersToday());
 
             const response = await authFetch(`/api/io/export?${params}`);
             if (!response.ok) {
@@ -184,7 +187,7 @@ function ImportExport({
 
             const blob = await response.blob();
             const filename = response.headers.get('Content-Disposition')?.split('filename=')[1]?.replaceAll('"', '')
-                || `thoughty_export_${new Date().toISOString().split('T')[0]}.txt`;
+                || `thoughty_export_${writersToday()}.txt`;
             downloadBlob(blob, filename);
 
             showMessage('success', t('exportSuccess'), 3000);

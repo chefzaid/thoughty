@@ -10,6 +10,7 @@ import {
 } from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
+import { writersDayOr } from '@/common/utils/writers-day.util';
 import { StatsPersonalityAnalysisService } from './stats-personality-analysis.service';
 import { StatsStreakService } from './stats-streak.service';
 
@@ -52,7 +53,7 @@ export class StatsController {
     return this.statsStreakService.getStreak(
       user.userId,
       query.diaryId,
-      query.today ?? new Date().toISOString().slice(0, 10),
+      writersDayOr(query.today),
     );
   }
 

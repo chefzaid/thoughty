@@ -96,7 +96,8 @@ export async function handleIoRoutes({
       status: 200,
       contentType,
       headers: {
-        "Content-Disposition": `attachment; filename="thoughty_export_2026-04-18.${extension}"`,
+        // Named after the writer's day the app sends, as the API names it
+        "Content-Disposition": `attachment; filename="thoughty_export_${searchParams.get("today")}.${extension}"`,
       },
       body,
     });

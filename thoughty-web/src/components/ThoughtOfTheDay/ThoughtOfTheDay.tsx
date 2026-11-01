@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useId, useRef } from 'react';
 import HighlightCard from './HighlightCard';
 import OpenedCapsulesSection from './OpenedCapsulesSection';
 import RereadRemindersSection from './RereadRemindersSection';
-import { formatEntryDate } from '../../utils/entryDate';
+import { writersToday } from '../../utils/entryDate';
 import OnThisDaySection from './OnThisDaySection';
 import type { Language } from '../../utils/translations';
 import './ThoughtOfTheDay.css';
@@ -42,8 +42,8 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
     const fetchHighlights = useCallback(async (): Promise<void> => {
         try {
             setLoading(true);
-            // Reread reminders are due by the writer's own day
-            const params = new URLSearchParams({ today: formatEntryDate(new Date()) });
+            // On This Day and reread reminders go by the writer's own day
+            const params = new URLSearchParams({ today: writersToday() });
             if (diaryId) params.append('diaryId', diaryId.toString());
             const response = await authFetch(`/api/entries/highlights?${params}`);
             if (!response.ok) throw new Error('Failed to fetch highlights');

@@ -64,7 +64,7 @@ describe('IoController', () => {
 
   describe('export', () => {
     it('sets headers and sends content via response', async () => {
-      const query = { diaryId: 1 } as any;
+      const query = { diaryId: 1, today: '2026-11-01' } as any;
       ioService.export!.mockResolvedValue({
         content: 'exported data',
         filename: 'diary.txt',
@@ -78,7 +78,7 @@ describe('IoController', () => {
 
       await controller.export(mockUser as any, query, mockRes);
 
-      expect(ioService.export).toHaveBeenCalledWith(1, 1, undefined, undefined);
+      expect(ioService.export).toHaveBeenCalledWith(1, 1, undefined, undefined, '2026-11-01');
       expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Type', 'text/plain; charset=utf-8');
       expect(mockRes.setHeader).toHaveBeenCalledWith(
         'Content-Disposition',
@@ -131,9 +131,9 @@ describe('IoController', () => {
       markdownArchiveService.prepare.mockResolvedValue({ filename: 'thoughty_all_diaries_2026-10-19.zip', write });
       const res = createResponse();
 
-      await controller.export(mockUser as any, { format: 'zip' } as any, res as any);
+      await controller.export(mockUser as any, { format: 'zip', today: '2026-11-01' } as any, res as any);
 
-      expect(markdownArchiveService.prepare).toHaveBeenCalledWith(1, undefined);
+      expect(markdownArchiveService.prepare).toHaveBeenCalledWith(1, undefined, '2026-11-01');
       expect(ioService.export).not.toHaveBeenCalled();
       expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/zip');
       expect(res.setHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename="thoughty_all_diaries_2026-10-19.zip"');
@@ -150,7 +150,7 @@ describe('IoController', () => {
 
       await controller.export(mockUser as any, { format: 'zip', diaryId: 4 } as any, res as any);
 
-      expect(markdownArchiveService.prepare).toHaveBeenCalledWith(1, 4);
+      expect(markdownArchiveService.prepare).toHaveBeenCalledWith(1, 4, expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/));
       expect(res.destroy).toHaveBeenCalled();
       expect(res.end).not.toHaveBeenCalled();
     });

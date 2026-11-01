@@ -131,6 +131,8 @@ test.describe('Import from other journaling apps', () => {
 
   test('downloads everything as a Markdown folder with attachments', async ({ page }) => {
     const { state } = await setupMockApp(page, { startAuthenticated: true });
+    // Exports are named after the writer's day
+    await page.clock.setFixedTime(new Date('2026-04-18T12:00:00'));
     await page.goto('/import-export?diary=all&section=export');
 
     await page.locator('#export-format').selectOption({ label: 'Markdown folder with attachments (.zip)' });

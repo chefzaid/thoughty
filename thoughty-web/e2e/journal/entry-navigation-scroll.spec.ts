@@ -33,6 +33,8 @@ test.describe('Navigating to an entry', () => {
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 700 });
     await setupMockApp(page, { startAuthenticated: true, initialEntries: entries });
+    // A year after the oldest entry, so On this day shows it
+    await page.clock.setFixedTime(new Date('2025-03-02T12:00:00'));
     await page.goto('/journal?diary=all');
   });
 

@@ -4,7 +4,8 @@ import { Repository } from 'typeorm';
 import { apiError } from '@/common/errors';
 import { Entry } from '@/database/entities';
 import { assertEntryNotSealed } from '@/modules/time-capsules/time-capsule.guard';
-import { isRereadDayAllowed, isWritersDay } from './reread-reminder-dates';
+import { isWritersDay } from '@/common/utils/writers-day.util';
+import { isRereadDayAllowed } from './reread-reminder-dates';
 
 /** Reminders Highlights shows at most. */
 export const REREAD_REMINDER_HIGHLIGHT_LIMIT = 10;

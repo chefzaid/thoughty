@@ -11,6 +11,7 @@ import {
   UNTAGGED_CHAPTER_TITLE,
 } from './book-model.util';
 import { compareErasChronologically, mostSpecificEra, OUTSIDE_ERAS_CHAPTER_TITLE, type BookEra } from './book-era.util';
+import { writersDayOr } from './writers-day.util';
 
 // The book model and its Markdown and HTML renderers live in their own modules; this one builds
 // books from entries and stays the entry point for all three.
@@ -152,7 +153,7 @@ function buildChronologicalBook(
   return {
     title: options.title,
     author: options.author,
-    generatedAt: new Date().toISOString().split('T')[0],
+    generatedAt: writersDayOr(options.today),
     chapters: [...chapterMap.values()],
   };
 }
@@ -164,7 +165,7 @@ function buildChronologicalBook(
  */
 function buildEraBook(entries: BookEntryInput[], options: BuildBookOptions): Book {
   const eras = [...(options.eras ?? [])].sort(compareErasChronologically);
-  const generatedAt = new Date().toISOString().split('T')[0];
+  const generatedAt = writersDayOr(options.today);
   const byEra = new Map<BookEra, BookEntry[]>();
   const outside: BookEntry[] = [];
 
@@ -242,7 +243,7 @@ export function buildBook(entries: BookEntryInput[], options: BuildBookOptions):
   return {
     title: options.title,
     author: options.author,
-    generatedAt: new Date().toISOString().split('T')[0],
+    generatedAt: writersDayOr(options.today),
     chapters,
   };
 }
@@ -254,7 +255,7 @@ export function buildBook(entries: BookEntryInput[], options: BuildBookOptions):
  */
 export function buildJournalDocument(
   entries: BookEntryInput[],
-  options: { title: string; author?: string },
+  options: { title: string; author?: string; today?: string },
 ): Book {
   const normalized = entries.map(normalizeBookEntry).filter((entry) => entry.content.trim());
 
@@ -274,7 +275,7 @@ export function buildJournalDocument(
   return {
     title: options.title,
     author: options.author,
-    generatedAt: new Date().toISOString().split('T')[0],
+    generatedAt: writersDayOr(options.today),
     chapters: [...chapterMap.values()],
   };
 }

@@ -25,6 +25,7 @@ import {
   hydrateBookImages,
   inlineImageIds,
   inlineImagesToAltText,
+  writersDayOr,
 } from '@/common/utils';
 import { AttachmentsService } from '@/modules/attachments';
 import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
@@ -239,11 +240,13 @@ export class IoService {
     entries: Entry[],
     format: 'pdf' | 'html' | 'epub',
     diary: Diary | null,
+    today: string,
   ): Promise<{ content: string | Buffer; extension: string; contentType: string }> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     const document = buildJournalDocument(entries, {
       title: diary?.name ?? 'My Journal',
       author: user?.username,
+      today,
     });
     // Documents show attachments only where the text places them, within the books' image budgets
     for (const chapter of document.chapters) {
@@ -276,7 +279,14 @@ export class IoService {
     }
   }
 
-  async export(userId: number, diaryId?: number, includeVisibility?: boolean, format: ExportFormat = 'txt'): Promise<ExportFile> {
+  /** `today` is the writer's own day, which names the file and dates a reading copy; the UTC day without it. */
+  async export(
+    userId: number,
+    diaryId?: number,
+    includeVisibility?: boolean,
+    format: ExportFormat = 'txt',
+    today = writersDayOr(undefined),
+  ): Promise<ExportFile> {
     const diary = diaryId
       ? await this.diaryRepository.findOne({ where: { id: diaryId, userId } })
       : null;
@@ -337,7 +347,7 @@ export class IoService {
       case 'pdf':
       case 'html':
       case 'epub': {
-        const document = await this.renderExportDocument(userId, entries, format, diary);
+        const document = await this.renderExportDocument(userId, entries, format, diary, today);
         fileContent = document.content;
         extension = document.extension;
         contentType = document.contentType;
@@ -356,8 +366,7 @@ export class IoService {
     if (diaryId) {
       diaryLabel = diary ? diary.name.replaceAll(/[^a-zA-Z0-9_-]/g, '_') : `diary${diaryId}`;
     }
-    const dateStr = new Date().toISOString().split('T')[0];
-    const filename = `thoughty_${diaryLabel}_${dateStr}.${extension}`;
+    const filename = `thoughty_${diaryLabel}_${today}.${extension}`;
 
     return { content: fileContent, filename, contentType };
   }

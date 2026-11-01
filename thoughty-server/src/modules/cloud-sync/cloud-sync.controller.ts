@@ -89,7 +89,7 @@ export class CloudSyncController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CloudUploadDto,
   ): Promise<CloudFileInfoDto> {
-    return this.cloudSyncService.uploadExport(user.userId, dto.provider, dto.diaryId, dto.format, dto.includeVisibility);
+    return this.cloudSyncService.uploadExport(user.userId, dto.provider, dto.diaryId, dto.format, dto.includeVisibility, dto.today);
   }
 
   @Post('download')
@@ -146,6 +146,6 @@ export class CloudSyncController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: TriggerSyncDto,
   ): Promise<DiffSyncResponseDto> {
-    return this.cloudSyncService.executeDiffSync(user.userId, dto.provider);
+    return this.cloudSyncService.executeDiffSync(user.userId, dto.provider, dto.today);
   }
 }

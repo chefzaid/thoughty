@@ -300,19 +300,9 @@ describe('EntriesQueryService', () => {
       .mockReturnValueOnce(randomQb)
       .mockReturnValueOnce(onThisDayQb);
 
-    const realDate = Date;
-    global.Date = class extends Date {
-      constructor(value?: string | number | Date) {
-        super(value ?? '2024-01-15T12:00:00Z');
-      }
-      static override now() {
-        return new realDate('2024-01-15T12:00:00Z').valueOf();
-      }
-    } as DateConstructor;
+    const now = new Date('2024-01-15T12:00:00Z');
 
-    const result = await service.getHighlights(7, { diaryId: 3 });
-
-    global.Date = realDate;
+    const result = await service.getHighlights(7, { diaryId: 3 }, now);
 
     expect(randomQb.andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 3 });
     expect(onThisDayQb.andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 3 });
@@ -328,11 +318,36 @@ describe('EntriesQueryService', () => {
     expect(result.currentDate).toEqual({ month: '01', day: '15', year: 2024 });
     expect(randomQb.andWhere).toHaveBeenCalledWith('e.sealed_until IS NULL');
     expect(onThisDayQb.andWhere).toHaveBeenCalledWith('e.sealed_until IS NULL');
-    expect(timeCapsules.findRecentlyOpened).toHaveBeenCalledWith(7, 3, expect.any(Date));
+    expect(timeCapsules.findRecentlyOpened).toHaveBeenCalledWith(7, 3, now);
     expect(result.openedCapsules).toEqual([]);
-    // Without the writer's day, reminders are due by the server's UTC day
+    // Without the writer's day, On This Day and reminders go by the server's UTC day
+    expect(onThisDayQb.andWhere).toHaveBeenCalledWith("TO_CHAR(e.date, 'MM-DD') = :mmdd", { mmdd: '01-15' });
     expect(rereadReminders.findDue).toHaveBeenCalledWith(7, 3, '2024-01-15');
     expect(result.rereadReminders).toEqual([]);
+  });
+
+  it.each([
+    // 10:30 UTC on 31 October is 00:30 on 1 November in Kiritimati (UTC+14) and 23:30 on 30 October in Pago Pago (UTC-11)
+    ['Pacific/Kiritimati', '2026-10-31T10:30:00Z', '2026-11-01', '11-01', { month: '11', day: '01', year: 2026 }],
+    ['Pacific/Pago_Pago', '2026-10-31T10:30:00Z', '2026-10-30', '10-30', { month: '10', day: '30', year: 2026 }],
+    // New Year's Day in Kiritimati while it is still the last day of the year in UTC: last year's entries are a year ago
+    ['Pacific/Kiritimati', '2026-12-31T10:30:00Z', '2027-01-01', '01-01', { month: '01', day: '01', year: 2027 }],
+    ['Pacific/Pago_Pago', '2027-01-01T10:30:00Z', '2026-12-31', '12-31', { month: '12', day: '31', year: 2026 }],
+  ])('shows On This Day for the writer’s own day in %s at %s', async (_zone, at, today, mmdd, currentDate) => {
+    const onThisDayQb = createQueryBuilder({
+      getRawAndEntities: jest.fn().mockResolvedValue({ raw: [{ entry_year: '2025' }], entities: [{ id: 4, diary: null }] }),
+    });
+    entryRepository.createQueryBuilder
+      .mockReturnValueOnce(createQueryBuilder({ getOne: jest.fn().mockResolvedValue(null) }))
+      .mockReturnValueOnce(onThisDayQb);
+
+    const result = await service.getHighlights(7, { today }, new Date(at));
+
+    expect(onThisDayQb.andWhere).toHaveBeenCalledWith("TO_CHAR(e.date, 'MM-DD') = :mmdd", { mmdd });
+    expect(onThisDayQb.andWhere).toHaveBeenCalledWith('EXTRACT(YEAR FROM e.date) < :currentYear', { currentYear: currentDate.year });
+    expect(result.currentDate).toEqual(currentDate);
+    expect(result.onThisDay).toEqual({ [currentDate.year - 2025]: [expect.objectContaining({ id: 4 })] });
+    expect(rereadReminders.findDue).toHaveBeenCalledWith(7, undefined, today);
   });
 
   it('shows the entries the writer asked to reread by their own day', async () => {

@@ -29,6 +29,8 @@ test.describe('Book cover image', () => {
       if (request.method() === 'POST' && new URL(request.url()).pathname.startsWith('/api/books/')) coverRequests.push(request);
     });
 
+    // Books are named after the writer's day
+    await page.clock.setFixedTime(new Date('2026-08-01T12:00:00'));
     await page.goto('/import-export?diary=1&section=book');
     const bookSection = page.locator('#book-section');
     await bookSection.getByLabel('Title').fill('Garden Notes');

@@ -1,6 +1,6 @@
 import { IsString, IsOptional, IsIn } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { StrictBoolean, StrictInt } from '@/common/validation';
+import { StrictBoolean, StrictInt, WritersDay } from '@/common/validation';
 
 export type CloudProviderType = 'google_drive' | 'onedrive' | 'dropbox';
 
@@ -57,6 +57,15 @@ export class CloudUploadDto {
   @IsOptional()
   @StrictBoolean()
   includeVisibility?: boolean;
+
+  @ApiPropertyOptional({
+    example: '2026-10-31',
+    format: 'date',
+    description: 'The writer’s own day (the UTC day or the one before or after it), which names the file; the server’s UTC day when left out',
+  })
+  @IsOptional()
+  @WritersDay()
+  today?: string;
 }
 
 export class CloudDownloadDto {
@@ -124,4 +133,13 @@ export class TriggerSyncDto {
   @ApiProperty({ description: 'Cloud provider', enum: ['google_drive', 'onedrive', 'dropbox'] })
   @IsIn(['google_drive', 'onedrive', 'dropbox'])
   provider: CloudProviderType;
+
+  @ApiPropertyOptional({
+    example: '2026-10-31',
+    format: 'date',
+    description: 'The writer’s own day (the UTC day or the one before or after it), which names the file; the server’s UTC day when left out',
+  })
+  @IsOptional()
+  @WritersDay()
+  today?: string;
 }

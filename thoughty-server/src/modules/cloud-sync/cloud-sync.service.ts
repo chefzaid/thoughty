@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException, HttpException, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { apiError, apiErrorCodeOf } from '@/common/errors';
+import { writersDayOr } from '@/common/utils/writers-day.util';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Setting } from '@/database/entities';
@@ -203,9 +204,10 @@ export class CloudSyncService {
     diaryId?: number,
     format: TextExportFormat = 'txt',
     includeVisibility?: boolean,
+    today?: string,
   ): Promise<CloudFileInfo> {
     const accessToken = await this.getValidAccessToken(userId, provider);
-    const { content, filename, contentType } = await this.ioService.export(userId, diaryId, includeVisibility, format);
+    const { content, filename, contentType } = await this.ioService.export(userId, diaryId, includeVisibility, format, writersDayOr(today));
     return this.providers[provider].uploadFile(accessToken, filename, String(content), contentType);
   }
 
@@ -318,7 +320,11 @@ export class CloudSyncService {
     return { success: true };
   }
 
-  async executeDiffSync(userId: number, provider: CloudProviderType): Promise<DiffSyncResponseDto> {
+  /**
+   * Uploads the scheduled export when it changed since the last sync. `today` is the writer's day,
+   * which names the file, when they press Sync now; the worker's scheduled runs use the UTC day.
+   */
+  async executeDiffSync(userId: number, provider: CloudProviderType, today?: string): Promise<DiffSyncResponseDto> {
     await verifyCloudOwnership();
     // Load schedule config
     const [formatSetting, diaryIdSetting, includeVisibilitySetting, lastHashSetting] = await Promise.all([
@@ -334,7 +340,7 @@ export class CloudSyncService {
     const lastHash = lastHashSetting?.value || '';
 
     // Generate export content (text formats only, per the schedule DTO)
-    const exported = await this.ioService.export(userId, diaryId, includeVisibility, format);
+    const exported = await this.ioService.export(userId, diaryId, includeVisibility, format, writersDayOr(today));
     await verifyCloudOwnership();
     const { filename, contentType } = exported;
     const content = String(exported.content);

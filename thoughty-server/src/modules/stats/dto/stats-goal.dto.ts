@@ -1,8 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsOptional, Matches, Min } from 'class-validator';
+import { IsOptional, Min } from 'class-validator';
 import type { DiaryGoalType } from '@/database/entities';
 import { DIARY_GOAL_TYPES } from '@/modules/diaries/dto';
-import { StrictInt } from '@/common/validation';
+import { StrictInt, WritersDay } from '@/common/validation';
 
 export class StatsQueryDto {
   @ApiPropertyOptional({ example: 3, minimum: 1, description: 'Limit the statistics to one diary' })
@@ -14,11 +14,10 @@ export class StatsQueryDto {
   @ApiPropertyOptional({
     example: '2026-10-27',
     format: 'date',
-    description: 'The writer’s own day, which writing goals and the writing streak are measured up to; the server’s UTC day when left out',
+    description: 'The writer’s own day (the UTC day or the one before or after it), which writing goals and the writing streak are measured up to; the server’s UTC day when left out',
   })
   @IsOptional()
-  @Matches(/^\d{4}-\d{2}-\d{2}$/)
-  @IsDateString({ strict: true })
+  @WritersDay()
   today?: string;
 }
 

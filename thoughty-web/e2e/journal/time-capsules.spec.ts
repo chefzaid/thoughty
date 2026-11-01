@@ -25,9 +25,11 @@ async function openHighlightsWithCapsule(page: Page, config: SetupMockAppOptions
     config,
     initialEntries: [
       { ...sealedLetter, capsule: { openAt: openedAt, sealedAt: '2025-03-01T10:00:00.000Z', openedAt } },
-      { id: 703, date: '2024-04-17', index: 1, content: 'Earlier highlight memory', tags: [], visibility: 'private', diaryId: 1 },
+      // A year before the writer's day below, so On this day shows it beside the capsule
+      { id: 703, date: '2025-06-15', index: 1, content: 'Earlier highlight memory', tags: [], visibility: 'private', diaryId: 1 },
     ],
   });
+  await page.clock.setFixedTime(new Date('2026-06-15T12:00:00'));
   await page.goto('/journal?diary=all');
   await page.getByRole('button', { name: 'Highlights' }).click();
   return page.locator('.opened-capsules');

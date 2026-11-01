@@ -1,6 +1,6 @@
 import { IsString, IsOptional, IsIn } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { StrictBoolean, StrictInt } from '@/common/validation';
+import { StrictBoolean, StrictInt, WritersDay } from '@/common/validation';
 
 export class FormatConfigDto {
   @ApiPropertyOptional()
@@ -74,6 +74,15 @@ export class ExportQueryDto {
   @IsOptional()
   @IsIn(['txt', 'json', 'md', 'csv', 'pdf', 'html', 'epub', 'zip'])
   format?: 'txt' | 'json' | 'md' | 'csv' | 'pdf' | 'html' | 'epub' | 'zip';
+
+  @ApiPropertyOptional({
+    example: '2026-10-31',
+    format: 'date',
+    description: 'The writer’s own day (the UTC day or the one before or after it), which names the file; the server’s UTC day when left out',
+  })
+  @IsOptional()
+  @WritersDay()
+  today?: string;
 }
 
 export class PreviewImportDto {

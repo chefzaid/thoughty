@@ -1,14 +1,15 @@
-import { Controller, Get, Post, Body, UseGuards, Res, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards, Res, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ConfigService } from './config.service';
 import { UserDataExportService } from './user-data-export.service';
-import { UpdateConfigDto } from './dto/config.dto';
+import { DownloadDataQueryDto, UpdateConfigDto } from './dto/config.dto';
 import { FEATURE_FLAGS_SCHEMA, UserConfigDto } from './dto/config-response.dto';
 import { SuccessResponseDto } from '@/common/dto';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { Response } from 'express';
 import { FeatureFlagsService } from '@/common';
+import { writersDayOr } from '@/common/utils/writers-day.util';
 
 @ApiTags('Config')
 @ApiBearerAuth()
@@ -61,11 +62,11 @@ export class ConfigController {
   @ApiResponse({ status: 200, description: 'JSON file with all user data' })
   async downloadData(
     @CurrentUser() user: AuthenticatedUser,
+    @Query() query: DownloadDataQueryDto,
     @Res() res: Response,
   ) {
     const data = await this.userDataExportService.downloadData(user.userId);
-    const dateStr = new Date().toISOString().split('T')[0];
-    const filename = `thoughty_data_${dateStr}.json`;
+    const filename = `thoughty_data_${writersDayOr(query.today)}.json`;
 
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

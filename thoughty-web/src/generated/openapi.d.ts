@@ -6119,7 +6119,8 @@ export interface components {
          *       "diaryId": 1,
          *       "format": "txt",
          *       "provider": "google_drive",
-         *       "includeVisibility": false
+         *       "includeVisibility": false,
+         *       "today": "2026-10-31"
          *     }
          */
         CloudUploadDto: {
@@ -6141,6 +6142,12 @@ export interface components {
              * @default false
              */
             includeVisibility: boolean;
+            /**
+             * Format: date
+             * @description The writer’s own day (the UTC day or the one before or after it), which names the file; the server’s UTC day when left out
+             * @example 2026-10-31
+             */
+            today?: string;
         };
         /**
          * @example {
@@ -6269,7 +6276,8 @@ export interface components {
         };
         /**
          * @example {
-         *       "provider": "google_drive"
+         *       "provider": "google_drive",
+         *       "today": "2026-10-31"
          *     }
          */
         TriggerSyncDto: {
@@ -6278,6 +6286,12 @@ export interface components {
              * @enum {string}
              */
             provider: "google_drive" | "onedrive" | "dropbox";
+            /**
+             * Format: date
+             * @description The writer’s own day (the UTC day or the one before or after it), which names the file; the server’s UTC day when left out
+             * @example 2026-10-31
+             */
+            today?: string;
         };
         /**
          * @example {
@@ -10271,7 +10285,7 @@ export interface operations {
             query?: {
                 /** @description Diary ID */
                 diaryId?: number;
-                /** @description The writer’s own day, which reread reminders are due by; the server’s UTC day when left out */
+                /** @description The writer’s own day (the UTC day or the one before or after it), which On This Day, `currentDate` and reread reminders are measured by; the server’s UTC day when left out */
                 today?: string;
             };
             header?: never;
@@ -11657,7 +11671,10 @@ export interface operations {
     };
     ConfigController_downloadData: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description The writer’s own day (the UTC day or the one before or after it), which names the file; the server’s UTC day when left out */
+                today?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -12840,7 +12857,7 @@ export interface operations {
             query?: {
                 /** @description Limit the statistics to one diary */
                 diaryId?: number;
-                /** @description The writer’s own day, which writing goals and the writing streak are measured up to; the server’s UTC day when left out */
+                /** @description The writer’s own day (the UTC day or the one before or after it), which writing goals and the writing streak are measured up to; the server’s UTC day when left out */
                 today?: string;
             };
             header?: never;
@@ -13002,7 +13019,7 @@ export interface operations {
             query?: {
                 /** @description Limit the statistics to one diary */
                 diaryId?: number;
-                /** @description The writer’s own day, which writing goals and the writing streak are measured up to; the server’s UTC day when left out */
+                /** @description The writer’s own day (the UTC day or the one before or after it), which writing goals and the writing streak are measured up to; the server’s UTC day when left out */
                 today?: string;
             };
             header?: never;
@@ -13179,6 +13196,8 @@ export interface operations {
                 includeVisibility?: boolean;
                 /** @description Export file format; `zip` is a Markdown folder with one file per entry and its attachments */
                 format?: "txt" | "json" | "md" | "csv" | "pdf" | "html" | "epub" | "zip";
+                /** @description The writer’s own day (the UTC day or the one before or after it), which names the file; the server’s UTC day when left out */
+                today?: string;
             };
             header?: never;
             path?: never;
@@ -13731,6 +13750,8 @@ export interface operations {
                 coverTheme?: "classic" | "ocean" | "forest" | "rose";
                 /** @description Embed eligible image attachments from entries in the generated book */
                 embedImages?: boolean;
+                /** @description The writer’s own day (the UTC day or the one before or after it): the book’s date and file name, and the end of an ongoing life era; the server’s UTC day when left out */
+                today?: string;
             };
             header?: never;
             path?: never;
@@ -13884,6 +13905,8 @@ export interface operations {
                 coverTheme?: "classic" | "ocean" | "forest" | "rose";
                 /** @description Embed eligible image attachments from entries in the generated book */
                 embedImages?: boolean;
+                /** @description The writer’s own day (the UTC day or the one before or after it): the book’s date and file name, and the end of an ongoing life era; the server’s UTC day when left out */
+                today?: string;
             };
             header?: never;
             path?: never;
@@ -13963,6 +13986,8 @@ export interface operations {
                 coverTheme?: "classic" | "ocean" | "forest" | "rose";
                 /** @description Embed eligible image attachments from entries in the generated book */
                 embedImages?: boolean;
+                /** @description The writer’s own day (the UTC day or the one before or after it): the book’s date and file name, and the end of an ongoing life era; the server’s UTC day when left out */
+                today?: string;
             };
             header?: never;
             path?: never;
@@ -14024,6 +14049,8 @@ export interface operations {
                 coverTheme?: "classic" | "ocean" | "forest" | "rose";
                 /** @description Embed eligible image attachments from entries in the generated book */
                 embedImages?: boolean;
+                /** @description The writer’s own day (the UTC day or the one before or after it): the book’s date and file name, and the end of an ongoing life era; the server’s UTC day when left out */
+                today?: string;
             };
             header?: never;
             path?: never;
@@ -14092,6 +14119,8 @@ export interface operations {
                 coverTheme?: "classic" | "ocean" | "forest" | "rose";
                 /** @description Embed eligible image attachments from entries in the generated book */
                 embedImages?: boolean;
+                /** @description The writer’s own day (the UTC day or the one before or after it): the book’s date and file name, and the end of an ongoing life era; the server’s UTC day when left out */
+                today?: string;
                 /** @description Connected cloud provider */
                 provider: "google_drive" | "onedrive" | "dropbox";
             };
@@ -14350,7 +14379,8 @@ export interface operations {
                  *       "diaryId": 1,
                  *       "format": "txt",
                  *       "provider": "google_drive",
-                 *       "includeVisibility": false
+                 *       "includeVisibility": false,
+                 *       "today": "2026-10-31"
                  *     }
                  */
                 "application/json": components["schemas"]["CloudUploadDto"];
@@ -14542,7 +14572,8 @@ export interface operations {
             content: {
                 /**
                  * @example {
-                 *       "provider": "google_drive"
+                 *       "provider": "google_drive",
+                 *       "today": "2026-10-31"
                  *     }
                  */
                 "application/json": components["schemas"]["TriggerSyncDto"];

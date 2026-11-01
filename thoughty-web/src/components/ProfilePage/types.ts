@@ -1,5 +1,6 @@
 import type { TranslationFunction } from '../../types';
 import type { User } from '../../contexts/authTypes';
+import { formatEntryDate } from '../../utils/entryDate';
 
 export type { TranslationFunction };
 
@@ -49,7 +50,7 @@ export const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024;
 export const getDefaultBirthday = (yearsAgo = DEFAULT_BIRTHDAY_YEARS_AGO): string => {
   const date = new Date();
   date.setFullYear(date.getFullYear() - yearsAgo);
-  return date.toISOString().split('T')[0] ?? '';
+  return formatEntryDate(date);
 };
 
 export const mergeUserProfileDefaults = (prev: ProfileConfig, user: ProfileUser | null): ProfileConfig => {

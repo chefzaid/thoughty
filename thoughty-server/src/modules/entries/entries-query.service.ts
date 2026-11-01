@@ -11,7 +11,7 @@ import {
   EntryResponseDto,
 } from './dto';
 import { toEntryResponse } from './entry-response.mapper';
-import { addSameDayOrder } from '@/common/utils';
+import { addSameDayOrder, dayParts, writersDayOr } from '@/common/utils';
 import { applyEntryListFilters, entrySearchRank, parseEntryIdsFilter } from './entry-list-filters';
 import { EntrySearchService } from './entry-search.service';
 import { ENTRY_WORDS_SQL } from '@/modules/stats/stats-sql';
@@ -159,13 +159,14 @@ export class EntriesQueryService {
     return { dates: result.map((row) => row.date) };
   }
 
-  async getHighlights(userId: number, query: GetHighlightsQueryDto): Promise<EntryHighlightsResponseDto> {
+  /**
+   * Highlights on the writer's own day (`query.today`, else the UTC day): a random entry, On This Day,
+   * the time capsules opened in the last week and the reread reminders due.
+   */
+  async getHighlights(userId: number, query: GetHighlightsQueryDto, now = new Date()): Promise<EntryHighlightsResponseDto> {
     const { diaryId } = query;
-    const today = new Date();
-    const writersDay = query.today ?? today.toISOString().slice(0, 10);
-    const currentMonth = String(today.getMonth() + 1).padStart(2, '0');
-    const currentDay = String(today.getDate()).padStart(2, '0');
-    const currentYear = today.getFullYear();
+    const today = writersDayOr(query.today, now);
+    const { year, month, day } = dayParts(today);
 
     let randomQb = this.entryRepository
       .createQueryBuilder('e')
@@ -181,9 +182,9 @@ export class EntriesQueryService {
 
     const [randomEntry, onThisDayEntries, openedCapsules, dueReminders] = await Promise.all([
       randomQb.getOne(),
-      this.findOnThisDay(userId, { year: currentYear, month: today.getMonth() + 1, day: today.getDate(), diaryId }),
-      this.timeCapsules.findRecentlyOpened(userId, diaryId, today),
-      this.rereadReminders.findDue(userId, diaryId, writersDay),
+      this.findOnThisDay(userId, { year, month, day, diaryId }),
+      this.timeCapsules.findRecentlyOpened(userId, diaryId, now),
+      this.rereadReminders.findDue(userId, diaryId, today),
     ]);
 
     const onThisDay: Record<number, EntryResponseDto[]> = {};
@@ -195,7 +196,7 @@ export class EntriesQueryService {
     return {
       randomEntry: randomEntry ? toEntryResponse(randomEntry) : null,
       onThisDay,
-      currentDate: { month: currentMonth, day: currentDay, year: currentYear },
+      currentDate: { month: today.slice(5, 7), day: today.slice(8, 10), year },
       openedCapsules: openedCapsules.map((capsule) => ({
         entry: toEntryResponse(capsule.entry),
         sealed_at: capsule.createdAt,

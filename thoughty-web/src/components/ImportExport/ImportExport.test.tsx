@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vite
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ImportExport from './ImportExport';
 import { cloudOk, cloudRefused } from '../../services/api/cloudSyncService.test-helpers';
+import { writersToday } from '../../utils/entryDate';
 
 vi.mock('../../contexts/AuthContext', () => {
     const authFetch = (...args: Parameters<typeof fetch>) => {
@@ -180,6 +181,8 @@ describe('ImportExport', () => {
             expect(exportCall).toBeTruthy();
             expect((exportCall as [string])[0]).toContain('format=json');
             expect((exportCall as [string])[0]).toContain('includeVisibility=true');
+            // The file is named after the writer's own day
+            expect((exportCall as [string])[0]).toContain(`today=${writersToday()}`);
         });
     });
 

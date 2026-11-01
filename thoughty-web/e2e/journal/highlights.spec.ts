@@ -28,6 +28,8 @@ test.describe('Journal highlights', () => {
       ],
     });
 
+    // A year after the earlier entry, so On this day shows it
+    await page.clock.setFixedTime(new Date('2025-04-17T12:00:00'));
     await page.goto('/journal?diary=all');
     await page.getByRole('button', { name: 'Highlights' }).click();
 
@@ -43,8 +45,9 @@ test.describe('Journal highlights', () => {
 
   for (const theme of ['dark', 'light'] as const) {
     test(`keeps keyboard focus inside the highlights dialog in the ${theme} theme`, async ({ page }) => {
-      const today = new Date().toISOString().slice(0, 10);
-      const lastYear = `${Number(today.slice(0, 4)) - 1}${today.slice(4)}`;
+      const today = '2026-06-15';
+      const lastYear = '2025-06-15';
+      await page.clock.setFixedTime(new Date(`${today}T12:00:00`));
       await setupMockApp(page, {
         startAuthenticated: true,
         config: { theme },

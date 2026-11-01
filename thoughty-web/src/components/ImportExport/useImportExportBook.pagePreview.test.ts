@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useImportExportBook } from './useImportExportBook';
 
@@ -49,6 +49,12 @@ const exportCalls = (authFetch: Mock<AuthFetch>) => authFetch.mock.calls.filter(
 describe('useImportExportBook page preview', () => {
     beforeEach(() => {
         downloadBlob.mockReset();
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date(2026, 9, 27, 12));
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     it('generates the PDF with the current settings, without a format or a saved version', async () => {
@@ -59,7 +65,7 @@ describe('useImportExportBook page preview', () => {
         await act(() => result.current.handlePagePreview());
 
         const [url, options] = exportCalls(authFetch)[0]!;
-        expect(url).toBe('/api/books/export?diaryId=2');
+        expect(url).toBe('/api/books/export?diaryId=2&today=2026-10-27');
         expect(options?.signal).toBeInstanceOf(AbortSignal);
         expect(options?.method).toBe('GET');
         expect(result.current.pagePreview?.file).toEqual({ blob: pdfBlob, filename: 'thoughty_book_Letters_2026-10-27.pdf' });

@@ -8,6 +8,7 @@ import { StatsCorrelationService } from './stats-correlation.service';
 import { StatsMoodService } from './stats-mood.service';
 import { StatsGoalService } from './stats-goal.service';
 import { ENTRY_WORDS_SQL } from './stats-sql';
+import { writersDayOr } from '@/common/utils/writers-day.util';
 
 const WORDS_PER_MINUTE = 200;
 
@@ -98,7 +99,7 @@ export class StatsService {
         .getRawOne(),
       this.statsCorrelationService.analyze(userId, diaryId),
       this.statsMoodService.analyze(userId, diaryId),
-      this.statsGoalService.analyze(userId, diaryId, today ?? new Date().toISOString().slice(0, 10)),
+      this.statsGoalService.analyze(userId, diaryId, writersDayOr(today)),
     ]);
 
     const thoughtsPerYear: Record<string, number> = {};

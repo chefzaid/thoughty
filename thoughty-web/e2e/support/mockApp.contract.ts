@@ -160,6 +160,20 @@ export function checkJsonRequestBody(method: string, pathname: string, body: unk
   return requestTypeProblems(schema, body, '$', loadDocument().components.schemas).map((problem) => `${method} ${pathname} sends ${problem}`);
 }
 
+/**
+ * Where the operation takes the writer's own day (`today`): in its query string, in its JSON body, or
+ * not at all (null).
+ */
+export function writersDayPlacement(method: string, pathname: string): 'query' | 'body' | null {
+  const operation = findOperation(method, pathname);
+  if (!operation) return null;
+  if ('today' in operation.queryTypes) return 'query';
+  const body = operation.jsonRequest?.$ref
+    ? resolveSchemaRef(operation.jsonRequest.$ref, loadDocument().components.schemas)
+    : operation.jsonRequest;
+  return body?.properties?.today ? 'body' : null;
+}
+
 const violations: string[] = [];
 
 /** Notes a mock answer that breaks the contract; the test fixture fails the test that received it. */

@@ -1,3 +1,4 @@
+import { writersToday } from '../../utils/entryDate';
 import type { BookOptions } from './ImportExport.types';
 
 /** A generated book file, kept in memory to show it or save it. */
@@ -16,7 +17,7 @@ export interface CachedBookPdf {
 /** The book file in an export answer, named as the server's Content-Disposition names it. */
 export async function readBookFile(response: Response, extension: string): Promise<GeneratedBookFile> {
     const filename = response.headers.get('Content-Disposition')?.split('filename=')[1]?.replaceAll('"', '')
-        || `thoughty_book_${new Date().toISOString().split('T')[0]}.${extension}`;
+        || `thoughty_book_${writersToday()}.${extension}`;
     return { blob: await response.blob(), filename };
 }
 

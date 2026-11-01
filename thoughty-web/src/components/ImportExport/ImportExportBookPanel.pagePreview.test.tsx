@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { getTranslation, type Language } from '../../utils/translations';
 import { ImportExportBookPanel } from './ImportExportBookPanel';
@@ -45,6 +45,10 @@ function renderPanel(language: Language = 'en', isLight = false) {
 }
 
 describe('ImportExportBookPanel page preview', () => {
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
     it('warns that the preview spends AI tokens only while AI writing is on', () => {
         renderPanel();
         const preview = screen.getByRole('button', { name: 'Preview Book' });
@@ -57,6 +61,8 @@ describe('ImportExportBookPanel page preview', () => {
     });
 
     it('opens the generated PDF page by page and returns focus when closed', async () => {
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date(2026, 9, 27, 12));
         const authFetch = renderPanel();
         const preview = screen.getByRole('button', { name: 'Preview Book' });
         preview.focus();
@@ -66,7 +72,8 @@ describe('ImportExportBookPanel page preview', () => {
         expect(dialog.parentElement).toHaveClass('book-reader--dark');
         expect(await screen.findByRole('toolbar', { name: 'Page controls' })).toHaveTextContent('Page 1 of 3');
         expect(screen.queryByText(/The preview shows the PDF edition/)).not.toBeInTheDocument();
-        expect(authFetch).toHaveBeenCalledWith('/api/books/export?diaryId=1', expect.objectContaining({ signal: expect.any(AbortSignal) }));
+        // The book is dated on the writer's own day
+        expect(authFetch).toHaveBeenCalledWith('/api/books/export?diaryId=1&today=2026-10-27', expect.objectContaining({ signal: expect.any(AbortSignal) }));
 
         fireEvent.click(screen.getByRole('button', { name: 'Close' }));
         await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
