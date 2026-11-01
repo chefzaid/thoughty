@@ -4,9 +4,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getTranslation } from '../../../utils/translations';
 import type { ZipEntry } from '../../../utils/zipReader';
 import { AppImportPanel } from './AppImportPanel';
+import { ExportTooLargeError } from './appImportArchive';
 import type { AppExport, ImportedEntry } from './appImportTypes';
 import { readAppExport, UnsupportedExportError } from './readAppExport';
-import { ExportTooLargeError, NoDailyNotesError } from './readDailyNotes';
+import { NoDailyNotesError } from './readDailyNotes';
+import { NoKeepNotesError } from './readKeep';
 import { runAppImport, type AppImportProgress, type AppImportSummary } from './runAppImport';
 
 const service = { importEntries: vi.fn(), uploadAttachments: vi.fn() };
@@ -58,6 +60,15 @@ const dailyNotesExport: AppExport = {
   journals: [],
   skippedMedia: 0,
   skippedNotes: { undated: 12, empty: 1, tooLarge: 0, unsafe: 2 },
+};
+
+const keepExport: AppExport = {
+  source: 'keep',
+  archive: new Blob(['zip']),
+  entries: [{ ...entry('2024-03-14', 1), journal: '', title: 'Groceries', pinned: true }],
+  journals: [],
+  skippedMedia: 1,
+  skippedNotes: { trashed: 4, noDate: 1, empty: 0, tooLarge: 0, unsafe: 0, unreadable: 2 },
 };
 
 function chooseExport(name = 'export.zip', label = 'appImportChoose') {
@@ -266,5 +277,52 @@ describe('AppImportPanel', () => {
 
     expect(screen.getByRole('region', { name: translate('appImportTitle') })).toBeInTheDocument();
     expect(screen.getByLabelText(language === 'en' ? 'Daily notes (Obsidian, Logseq)' : 'Notes quotidiennes (Obsidian, Logseq)')).not.toBeChecked();
+  });
+
+  it('reads Google Keep\'s Takeout once that choice is made, into the page\'s diary, counting the notes in the bin', async () => {
+    vi.mocked(readAppExport).mockResolvedValue(keepExport);
+    vi.mocked(runAppImport).mockResolvedValue({ ...summary, imported: 1, createdDiaries: [], skippedNotes: 7 });
+    render(<AppImportPanel diaryId={4} diaryName="Notes" language="en" t={t} />);
+
+    fireEvent.click(screen.getByLabelText('appImportKindKeep'));
+    expect(screen.getByText('appImportKeepDescription')).toBeInTheDocument();
+    expect(screen.getByLabelText('appImportChoose')).toHaveAttribute('accept', '.zip,application/zip');
+    chooseExport('takeout.zip');
+
+    expect(await screen.findByText('appImportFoundFrom Google Keep')).toBeInTheDocument();
+    expect(vi.mocked(readAppExport).mock.calls[0]![1]).toBe('keep');
+    expect(screen.queryByText('appImportStatJournals')).not.toBeInTheDocument();
+    expect(screen.getByText('appImportDailyNotesDiary Notes')).toBeInTheDocument();
+    expect(screen.getByText('appImportStatSkippedNotes').previousSibling).toHaveTextContent('7');
+    expect(screen.getByRole('list', { name: 'appImportStatSkippedNotes' }))
+      .toHaveTextContent('appImportSkippedTrashed 4appImportSkippedNoDate 1appImportSkippedUnreadable 2');
+
+    fireEvent.click(screen.getByRole('button', { name: 'appImportStart' }));
+
+    expect(runAppImport).toHaveBeenCalledWith(keepExport, { diaryId: 4, journalsAsDiaries: false }, service, expect.any(Function), expect.any(AbortSignal));
+    expect(await screen.findByText('appImportDone')).toBeInTheDocument();
+  });
+
+  it('explains why a Takeout cannot be read', async () => {
+    vi.mocked(readAppExport)
+      .mockRejectedValueOnce(new NoKeepNotesError('none'))
+      .mockRejectedValueOnce(new ExportTooLargeError('big'));
+    render(<AppImportPanel language="en" t={t} />);
+    fireEvent.click(screen.getByLabelText('appImportKindKeep'));
+
+    chooseExport('photos.zip');
+    expect(await screen.findByRole('alert')).toHaveTextContent('appImportNoKeepNotes');
+    chooseExport('huge.zip');
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('appImportKeepTooLarge'));
+  });
+
+  it.each(['en', 'fr'] as const)('names the Google Keep choice and its errors in %s', (language) => {
+    const translate = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);
+    render(<AppImportPanel language={language} t={translate} />);
+
+    fireEvent.click(screen.getByLabelText('Google Keep'));
+    expect(screen.getByText(translate('appImportKeepDescription'))).toBeInTheDocument();
+    expect(translate('appImportKeepDescription')).toContain('Google Takeout');
+    expect(translate('appImportNoKeepNotes')).not.toBe('appImportNoKeepNotes');
   });
 });

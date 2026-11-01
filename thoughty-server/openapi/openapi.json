@@ -6365,6 +6365,8 @@
                       "reflection"
                     ],
                     "favorite": true,
+                    "archived": true,
+                    "pinned": true,
                     "journal": "example"
                   }
                 ],
@@ -19620,7 +19622,7 @@
         "properties": {
           "sourceId": {
             "type": "string",
-            "description": "ID of the entry in the source app (for daily notes, the note's path in the archive); an entry already imported is not imported again",
+            "description": "ID of the entry in the source app (for daily notes, the note's path in the archive; for Google Keep, the note's file name in Takeout); an entry already imported is not imported again",
             "example": "journals/2024_03_14.md"
           },
           "date": {
@@ -19658,6 +19660,14 @@
           "favorite": {
             "type": "boolean"
           },
+          "archived": {
+            "type": "boolean",
+            "description": "True when the note was archived in the source app; the entry is archived"
+          },
+          "pinned": {
+            "type": "boolean",
+            "description": "True when the note was pinned in the source app; the entry is pinned while the writer's pinned-entry limit allows"
+          },
           "journal": {
             "type": "string",
             "description": "Name of the journal the entry belongs to in the source app"
@@ -19680,6 +19690,8 @@
             "reflection"
           ],
           "favorite": true,
+          "archived": true,
+          "pinned": true,
           "journal": "example"
         }
       },
@@ -19691,9 +19703,10 @@
             "enum": [
               "dayone",
               "journey",
-              "daily-notes"
+              "daily-notes",
+              "keep"
             ],
-            "description": "Day One, Journey, or a folder of daily notes named by date (Obsidian, Logseq)"
+            "description": "Day One, Journey, a folder of daily notes named by date (Obsidian, Logseq), or Google Keep (Takeout)"
           },
           "entries": {
             "type": "array",
@@ -19728,6 +19741,8 @@
                 "reflection"
               ],
               "favorite": true,
+              "archived": true,
+              "pinned": true,
               "journal": "example"
             }
           ],

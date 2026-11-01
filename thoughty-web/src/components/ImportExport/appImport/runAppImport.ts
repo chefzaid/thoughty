@@ -40,7 +40,7 @@ export interface AppImportSummary {
   readonly failedFiles: ReadonlyArray<{ readonly name: string; readonly reason: FailedFileReason }>;
   readonly createdDiaries: string[];
   readonly stopped: boolean;
-  /** Daily notes left out of the import (not named by a day, empty, too large, unsafe). */
+  /** Daily notes or Keep notes left out of the import (not named by a day, empty, too large, unsafe, or in Keep's bin). */
   readonly skippedNotes: number;
 }
 
@@ -101,6 +101,8 @@ function toRequestEntry(entry: ImportedEntry, journalsAsDiaries: boolean): AppIm
     content: entry.content,
     tags: entry.tags,
     favorite: entry.favorite,
+    ...(entry.archived ? { archived: true } : {}),
+    ...(entry.pinned ? { pinned: true } : {}),
     ...(journalsAsDiaries ? { journal: entry.journal } : {}),
   };
 }
@@ -199,8 +201,7 @@ export async function runAppImport(
     attached = await uploadFiles(data.archive, pendingFiles, service, onProgress, signal, failedFiles);
   }
 
-  const skipped = data.skippedNotes;
-  const skippedNotes = skipped ? skipped.undated + skipped.empty + skipped.tooLarge + skipped.unsafe : 0;
+  const skippedNotes = Object.values(data.skippedNotes ?? {}).reduce((sum: number, count) => sum + (count ?? 0), 0);
   return { imported, alreadyImported, attached, failedFiles, createdDiaries, stopped: signal.aborted, skippedNotes };
 }
 

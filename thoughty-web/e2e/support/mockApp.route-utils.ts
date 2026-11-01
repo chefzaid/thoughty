@@ -113,8 +113,7 @@ function openEntryResponse(entry: MockEntry, state: MockAppState): components['s
     visibility: entry.visibility,
     is_favorite: entry.is_favorite ?? false,
     is_archived: entry.is_archived ?? false,
-    // The mock journal has no pinning, so no entry is pinned.
-    is_pinned: false,
+    is_pinned: entry.is_pinned ?? false,
     diary_name: diary?.name,
     diary_icon: diary?.icon,
     diary_color: diary?.color ?? undefined,

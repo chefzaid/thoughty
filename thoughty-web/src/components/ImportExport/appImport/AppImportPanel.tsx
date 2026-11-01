@@ -10,21 +10,25 @@ import type { AppImportProgress, AppImportSummary, FailedFileReason } from './ru
 import { useAppImport, type UnreadableReason } from './useAppImport';
 import './AppImportPanel.css';
 
-const SOURCE_NAMES: Record<Exclude<AppImportSource, 'daily-notes'>, string> = { dayone: 'Day One', journey: 'Journey' };
+const SOURCE_NAMES: Record<Exclude<AppImportSource, 'daily-notes'>, string> = { dayone: 'Day One', journey: 'Journey', keep: 'Google Keep' };
 const KINDS: ReadonlyArray<{ kind: AppImportKind; label: string; description: string; accept: string }> = [
   { kind: 'apps', label: 'appImportKindApps', description: 'appImportDescription', accept: '.zip,.json,application/zip,application/json' },
   { kind: 'daily-notes', label: 'appImportKindDailyNotes', description: 'appImportDailyNotesDescription', accept: '.zip,application/zip' },
+  { kind: 'keep', label: 'appImportKindKeep', description: 'appImportKeepDescription', accept: '.zip,application/zip' },
 ];
 const UNREADABLE_KEYS: Record<UnreadableReason, Record<AppImportKind, string>> = {
-  unsupported: { apps: 'appImportUnsupported', 'daily-notes': 'appImportNoDailyNotes' },
-  tooLarge: { apps: 'appImportTooLarge', 'daily-notes': 'appImportTooLarge' },
-  damaged: { apps: 'appImportReadError', 'daily-notes': 'appImportReadError' },
+  unsupported: { apps: 'appImportUnsupported', 'daily-notes': 'appImportNoDailyNotes', keep: 'appImportNoKeepNotes' },
+  tooLarge: { apps: 'appImportTooLarge', 'daily-notes': 'appImportTooLarge', keep: 'appImportKeepTooLarge' },
+  damaged: { apps: 'appImportReadError', 'daily-notes': 'appImportReadError', keep: 'appImportReadError' },
 };
 const SKIPPED_NOTE_KEYS: Record<keyof SkippedNotes, string> = {
   undated: 'appImportSkippedUndated',
   empty: 'appImportSkippedEmpty',
   tooLarge: 'appImportSkippedTooLarge',
   unsafe: 'appImportSkippedUnsafe',
+  trashed: 'appImportSkippedTrashed',
+  noDate: 'appImportSkippedNoDate',
+  unreadable: 'appImportSkippedUnreadable',
 };
 const FAILURE_KEYS: Record<FailedFileReason, string> = {
   tooLarge: 'appImportReasonTooLarge',
@@ -70,8 +74,9 @@ function ExportPreview({
   const formatDay = (date: string) => new Intl.DateTimeFormat(language, { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`));
   const first = data.entries[0];
   const last = data.entries.at(-1);
-  const dailyNotes = data.source === 'daily-notes';
-  const skippedNotes = Object.entries(data.skippedNotes ?? {}).filter(([, count]) => count > 0) as Array<[keyof SkippedNotes, number]>;
+  // Daily notes and Keep notes have no journals: they go into the page's diary
+  const oneDiary = data.source === 'daily-notes' || data.source === 'keep';
+  const skippedNotes = Object.entries(data.skippedNotes ?? {}).filter(([, count]) => (count ?? 0) > 0) as Array<[keyof SkippedNotes, number]>;
 
   return (
     <div className="preview-box app-import-box">
@@ -80,7 +85,7 @@ function ExportPreview({
       </p>
       <div className="preview-stats">
         <Stat value={data.entries.length} label={t('appImportStatEntries')} language={language} />
-        {!dailyNotes && <Stat value={data.journals.length} label={t('appImportStatJournals')} language={language} />}
+        {!oneDiary && <Stat value={data.journals.length} label={t('appImportStatJournals')} language={language} />}
         <Stat value={mediaCount} label={t('appImportStatMedia')} language={language} />
         {data.skippedMedia > 0 && <Stat value={data.skippedMedia} label={t('appImportStatSkipped')} language={language} />}
         {skippedNotes.length > 0 && (
@@ -94,7 +99,7 @@ function ExportPreview({
       )}
       {first && last && <p className="app-import-note">{t('appImportRange', { first: formatDay(first.date), last: formatDay(last.date) })}</p>}
 
-      {dailyNotes ? (
+      {oneDiary ? (
         <p className="app-import-note">{t('appImportDailyNotesDiary', { diaryName: diaryLabel })}</p>
       ) : (
         <fieldset className="app-import-destination">
@@ -187,8 +192,8 @@ function ImportResult({
 }
 
 /**
- * Imports a Day One or Journey export, or a ZIP of Obsidian or Logseq daily notes, read in the browser,
- * with its photos and recordings.
+ * Imports a Day One or Journey export, a ZIP of Obsidian or Logseq daily notes, or Google Keep's
+ * Takeout, read in the browser, with its photos and recordings.
  */
 export function AppImportPanel({ diaryId, diaryName, language, onImported, t }: AppImportPanelProps) {
   const service = useAuthenticatedService(createAppImportService);

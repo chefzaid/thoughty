@@ -5,7 +5,9 @@ import { In, Repository } from 'typeorm';
 import { Attachment, Diary, Entry } from '@/database/entities';
 import { normalizeEntryTitle, normalizeMood, normalizeTimeOfDay, replaceInlineImages, sanitizeString } from '@/common/utils';
 import { AttachmentsService } from '@/modules/attachments';
+import { ConfigService } from '@/modules/config';
 import { DiariesService } from '@/modules/diaries';
+import { resolveMaxPinnedEntries } from '@/modules/entries/entries-command.service';
 import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
 import { EntryInlineImagesService } from '@/modules/entries/entry-inline-images.service';
 import {
@@ -50,6 +52,7 @@ export class AppImportService {
     private readonly attachmentsService: AttachmentsService,
     private readonly entryMentions: EntryMentionsService,
     private readonly inlineImages: EntryInlineImagesService,
+    private readonly configService: ConfigService,
   ) {}
 
   async importEntries(userId: number, dto: AppImportDto): Promise<AppImportResponseDto> {
@@ -74,6 +77,7 @@ export class AppImportService {
     }
 
     const nextIndex = await this.countEntriesByDate(userId, [...pending.values()].map((entry) => entry.date));
+    const pinSlots = await this.freePinSlots(userId, [...pending.values()].filter((entry) => entry.pinned === true).length);
     const rows = [...pending.entries()].map(([importRef, entry]) => {
       const index = (nextIndex.get(entry.date) ?? 0) + 1;
       nextIndex.set(entry.date, index);
@@ -90,6 +94,8 @@ export class AppImportService {
         format: 'markdown',
         visibility: 'private',
         isFavorite: entry.favorite === true,
+        isArchived: entry.archived === true,
+        isPinned: entry.pinned === true && pinSlots.take(),
         importRef,
       });
     });
@@ -123,6 +129,24 @@ export class AppImportService {
       importedCount: rows.length,
       alreadyImportedCount: dto.entries.length - rows.length,
       createdDiaries: journals.created,
+    };
+  }
+
+  /**
+   * How many of the entries to pin the writer's pinned-entry limit leaves room for, taken in import
+   * order: the pinned notes past it are imported unpinned, as a restore from the recycle bin does.
+   */
+  private async freePinSlots(userId: number, wanted: number): Promise<{ take: () => boolean }> {
+    let free = 0;
+    if (wanted > 0) {
+      const limit = resolveMaxPinnedEntries((await this.configService.getConfig(userId)).maxPinnedEntries);
+      free = limit - (await this.entryRepository.count({ where: { userId, isPinned: true } }));
+    }
+    return {
+      take: () => {
+        free -= 1;
+        return free >= 0;
+      },
     };
   }
 

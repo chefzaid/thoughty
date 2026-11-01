@@ -354,4 +354,28 @@ describe('runAppImport', () => {
     expect(importEntries.mock.calls[0]![0].entries[0]).not.toHaveProperty('journal');
     expect(summary).toEqual(expect.objectContaining({ imported: 1, skippedNotes: 7 }));
   });
+
+  it('sends a Keep note\'s archived and pinned flags only when set, and counts every reason a note was left out', async () => {
+    acceptEntries();
+
+    const summary = await runAppImport(
+      {
+        ...exportOf([entry('Groceries', { journal: '', archived: true, pinned: true }), entry('Plain', { journal: '' })]),
+        source: 'keep',
+        journals: [],
+        skippedNotes: { trashed: 4, noDate: 1, empty: 0, tooLarge: 0, unsafe: 2, unreadable: 1 },
+      },
+      { journalsAsDiaries: false },
+      service,
+      onProgress,
+      new AbortController().signal,
+    );
+
+    expect(importEntries.mock.calls[0]![0]).toEqual(expect.objectContaining({ source: 'keep' }));
+    expect(importEntries.mock.calls[0]![0].entries).toEqual([
+      { sourceId: 'Groceries', date: '2024-03-05', content: 'Entry Groceries', tags: [], favorite: false, archived: true, pinned: true },
+      { sourceId: 'Plain', date: '2024-03-05', content: 'Entry Plain', tags: [], favorite: false },
+    ]);
+    expect(summary).toEqual(expect.objectContaining({ imported: 2, skippedNotes: 8 }));
+  });
 });
