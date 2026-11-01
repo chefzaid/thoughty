@@ -115,9 +115,10 @@ function AiCredentialPanel({
       </div>
 
       <div className="ai-key-controls">
-        <label className="ai-key-input-wrap">
-          <span className="sr-only">{t("openRouterApiKey")}</span>
+        <div className="ai-key-input-wrap">
+          <label className="sr-only" htmlFor="profile-openrouter-key">{t("openRouterApiKey")}</label>
           <input
+            id="profile-openrouter-key"
             type={showKey ? "text" : "password"}
             value={apiKey}
             onChange={(event) => setApiKey(event.target.value)}
@@ -142,7 +143,7 @@ function AiCredentialPanel({
               aria-hidden="true"
             />
           </button>
-        </label>
+        </div>
         <button
           type="button"
           className="profile-primary-action"

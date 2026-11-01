@@ -120,15 +120,20 @@ function AISection({ localConfig, handleChange, t }: Readonly<AISectionProps>) {
         <AiCredentialPanel t={t} onCredentialChanged={() => loadModels(true)} />
         <div className="ai-settings-row">
           <div className="ai-setting-field ai-setting-model" ref={dropdownRef}>
-            <label className="setting-label">{t("openRouterModel")}</label>
+            <label className="setting-label" id="profile-ai-model-label" htmlFor="profile-ai-model">
+              {t("openRouterModel")}
+            </label>
             {models.length > 0 ? (
               <div className="model-dropdown-container">
                 <button
+                  id="profile-ai-model"
                   type="button"
+                  aria-labelledby="profile-ai-model-label profile-ai-model-value"
+                  aria-expanded={showDropdown}
                   className={`setting-input model-dropdown-trigger ${localConfig.theme === "light" ? "light" : "dark"}`}
                   onClick={() => setShowDropdown(!showDropdown)}
                 >
-                  <span className="model-dropdown-text">
+                  <span id="profile-ai-model-value" className="model-dropdown-text">
                     {localConfig.openRouterModel
                       ? selectedModelName
                       : "openai/gpt-4o-mini"}
@@ -158,6 +163,7 @@ function AISection({ localConfig, handleChange, t }: Readonly<AISectionProps>) {
                       type="text"
                       className={`model-dropdown-search ${localConfig.theme === "light" ? "light" : "dark"}`}
                       placeholder={t("searchModels")}
+                      aria-label={t("searchModels")}
                       value={modelSearch}
                       onChange={(e) => setModelSearch(e.target.value)}
                       autoFocus
@@ -193,6 +199,7 @@ function AISection({ localConfig, handleChange, t }: Readonly<AISectionProps>) {
             ) : (
               <div className="model-input-container">
                 <input
+                  id="profile-ai-model"
                   type="text"
                   name="openRouterModel"
                   value={localConfig.openRouterModel || ""}
@@ -209,8 +216,11 @@ function AISection({ localConfig, handleChange, t }: Readonly<AISectionProps>) {
             )}
           </div>
           <div className="ai-setting-field ai-setting-maxtags">
-            <label className="setting-label">{t("autoTagMaxTags")}</label>
+            <label className="setting-label" htmlFor="profile-auto-tag-max-tags">
+              {t("autoTagMaxTags")}
+            </label>
             <input
+              id="profile-auto-tag-max-tags"
               type="number"
               min="0"
               max="10"

@@ -28,7 +28,7 @@ const getMessageStyle = (type: 'success' | 'error', isDark: boolean) => {
   const successBg = isDark ? '#0b2e1a' : '#f0fdf4';
   const errorBg = isDark ? '#3b1111' : '#fef2f2';
   const successColor = isDark ? '#86efac' : '#15803d';
-  const errorColor = isDark ? '#fca5a5' : '#dc2626';
+  const errorColor = isDark ? '#fca5a5' : '#b91c1c';
   const successBorder = isDark ? '#14532d' : '#bbf7d0';
   const errorBorder = isDark ? '#7f1d1d' : '#fecaca';
 
@@ -74,7 +74,7 @@ const getProviderButtonStyle = (
     return {
       cursor: 'pointer',
       background: isDark ? '#3b1111' : '#fef2f2',
-      color: isDark ? '#fca5a5' : '#dc2626',
+      color: isDark ? '#fca5a5' : '#b91c1c',
       border: `1px solid ${isDark ? '#7f1d1d' : '#fecaca'}`,
       padding: '0.35rem 0.75rem',
       borderRadius: '6px',

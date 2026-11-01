@@ -1,34 +1,67 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '../support/test';
+import { expect, test, type Locator, type Page } from '../support/test';
 
 import { buildZip } from '../../src/test/zipFixture';
 import { setupMockApp } from '../support/mockApp';
 
-const PUBLIC_ROUTES = [
-  '/',
-  '/login',
-  '/register',
-  '/verify-email?token=valid-token',
-  '/about',
-  '/privacy',
-  '/terms',
-  '/contact',
-  '/feedback',
-  '/blog',
-] as const;
+type RouteContent = (page: Page) => Locator[];
 
-const AUTHENTICATED_ROUTES = [
-  '/journal',
-  '/feed',
-  '/memoir',
-  '/tags',
-  '/profile',
-  '/diaries',
-  '/stats',
-  '/review',
-  '/import-export',
-  '/recycle-bin',
-] as const;
+/**
+ * What each route shows once its content has loaded. The routes render after the session check and
+ * fill in from the API, so a scan right after `goto` would see an empty page; each scan waits for these.
+ */
+const PUBLIC_ROUTES: Record<string, RouteContent> = {
+  '/': (page) => [page.getByRole('heading', { level: 1, name: 'A private journal that becomes your life story.' })],
+  '/login': (page) => [page.getByRole('textbox', { name: 'Email or Username' }), page.getByRole('button', { name: 'Sign In', exact: true })],
+  '/register': (page) => [page.getByRole('textbox', { name: 'Confirm Password' })],
+  '/verify-email?token=valid-token': (page) => [page.getByRole('status').filter({ hasText: 'Your email is verified.' })],
+  '/about': (page) => [page.getByRole('heading', { name: 'Small, product-led, and close to the writing.' })],
+  '/privacy': (page) => [page.getByRole('heading', { name: 'Security and providers' })],
+  '/terms': (page) => [page.getByRole('heading', { name: 'Service changes' })],
+  '/contact': (page) => [page.getByRole('combobox', { name: 'Topic' }), page.getByRole('heading', { name: 'Which formats are available?' })],
+  '/feedback': (page) => [page.getByRole('button', { name: 'Sign in to vote for Mood calendar' })],
+  '/blog': (page) => [page.getByRole('heading', { name: 'Prompts for writing when the day feels noisy' })],
+};
+
+const AUTHENTICATED_ROUTES: Record<string, RouteContent> = {
+  '/journal': (page) => [
+    page.getByRole('button', { name: 'Manage Diaries' }),
+    page.getByRole('textbox', { name: 'Date of the entry' }),
+    page.getByText('No entries found'),
+  ],
+  '/feed': (page) => [page.getByText('No public entries from the community yet.')],
+  '/memoir': (page) => [page.getByRole('form', { name: 'Start your memoir' })],
+  '/tags': (page) => [page.getByRole('textbox', { name: 'New tag' }), page.getByRole('heading', { name: 'Tag Organization' })],
+  // Every section, including those that load their own data: achievements, two-factor, sessions,
+  // life eras, the opt-in emails, the AI models and key, cloud storage and the plan
+  '/profile': (page) => [
+    page.getByRole('region', { name: 'Achievements' }).getByRole('progressbar', { name: 'Progress: 0 of 1', exact: true }),
+    page.getByRole('combobox', { name: 'Gender' }),
+    page.getByText('Verify your email before enabling two-factor authentication.'),
+    page.getByRole('cell', { name: 'Current session' }),
+    page.getByText('0 of 100 eras'),
+    page.getByRole('switch', { name: 'Email me “On this day”' }),
+    page.getByRole('switch', { name: 'Email me a monthly recap' }),
+    page.getByRole('combobox', { name: 'Font style' }),
+    page.getByText('Using the server key'),
+    page.getByRole('button', { name: /^Model / }),
+    page.getByText(/^Connected since/).first(),
+    page.getByRole('combobox', { name: 'Plan' }),
+  ],
+  '/diaries': (page) => [page.getByRole('textbox', { name: 'Diary Name' }), page.getByText('Default Diary')],
+  '/stats': (page) => [
+    page.getByText('This diary has no writing goal yet.'),
+    page.getByText('No journaling activity yet.'),
+    page.getByText('The words you use at least twice this month will show here.'),
+  ],
+  '/review': (page) => [page.getByText('Write your first entry to start your year in review.')],
+  '/import-export': (page) => [
+    page.getByRole('region', { name: 'From Day One or Journey' }),
+    page.getByRole('heading', { name: 'Import from Cloud' }),
+    page.getByRole('textbox', { name: 'Dedication' }),
+  ],
+  '/recycle-bin': (page) => [page.getByText('The recycle bin is empty. Entries you delete wait here for 30 days.')],
+};
 
 const THEMES = ['dark', 'light'] as const;
 
@@ -52,19 +85,21 @@ test.describe('route accessibility', () => {
   test.setTimeout(60_000);
 
   for (const theme of THEMES) {
-    for (const path of PUBLIC_ROUTES) {
+    for (const [path, content] of Object.entries(PUBLIC_ROUTES)) {
       test(`${theme} public route ${path}`, async ({ page }) => {
         await setupMockApp(page, { config: { theme } });
         await page.goto(path);
+        for (const part of content(page)) await expect(part).toBeVisible();
 
         await expectNoAccessibilityViolations(page);
       });
     }
 
-    for (const path of AUTHENTICATED_ROUTES) {
+    for (const [path, content] of Object.entries(AUTHENTICATED_ROUTES)) {
       test(`${theme} authenticated route ${path}`, async ({ page }) => {
         await setupMockApp(page, { startAuthenticated: true, config: { theme } });
         await page.goto(path);
+        for (const part of content(page)) await expect(part).toBeVisible();
 
         await expectNoAccessibilityViolations(page);
       });
@@ -88,6 +123,23 @@ test.describe('route accessibility', () => {
       await page.getByRole('button', { name: 'Delete the entry of October 20, 2026 forever' }).click();
       await expect(page.getByRole('heading', { name: 'Delete forever?' })).toBeVisible();
       await expectNoAccessibilityViolations(page);
+    });
+  }
+
+  for (const theme of THEMES) {
+    test(`${theme} profile with two-factor on, its turn-off form, and the account deletion confirmation`, async ({ page }) => {
+      const { state } = await setupMockApp(page, { startAuthenticated: true, config: { theme } });
+      state.user.emailVerified = true;
+      state.user.twoFactorEnabled = true;
+      await page.goto('/profile');
+      await expect(page.getByText('Enabled', { exact: true })).toBeVisible();
+      await expectNoAccessibilityViolations(page, '.profile-two-column');
+
+      await page.getByRole('button', { name: 'Disable two-factor authentication' }).click();
+      await page.getByRole('button', { name: 'Delete Account' }).click();
+      await expect(page.getByRole('textbox', { name: 'Type DELETE to confirm' })).toBeVisible();
+      await expect(page.getByLabel('Password', { exact: true })).toBeVisible();
+      await expectNoAccessibilityViolations(page, '.profile-two-column');
     });
   }
 

@@ -22,12 +22,14 @@ function PersonalSection({ localConfig, handleChange, setLocalConfig, isDark, t 
     <div className="section-content">
       <div className="setting-row">
         <div className="setting-info">
-          <label className="setting-label">{t('fullName')}</label>
-          <span className="setting-description">{t('fullNameDescription')}</span>
+          <label className="setting-label" htmlFor="profile-name">{t('fullName')}</label>
+          <span id="profile-name-description" className="setting-description">{t('fullNameDescription')}</span>
         </div>
         <input
           type="text"
+          id="profile-name"
           name="name"
+          aria-describedby="profile-name-description"
           value={localConfig.name || ''}
           onChange={handleChange}
           placeholder={t('enterYourFullName')}
@@ -37,11 +39,13 @@ function PersonalSection({ localConfig, handleChange, setLocalConfig, isDark, t 
 
       <div className="setting-row">
         <div className="setting-info">
-          <label className="setting-label">{t('bio')}</label>
-          <span className="setting-description">{t('bioDescription')}</span>
+          <label className="setting-label" htmlFor="profile-bio">{t('bio')}</label>
+          <span id="profile-bio-description" className="setting-description">{t('bioDescription')}</span>
         </div>
         <textarea
+          id="profile-bio"
           name="bio"
+          aria-describedby="profile-bio-description"
           value={localConfig.bio || ''}
           onChange={handleChange}
           placeholder={t('writeSomethingAboutYourself')}
@@ -52,12 +56,14 @@ function PersonalSection({ localConfig, handleChange, setLocalConfig, isDark, t 
 
       <div className="setting-row">
         <div className="setting-info">
-          <label className="setting-label">{t('email')}</label>
-          <span className="setting-description">{t('emailDescription')}</span>
+          <label className="setting-label" htmlFor="profile-email">{t('email')}</label>
+          <span id="profile-email-description" className="setting-description">{t('emailDescription')}</span>
         </div>
         <input
           type="email"
+          id="profile-email"
           name="email"
+          aria-describedby="profile-email-description"
           value={localConfig.email || ''}
           onChange={handleChange}
           placeholder={t('enterYourEmail')}
@@ -68,12 +74,14 @@ function PersonalSection({ localConfig, handleChange, setLocalConfig, isDark, t 
 
       <div className="setting-row">
         <div className="setting-info">
-          <label className="setting-label">{t('birthday')}</label>
-          <span className="setting-description">{t('birthdayDescription')}</span>
+          <label className="setting-label" htmlFor="profile-birthday">{t('birthday')}</label>
+          <span id="profile-birthday-description" className="setting-description">{t('birthdayDescription')}</span>
         </div>
         <input
           type="date"
+          id="profile-birthday"
           name="birthday"
+          aria-describedby="profile-birthday-description"
           value={localConfig.birthday || ''}
           onChange={handleChange}
           onFocus={() => {
@@ -87,11 +95,13 @@ function PersonalSection({ localConfig, handleChange, setLocalConfig, isDark, t 
 
       <div className="setting-row">
         <div className="setting-info">
-          <label className="setting-label">{t('gender')}</label>
-          <span className="setting-description">{t('genderDescription')}</span>
+          <label className="setting-label" htmlFor="profile-gender">{t('gender')}</label>
+          <span id="profile-gender-description" className="setting-description">{t('genderDescription')}</span>
         </div>
         <select
+          id="profile-gender"
           name="gender"
+          aria-describedby="profile-gender-description"
           value={localConfig.gender || ''}
           onChange={handleChange}
           className={`setting-select ${isDark ? 'dark' : 'light'}`}

@@ -1,4 +1,4 @@
-import { useState, type ComponentProps } from 'react';
+import { useId, useState, type ComponentProps } from 'react';
 import type { TranslationFunction } from './types';
 import './DataPrivacySection.css';
 import ActiveSessionsSection from './ActiveSessionsSection';
@@ -56,13 +56,15 @@ interface DeleteAccountSectionProps {
 }
 
 function PasswordField({ label, value, setValue, placeholder, isDark, isVisible, setVisible, t }: Readonly<PasswordFieldProps>) {
+  const id = useId();
   return (
     <div className="setting-row">
       <div className="setting-info">
-        <label className="setting-label">{label}</label>
+        <label className="setting-label" htmlFor={id}>{label}</label>
       </div>
       <div className="api-key-input-container">
         <input
+          id={id}
           type={isVisible ? 'text' : 'password'}
           value={value}
           onChange={(e) => setValue?.(e.target.value)}
@@ -187,15 +189,19 @@ function DeleteAccountSection({
   return (
     <div className="delete-confirm-container">
       <p className="delete-warning">{t('deleteAccountWarning')}</p>
+      <label className="sr-only" htmlFor="profile-delete-confirm">{t('typeDeleteToConfirm')}</label>
       <input
+        id="profile-delete-confirm"
         type="text"
         value={deleteConfirmText}
         onChange={(e) => setDeleteConfirmText(e.target.value)}
         placeholder={t('typeDeleteToConfirm')}
         className={`setting-input delete-confirm-input ${isDark ? 'dark' : 'light'}`}
       />
+      {isLocalAuth && <label className="sr-only" htmlFor="profile-delete-password">{t('password')}</label>}
       {isLocalAuth && (
         <input
+          id="profile-delete-password"
           type="password"
           value={deletePassword}
           onChange={(e) => setDeletePassword(e.target.value)}

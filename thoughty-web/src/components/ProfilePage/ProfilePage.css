@@ -87,7 +87,8 @@
     gap: 1rem;
 }
 
-/* Setting Rows */
+/* Setting Rows. Secondary text uses the muted gray shades (gray-400 dark, gray-600 light,
+   as `mutedTextClass`), which reach WCAG AA contrast on the cards and inputs of both themes. */
 .setting-row {
     display: flex;
     flex-direction: column;
@@ -132,11 +133,11 @@
 }
 
 .profile-page.dark .setting-description {
-    color: #6b7280;
+    color: #9ca3af;
 }
 
 .profile-page.light .setting-description {
-    color: #9ca3af;
+    color: #4b5563;
 }
 
 .setting-input {
@@ -195,9 +196,6 @@
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
-.setting-textarea::placeholder {
-    opacity: 0.6;
-}
 
 .setting-select {
     padding: 0.5rem 2rem 0.5rem 0.75rem;
@@ -258,7 +256,7 @@
 }
 
 .profile-page.light .btn-cancel {
-    color: #6b7280;
+    color: #4b5563;
 }
 
 .btn-cancel:hover {

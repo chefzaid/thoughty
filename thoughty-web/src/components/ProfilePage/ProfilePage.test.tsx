@@ -136,6 +136,17 @@ describe('ProfilePage', () => {
             expect(input).toBeInTheDocument();
         });
 
+        it('names the password fields and the delete confirmation fields by their labels', () => {
+            render(<ProfilePage {...defaultProps} />);
+
+            for (const label of ['currentPassword', 'newPassword', 'confirmNewPassword']) {
+                expect(screen.getByLabelText(label)).toHaveAttribute('type', 'password');
+            }
+            fireEvent.click(screen.getByRole('button', { name: 'deleteAccount' }));
+            expect(screen.getByRole('textbox', { name: 'typeDeleteToConfirm' })).toHaveValue('');
+            expect(screen.getByLabelText('password')).toHaveAttribute('type', 'password');
+        });
+
         it('displays user initial in avatar', () => {
             render(<ProfilePage {...defaultProps} />);
 

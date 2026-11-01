@@ -179,11 +179,13 @@ function ThemeAndPaginationSettings({
 
       <div className="setting-row horizontal">
         <div className="setting-info">
-          <span className="setting-label">{t('entriesPerPage')}</span>
-          <span className="setting-description">{t('entriesPerPageDescription')}</span>
+          <label className="setting-label" htmlFor="profile-entries-per-page">{t('entriesPerPage')}</label>
+          <span id="profile-entries-per-page-description" className="setting-description">{t('entriesPerPageDescription')}</span>
         </div>
         <select
+          id="profile-entries-per-page"
           name="entriesPerPage"
+          aria-describedby="profile-entries-per-page-description"
           value={entriesPerPage || '10'}
           onChange={handleChange}
           className={`setting-select ${isDark ? 'dark' : 'light'}`}
@@ -199,11 +201,13 @@ function ThemeAndPaginationSettings({
 
       <div className="setting-row horizontal">
         <div className="setting-info">
-          <span className="setting-label">{t('maxPinnedEntries')}</span>
-          <span className="setting-description">{t('maxPinnedEntriesDescription')}</span>
+          <label className="setting-label" htmlFor="profile-max-pinned-entries">{t('maxPinnedEntries')}</label>
+          <span id="profile-max-pinned-entries-description" className="setting-description">{t('maxPinnedEntriesDescription')}</span>
         </div>
         <select
+          id="profile-max-pinned-entries"
           name="maxPinnedEntries"
+          aria-describedby="profile-max-pinned-entries-description"
           value={maxPinnedEntries || '3'}
           onChange={handleChange}
           className={`setting-select ${isDark ? 'dark' : 'light'}`}
@@ -253,15 +257,16 @@ function SpeechSettings({
 
       <div className="setting-row horizontal">
         <div className="setting-info">
-          <span className="setting-label">{t('ttsVoice')}</span>
-          <span className="setting-description">{t('ttsVoiceDescription')}</span>
+          <label className="setting-label" htmlFor="profile-tts-voice">{t('ttsVoice')}</label>
+          <span id="profile-tts-voice-description" className="setting-description">{t('ttsVoiceDescription')}</span>
         </div>
         <div className="voice-controls">
           <select
+            id="profile-tts-voice"
             name="ttsVoiceUri"
             value={selectedVoiceValue}
             onChange={handleChange}
-            aria-label={t('ttsVoice')}
+            aria-describedby="profile-tts-voice-description"
             className={`setting-select ${isDark ? 'dark' : 'light'}`}
             disabled={!speechAvailable}
           >

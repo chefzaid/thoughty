@@ -97,7 +97,21 @@
 .visibility-label {
     font-size: 0.75rem;
     font-weight: 600;
-    color: #6b7280;
+}
+
+/* Secondary text in the muted gray shades, which reach WCAG AA contrast on the cards of both themes */
+.diary-manager.dark .visibility-label,
+.diary-manager.dark .toggle-label,
+.diary-manager.dark .no-diaries,
+.diary-manager.dark .diary-visibility {
+    color: #9ca3af;
+}
+
+.diary-manager.light .visibility-label,
+.diary-manager.light .toggle-label,
+.diary-manager.light .no-diaries,
+.diary-manager.light .diary-visibility {
+    color: #4b5563;
 }
 
 .visibility-toggle {
@@ -108,13 +122,19 @@
 
 .toggle-label {
     font-size: 0.75rem;
-    color: #6b7280;
     transition: color 0.2s;
 }
 
-.toggle-label.active {
-    color: #3b82f6;
+.diary-manager .toggle-label.active {
     font-weight: 600;
+}
+
+.diary-manager.dark .toggle-label.active {
+    color: #60a5fa;
+}
+
+.diary-manager.light .toggle-label.active {
+    color: #1d4ed8;
 }
 
 .toggle-switch {
@@ -191,7 +211,6 @@
 .no-diaries {
     text-align: center;
     padding: 2rem;
-    color: #6b7280;
 }
 
 .diary-cards {
@@ -304,7 +323,6 @@
 
 .diary-visibility {
     font-size: 0.75rem;
-    color: #6b7280;
     text-transform: capitalize;
 }
 

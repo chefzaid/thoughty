@@ -82,6 +82,14 @@ describe("AiCredentialPanel", () => {
     expect(screen.getByText("thoughtyUsagePeriod:30")).toBeInTheDocument();
   });
 
+  it("names the key field by its label alone, apart from the show button", async () => {
+    render(<AiCredentialPanel t={t} onCredentialChanged={vi.fn()} />);
+    await screen.findByText("...value");
+
+    expect(screen.getByLabelText("openRouterApiKey")).toHaveAccessibleName("openRouterApiKey");
+    expect(screen.getByRole("button", { name: "showApiKey" })).toBeInTheDocument();
+  });
+
   it("validates and replaces a personal key without echoing it back", async () => {
     const onCredentialChanged = vi.fn().mockResolvedValue(undefined);
     render(

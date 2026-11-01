@@ -93,13 +93,13 @@
     flex: 0 0 auto;
 }
 
-.diary-name {
+.diary-tab .diary-name {
     max-width: 120px;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.default-badge {
+.diary-tab .default-badge {
     font-size: 0.75rem;
     color: #f59e0b;
     margin-left: -0.25rem;

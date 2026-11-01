@@ -23,6 +23,15 @@
     color: #22c55e;
 }
 
+.profile-page.light .two-factor-status {
+    color: #4b5563;
+}
+
+.profile-page.light .two-factor-status.enabled {
+    border-color: #16a34a;
+    color: #15803d;
+}
+
 .two-factor-note {
     margin: 0;
 }
@@ -46,6 +55,16 @@
     cursor: pointer;
     font-size: 0.875rem;
     font-weight: 600;
+}
+
+.profile-page.dark .btn-two-factor-disable {
+    border-color: #f87171;
+    color: #fca5a5;
+}
+
+.profile-page.light .btn-two-factor-disable {
+    border-color: #dc2626;
+    color: #b91c1c;
 }
 
 .btn-two-factor-disable:disabled {

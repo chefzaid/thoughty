@@ -140,7 +140,17 @@
     color: #ef4444;
 }
 
-.btn-delete-account:hover {
+.profile-page.dark .btn-delete-account {
+    border-color: #f87171;
+    color: #fca5a5;
+}
+
+.profile-page.light .btn-delete-account {
+    border-color: #dc2626;
+    color: #b91c1c;
+}
+
+.profile-page .btn-delete-account:hover {
     background: #dc2626;
     color: white;
 }
@@ -163,9 +173,17 @@
     border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
+/* The instruction to type DELETE stays readable: the tinted red shades reach WCAG AA on the field */
 .delete-confirm-input::placeholder {
-    color: #ef4444;
-    opacity: 0.7;
+    opacity: 1;
+}
+
+.profile-page.dark .delete-confirm-input::placeholder {
+    color: #fca5a5;
+}
+
+.profile-page.light .delete-confirm-input::placeholder {
+    color: #b91c1c;
 }
 
 .delete-actions {
@@ -185,6 +203,15 @@
     border: 1px solid #6b7280;
     background: transparent;
     color: #6b7280;
+}
+
+.profile-page.dark .btn-cancel-delete {
+    border-color: #9ca3af;
+    color: #9ca3af;
+}
+
+.profile-page.light .btn-cancel-delete {
+    color: #4b5563;
 }
 
 .btn-cancel-delete:hover {

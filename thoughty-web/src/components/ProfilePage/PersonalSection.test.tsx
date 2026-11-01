@@ -34,6 +34,19 @@ describe('PersonalSection', () => {
   });
 
 
+  it.each([
+    ['fullName', 'fullNameDescription', 'John Doe'],
+    ['bio', 'bioDescription', 'A short bio'],
+    ['email', 'emailDescription', 'john@example.com'],
+    ['birthday', 'birthdayDescription', '1990-05-15'],
+    ['gender', 'genderDescription', 'male'],
+  ])('names the %s field by its label and describes it', (label, description, value) => {
+    render(<PersonalSection {...defaultProps} />);
+    const field = screen.getByLabelText(label);
+    expect(field).toHaveValue(value);
+    expect(field).toHaveAccessibleDescription(description);
+  });
+
   it('renders email input as disabled', () => {
     render(<PersonalSection {...defaultProps} />);
     const emailInput = screen.getByDisplayValue('john@example.com');

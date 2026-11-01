@@ -239,6 +239,17 @@ describe('AppearanceSection', () => {
     expect(select).toBeInTheDocument();
   });
 
+  it.each([
+    ['entriesPerPage', 'entriesPerPageDescription', '10'],
+    ['maxPinnedEntries', 'maxPinnedEntriesDescription', '3'],
+    ['ttsVoice', 'ttsVoiceDescription', ''],
+  ])('names the %s select by its label and describes it', (label, description, value) => {
+    render(<AppearanceSection {...defaultProps} />);
+    const select = screen.getByRole('combobox', { name: label });
+    expect(select).toHaveValue(value);
+    expect(select).toHaveAccessibleDescription(description);
+  });
+
   it('uses the selected font settings in the preview', () => {
     render(
       <AppearanceSection

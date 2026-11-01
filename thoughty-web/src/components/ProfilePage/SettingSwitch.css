@@ -6,8 +6,7 @@
     gap: 0.75rem;
 }
 
-.theme-label,
-.visibility-label {
+.theme-label {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -15,8 +14,7 @@
     transition: opacity 0.2s ease;
 }
 
-.theme-label.active,
-.visibility-label.active {
+.theme-label.active {
     opacity: 1;
 }
 

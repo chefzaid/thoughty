@@ -85,6 +85,41 @@ describe("AISection", () => {
     );
   });
 
+  it("names the model field and the tag limit by their labels", async () => {
+    render(
+      <AISection
+        localConfig={{ theme: "dark", autoTagMaxTags: "3" }}
+        handleChange={mockHandleChange}
+        t={mockT}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(mockFetchModels).toHaveBeenCalled();
+    });
+
+    expect(screen.getByRole("textbox", { name: "openRouterModel" })).toHaveAttribute("placeholder", "openai/gpt-4o-mini");
+    expect(screen.getByRole("spinbutton", { name: "autoTagMaxTags" })).toHaveValue(3);
+  });
+
+  it("names the model picker by its label and the chosen model, and its search field", async () => {
+    mockFetchModels.mockResolvedValue(mockModels);
+
+    render(
+      <AISection
+        localConfig={{ theme: "dark" }}
+        handleChange={mockHandleChange}
+        t={mockT}
+      />,
+    );
+
+    const trigger = await screen.findByRole("button", { name: "openRouterModel openai/gpt-4o-mini" });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("textbox", { name: "searchModels" })).toBeInTheDocument();
+  });
+
   it("fetches models on mount", async () => {
     mockFetchModels.mockResolvedValue(mockModels);
 
