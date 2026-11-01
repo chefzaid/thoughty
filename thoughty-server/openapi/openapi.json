@@ -2046,6 +2046,72 @@
         ]
       }
     },
+    "/api/entries/comfort-reads": {
+      "get": {
+        "description": "Up to three of the writer's own entries, picked at random among those marked as favorites or tagged `gratitude`, `grateful` or `reconnaissance` (any case), with the start of their text. The web offers them after the writer records a very low mood. Sealed time capsules, entries in the recycle bin and `excludeId` (the entry just written) are never picked; with none to offer, the list is empty.",
+        "operationId": "EntriesController_getComfortReads",
+        "parameters": [
+          {
+            "name": "excludeId",
+            "required": false,
+            "in": "query",
+            "description": "The entry just written, left out of the picks",
+            "schema": {
+              "example": 42,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The picked entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComfortReadsResponseDto"
+                },
+                "example": {
+                  "entries": [
+                    {
+                      "id": 12,
+                      "date": "2025-06-14",
+                      "index": 1,
+                      "title": "The lake at dawn",
+                      "excerpt": "We swam before anyone else was up…"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`excludeId` is invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "`excludeId` is invalid",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A few favorite or gratitude entries to reread",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
     "/api/entries/reader": {
       "get": {
         "description": "An entry among those the journal list shows with the same filters (optionally only one day or one month of them), whole, with the entries before and after it oldest first, its place and how many are read. Without `entryId`, the oldest. Sealed time capsules and entries in the recycle bin are left out.",
@@ -3979,7 +4045,8 @@
                   "highContrast": "true",
                   "readDates": "true",
                   "streakCard": "true",
-                  "quietMode": "true"
+                  "quietMode": "true",
+                  "comfortReads": "true"
                 }
               }
             }
@@ -4028,6 +4095,7 @@
                 "readDates": "true",
                 "streakCard": "true",
                 "quietMode": "true",
+                "comfortReads": "true",
                 "openRouterModel": "example",
                 "openRouterTagModel": "reflection",
                 "openRouterWritingModel": "example",
@@ -14070,6 +14138,76 @@
           "page": 3
         }
       },
+      "ComfortReadDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 12
+          },
+          "date": {
+            "type": "string",
+            "description": "Entry date (YYYY-MM-DD)",
+            "example": "2025-06-14"
+          },
+          "index": {
+            "type": "number",
+            "description": "Same-day index, as cross-references use it",
+            "example": 1
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "Its title, if it has one",
+            "example": "The lake at dawn"
+          },
+          "excerpt": {
+            "type": "string",
+            "description": "The start of its text as plain words, cut at a word",
+            "example": "We swam before anyone else was up…"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "index",
+          "title",
+          "excerpt"
+        ],
+        "example": {
+          "id": 12,
+          "date": "2025-06-14",
+          "index": 1,
+          "title": "The lake at dawn",
+          "excerpt": "We swam before anyone else was up…"
+        }
+      },
+      "ComfortReadsResponseDto": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "description": "Up to three entries, in a random order; empty when the writer has none to offer",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComfortReadDto"
+            }
+          }
+        },
+        "required": [
+          "entries"
+        ],
+        "example": {
+          "entries": [
+            {
+              "id": 12,
+              "date": "2025-06-14",
+              "index": 1,
+              "title": "The lake at dawn",
+              "excerpt": "We swam before anyone else was up…"
+            }
+          ]
+        }
+      },
       "EntryReaderResponseDto": {
         "type": "object",
         "properties": {
@@ -15631,6 +15769,14 @@
               "false"
             ],
             "description": "Quiet mode: hide streaks, badges, karma, likes, counts and goal progress; off unless true"
+          },
+          "comfortReads": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "description": "Offer a few favorite or gratitude entries to reread after a very low mood; offered unless false"
           }
         },
         "example": {
@@ -15668,7 +15814,8 @@
           "highContrast": "true",
           "readDates": "true",
           "streakCard": "true",
-          "quietMode": "true"
+          "quietMode": "true",
+          "comfortReads": "true"
         }
       },
       "UpdateConfigDto": {
@@ -15875,6 +16022,21 @@
             ],
             "description": "Quiet mode: hide streaks, badges, karma, likes, counts and goal progress; off unless true"
           },
+          "comfortReads": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "true",
+                  "false"
+                ]
+              },
+              {
+                "type": "boolean"
+              }
+            ],
+            "description": "Offer a few favorite or gratitude entries to reread after a very low mood; offered unless false"
+          },
           "openRouterModel": {
             "type": "string",
             "maxLength": 300,
@@ -15983,6 +16145,7 @@
           "readDates": "true",
           "streakCard": "true",
           "quietMode": "true",
+          "comfortReads": "true",
           "openRouterModel": "example",
           "openRouterTagModel": "reflection",
           "openRouterWritingModel": "example",

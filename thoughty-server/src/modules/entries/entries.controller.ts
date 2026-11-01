@@ -36,6 +36,8 @@ import {
   EntryCalendarResponseDto,
   GetRandomEntryQueryDto,
   RandomEntryResponseDto,
+  GetComfortReadsQueryDto,
+  ComfortReadsResponseDto,
   GetEntryReaderQueryDto,
   EntryReaderResponseDto,
   GetOpenTasksQueryDto,
@@ -137,6 +139,24 @@ export class EntriesController {
     @Query() query: GetRandomEntryQueryDto,
   ): Promise<RandomEntryResponseDto> {
     return this.entriesService.getRandomEntry(user.userId, query);
+  }
+
+  @Get('comfort-reads')
+  @ApiOperation({
+    summary: 'A few favorite or gratitude entries to reread',
+    description:
+      'Up to three of the writer\'s own entries, picked at random among those marked as favorites or tagged ' +
+      '`gratitude`, `grateful` or `reconnaissance` (any case), with the start of their text. The web offers them ' +
+      'after the writer records a very low mood. Sealed time capsules, entries in the recycle bin and `excludeId` ' +
+      '(the entry just written) are never picked; with none to offer, the list is empty.',
+  })
+  @ApiResponse({ status: 200, description: 'The picked entries', type: ComfortReadsResponseDto })
+  @ApiResponse({ status: 400, description: '`excludeId` is invalid' })
+  async getComfortReads(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: GetComfortReadsQueryDto,
+  ): Promise<ComfortReadsResponseDto> {
+    return this.entriesService.getComfortReads(user.userId, query);
   }
 
   @Get('reader')

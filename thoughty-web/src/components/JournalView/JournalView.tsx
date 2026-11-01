@@ -30,6 +30,8 @@ import EntryReader from '../EntryReader/EntryReader';
 import ReadEntriesButton from '../EntryReader/ReadEntriesButton';
 import { useEntryReaderRoute } from '../EntryReader/useEntryReaderRoute';
 import { readerScopeFromList, readerScopeOfMonth } from '../../services/api/entryReaderService';
+import ComfortReadsCard from '../ComfortReads/ComfortReadsCard';
+import type { SavedEntry } from '../ComfortReads/comfortReadsState';
 
 type DiaryTabsProps = Pick<ComponentProps<typeof DiaryTabs>, 'diaries' | 'currentDiaryId' | 'onDiaryChange' | 'onManageDiaries'>;
 interface ThoughtOfDayProps {
@@ -59,6 +61,8 @@ interface JournalViewProps {
   yearMonthNavigator: YearMonthNavigatorProps;
   duplicateReview: DuplicateReviewProps;
   randomEntry: RandomEntryProps;
+  /** The entry the composer saved last, which a very low mood answers with an offer of comfort reads. */
+  savedEntry?: SavedEntry | null;
   onOpenRecycleBin: () => void;
   /** Opens the profile's life eras. */
   onManageLifeEras: () => void;
@@ -80,6 +84,7 @@ function JournalView({
   yearMonthNavigator,
   duplicateReview,
   randomEntry,
+  savedEntry = null,
   onOpenRecycleBin,
   onManageLifeEras,
   onManagePeople,
@@ -163,6 +168,9 @@ function JournalView({
   /** The reader reads the list's entries as they are filtered now, or a month of the calendar. */
   const readCurrentFilters = () => reader.open(readerScopeFromList(randomEntry.query));
   const readMonth = (month: string) => reader.open(readerScopeOfMonth({ ...calendarFilters, month }));
+  /** An offered comfort read opens in the reader, which turns through the entries offered, archived or not. */
+  const readComfortEntry = (entryId: number, offeredIds: readonly number[]) =>
+    reader.open(new URLSearchParams({ ids: offeredIds.join(','), archiveStatus: 'all' }).toString(), entryId);
   /** A random entry opens in the list, on its page among the same filters. */
   const openRandomEntry = (entryId: number, page: number) => {
     if (showCalendar) layoutRoute.setLayout('list');
@@ -214,6 +222,15 @@ function JournalView({
         />
       </div>
       {composerSeed.dialog}
+
+      <ComfortReadsCard
+        saved={savedEntry}
+        enabled={config.comfortReads !== false}
+        onOpenEntry={readComfortEntry}
+        language={language}
+        theme={theme}
+        t={t}
+      />
 
       <div ref={searchRef}>
         <FilterControls

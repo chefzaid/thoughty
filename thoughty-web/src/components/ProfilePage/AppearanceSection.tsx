@@ -376,6 +376,14 @@ function AppearanceSection({
         handleChange={handleChange}
       />
 
+      <SettingSwitch
+        name="comfortReads"
+        label={t('comfortReadsSetting')}
+        description={t('comfortReadsSettingDescription')}
+        enabled={localConfig.comfortReads !== false}
+        handleChange={handleChange}
+      />
+
       <SpeechSettings
         handleChange={handleChange}
         isDark={isDark}

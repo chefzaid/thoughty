@@ -218,6 +218,7 @@ export function stubShellModelHooks() {
     pendingFiles: [],
     removePendingFile: vi.fn(),
     removeUploadedAttachment: vi.fn(),
+    savedEntry: null,
     selectedDate: new Date('2024-01-15'),
     setFormat: vi.fn(),
     setNewEntryText: vi.fn(),

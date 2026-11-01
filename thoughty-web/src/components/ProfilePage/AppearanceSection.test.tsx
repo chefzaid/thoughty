@@ -189,6 +189,21 @@ describe('AppearanceSection', () => {
     expect(defaultProps.handleChange).toHaveBeenLastCalledWith({ target: { name: 'quietMode', value: 'false' } });
   });
 
+  it('turns the gentle rereads off and on, on by default', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<AppearanceSection {...defaultProps} />);
+
+    const toggle = screen.getByRole('switch', { name: 'comfortReadsSetting' });
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByText('comfortReadsSettingDescription')).toBeInTheDocument();
+    await user.click(toggle);
+    expect(defaultProps.handleChange).toHaveBeenLastCalledWith({ target: { name: 'comfortReads', value: 'false' } });
+
+    rerender(<AppearanceSection {...defaultProps} localConfig={{ ...defaultProps.localConfig, comfortReads: false }} />);
+    await user.click(screen.getByRole('switch', { name: 'comfortReadsSetting' }));
+    expect(defaultProps.handleChange).toHaveBeenLastCalledWith({ target: { name: 'comfortReads', value: 'true' } });
+  });
+
   it('calls handleChange to toggle high contrast mode', async () => {
     const user = userEvent.setup();
     render(<AppearanceSection {...defaultProps} />);

@@ -189,6 +189,36 @@ describe("useEntryActions", () => {
       expect(result.current.feelings).toEqual([]);
     });
 
+    it("handleSubmit keeps the saved entry and its mood, a new one for each save, for the comfort reads offer", async () => {
+      const createEntry = vi.fn().mockResolvedValueOnce({ success: true, entryId: 42 }).mockResolvedValueOnce({ success: false, error: "entrySaveFailed" });
+      await createEntriesServiceMock({ createEntry });
+      const { result } = renderHook(() =>
+        useEntryForm({ defaultVisibility: "private", entriesPerPage: 10 }, 1, mockOnSuccess),
+      );
+      expect(result.current.savedEntry).toBeNull();
+
+      act(() => {
+        result.current.setNewEntryText("A hard day");
+        result.current.setTags(["days"]);
+        result.current.setMood(1);
+      });
+      await act(async () => {
+        await result.current.handleSubmit(mockEvent);
+      });
+      expect(result.current.savedEntry).toEqual({ id: 42, mood: 1 });
+
+      // A save that fails leaves the last saved entry as it was
+      const saved = result.current.savedEntry;
+      act(() => {
+        result.current.setNewEntryText("Another");
+        result.current.setTags(["days"]);
+      });
+      await act(async () => {
+        await result.current.handleSubmit(mockEvent);
+      });
+      expect(result.current.savedEntry).toBe(saved);
+    });
+
     it("handleSubmit sends no title or time when they are left empty", async () => {
       const createEntry = vi.fn().mockResolvedValue({ success: true, entryId: 42 });
       await createEntriesServiceMock({ createEntry });

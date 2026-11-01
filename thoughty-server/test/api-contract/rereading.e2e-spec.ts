@@ -125,4 +125,21 @@ describeContract('rereading', (context) => {
     await read(bob, { entryId: String(first) }, 404);
     await read(alice, { month: '2023-6' }, 400);
   });
+
+  it('offers up to three of the writer’s favorite or gratitude entries, never the one just written or another writer’s', async () => {
+    const { alice, bob } = context;
+    const favorite = await createEntry(context, alice, { text: 'Swimming at dawn', date: '2024-07-01' });
+    await call('PATCH /api/entries/{id}/favorite', { as: alice, params: { id: favorite }, json: { isFavorite: true }, status: 200 });
+    const grateful = await createEntry(context, alice, { text: 'Soup from Lea', tags: ['gratitude'], date: '2024-07-02' });
+    await createEntry(context, alice, { text: 'Errands', tags: ['errands'], date: '2024-07-03' });
+    const justWritten = await createEntry(context, alice, { text: 'A hard day', mood: 1, tags: ['gratitude'] });
+    const comfort = (as: typeof alice, query: Record<string, string>, status = 200) =>
+      call('GET /api/entries/comfort-reads', { as, query: new URLSearchParams(query), status, ...(status === 400 ? { code: 'VALIDATION_FAILED' } : {}) });
+
+    const offered = (await comfort(alice, { excludeId: String(justWritten) })).body as { entries: { id: number; excerpt: string }[] };
+    expect(offered.entries.map((entry) => entry.id).sort((a, b) => a - b)).toEqual([favorite, grateful]);
+    expect(offered.entries.find((entry) => entry.id === favorite)).toMatchObject({ date: '2024-07-01', index: 1, title: null, excerpt: 'Swimming at dawn' });
+    expect((await comfort(bob, {})).body).toEqual({ entries: [] });
+    await comfort(alice, { excludeId: 'last' }, 400);
+  });
 });

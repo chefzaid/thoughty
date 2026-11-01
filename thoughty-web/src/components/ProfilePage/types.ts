@@ -26,6 +26,7 @@ export interface ProfileConfig {
   readDates?: boolean;
   streakCard?: boolean;
   quietMode?: boolean;
+  comfortReads?: boolean;
   openRouterModel?: string;
   openRouterTagModel?: string;
   openRouterWritingModel?: string;

@@ -18,6 +18,7 @@ export class UserConfigDto extends OmitType(UpdateConfigDto, [
   'readDates',
   'streakCard',
   'quietMode',
+  'comfortReads',
 ] as const) {
   @NumberText('Font size in pixels')
   fontSize?: string;
@@ -42,6 +43,9 @@ export class UserConfigDto extends OmitType(UpdateConfigDto, [
 
   @BooleanText('Quiet mode: hide streaks, badges, karma, likes, counts and goal progress; off unless true')
   quietMode?: string;
+
+  @BooleanText('Offer a few favorite or gratitude entries to reread after a very low mood; offered unless false')
+  comfortReads?: string;
 }
 
 /** The runtime feature flags by name: `ai`, `bookConverter`, `cloudSync`, `publicSharing`, and any the provider adds. */

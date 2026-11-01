@@ -17,6 +17,7 @@ import { handleSavedSearchRoutes } from "./mockApp.routes.saved-searches";
 import { handleCalendarRoutes } from "./mockApp.routes.calendar";
 import { handleOpenTaskRoutes } from "./mockApp.routes.open-tasks";
 import { handleRandomEntryRoutes } from "./mockApp.routes.random-entry";
+import { handleComfortReadsRoutes } from "./mockApp.routes.comfort-reads";
 import { handleReaderRoutes } from "./mockApp.routes.reader";
 import { handleLifeEraRoutes } from "./mockApp.routes.life-eras";
 import { handleOptInEmailRoutes } from "./mockApp.routes.opt-in-emails";
@@ -395,6 +396,9 @@ export async function registerMockAppRoutes(page: Page, state: MockAppState) {
       return;
     }
     if (await handleRandomEntryRoutes(context)) {
+      return;
+    }
+    if (await handleComfortReadsRoutes(context)) {
       return;
     }
     if (await handleReaderRoutes(context)) {

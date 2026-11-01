@@ -9,6 +9,7 @@ import type { Person } from '../../services/api';
 vi.mock('../DiaryTabs/DiaryTabs', async () => ({ default: (await import('./JournalView.test-helpers')).MockDiaryTabs }));
 vi.mock('../ThoughtOfTheDay/ThoughtOfTheDay', async () => ({ default: (await import('./JournalView.test-helpers')).MockThoughtOfTheDay }));
 vi.mock('../WritingStreak/WritingStreakCard', async () => ({ default: (await import('./JournalView.test-helpers')).MockWritingStreakCard }));
+vi.mock('../ComfortReads/ComfortReadsCard', async () => ({ default: (await import('./JournalView.test-helpers')).MockComfortReadsCard }));
 vi.mock('../EntryForm/EntryForm', async () => ({ default: (await import('./JournalView.test-helpers')).MockEntryForm }));
 vi.mock('../FilterControls/FilterControls', async () => ({ default: (await import('./JournalView.test-helpers')).MockFilterControls }));
 vi.mock('../EntriesList/EntriesList', async () => ({ default: (await import('./JournalView.test-helpers')).MockEntriesList }));

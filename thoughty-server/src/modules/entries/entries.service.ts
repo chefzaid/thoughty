@@ -12,6 +12,8 @@ import {
   EntryCalendarResponseDto,
   GetRandomEntryQueryDto,
   RandomEntryResponseDto,
+  GetComfortReadsQueryDto,
+  ComfortReadsResponseDto,
   GetEntryReaderQueryDto,
   EntryReaderResponseDto,
   GetOpenTasksQueryDto,
@@ -32,6 +34,7 @@ import { EntryTaskListService } from './entry-task-list.service';
 import { EntryOpenTasksService } from './entry-open-tasks.service';
 import { EntryCalendarService } from './entry-calendar.service';
 import { EntryRandomService } from './entry-random.service';
+import { EntryComfortReadsService } from './entry-comfort-reads.service';
 import { EntryReaderService } from './entry-reader.service';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 
@@ -46,6 +49,7 @@ export class EntriesService {
     private readonly entryOpenTasksService: EntryOpenTasksService,
     private readonly entryCalendarService: EntryCalendarService,
     private readonly entryRandomService: EntryRandomService,
+    private readonly entryComfortReadsService: EntryComfortReadsService,
     private readonly entryReaderService: EntryReaderService,
     private readonly timeCapsuleService: TimeCapsuleService,
   ) {}
@@ -66,6 +70,10 @@ export class EntriesService {
 
   async getRandomEntry(userId: number, query: GetRandomEntryQueryDto): Promise<RandomEntryResponseDto> {
     return this.entryRandomService.pick(userId, query);
+  }
+
+  async getComfortReads(userId: number, query: GetComfortReadsQueryDto): Promise<ComfortReadsResponseDto> {
+    return this.entryComfortReadsService.pick(userId, query);
   }
 
   async readEntry(userId: number, query: GetEntryReaderQueryDto): Promise<EntryReaderResponseDto> {

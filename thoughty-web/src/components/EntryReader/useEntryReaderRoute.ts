@@ -31,8 +31,11 @@ export function useEntryReaderRoute() {
     }, { replace });
   }, [setSearchParams]);
 
-  /** Opens the reader on these filters (a reader scope), at its first entry. */
-  const open = useCallback((nextScope: string) => write(null, normalizeReaderScope(nextScope), false), [write]);
+  /** Opens the reader on these filters (a reader scope), at the given entry or else its first one. */
+  const open = useCallback(
+    (nextScope: string, entry: number | null = null) => write(entry, normalizeReaderScope(nextScope), false),
+    [write],
+  );
 
   /** Shows another entry of the same reading, or its first one with null. */
   const show = useCallback((entry: number | null) => write(entry, null, true), [write]);

@@ -8,6 +8,7 @@ import { browserTimeZone } from '../utils/timeZone';
 import { storePlacedFiles } from '../utils/inlineImages';
 import { useApiServices } from './useApiServices';
 import { useEntryTagSuggestions } from './useEntryTagSuggestions';
+import type { SavedEntry } from '../components/ComfortReads/comfortReadsState';
 
 export const useEntryForm = (
   config: Config,
@@ -32,6 +33,8 @@ export const useEntryForm = (
   const [fixingWriting, setFixingWriting] = useState<boolean>(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [uploadedAttachments, setUploadedAttachments] = useState<Attachment[]>([]);
+  /** The entry saved last, a new object for each save, which the journal's comfort reads offer follows. */
+  const [savedEntry, setSavedEntry] = useState<SavedEntry | null>(null);
   const autoTagLimit = getAutoTagLimit(config.autoTagMaxTags);
   const tagSuggestions = useEntryTagSuggestions(aiService, newEntryText, tags, setTags, autoTagLimit, setFormError);
 
@@ -111,6 +114,7 @@ export const useEntryForm = (
       }
     }
 
+    setSavedEntry({ id: result.entryId, mood });
     resetEntryForm();
     onSuccess();
   }, [attachmentsService, currentDiaryId, entriesService, feelings, format, mood, newEntryText, onSuccess, pendingFiles, resetEntryForm, selectedDate, tags, timeCapsule, timeOfDay, title, uploadedAttachments, validateEntryForm, visibility]);
@@ -179,6 +183,7 @@ export const useEntryForm = (
     fixingWriting,
     handleFixWriting,
     handleSubmit,
+    savedEntry,
     pendingFiles,
     uploadedAttachments,
     addPendingFile,

@@ -486,6 +486,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/entries/comfort-reads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A few favorite or gratitude entries to reread
+         * @description Up to three of the writer's own entries, picked at random among those marked as favorites or tagged `gratitude`, `grateful` or `reconnaissance` (any case), with the start of their text. The web offers them after the writer records a very low mood. Sealed time capsules, entries in the recycle bin and `excludeId` (the entry just written) are never picked; with none to offer, the list is empty.
+         */
+        get: operations["EntriesController_getComfortReads"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/entries/reader": {
         parameters: {
             query?: never;
@@ -3125,6 +3145,56 @@ export interface components {
         };
         /**
          * @example {
+         *       "id": 12,
+         *       "date": "2025-06-14",
+         *       "index": 1,
+         *       "title": "The lake at dawn",
+         *       "excerpt": "We swam before anyone else was up…"
+         *     }
+         */
+        ComfortReadDto: {
+            /** @example 12 */
+            id: number;
+            /**
+             * @description Entry date (YYYY-MM-DD)
+             * @example 2025-06-14
+             */
+            date: string;
+            /**
+             * @description Same-day index, as cross-references use it
+             * @example 1
+             */
+            index: number;
+            /**
+             * @description Its title, if it has one
+             * @example The lake at dawn
+             */
+            title: string | null;
+            /**
+             * @description The start of its text as plain words, cut at a word
+             * @example We swam before anyone else was up…
+             */
+            excerpt: string;
+        };
+        /**
+         * @example {
+         *       "entries": [
+         *         {
+         *           "id": 12,
+         *           "date": "2025-06-14",
+         *           "index": 1,
+         *           "title": "The lake at dawn",
+         *           "excerpt": "We swam before anyone else was up…"
+         *         }
+         *       ]
+         *     }
+         */
+        ComfortReadsResponseDto: {
+            /** @description Up to three entries, in a random order; empty when the writer has none to offer */
+            entries: components["schemas"]["ComfortReadDto"][];
+        };
+        /**
+         * @example {
          *       "entry": {
          *         "id": 1,
          *         "user_id": 1,
@@ -4065,7 +4135,8 @@ export interface components {
          *       "highContrast": "true",
          *       "readDates": "true",
          *       "streakCard": "true",
-         *       "quietMode": "true"
+         *       "quietMode": "true",
+         *       "comfortReads": "true"
          *     }
          */
         UserConfigDto: {
@@ -4172,6 +4243,11 @@ export interface components {
              * @enum {string}
              */
             quietMode?: "true" | "false";
+            /**
+             * @description Offer a few favorite or gratitude entries to reread after a very low mood; offered unless false
+             * @enum {string}
+             */
+            comfortReads?: "true" | "false";
         };
         /**
          * @example {
@@ -4196,6 +4272,7 @@ export interface components {
          *       "readDates": "true",
          *       "streakCard": "true",
          *       "quietMode": "true",
+         *       "comfortReads": "true",
          *       "openRouterModel": "example",
          *       "openRouterTagModel": "reflection",
          *       "openRouterWritingModel": "example",
@@ -4273,6 +4350,8 @@ export interface components {
             streakCard?: ("true" | "false") | boolean;
             /** @description Quiet mode: hide streaks, badges, karma, likes, counts and goal progress; off unless true */
             quietMode?: ("true" | "false") | boolean;
+            /** @description Offer a few favorite or gratitude entries to reread after a very low mood; offered unless false */
+            comfortReads?: ("true" | "false") | boolean;
             /** @description OpenRouter model id, or empty for the default */
             openRouterModel?: string;
             /** @description OpenRouter model id, or empty for the default */
@@ -10914,6 +10993,59 @@ export interface operations {
             };
         };
     };
+    EntriesController_getComfortReads: {
+        parameters: {
+            query?: {
+                /** @description The entry just written, left out of the picks */
+                excludeId?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The picked entries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "entries": [
+                     *         {
+                     *           "id": 12,
+                     *           "date": "2025-06-14",
+                     *           "index": 1,
+                     *           "title": "The lake at dawn",
+                     *           "excerpt": "We swam before anyone else was up…"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ComfortReadsResponseDto"];
+                };
+            };
+            /** @description `excludeId` is invalid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "`excludeId` is invalid",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
     EntriesController_readEntry: {
         parameters: {
             query?: {
@@ -12442,7 +12574,8 @@ export interface operations {
                      *       "highContrast": "true",
                      *       "readDates": "true",
                      *       "streakCard": "true",
-                     *       "quietMode": "true"
+                     *       "quietMode": "true",
+                     *       "comfortReads": "true"
                      *     }
                      */
                     "application/json": components["schemas"]["UserConfigDto"];
@@ -12482,6 +12615,7 @@ export interface operations {
                  *       "readDates": "true",
                  *       "streakCard": "true",
                  *       "quietMode": "true",
+                 *       "comfortReads": "true",
                  *       "openRouterModel": "example",
                  *       "openRouterTagModel": "reflection",
                  *       "openRouterWritingModel": "example",

@@ -170,6 +170,8 @@ export interface MockAppState {
     streakCard?: boolean;
     /** Off unless turned on, as the API answers it for a new account. */
     quietMode?: boolean;
+    /** The comfort reads offer after a very low mood; offered unless false. */
+    comfortReads?: boolean;
     defaultVisibility?: "public" | "private";
     ttsVoiceUri?: string;
     openRouterModel?: string;

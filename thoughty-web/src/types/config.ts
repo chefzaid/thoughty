@@ -27,6 +27,8 @@ export interface Config {
   streakCard?: boolean;
   /** Quiet mode hides streaks, badges, karma, likes, counts and goal progress; off unless true. */
   quietMode?: boolean;
+  /** After a very low mood, offer favorite or gratitude entries to reread; offered unless false. */
+  comfortReads?: boolean;
   openRouterModel?: string;
   openRouterSummaryModel?: string;
   openRouterPromptModel?: string;

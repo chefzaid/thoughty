@@ -374,7 +374,7 @@ describe('ProfilePage', () => {
             );
         });
 
-        it('saves quiet mode turned on, off until then', async () => {
+        it('saves quiet mode turned on, off until then, and the gentle rereads turned off, on until then', async () => {
             const user = userEvent.setup();
             render(<ProfilePage {...defaultProps} />);
 
@@ -382,10 +382,11 @@ describe('ProfilePage', () => {
             expect(quiet).toHaveAttribute('aria-checked', 'false');
             expect(screen.getByRole('region', { name: 'achievements' })).toBeInTheDocument();
             await user.click(quiet);
+            await user.click(screen.getByRole('switch', { name: 'comfortReadsSetting' }));
             await user.click(screen.getByText('saveSettings'));
 
             expect(defaultProps.onUpdateConfig).toHaveBeenCalledWith(
-                expect.objectContaining({ quietMode: true })
+                expect.objectContaining({ quietMode: true, comfortReads: false })
             );
         });
 

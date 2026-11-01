@@ -39,6 +39,15 @@ describe('useEntryReaderRoute', () => {
     expect(result.current.route.isOpen).toBe(false);
   });
 
+  it('opens a scope at a chosen entry', () => {
+    const { result } = renderRoute('?diary=2');
+
+    act(() => result.current.route.open('ids=11%2C12', 12));
+    expect(result.current.location.search).toBe('?diary=2&read=12&readIn=ids%3D11%252C12');
+    expect(result.current.navigation).toBe('PUSH');
+    expect(result.current.route).toMatchObject({ isOpen: true, entryId: 12, scope: 'ids=11%2C12' });
+  });
+
   it('reads the whole journal without a scope, and opens the first entry for an ID that is not one', () => {
     const { result } = renderRoute('?read=abc&readIn=evil%3D1');
     expect(result.current.route).toMatchObject({ isOpen: true, entryId: null, scope: '' });

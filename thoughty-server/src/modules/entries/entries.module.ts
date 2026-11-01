@@ -14,6 +14,7 @@ import { EntryListCacheService } from './entry-list-cache.service';
 import { EntrySearchService } from './entry-search.service';
 import { EntryCalendarService } from './entry-calendar.service';
 import { EntryRandomService } from './entry-random.service';
+import { EntryComfortReadsService } from './entry-comfort-reads.service';
 import { EntryReaderService } from './entry-reader.service';
 import { EntryTaggingService } from './entry-tagging.service';
 import { EntryTaskListService } from './entry-task-list.service';
@@ -33,6 +34,7 @@ import { EntryInlineImagesService } from './entry-inline-images.service';
     EntrySearchService,
     EntryCalendarService,
     EntryRandomService,
+    EntryComfortReadsService,
     EntryReaderService,
     EntryTaggingService,
     EntryTaskListService,

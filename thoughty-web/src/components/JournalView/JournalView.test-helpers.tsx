@@ -61,6 +61,17 @@ export const MockWritingStreakCard = (props: {
   </div>
 );
 
+/** Stands in for the comfort reads offer, showing the save it follows and offering to open an entry. */
+export const MockComfortReadsCard = (props: {
+  saved: { id: number; mood: number | null } | null;
+  enabled: boolean;
+  onOpenEntry: (entryId: number, offeredIds: readonly number[]) => void;
+}) => (
+  <div data-testid="comfort-reads" data-saved-id={props.saved?.id ?? 'none'} data-enabled={String(props.enabled)}>
+    <button type="button" onClick={() => props.onOpenEntry(12, [11, 12, 13])}>Reread a comfort entry</button>
+  </div>
+);
+
 export const MockEntryForm = (props: {
   newEntryText: string;
   setNewEntryText: (text: string) => void;

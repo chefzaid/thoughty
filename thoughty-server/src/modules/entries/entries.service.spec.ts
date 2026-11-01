@@ -7,6 +7,7 @@ import { EntryListCacheService } from './entry-list-cache.service';
 import { EntryTaskListService } from './entry-task-list.service';
 import { EntryCalendarService } from './entry-calendar.service';
 import { EntryRandomService } from './entry-random.service';
+import { EntryComfortReadsService } from './entry-comfort-reads.service';
 import { EntryReaderService } from './entry-reader.service';
 import { EntryOpenTasksService } from './entry-open-tasks.service';
 import type { Entry } from '@/database/entities';
@@ -45,6 +46,7 @@ describe('EntriesService', () => {
   let timeCapsuleService: Record<string, jest.Mock>;
   let entryCalendarService: Record<string, jest.Mock>;
   let entryRandomService: Record<string, jest.Mock>;
+  let entryComfortReadsService: Record<string, jest.Mock>;
   let entryReaderService: Record<string, jest.Mock>;
   let entryOpenTasksService: Record<string, jest.Mock>;
 
@@ -94,6 +96,10 @@ describe('EntriesService', () => {
       pick: jest.fn(),
     };
 
+    entryComfortReadsService = {
+      pick: jest.fn(),
+    };
+
     entryReaderService = {
       read: jest.fn(),
     };
@@ -116,6 +122,7 @@ describe('EntriesService', () => {
         { provide: EntryTaskListService, useValue: entryTaskListService },
         { provide: EntryCalendarService, useValue: entryCalendarService },
         { provide: EntryRandomService, useValue: entryRandomService },
+        { provide: EntryComfortReadsService, useValue: entryComfortReadsService },
         { provide: EntryReaderService, useValue: entryReaderService },
         { provide: EntryOpenTasksService, useValue: entryOpenTasksService },
         { provide: TimeCapsuleService, useValue: timeCapsuleService },
@@ -154,6 +161,15 @@ describe('EntriesService', () => {
 
     await expect(service.getRandomEntry(1, { tags: 'walks', excludeId: 3 })).resolves.toBe(expected);
     expect(entryRandomService.pick).toHaveBeenCalledWith(1, { tags: 'walks', excludeId: 3 });
+    expect(entryListCacheService.getOrLoad).not.toHaveBeenCalled();
+  });
+
+  it('delegates the comfort reads to EntryComfortReadsService without the list cache', async () => {
+    const expected = { entries: [{ id: 4, date: '2026-10-02', index: 1, title: null, excerpt: 'A swim' }] };
+    entryComfortReadsService.pick.mockResolvedValue(expected);
+
+    await expect(service.getComfortReads(1, { excludeId: 3 })).resolves.toBe(expected);
+    expect(entryComfortReadsService.pick).toHaveBeenCalledWith(1, { excludeId: 3 });
     expect(entryListCacheService.getOrLoad).not.toHaveBeenCalled();
   });
 

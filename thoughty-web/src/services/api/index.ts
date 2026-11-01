@@ -17,6 +17,7 @@ export * from './lifeErasService';
 export * from './peopleService';
 export * from './entryCalendarService';
 export * from './randomEntryService';
+export * from './comfortReadsService';
 export * from './writingStreakService';
 export * from './optInEmailService';
 export * from './onThisDayEmailService';

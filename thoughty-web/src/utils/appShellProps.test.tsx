@@ -181,6 +181,7 @@ describe('appShellProps', () => {
         pendingFiles: [],
         removePendingFile: vi.fn(),
         removeUploadedAttachment: vi.fn(),
+        savedEntry: null,
         selectedDate: new Date('2024-01-15T00:00:00.000Z'),
         setFeelings: vi.fn(),
         timeCapsule: null,

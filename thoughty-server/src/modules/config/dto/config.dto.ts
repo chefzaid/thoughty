@@ -128,6 +128,9 @@ export class UpdateConfigDto {
   @SettingChoice(BOOLEAN_TEXT, 'Quiet mode: hide streaks, badges, karma, likes, counts and goal progress; off unless true')
   quietMode?: string;
 
+  @SettingChoice(BOOLEAN_TEXT, 'Offer a few favorite or gratitude entries to reread after a very low mood; offered unless false')
+  comfortReads?: string;
+
   @SettingText(MODEL_ID_MAX_LENGTH, MODEL_DESCRIPTION)
   openRouterModel?: string;
 
@@ -198,6 +201,7 @@ export const USER_CONFIG_KEYS: ReadonlySet<string> = new Set<keyof UpdateConfigD
   'readDates',
   'streakCard',
   'quietMode',
+  'comfortReads',
   'openRouterModel',
   'openRouterTagModel',
   'openRouterWritingModel',

@@ -51,6 +51,7 @@ import { aiSettingsTranslations, type AiSettingsTranslationKey } from "./transla
 import { diariesTranslations, type DiariesTranslationKey } from "./translations.diaries";
 import { writingGoalsTranslations, type WritingGoalsTranslationKey } from "./translations.writingGoals";
 import { writingStreakTranslations, type WritingStreakTranslationKey } from "./translations.writingStreak";
+import { comfortReadsTranslations, type ComfortReadsTranslationKey } from "./translations.comfortReads";
 import { shareImageTranslations, type ShareImageTranslationKey } from "./translations.shareImage";
 import { subscriptionTranslations, type SubscriptionTranslationKey } from "./translations.subscription";
 import { cloudSyncTranslations, type CloudSyncTranslationKey } from "./translations.cloudSync";
@@ -113,6 +114,7 @@ export type TranslationKey =
   | DiariesTranslationKey
   | WritingGoalsTranslationKey
   | WritingStreakTranslationKey
+  | ComfortReadsTranslationKey
   | ShareImageTranslationKey
   | SubscriptionTranslationKey
   | CloudSyncTranslationKey
@@ -180,6 +182,7 @@ export const translations: Translations = {
     ...diariesTranslations.en,
     ...writingGoalsTranslations.en,
     ...writingStreakTranslations.en,
+    ...comfortReadsTranslations.en,
     ...shareImageTranslations.en,
     ...subscriptionTranslations.en,
     ...cloudSyncTranslations.en,
@@ -240,6 +243,7 @@ export const translations: Translations = {
     ...diariesTranslations.fr,
     ...writingGoalsTranslations.fr,
     ...writingStreakTranslations.fr,
+    ...comfortReadsTranslations.fr,
     ...shareImageTranslations.fr,
     ...subscriptionTranslations.fr,
     ...cloudSyncTranslations.fr,

@@ -10,6 +10,7 @@ import { createProps, lifeEraListMock, type JournalViewProps } from './JournalVi
 vi.mock('../DiaryTabs/DiaryTabs', async () => ({ default: (await import('./JournalView.test-helpers')).MockDiaryTabs }));
 vi.mock('../ThoughtOfTheDay/ThoughtOfTheDay', async () => ({ default: (await import('./JournalView.test-helpers')).MockThoughtOfTheDay }));
 vi.mock('../WritingStreak/WritingStreakCard', async () => ({ default: (await import('./JournalView.test-helpers')).MockWritingStreakCard }));
+vi.mock('../ComfortReads/ComfortReadsCard', async () => ({ default: (await import('./JournalView.test-helpers')).MockComfortReadsCard }));
 vi.mock('../EntryForm/EntryForm', async () => ({ default: (await import('./JournalView.test-helpers')).MockEntryForm }));
 vi.mock('../FilterControls/FilterControls', async () => ({ default: (await import('./JournalView.test-helpers')).MockFilterControls }));
 vi.mock('../EntriesList/EntriesList', async () => ({ default: (await import('./JournalView.test-helpers')).MockEntriesList }));
@@ -118,6 +119,24 @@ describe('JournalView calendar layout', () => {
     fireEvent.click(screen.getByRole('button', { name: 'journalLayoutCalendar' }));
     act(() => calendar().onReadMonth('2026-09'));
     expect(screen.getByTestId('entry-reader')).toHaveAttribute('data-scope', 'search=harbor&tags=walks&month=2026-09&favorites=true&archiveStatus=active&diaryId=1');
+  });
+
+  it('follows the composer\'s last save with the comfort reads offer, and reads an offered entry among the others', () => {
+    renderJournal(createProps({ savedEntry: { id: 30, mood: 1 } }), '?diary=1');
+    expect(screen.getByTestId('comfort-reads')).toHaveAttribute('data-saved-id', '30');
+    expect(screen.getByTestId('comfort-reads')).toHaveAttribute('data-enabled', 'true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reread a comfort entry' }));
+    expect(new URLSearchParams(location() ?? '').get('read')).toBe('12');
+    expect(new URLSearchParams(location() ?? '').get('readIn')).toBe('ids=11%2C12%2C13&archiveStatus=all');
+    expect(screen.getByTestId('entry-reader')).toHaveAttribute('data-entry-id', '12');
+  });
+
+  it('leaves the comfort reads offer off when the writer turned it off', () => {
+    const props = createProps();
+    renderJournal({ ...props, config: { ...props.config, comfortReads: false } });
+    expect(screen.getByTestId('comfort-reads')).toHaveAttribute('data-enabled', 'false');
+    expect(screen.getByTestId('comfort-reads')).toHaveAttribute('data-saved-id', 'none');
   });
 
   it('says when the filtered list has nothing to read', () => {

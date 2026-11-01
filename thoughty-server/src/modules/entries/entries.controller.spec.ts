@@ -15,6 +15,7 @@ describe('EntriesController', () => {
       getCalendarMonth: jest.fn(),
       getOpenTasks: jest.fn(),
       getRandomEntry: jest.fn(),
+      getComfortReads: jest.fn(),
       readEntry: jest.fn(),
       getFirstEntry: jest.fn(),
       getEntryByDate: jest.fn(),
@@ -104,6 +105,18 @@ describe('EntriesController', () => {
 
       const result = await controller.getRandomEntry(mockUser as any, query);
       expect(entriesService.getRandomEntry).toHaveBeenCalledWith(1, query);
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('getComfortReads', () => {
+    it("delegates to entriesService.getComfortReads with the writer's id", async () => {
+      const query = { excludeId: 9 };
+      const expected = { entries: [] };
+      entriesService.getComfortReads!.mockResolvedValue(expected);
+
+      const result = await controller.getComfortReads(mockUser as any, query);
+      expect(entriesService.getComfortReads).toHaveBeenCalledWith(1, query);
       expect(result).toBe(expected);
     });
   });
