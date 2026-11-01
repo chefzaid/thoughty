@@ -61,6 +61,13 @@ export type MoodTranslationKey =
   | 'statsTopFeelingsEmpty'
   | 'statsFeelingRow_one'
   | 'statsFeelingRow_other'
+  | 'statsMoodTagsTitle'
+  | 'statsMoodTagsIntro'
+  | 'statsMoodTagsEmpty'
+  | 'statsMoodTagsListEmpty'
+  | 'statsMoodTagsCount_one'
+  | 'statsMoodTagsCount_other'
+  | 'statsMoodTagsOpen'
   | 'statsMoodEarlier'
   | 'statsMoodLater'
   | 'reviewMoodRecordedSource'
@@ -132,6 +139,13 @@ export const moodTranslations: Record<Language, Record<MoodTranslationKey, strin
     statsTopFeelingsEmpty: 'Name a feeling with your entries to see the ones you come back to.',
     statsFeelingRow_one: '{feeling}: {count} entry',
     statsFeelingRow_other: '{feeling}: {count} entries',
+    statsMoodTagsTitle: 'Tags and moods',
+    statsMoodTagsIntro: 'The tags on most entries where you chose a good or very good mood, and on most where you chose a low or very low one. A tag can be in both lists; tags on a single entry are left out.',
+    statsMoodTagsEmpty: 'When a tag comes back on a few entries with a good or a low mood, it will show here.',
+    statsMoodTagsListEmpty: 'No tag on two of these entries yet.',
+    statsMoodTagsCount_one: '{count} entry',
+    statsMoodTagsCount_other: '{count} entries',
+    statsMoodTagsOpen: 'Show entries tagged {tag}',
     statsMoodEarlier: 'Earlier months',
     statsMoodLater: 'Later months',
     reviewMoodRecordedSource: 'From the moods you recorded, without AI',
@@ -202,6 +216,13 @@ export const moodTranslations: Record<Language, Record<MoodTranslationKey, strin
     statsTopFeelingsEmpty: 'Nommez un ressenti avec vos entrées pour voir ceux qui reviennent.',
     statsFeelingRow_one: '{feeling} : {count} entrée',
     statsFeelingRow_other: '{feeling} : {count} entrées',
+    statsMoodTagsTitle: 'Tags et humeurs',
+    statsMoodTagsIntro: 'Les tags présents sur le plus d’entrées où vous avez choisi une humeur bonne ou très bonne, et sur le plus d’entrées où vous avez choisi une humeur basse ou très basse. Un tag peut figurer dans les deux listes ; les tags d’une seule entrée sont laissés de côté.',
+    statsMoodTagsEmpty: 'Quand un tag reviendra sur quelques entrées à l’humeur bonne ou basse, il apparaîtra ici.',
+    statsMoodTagsListEmpty: 'Aucun tag sur deux de ces entrées pour l’instant.',
+    statsMoodTagsCount_one: '{count} entrée',
+    statsMoodTagsCount_other: '{count} entrées',
+    statsMoodTagsOpen: 'Voir les entrées avec le tag {tag}',
     statsMoodEarlier: 'Mois précédents',
     statsMoodLater: 'Mois suivants',
     reviewMoodRecordedSource: 'D’après les humeurs que vous avez notées, sans IA',

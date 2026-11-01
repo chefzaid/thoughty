@@ -5673,6 +5673,18 @@
                         "feeling": "calm",
                         "count": 14
                       }
+                    ],
+                    "goodMoodTags": [
+                      {
+                        "tag": "family",
+                        "entries": 6
+                      }
+                    ],
+                    "lowMoodTags": [
+                      {
+                        "tag": "family",
+                        "entries": 6
+                      }
                     ]
                   },
                   "goals": [
@@ -17407,6 +17419,29 @@
           "count": 14
         }
       },
+      "StatsMoodTagDto": {
+        "type": "object",
+        "properties": {
+          "tag": {
+            "type": "string",
+            "example": "family"
+          },
+          "entries": {
+            "type": "number",
+            "example": 6,
+            "minimum": 2,
+            "description": "Entries with this tag and a mood in the list’s range"
+          }
+        },
+        "required": [
+          "tag",
+          "entries"
+        ],
+        "example": {
+          "tag": "family",
+          "entries": 6
+        }
+      },
       "StatsMoodDto": {
         "type": "object",
         "properties": {
@@ -17455,6 +17490,20 @@
             "items": {
               "$ref": "#/components/schemas/StatsFeelingDto"
             }
+          },
+          "goodMoodTags": {
+            "description": "The tags on most entries with a good mood (4 or 5), up to five, each on two entries or more; most first, then by name",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsMoodTagDto"
+            }
+          },
+          "lowMoodTags": {
+            "description": "The tags on most entries with a low mood (1 or 2), up to five, each on two entries or more; most first, then by name",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsMoodTagDto"
+            }
           }
         },
         "required": [
@@ -17463,7 +17512,9 @@
           "levels",
           "months",
           "weekdays",
-          "topFeelings"
+          "topFeelings",
+          "goodMoodTags",
+          "lowMoodTags"
         ],
         "example": {
           "recordedEntries": 48,
@@ -17492,6 +17543,18 @@
             {
               "feeling": "calm",
               "count": 14
+            }
+          ],
+          "goodMoodTags": [
+            {
+              "tag": "family",
+              "entries": 6
+            }
+          ],
+          "lowMoodTags": [
+            {
+              "tag": "family",
+              "entries": 6
             }
           ]
         }
@@ -18237,6 +18300,18 @@
               {
                 "feeling": "calm",
                 "count": 14
+              }
+            ],
+            "goodMoodTags": [
+              {
+                "tag": "family",
+                "entries": 6
+              }
+            ],
+            "lowMoodTags": [
+              {
+                "tag": "family",
+                "entries": 6
               }
             ]
           },

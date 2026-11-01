@@ -51,7 +51,7 @@ flowchart TD
 | `attachments` | upload validation, object storage, audio transcription; `sendAttachmentFile` (`attachment-file-response.ts`) streams a stored file with its safe headers and byte ranges for both the owner's file route and a share link's |
 | `share-links` | private share links ([ADR 0024](./adr/0024-private-share-links.md)): `ShareLinksService` makes, lists and revokes the writer's links (`/api/share-links`, at most 100 unexpired), and `SharedContentService` answers the public `GET /api/shared/:token…` routes for a reader without an account (the entry, a book version's file, the entry's own attachments), counting views, with one `404` for every refusal and the headers of `SharedResponseHeadersInterceptor` |
 | `ai` | OpenRouter credentials and usage, tag suggestions, inspiration, rephrasing, summaries, chat, semantic search, duplicates, tag organization, writing insights |
-| `stats` | statistics, heatmap, writing goal progress, daily writing streak, mood stats, connections graph, writing-tendency analysis |
+| `stats` | statistics, heatmap, writing goal progress, daily writing streak, mood stats (with the tags beside good and low moods), connections graph, writing-tendency analysis |
 | `review` | year in review: totals, rhythm, themes, highlights, moods, and the on-request AI mood arc |
 | `io` | import and export formats, TXT format settings, Day One and Journey imports parsed in the browser ([ADR 0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md)), the streamed Markdown folder export |
 | `books` | book composition, covers, previews, saved versions; `BookEntrySourceService` selects entries from the journal, a saved search (through `saved-searches` and the entry list filters of `entries`) or hand-picked IDs |

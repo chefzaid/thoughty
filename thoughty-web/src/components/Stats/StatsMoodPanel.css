@@ -138,3 +138,53 @@
 .tone-mood-bar-fill.recorded-feeling {
     background: #8b5cf6;
 }
+
+/* Tags beside the moods */
+.mood-tags-list {
+    display: grid;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.mood-tags-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-width: 0;
+    font-size: 0.875rem;
+}
+
+.mood-tags-link {
+    display: inline-flex;
+    max-width: 100%;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.mood-tags-link:hover {
+    opacity: 0.85;
+}
+
+.mood-tags-link:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+.mood-tags-count {
+    flex-shrink: 0;
+    opacity: 0.72;
+}
+
+.mood-tags-none {
+    margin: 0;
+    font-size: 0.875rem;
+    opacity: 0.72;
+}

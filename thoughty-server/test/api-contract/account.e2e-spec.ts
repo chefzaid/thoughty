@@ -2,7 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { getUnsubscribeSecret } from '../../src/modules/auth/auth-secrets';
 import { createEmailUnsubscribeToken } from '../../src/modules/opt-in-email/email-unsubscribe-token';
 import { createUnsubscribeToken } from '../../src/modules/on-this-day-email/on-this-day-unsubscribe-token';
-import { describeContract } from './contract-suite';
+import { describeContract, registerWriter } from './contract-suite';
 import { createEntry, defaultDiaryId, todayIso } from './contract-fixtures';
 
 describeContract('account', (context) => {
@@ -111,6 +111,46 @@ describeContract('account', (context) => {
       status: 400,
       code: 'VALIDATION_FAILED',
     });
+  });
+
+  it('lists the tags on good and low moods, per diary, without the recycle bin, sealed capsules or other writers', async () => {
+    const { bob } = context;
+    const erin = await registerWriter(context.client, 'erin');
+    const journal = await defaultDiaryId(context, erin);
+    const travel = await call('POST /api/diaries', {
+      as: erin,
+      json: { name: 'Travel', visibility: 'private', goalType: null, goalTarget: null },
+      status: 201,
+    });
+    const travelId = (travel.body as { id: number }).id;
+    const write = (mood: number, tags: string[], diaryId = journal) => createEntry(context, erin, { text: 'A day', mood, tags, diaryId });
+    await write(5, ['family', 'walks']);
+    await write(4, ['family', 'walks', 'once']);
+    await write(2, ['family', 'sleep']);
+    await write(1, ['family', 'sleep']);
+    await write(3, ['walks', 'okay']);
+    await write(3, ['okay']);
+    await write(4, ['sea'], travelId);
+    await write(5, ['sea'], travelId);
+    const binned = await write(1, ['bin']);
+    await write(2, ['bin']);
+    await call('DELETE /api/entries/{id}', { as: erin, params: { id: binned }, status: 200 });
+    for (let copy = 0; copy < 2; copy += 1) {
+      await call('POST /api/entries', {
+        as: erin,
+        json: { text: 'Later', tags: ['sealed'], mood: 5, date: todayIso(), visibility: 'private', format: 'plain', seal: { opensOn: todayIso(365), timeZone: 'UTC' } },
+        status: 201,
+      });
+    }
+    await createEntry(context, bob, { text: 'Bob’s day', mood: 5, tags: ['family'] });
+
+    const all = await call('GET /api/stats', { as: erin, query: { today: todayIso() }, status: 200 });
+    expect((all.body as { moods: unknown }).moods).toMatchObject({
+      goodMoodTags: [{ tag: 'family', entries: 2 }, { tag: 'sea', entries: 2 }, { tag: 'walks', entries: 2 }],
+      lowMoodTags: [{ tag: 'family', entries: 2 }, { tag: 'sleep', entries: 2 }],
+    });
+    const one = await call('GET /api/stats', { as: erin, query: { diaryId: String(travelId), today: todayIso() }, status: 200 });
+    expect((one.body as { moods: unknown }).moods).toMatchObject({ goodMoodTags: [{ tag: 'sea', entries: 2 }], lowMoodTags: [] });
   });
 
   it('reviews a year for all diaries or one, and refuses another writer’s diary', async () => {

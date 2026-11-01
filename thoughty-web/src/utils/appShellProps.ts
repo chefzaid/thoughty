@@ -246,6 +246,12 @@ export function buildAuthenticatedRoutesProps({
         entriesState.setPage(1);
         routingState.handleViewChange('journal');
       },
+      onOpenJournalTag: (tag: string) => {
+        entriesState.setFilterTags([tag]);
+        entriesState.setFilterDateObj(null);
+        entriesState.setPage(1);
+        routingState.handleViewChange('journal');
+      },
       theme: config.theme,
       language: config.language,
       t,

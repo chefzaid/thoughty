@@ -158,15 +158,22 @@ describe('Stats Component', () => {
                     months: [{ month: '2024-01', average: 4, entries: 3 }],
                     weekdays: Array.from({ length: 7 }, () => ({ average: null, entries: 0 })),
                     topFeelings: [{ feeling: 'calm', count: 2 }],
+                    goodMoodTags: [{ tag: 'garden', entries: 2 }],
+                    lowMoodTags: [],
                 },
             }),
         });
+        const onOpenJournalTag = vi.fn();
 
-        const { unmount } = render(<Stats {...defaultProps} language="en" />);
+        const { unmount } = render(<Stats {...defaultProps} language="en" onOpenJournalTag={onOpenJournalTag} />);
 
         const panel = await screen.findByRole('region', { name: 'statsMoodTitle' });
         expect(within(panel).getByText('statsMoodAverage')).toBeInTheDocument();
         expect(within(panel).getByText('feelingCalm')).toBeInTheDocument();
+        // The tags beside the moods follow the mood panel and open the journal filtered to the tag
+        const tags = screen.getByRole('region', { name: 'statsMoodTagsTitle' });
+        await userEvent.click(within(tags).getByRole('button', { name: 'statsMoodTagsOpen' }));
+        expect(onOpenJournalTag).toHaveBeenCalledWith('garden');
         unmount();
 
         (globalThis.fetch as Mock).mockResolvedValueOnce({ ok: true, json: async () => mockStatsData });

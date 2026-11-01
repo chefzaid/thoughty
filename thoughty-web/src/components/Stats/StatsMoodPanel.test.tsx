@@ -28,6 +28,8 @@ const moods = {
         { average: null, entries: 0 },
     ],
     topFeelings: [{ feeling: 'calm', count: 4 }, { feeling: 'nostalgic', count: 1 }],
+    goodMoodTags: [],
+    lowMoodTags: [],
 };
 
 describe('StatsMoodPanel', () => {
@@ -98,7 +100,7 @@ describe('StatsMoodPanel', () => {
     it('invites the writer to record a mood when none is recorded yet', () => {
         render(
             <StatsMoodPanel
-                moods={{ recordedEntries: 0, averageMood: null, levels: [0, 0, 0, 0, 0], months: [], weekdays: [], topFeelings: [] }}
+                moods={{ recordedEntries: 0, averageMood: null, levels: [0, 0, 0, 0, 0], months: [], weekdays: [], topFeelings: [], goodMoodTags: [], lowMoodTags: [] }}
                 themeClass="dark"
                 language="en"
                 t={t}

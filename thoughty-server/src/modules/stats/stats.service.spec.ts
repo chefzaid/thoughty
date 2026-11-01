@@ -59,6 +59,8 @@ describe('StatsService', () => {
         months: [],
         weekdays: [],
         topFeelings: [],
+        goodMoodTags: [],
+        lowMoodTags: [],
       }),
     };
 

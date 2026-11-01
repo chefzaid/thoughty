@@ -21,6 +21,7 @@ import StatsInsights from './StatsInsights';
 import StatsPersonalityPanel from './StatsPersonalityPanel';
 import StatsCorrelationGraph from './StatsCorrelationGraph';
 import StatsMoodPanel from './StatsMoodPanel';
+import StatsMoodTags from './StatsMoodTags';
 import StatsGoalPanel from './StatsGoalPanel';
 import StatsPagination from './StatsPagination';
 import StatsBarChart, { type StatsChartPoint } from './StatsBarChart';
@@ -50,6 +51,8 @@ interface StatsProps {
     readonly t: (key: string, params?: Record<string, string | number>) => string;
     readonly diaryId?: number | null;
     readonly onOpenJournalDay?: (date: string) => void | Promise<void>;
+    /** Opens the journal filtered to one tag, for the tags beside the moods. */
+    readonly onOpenJournalTag?: (tag: string) => void;
     /** Opens one entry through its permalink, for the personal records. */
     readonly onOpenEntry?: (entryId: number) => void;
     readonly onManageDiaries?: () => void;
@@ -106,6 +109,8 @@ const EMPTY_STATS: StatsData = {
         months: [],
         weekdays: [],
         topFeelings: [],
+        goodMoodTags: [],
+        lowMoodTags: [],
     },
     goals: [],
     writingTimes: {
@@ -122,7 +127,7 @@ const EMPTY_STATS: StatsData = {
     },
 };
 
-function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenEntry, onManageDiaries, tagMetadata, language, teaser }: StatsProps) {
+function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onOpenEntry, onManageDiaries, tagMetadata, language, teaser }: StatsProps) {
     const { authFetch } = useAuth();
     // Quiet mode keeps the readings of the journal (insights, moods, personality, links) and leaves out its counts and goals
     const quiet = useQuietMode();
@@ -302,6 +307,15 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenEntry, onManageDiari
                             themeClass={themeClass}
                             language={uiLanguage}
                             t={t}
+                        />
+                        <StatsMoodTags
+                            moods={stats.moods ?? EMPTY_STATS.moods}
+                            theme={theme}
+                            themeClass={themeClass}
+                            language={uiLanguage}
+                            tagMetadata={tagMetadata}
+                            t={t}
+                            onOpenJournalTag={onOpenJournalTag}
                         />
                         <StatsPersonalityPanel
                             themeClass={themeClass}

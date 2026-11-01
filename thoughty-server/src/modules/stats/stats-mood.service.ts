@@ -7,6 +7,15 @@ import type { StatsMoodDto } from './dto';
 
 const TOP_FEELINGS = 10;
 
+/** Moods of 4 (good) and 5 (very good) count as good; 3 (okay) is in neither list. */
+export const GOOD_MOOD_MIN = 4;
+/** Moods of 1 (very low) and 2 (low) count as low. */
+export const LOW_MOOD_MAX = 2;
+/** Each list of tags beside the moods shows at most this many tags. */
+export const TOP_MOOD_TAGS = 5;
+/** A tag on a single entry says little about a mood, so a tag needs this many entries to be listed. */
+export const MIN_MOOD_TAG_ENTRIES = 2;
+
 /** An average mood to one decimal, as the stats show it. */
 export function roundMood(value: number | string | null | undefined): number | null {
   const parsed = Number(value);
@@ -15,7 +24,10 @@ export function roundMood(value: number | string | null | undefined): number | n
 
 /**
  * The moods writers recorded themselves, summed up without AI: the average by month and by
- * weekday, how often each level was chosen, and the feeling words used most.
+ * weekday, how often each level was chosen, the feeling words used most, and the tags used most on
+ * entries with a good mood and on those with a low one. Each entry counts by its own mood, so a day
+ * with a good entry and a low one adds to both lists, and a tag can be in both lists. Sealed time
+ * capsules keep no mood or tags on the entry and the recycle bin is left out, so neither counts.
  */
 @Injectable()
 export class StatsMoodService {
@@ -40,7 +52,20 @@ export class StatsMoodService {
       return diaryId ? query.andWhere('e.diary_id = :diaryId', { diaryId }) : query;
     };
 
-    const [monthRows, weekdayRows, levelRows, feelingRows] = await Promise.all([
+    /** The tags on most entries whose mood meets `condition`, on at least two entries, most first. */
+    const moodTags = (condition: string, mood: number) =>
+      recorded()
+        .andWhere(condition, { mood })
+        .select('UNNEST(e.tags)', 'tag')
+        .addSelect('COUNT(*)', 'entries')
+        .groupBy('tag')
+        .having('COUNT(*) >= :minimum', { minimum: MIN_MOOD_TAG_ENTRIES })
+        .orderBy('entries', 'DESC')
+        .addOrderBy('tag', 'ASC')
+        .limit(TOP_MOOD_TAGS)
+        .getRawMany<{ tag: string; entries: string }>();
+
+    const [monthRows, weekdayRows, levelRows, feelingRows, goodTagRows, lowTagRows] = await Promise.all([
       recorded()
         .select("TO_CHAR(e.date, 'YYYY-MM')", 'month')
         .addSelect('AVG(e.mood)', 'average')
@@ -67,6 +92,8 @@ export class StatsMoodService {
         .addOrderBy('feeling', 'ASC')
         .limit(TOP_FEELINGS)
         .getRawMany<{ feeling: string; count: string }>(),
+      moodTags('e.mood >= :mood', GOOD_MOOD_MIN),
+      moodTags('e.mood <= :mood', LOW_MOOD_MAX),
     ]);
 
     const levels: number[] = Array.from({ length: MAX_MOOD }, () => 0);
@@ -89,6 +116,8 @@ export class StatsMoodService {
       months: monthRows.map((row) => ({ month: row.month, average: roundMood(row.average) ?? 0, entries: Number(row.entries) })),
       weekdays,
       topFeelings: feelingRows.map((row) => ({ feeling: row.feeling, count: Number(row.count) })),
+      goodMoodTags: goodTagRows.map((row) => ({ tag: row.tag, entries: Number(row.entries) })),
+      lowMoodTags: lowTagRows.map((row) => ({ tag: row.tag, entries: Number(row.entries) })),
     };
   }
 }

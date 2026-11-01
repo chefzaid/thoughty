@@ -191,6 +191,14 @@ export class StatsFeelingDto {
   count!: number;
 }
 
+export class StatsMoodTagDto {
+  @ApiProperty({ example: 'family' })
+  tag!: string;
+
+  @ApiProperty({ example: 6, minimum: 2, description: 'Entries with this tag and a mood in the list’s range' })
+  entries!: number;
+}
+
 export class StatsMoodDto {
   @ApiProperty({ example: 48, description: 'Entries with a recorded mood' })
   recordedEntries!: number;
@@ -209,6 +217,18 @@ export class StatsMoodDto {
 
   @ApiProperty({ type: [StatsFeelingDto], description: 'The feeling words recorded most often, up to ten' })
   topFeelings!: StatsFeelingDto[];
+
+  @ApiProperty({
+    type: [StatsMoodTagDto],
+    description: 'The tags on most entries with a good mood (4 or 5), up to five, each on two entries or more; most first, then by name',
+  })
+  goodMoodTags!: StatsMoodTagDto[];
+
+  @ApiProperty({
+    type: [StatsMoodTagDto],
+    description: 'The tags on most entries with a low mood (1 or 2), up to five, each on two entries or more; most first, then by name',
+  })
+  lowMoodTags!: StatsMoodTagDto[];
 }
 
 export class StatsResponseDto {

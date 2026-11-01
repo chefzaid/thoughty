@@ -9,6 +9,7 @@ describe('StatsMoodService', () => {
     groupBy: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     addOrderBy: jest.fn().mockReturnThis(),
+    having: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     getRawMany: jest.fn().mockResolvedValue(rows),
   });
@@ -27,12 +28,16 @@ describe('StatsMoodService', () => {
       { level: '5', entries: '2' },
     ]);
     const feelingQb = createQueryBuilder([{ feeling: 'calm', count: '3' }, { feeling: 'tired', count: '1' }]);
+    const goodTagQb = createQueryBuilder([{ tag: 'family', entries: '4' }, { tag: 'walks', entries: '2' }]);
+    const lowTagQb = createQueryBuilder([{ tag: 'family', entries: '2' }]);
     const repository = {
       createQueryBuilder: jest.fn()
         .mockReturnValueOnce(monthQb)
         .mockReturnValueOnce(weekdayQb)
         .mockReturnValueOnce(levelQb)
-        .mockReturnValueOnce(feelingQb),
+        .mockReturnValueOnce(feelingQb)
+        .mockReturnValueOnce(goodTagQb)
+        .mockReturnValueOnce(lowTagQb),
     };
 
     const moods = await new StatsMoodService(repository as never).analyze(7, 3);
@@ -55,8 +60,11 @@ describe('StatsMoodService', () => {
         { average: 2, entries: 2 },
       ],
       topFeelings: [{ feeling: 'calm', count: 3 }, { feeling: 'tired', count: 1 }],
+      // A tag used on both kinds of entry is in both lists, each with its own count
+      goodMoodTags: [{ tag: 'family', entries: 4 }, { tag: 'walks', entries: 2 }],
+      lowMoodTags: [{ tag: 'family', entries: 2 }],
     });
-    for (const qb of [monthQb, weekdayQb, levelQb]) {
+    for (const qb of [monthQb, weekdayQb, levelQb, goodTagQb, lowTagQb]) {
       expect(qb.where).toHaveBeenCalledWith('e.user_id = :userId', { userId: 7 });
       expect(qb.andWhere).toHaveBeenCalledWith('e.mood IS NOT NULL');
       expect(qb.andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 3 });
@@ -65,15 +73,21 @@ describe('StatsMoodService', () => {
     expect(feelingQb.andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 3 });
     expect(feelingQb.limit).toHaveBeenCalledWith(10);
     expect(weekdayQb.select).toHaveBeenCalledWith('EXTRACT(ISODOW FROM e.date)::int', 'weekday');
+    expect(goodTagQb.andWhere).toHaveBeenCalledWith('e.mood >= :mood', { mood: 4 });
+    expect(lowTagQb.andWhere).toHaveBeenCalledWith('e.mood <= :mood', { mood: 2 });
+    for (const qb of [goodTagQb, lowTagQb]) {
+      expect(qb.having).toHaveBeenCalledWith('COUNT(*) >= :minimum', { minimum: 2 });
+      expect(qb.limit).toHaveBeenCalledWith(5);
+    }
   });
 
   it('reports no average when no mood was recorded, across all diaries', async () => {
-    const qbs = [createQueryBuilder([]), createQueryBuilder([]), createQueryBuilder([]), createQueryBuilder([])];
+    const qbs = Array.from({ length: 6 }, () => createQueryBuilder([]));
     const repository = { createQueryBuilder: jest.fn(() => qbs.shift()) };
 
     const moods = await new StatsMoodService(repository as never).analyze(7);
 
-    expect(moods).toMatchObject({ recordedEntries: 0, averageMood: null, levels: [0, 0, 0, 0, 0], months: [], topFeelings: [] });
+    expect(moods).toMatchObject({ recordedEntries: 0, averageMood: null, levels: [0, 0, 0, 0, 0], months: [], topFeelings: [], goodMoodTags: [], lowMoodTags: [] });
     expect(moods.weekdays).toHaveLength(7);
   });
 

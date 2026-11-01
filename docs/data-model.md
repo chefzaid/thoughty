@@ -113,7 +113,7 @@ Entries imported from Day One or Journey ([ADR 0020](./adr/0020-browser-side-app
 - `mood` is a nullable `SMALLINT` from 1 (very low) to 5 (very good), checked by `chk_entries_mood`. `feelings` is `TEXT[] NOT NULL DEFAULT '{}'` and can be set without a mood.
 - `normalizeFeelings` stores feelings lowercase and without duplicates: at most 10, each at most 40 characters, with the characters that would break the export formats removed (commas, semicolons, pipes, braces, brackets, backticks, and double quotes).
 - Curated feelings are stored by their English key (`calm`), whatever the interface language. Words the writer types are kept as written.
-- The partial index `idx_entries_user_mood_date` on `(user_id, mood, date) WHERE mood IS NOT NULL` serves the mood filter (`mood=4,5`, `mood=any`, `mood=none`) and mood stats. Stats (`StatsMoodService`) and the year in review compute from these columns on request.
+- The partial index `idx_entries_user_mood_date` on `(user_id, mood, date) WHERE mood IS NOT NULL` serves the mood filter (`mood=4,5`, `mood=any`, `mood=none`) and mood stats. Stats (`StatsMoodService`) and the year in review compute from these columns on request; the tags beside the moods unnest `tags` of entries with `mood >= 4` and `mood <= 2`, keeping tags on two entries or more (`HAVING COUNT(*) >= 2`), at most five each.
 - Mood and feelings are private: the public feed and share text never include them.
 
 ### Task List Ticks

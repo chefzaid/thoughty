@@ -528,7 +528,7 @@ Small, relatable additions that reuse what already exists (entries, tags, moods,
 
 - [x] When you write: a small chart in Stats of the hours of the day and days of the week you write most, from entry times (and creation times, in the writer's time zone, when no time was set), scoped to the diary, with a table view and words instead of counts in quiet mode.
 - [x] Personal records: longest entry, busiest day, longest streak, earliest and latest hour written, and first entry, as a playful card in Stats; entries open through their permalink, the busiest day and the streak's first day in the journal; quiet mode keeps only the hours and the first entry.
-- [ ] Tags on your good days: for writers who record moods, the tags that appear most on good-mood days and on low-mood days, as two short lists with entry counts and no judgement in the wording.
+- [x] Tags on your good days: **Stats › Tags and moods**, below the recorded moods, lists the top five tags on entries with a good mood (4 or 5) and on entries with a low one (1 or 2), each tag on two entries or more with its entry count, ranked by entries then name. Each entry counts by its own mood and a tag can be in both lists. Scoped like the rest of Stats (diary, recycle bin, sealed capsules), each tag opens the journal filtered to it, quiet mode keeps the tags without counts, hidden until a mood is recorded. English and French, without judgement.
 - [ ] Words you use most this month, leaving out common words in English and French, as a simple ranked list rather than a word cloud, scoped to the current diary.
 
 ### Comfort and privacy

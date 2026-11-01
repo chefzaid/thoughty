@@ -5139,6 +5139,21 @@ export interface components {
         };
         /**
          * @example {
+         *       "tag": "family",
+         *       "entries": 6
+         *     }
+         */
+        StatsMoodTagDto: {
+            /** @example family */
+            tag: string;
+            /**
+             * @description Entries with this tag and a mood in the list’s range
+             * @example 6
+             */
+            entries: number;
+        };
+        /**
+         * @example {
          *       "recordedEntries": 48,
          *       "averageMood": 3.7,
          *       "levels": [
@@ -5165,6 +5180,18 @@ export interface components {
          *         {
          *           "feeling": "calm",
          *           "count": 14
+         *         }
+         *       ],
+         *       "goodMoodTags": [
+         *         {
+         *           "tag": "family",
+         *           "entries": 6
+         *         }
+         *       ],
+         *       "lowMoodTags": [
+         *         {
+         *           "tag": "family",
+         *           "entries": 6
          *         }
          *       ]
          *     }
@@ -5197,6 +5224,10 @@ export interface components {
             weekdays: components["schemas"]["StatsMoodWeekdayDto"][];
             /** @description The feeling words recorded most often, up to ten */
             topFeelings: components["schemas"]["StatsFeelingDto"][];
+            /** @description The tags on most entries with a good mood (4 or 5), up to five, each on two entries or more; most first, then by name */
+            goodMoodTags: components["schemas"]["StatsMoodTagDto"][];
+            /** @description The tags on most entries with a low mood (1 or 2), up to five, each on two entries or more; most first, then by name */
+            lowMoodTags: components["schemas"]["StatsMoodTagDto"][];
         };
         /**
          * @example {
@@ -5630,6 +5661,18 @@ export interface components {
          *           {
          *             "feeling": "calm",
          *             "count": 14
+         *           }
+         *         ],
+         *         "goodMoodTags": [
+         *           {
+         *             "tag": "family",
+         *             "entries": 6
+         *           }
+         *         ],
+         *         "lowMoodTags": [
+         *           {
+         *             "tag": "family",
+         *             "entries": 6
          *           }
          *         ]
          *       },
@@ -13762,6 +13805,18 @@ export interface operations {
                      *           {
                      *             "feeling": "calm",
                      *             "count": 14
+                     *           }
+                     *         ],
+                     *         "goodMoodTags": [
+                     *           {
+                     *             "tag": "family",
+                     *             "entries": 6
+                     *           }
+                     *         ],
+                     *         "lowMoodTags": [
+                     *           {
+                     *             "tag": "family",
+                     *             "entries": 6
                      *           }
                      *         ]
                      *       },

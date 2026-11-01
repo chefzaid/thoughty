@@ -147,6 +147,7 @@ describe('appShellProps', () => {
     props.statsRouteProps.onManageDiaries();
     props.statsRouteProps.onDiaryChange(8);
     props.statsRouteProps.onOpenJournalDay?.('2024-01-22');
+    props.statsRouteProps.onOpenJournalTag?.('family');
     props.tasksRouteProps.onManageDiaries();
     props.tasksRouteProps.onDiaryChange(10);
     props.importExportRouteProps.onManageDiaries();
@@ -173,6 +174,9 @@ describe('appShellProps', () => {
     expect(handleDiaryChange).toHaveBeenCalledWith(9);
     expect(props.statsRouteProps.onOpenJournalDay).toBeDefined();
     expect(props.journalRouteProps.filters.setFilterDateObj).toHaveBeenCalledWith(new Date('2024-01-22T00:00:00.000Z'));
+    // A tag opened from the moods shows every entry with it, whatever day was chosen before
+    expect(props.journalRouteProps.filters.setFilterTags).toHaveBeenCalledWith(['family']);
+    expect(props.journalRouteProps.filters.setFilterDateObj).toHaveBeenLastCalledWith(null);
     expect(props.journalRouteProps.filters.setPage).toHaveBeenCalledWith(1);
     expect(handleViewChange).toHaveBeenCalledWith('journal');
     expect(handleImportExportRouteStateChange).toHaveBeenCalledWith({

@@ -44,6 +44,8 @@ const stats = {
         months: [{ month: '2024-01', average: 4, entries: 37 }],
         weekdays: Array.from({ length: 7 }, () => ({ average: null, entries: 0 })),
         topFeelings: [{ feeling: 'calm', count: 23 }],
+        goodMoodTags: [{ tag: 'garden', entries: 19 }],
+        lowMoodTags: [],
     },
     goals: [{
         diaryId: 2,
@@ -101,6 +103,10 @@ describe('Stats in quiet mode', () => {
         expect(within(mood).queryByText('37')).not.toBeInTheDocument();
         expect(within(mood).queryByText('23')).not.toBeInTheDocument();
         expect(mood.querySelector('.tone-mood-highlights')).toHaveClass('single');
+        // The tags beside the moods keep their names without how many entries each is on
+        const moodTags = screen.getByRole('region', { name: 'Tags and moods' });
+        expect(within(moodTags).getByText('garden')).toBeInTheDocument();
+        expect(within(moodTags).queryByText(/19/)).not.toBeInTheDocument();
 
         // When the writer writes stays as a shape, said in words rather than counts
         const times = screen.getByRole('region', { name: 'When you write' });

@@ -39,7 +39,24 @@ export function buildMockWritingTimes(entries: StatsEntry[], timeZone = "UTC") {
 
 const roundMood = (value: number) => Math.round(value * 10) / 10;
 
-/** Recorded moods summed up as the server does: by month, by weekday (Monday first), and the top feelings. */
+/**
+ * The tags on most entries whose mood `matches`, as the server lists them: on two entries or more,
+ * most first then by name, at most five. A sealed time capsule keeps no mood or tags there.
+ */
+function buildMockMoodTags(entries: Array<StatsEntry & { mood: number }>, matches: (mood: number) => boolean) {
+  const counts = new Map<string, number>();
+  for (const entry of entries) {
+    if (!matches(entry.mood) || (entry.capsule && !entry.capsule.openedAt)) continue;
+    for (const tag of new Set(entry.tags)) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .filter(([, count]) => count >= 2)
+    .sort(([leftTag, left], [rightTag, right]) => right - left || (leftTag < rightTag ? -1 : 1))
+    .slice(0, 5)
+    .map(([tag, count]) => ({ tag, entries: count }));
+}
+
+/** Recorded moods summed up as the server does: by month, by weekday (Monday first), the top feelings, and the tags beside good and low moods. */
 export function buildMockMoods(entries: StatsEntry[]) {
   const recorded = entries.filter((entry) => typeof entry.mood === "number") as Array<StatsEntry & { mood: number }>;
   const levels = [0, 0, 0, 0, 0];
@@ -73,6 +90,8 @@ export function buildMockMoods(entries: StatsEntry[]) {
       .map(([feeling, count]) => ({ feeling, count }))
       .sort((left, right) => right.count - left.count || left.feeling.localeCompare(right.feeling))
       .slice(0, 10),
+    goodMoodTags: buildMockMoodTags(recorded, (mood) => mood >= 4),
+    lowMoodTags: buildMockMoodTags(recorded, (mood) => mood <= 2),
   };
 }
 
