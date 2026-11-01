@@ -2725,6 +2725,65 @@
                         "swimming"
                       ]
                     }
+                  ],
+                  "personDates": [
+                    {
+                      "id": 12,
+                      "name": "Marie",
+                      "date": {
+                        "kind": "birthday",
+                        "month": 3,
+                        "day": 14,
+                        "year": 1992
+                      },
+                      "years": 34,
+                      "entryCount": 8,
+                      "latestEntry": {
+                        "id": 1,
+                        "user_id": 1,
+                        "diary_id": 1,
+                        "date": "2026-06-24",
+                        "index": 1,
+                        "title": "Morning walk by the river",
+                        "time_of_day": "08:30",
+                        "mood": 4,
+                        "feelings": [
+                          "calm",
+                          "grateful"
+                        ],
+                        "tags": [
+                          "reflection"
+                        ],
+                        "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                        "format": "plain",
+                        "visibility": "private",
+                        "is_favorite": true,
+                        "is_archived": true,
+                        "is_pinned": true,
+                        "diary_name": "Daily Journal",
+                        "diary_icon": "journal",
+                        "diary_color": "#2A9D8F",
+                        "attachments": [
+                          {
+                            "id": 1,
+                            "original_filename": "Daily Journal",
+                            "stored_filename": "Daily Journal",
+                            "mimetype": "example",
+                            "size": 1,
+                            "poster_filename": "Daily Journal",
+                            "transcript": "example",
+                            "transcribed_at": "2026-06-24T10:00:00.000Z"
+                          }
+                        ],
+                        "created_at": "2026-06-24T10:00:00.000Z",
+                        "sealed_until": null,
+                        "reread_on": null,
+                        "search_matches": [
+                          "morning run",
+                          "swimming"
+                        ]
+                      }
+                    }
                   ]
                 }
               }
@@ -11935,6 +11994,12 @@
                       ],
                       "entryCount": 8,
                       "lastMentionedOn": "2026-10-21",
+                      "date": {
+                        "kind": "birthday",
+                        "month": 3,
+                        "day": 14,
+                        "year": 1992
+                      },
                       "createdAt": "2026-10-27T09:30:00.000Z",
                       "updatedAt": "2026-10-27T09:30:00.000Z"
                     }
@@ -11958,7 +12023,7 @@
     },
     "/api/people/{id}": {
       "patch": {
-        "operationId": "PeopleController_rename",
+        "operationId": "PeopleController_update",
         "parameters": [
           {
             "name": "id",
@@ -11977,14 +12042,20 @@
                 "$ref": "#/components/schemas/UpdatePersonDto"
               },
               "example": {
-                "name": "Marie Curie"
+                "name": "Marie Curie",
+                "date": {
+                  "kind": "birthday",
+                  "month": 3,
+                  "day": 14,
+                  "year": 1992
+                }
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Person renamed",
+            "description": "Person saved",
             "content": {
               "application/json": {
                 "schema": {
@@ -11999,6 +12070,12 @@
                   ],
                   "entryCount": 8,
                   "lastMentionedOn": "2026-10-21",
+                  "date": {
+                    "kind": "birthday",
+                    "month": 3,
+                    "day": 14,
+                    "year": 1992
+                  },
                   "createdAt": "2026-10-27T09:30:00.000Z",
                   "updatedAt": "2026-10-27T09:30:00.000Z"
                 }
@@ -12006,7 +12083,7 @@
             }
           },
           "400": {
-            "description": "Invalid name",
+            "description": "Invalid name, or a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE)",
             "content": {
               "application/json": {
                 "schema": {
@@ -12014,7 +12091,7 @@
                 },
                 "example": {
                   "statusCode": 400,
-                  "message": "Invalid name",
+                  "message": "Invalid name, or a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE)",
                   "error": "Bad Request",
                   "code": "VALIDATION_FAILED"
                 }
@@ -12043,7 +12120,7 @@
             "bearer": []
           }
         ],
-        "summary": "Change the name shown for a person; their handles and the entries’ text stay as they are",
+        "summary": "Change the name shown for a person and their birthday or anniversary; their handles and the entries’ text stay as they are",
         "tags": [
           "People"
         ]
@@ -12146,6 +12223,12 @@
                   ],
                   "entryCount": 8,
                   "lastMentionedOn": "2026-10-21",
+                  "date": {
+                    "kind": "birthday",
+                    "month": 3,
+                    "day": 14,
+                    "year": 1992
+                  },
                   "createdAt": "2026-10-27T09:30:00.000Z",
                   "updatedAt": "2026-10-27T09:30:00.000Z"
                 }
@@ -14524,6 +14607,162 @@
           "opened_early": false
         }
       },
+      "PersonDateKind": {
+        "type": "string",
+        "enum": [
+          "birthday",
+          "anniversary"
+        ],
+        "description": "What the date marks: a birthday or an anniversary (a wedding, a meeting, a loss)",
+        "example": "birthday"
+      },
+      "PersonDateDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "example": "birthday",
+            "description": "What the date marks: a birthday or an anniversary (a wedding, a meeting, a loss)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PersonDateKind"
+              }
+            ]
+          },
+          "month": {
+            "type": "number",
+            "example": 3,
+            "minimum": 1,
+            "maximum": 12
+          },
+          "day": {
+            "type": "number",
+            "example": 14,
+            "minimum": 1,
+            "maximum": 31
+          },
+          "year": {
+            "type": "number",
+            "nullable": true,
+            "example": 1992,
+            "description": "Null when the writer does not know the year"
+          }
+        },
+        "required": [
+          "kind",
+          "month",
+          "day",
+          "year"
+        ],
+        "example": {
+          "kind": "birthday",
+          "month": 3,
+          "day": 14,
+          "year": 1992
+        }
+      },
+      "PersonDateHighlightDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 12
+          },
+          "name": {
+            "type": "string",
+            "example": "Marie"
+          },
+          "date": {
+            "$ref": "#/components/schemas/PersonDateDto"
+          },
+          "years": {
+            "type": "number",
+            "nullable": true,
+            "example": 34,
+            "description": "The age the birthday marks, or the years since the anniversary, on the writer’s day; null without the year"
+          },
+          "entryCount": {
+            "type": "number",
+            "example": 8,
+            "minimum": 0,
+            "description": "Entries in every diary that mention the person, leaving out the recycle bin and sealed time capsules"
+          },
+          "latestEntry": {
+            "nullable": true,
+            "description": "The newest of those entries; null when there is none",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntryResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "date",
+          "years",
+          "entryCount",
+          "latestEntry"
+        ],
+        "example": {
+          "id": 12,
+          "name": "Marie",
+          "date": {
+            "kind": "birthday",
+            "month": 3,
+            "day": 14,
+            "year": 1992
+          },
+          "years": 34,
+          "entryCount": 8,
+          "latestEntry": {
+            "id": 1,
+            "user_id": 1,
+            "diary_id": 1,
+            "date": "2026-06-24",
+            "index": 1,
+            "title": "Morning walk by the river",
+            "time_of_day": "08:30",
+            "mood": 4,
+            "feelings": [
+              "calm",
+              "grateful"
+            ],
+            "tags": [
+              "reflection"
+            ],
+            "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+            "format": "plain",
+            "visibility": "private",
+            "is_favorite": true,
+            "is_archived": true,
+            "is_pinned": true,
+            "diary_name": "Daily Journal",
+            "diary_icon": "journal",
+            "diary_color": "#2A9D8F",
+            "attachments": [
+              {
+                "id": 1,
+                "original_filename": "Daily Journal",
+                "stored_filename": "Daily Journal",
+                "mimetype": "example",
+                "size": 1,
+                "poster_filename": "Daily Journal",
+                "transcript": "example",
+                "transcribed_at": "2026-06-24T10:00:00.000Z"
+              }
+            ],
+            "created_at": "2026-06-24T10:00:00.000Z",
+            "sealed_until": null,
+            "reread_on": null,
+            "search_matches": [
+              "morning run",
+              "swimming"
+            ]
+          }
+        }
+      },
       "EntryHighlightsResponseDto": {
         "type": "object",
         "properties": {
@@ -14566,6 +14805,13 @@
             "items": {
               "$ref": "#/components/schemas/EntryResponseDto"
             }
+          },
+          "personDates": {
+            "description": "People whose birthday or anniversary is on the writer’s day (`today`), by name; a 29 February date comes on 28 February in a year without a 29th",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PersonDateHighlightDto"
+            }
           }
         },
         "required": [
@@ -14573,7 +14819,8 @@
           "onThisDay",
           "currentDate",
           "openedCapsules",
-          "rereadReminders"
+          "rereadReminders",
+          "personDates"
         ],
         "example": {
           "randomEntry": {
@@ -14726,6 +14973,65 @@
                 "morning run",
                 "swimming"
               ]
+            }
+          ],
+          "personDates": [
+            {
+              "id": 12,
+              "name": "Marie",
+              "date": {
+                "kind": "birthday",
+                "month": 3,
+                "day": 14,
+                "year": 1992
+              },
+              "years": 34,
+              "entryCount": 8,
+              "latestEntry": {
+                "id": 1,
+                "user_id": 1,
+                "diary_id": 1,
+                "date": "2026-06-24",
+                "index": 1,
+                "title": "Morning walk by the river",
+                "time_of_day": "08:30",
+                "mood": 4,
+                "feelings": [
+                  "calm",
+                  "grateful"
+                ],
+                "tags": [
+                  "reflection"
+                ],
+                "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                "format": "plain",
+                "visibility": "private",
+                "is_favorite": true,
+                "is_archived": true,
+                "is_pinned": true,
+                "diary_name": "Daily Journal",
+                "diary_icon": "journal",
+                "diary_color": "#2A9D8F",
+                "attachments": [
+                  {
+                    "id": 1,
+                    "original_filename": "Daily Journal",
+                    "stored_filename": "Daily Journal",
+                    "mimetype": "example",
+                    "size": 1,
+                    "poster_filename": "Daily Journal",
+                    "transcript": "example",
+                    "transcribed_at": "2026-06-24T10:00:00.000Z"
+                  }
+                ],
+                "created_at": "2026-06-24T10:00:00.000Z",
+                "sealed_until": null,
+                "reread_on": null,
+                "search_matches": [
+                  "morning run",
+                  "swimming"
+                ]
+              }
             }
           ]
         }
@@ -23324,6 +23630,16 @@
             "example": "2026-10-21",
             "description": "Date of the latest entry that mentions the person; null when none does"
           },
+          "date": {
+            "nullable": true,
+            "description": "Their birthday or anniversary, shown in Highlights on its day; null when none is set",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PersonDateDto"
+              }
+            ]
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string",
@@ -23341,6 +23657,7 @@
           "handles",
           "entryCount",
           "lastMentionedOn",
+          "date",
           "createdAt",
           "updatedAt"
         ],
@@ -23353,6 +23670,12 @@
           ],
           "entryCount": 8,
           "lastMentionedOn": "2026-10-21",
+          "date": {
+            "kind": "birthday",
+            "month": 3,
+            "day": 14,
+            "year": 1992
+          },
           "createdAt": "2026-10-27T09:30:00.000Z",
           "updatedAt": "2026-10-27T09:30:00.000Z"
         }
@@ -23388,11 +23711,62 @@
               ],
               "entryCount": 8,
               "lastMentionedOn": "2026-10-21",
+              "date": {
+                "kind": "birthday",
+                "month": 3,
+                "day": 14,
+                "year": 1992
+              },
               "createdAt": "2026-10-27T09:30:00.000Z",
               "updatedAt": "2026-10-27T09:30:00.000Z"
             }
           ],
           "limit": 1000
+        }
+      },
+      "PersonDateInputDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "example": "birthday",
+            "description": "What the date marks: a birthday or an anniversary (a wedding, a meeting, a loss)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PersonDateKind"
+              }
+            ]
+          },
+          "month": {
+            "type": "number",
+            "example": 3,
+            "minimum": 1,
+            "maximum": 12
+          },
+          "day": {
+            "type": "number",
+            "example": 14,
+            "minimum": 1,
+            "maximum": 31,
+            "description": "A day the month has (`400 PERSON_DATE_INVALID` otherwise); 29 February only in a leap year when the year is given"
+          },
+          "year": {
+            "type": "number",
+            "nullable": true,
+            "example": 1992,
+            "minimum": 1000,
+            "description": "The year, when the writer knows it: four digits (`400 PERSON_DATE_YEAR_INVALID`), and with it the date cannot be later than today anywhere on Earth (`400 PERSON_DATE_IN_FUTURE`). Null or left out when unknown."
+          }
+        },
+        "required": [
+          "kind",
+          "month",
+          "day"
+        ],
+        "example": {
+          "kind": "birthday",
+          "month": 3,
+          "day": 14,
+          "year": 1992
         }
       },
       "UpdatePersonDto": {
@@ -23403,13 +23777,29 @@
             "example": "Marie Curie",
             "minLength": 1,
             "maxLength": 80
+          },
+          "date": {
+            "nullable": true,
+            "description": "Their birthday or anniversary, shown in Highlights each year on its day; null removes it, left out keeps it",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PersonDateInputDto"
+              }
+            ]
           }
         },
         "required": [
           "name"
         ],
         "example": {
-          "name": "Marie Curie"
+          "name": "Marie Curie",
+          "date": {
+            "kind": "birthday",
+            "month": 3,
+            "day": 14,
+            "year": 1992
+          }
         }
       },
       "MergePersonDto": {
@@ -24275,6 +24665,9 @@
           "LIFE_ERA_DATES_INVALID",
           "PERSON_NOT_FOUND",
           "PERSON_MERGE_SAME",
+          "PERSON_DATE_INVALID",
+          "PERSON_DATE_YEAR_INVALID",
+          "PERSON_DATE_IN_FUTURE",
           "ATTACHMENT_NOT_FOUND",
           "ATTACHMENT_FILE_NOT_FOUND",
           "ATTACHMENT_FILE_MISSING",

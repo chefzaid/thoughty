@@ -1,0 +1,70 @@
+/* Birthdays and anniversaries of the day: after the capsules opened lately in Highlights, in rose.
+   The title, names and meta lines are rose too, a shade that reaches 4.5:1 on the modal and on the
+   framed card in both themes. */
+.thought-of-day-modal.light .person-dates .section-title,
+.thought-of-day-modal.light .person-dates .person-date-heading,
+.thought-of-day-modal.light .person-dates .person-date-latest,
+.thought-of-day-modal.light .person-dates .entry-meta {
+    color: #be123c;
+}
+
+.thought-of-day-modal.dark .person-dates .section-title,
+.thought-of-day-modal.dark .person-dates .person-date-heading,
+.thought-of-day-modal.dark .person-dates .person-date-latest,
+.thought-of-day-modal.dark .person-dates .entry-meta {
+    color: #fda4af;
+}
+
+.thought-of-day-modal .person-dates .person-date-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.thought-of-day-modal .person-dates .person-date {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.thought-of-day-modal .person-dates .person-date-heading {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.thought-of-day-modal .person-dates .person-date-name {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    border-radius: 2px;
+}
+
+.thought-of-day-modal .person-dates .person-date-name:focus-visible {
+    outline: 3px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+.thought-of-day-modal .person-dates .person-date-count,
+.thought-of-day-modal .person-dates .person-date-latest {
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+.thought-of-day-modal .person-dates .person-date-latest {
+    font-weight: 600;
+}
+
+/* One class more specific than the theme borders in ThoughtOfTheDay.css, whichever loads first. */
+.thought-of-day-modal.light .person-dates .highlight-card {
+    border: 2px solid #f43f5e;
+    background: #fff1f2;
+}
+
+.thought-of-day-modal.dark .person-dates .highlight-card {
+    border: 2px solid #f43f5e;
+    background: #4c0519;
+}

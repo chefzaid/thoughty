@@ -21,17 +21,22 @@ export class PeopleController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Change the name shown for a person; their handles and the entries’ text stay as they are' })
+  @ApiOperation({
+    summary: 'Change the name shown for a person and their birthday or anniversary; their handles and the entries’ text stay as they are',
+  })
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Person renamed', type: PersonResponseDto })
-  @ApiResponse({ status: 400, description: 'Invalid name' })
+  @ApiResponse({ status: 200, description: 'Person saved', type: PersonResponseDto })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid name, or a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE)',
+  })
   @ApiResponse({ status: 404, description: 'Person not found' })
-  async rename(
+  async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdatePersonDto,
   ): Promise<PersonResponseDto> {
-    return this.peopleService.rename(user.userId, id, dto);
+    return this.peopleService.update(user.userId, id, dto);
   }
 
   @Post(':id/merge')

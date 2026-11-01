@@ -26,6 +26,7 @@ import {
   UserFollow,
 } from '@/database/entities';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
+import { toPersonDate, type PersonDateColumns } from '@/modules/people/person-dates';
 import { isExportableSettingKey } from './config.service';
 
 /** An opt-in email setting as the data download writes it, null when it was never saved. */
@@ -257,23 +258,25 @@ export class UserDataExportService {
   }
 
   /**
-   * The people the writer mentions, with their handles and the entries (recycle bin included) that
-   * mention them. The ID is what a saved search's `personId` filter refers to.
+   * The people the writer mentions, with their handles, their birthday or anniversary and the entries
+   * (recycle bin included) that mention them. The ID is what a saved search's `personId` filter refers to.
    */
   private async collectPeople(userId: number) {
     const rows = (await this.personRepository.query(
       `SELECT p.id, p.name, p.created_at AS "createdAt", p.updated_at AS "updatedAt",
+              p.date_kind AS "dateKind", p.date_month AS "dateMonth", p.date_day AS "dateDay", p.date_year AS "dateYear",
               COALESCE((SELECT array_agg(h.handle ORDER BY h.created_at, h.handle) FROM person_handles h WHERE h.person_id = p.id), '{}') AS handles,
               COALESCE((SELECT array_agg(ep.entry_id ORDER BY ep.entry_id) FROM entry_people ep WHERE ep.person_id = p.id), '{}') AS "entryIds"
          FROM people p
         WHERE p.user_id = $1
         ORDER BY p.id`,
       [userId],
-    )) as Array<{ id: number; name: string; handles: string[]; entryIds: number[]; createdAt: Date; updatedAt: Date }>;
+    )) as Array<PersonDateColumns & { id: number; name: string; handles: string[]; entryIds: number[]; createdAt: Date; updatedAt: Date }>;
     return rows.map((person) => ({
       id: person.id,
       name: person.name,
       handles: person.handles,
+      date: toPersonDate(person),
       entryIds: person.entryIds.map(Number),
       createdAt: person.createdAt,
       updatedAt: person.updatedAt,

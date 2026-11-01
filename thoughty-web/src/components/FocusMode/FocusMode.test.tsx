@@ -165,7 +165,7 @@ describe('FocusMode', () => {
 
 describe('FocusMode @ suggestions', () => {
     const person = (id: number, name: string, handle: string, entryCount: number): Person => ({
-        id, name, handles: [handle], entryCount, lastMentionedOn: null, createdAt: '', updatedAt: '',
+        id, name, handles: [handle], entryCount, lastMentionedOn: null, date: null, createdAt: '', updatedAt: '',
     });
     const people = [person(1, 'Marie', 'marie', 4), person(2, 'Martin', 'martin', 1)];
 

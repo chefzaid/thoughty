@@ -9,7 +9,7 @@ import { normalizeMentionHandle } from '../../utils/mentions';
 import { pluralPhrase } from '../../utils/pluralPhrase';
 import { mutedTextClass } from '../../utils/tintedText';
 import MergePersonDialog from './MergePersonDialog';
-import PersonRow from './PersonRow';
+import PersonRow, { type PersonChanges } from './PersonRow';
 import { usePeople } from './usePeople';
 
 export interface PeoplePageProps {
@@ -20,10 +20,10 @@ export interface PeoplePageProps {
 
 /**
  * The people the writer mentions with `@name`: how many entries mention each, a link to those
- * entries, and renaming, merging and deleting. People are the writer's own notes, never accounts.
+ * entries, and renaming, giving a birthday or an anniversary, merging and deleting. People are the writer's own notes, never accounts.
  */
 export default function PeoplePage({ theme = 'dark', language: languageSetting, t }: PeoplePageProps) {
-  const { list, people, rename, merge, remove } = usePeople();
+  const { list, people, update, merge, remove } = usePeople();
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('');
   const [merging, setMerging] = useState<Person | null>(null);
@@ -41,10 +41,12 @@ export default function PeoplePage({ theme = 'dark', language: languageSetting, 
       || person.handles.some((handle) => handle.includes(key)));
   }, [people, query]);
 
-  const renamePerson = async (person: Person, name: string): Promise<string | null> => {
-    const result = await rename(person.id, name);
-    if (!result.data) return t(result.error ?? 'personSaveFailed');
-    setStatus(t('personRenamed', { name: result.data.name }));
+  const savePerson = async (person: Person, changes: PersonChanges): Promise<string | null> => {
+    const result = await update(person.id, changes);
+    if (!result.data) return result.error ?? 'personSaveFailed';
+    setStatus(changes.name === person.name
+      ? t('personDateSaved', { name: result.data.name })
+      : t('personRenamed', { name: result.data.name }));
     return null;
   };
 
@@ -103,7 +105,7 @@ export default function PeoplePage({ theme = 'dark', language: languageSetting, 
                     theme={theme}
                     language={language}
                     t={t}
-                    onRename={(name) => renamePerson(person, name)}
+                    onSave={(changes) => savePerson(person, changes)}
                     onMerge={() => setMerging(person)}
                     onDelete={() => setDeleting(person)}
                   />

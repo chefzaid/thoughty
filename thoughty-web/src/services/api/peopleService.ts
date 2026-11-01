@@ -13,9 +13,11 @@ export const createPeopleService = (authFetch: AuthFetchFunction) => ({
     return requestJson(authFetch('/api/people'), 'peopleLoadFailed');
   },
 
-  /** Changes the name shown; the person's handles and the entries' text stay as they are. */
-  rename(id: number, name: string): Promise<ServiceResult<Person>> {
-    const body: components['schemas']['UpdatePersonDto'] = { name };
+  /**
+   * Changes the name shown and sets their birthday or anniversary (null removes it, leaving it out keeps it);
+   * the person's handles and the entries' text stay as they are.
+   */
+  update(id: number, body: components['schemas']['UpdatePersonDto']): Promise<ServiceResult<Person>> {
     return requestJson(
       authFetch(`/api/people/${id}`, { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) }),
       'personSaveFailed',

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useId, useRef } from 'react';
 import HighlightCard from './HighlightCard';
 import OpenedCapsulesSection from './OpenedCapsulesSection';
 import RereadRemindersSection from './RereadRemindersSection';
+import PersonDatesSection from './PersonDatesSection';
 import { writersToday } from '../../utils/entryDate';
 import OnThisDaySection from './OnThisDaySection';
 import type { Language } from '../../utils/translations';
@@ -42,7 +43,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
     const fetchHighlights = useCallback(async (): Promise<void> => {
         try {
             setLoading(true);
-            // On This Day and reread reminders go by the writer's own day
+            // On This Day, reread reminders and birthdays go by the writer's own day
             const params = new URLSearchParams({ today: writersToday() });
             if (diaryId) params.append('diaryId', diaryId.toString());
             const response = await authFetch(`/api/entries/highlights?${params}`);
@@ -140,7 +141,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
             );
         }
 
-        if (!hasRandomEntry && !hasOnThisDay && openedCapsules.length === 0 && dueRereads.length === 0) {
+        if (!hasRandomEntry && !hasOnThisDay && openedCapsules.length === 0 && dueRereads.length === 0 && personDates.length === 0) {
             return (
                 <div className="thought-of-day-empty">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -159,6 +160,17 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
                         language={language}
                         formatDate={formatDate}
                         onSelectEntry={handleEntryClick}
+                        t={t}
+                    />
+                )}
+                {/* Today only, so ahead of the reminders, which wait until they are marked done */}
+                {personDates.length > 0 && (
+                    <PersonDatesSection
+                        people={personDates}
+                        language={language}
+                        formatDate={formatDate}
+                        onSelectEntry={handleEntryClick}
+                        onOpenPerson={onClose}
                         t={t}
                     />
                 )}
@@ -228,6 +240,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
     const hasOnThisDay = highlights?.onThisDay && Object.keys(highlights.onThisDay).length > 0;
     const openedCapsules = highlights?.openedCapsules ?? [];
     const dueRereads = highlights?.rereadReminders ?? [];
+    const personDates = highlights?.personDates ?? [];
 
     return (
         <div className={`thought-of-day-overlay ${themeClass}`}>

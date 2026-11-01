@@ -27,7 +27,7 @@ export function usePeopleList(enabled = true) {
 }
 
 /**
- * The people with the calls that rename, merge and delete them. Merging and deleting also reload the
+ * The people with the calls that rename and date, merge and delete them. Merging and deleting also reload the
  * journal (a person's entries change) and the saved searches (they follow the person kept, or widen).
  */
 export function usePeople() {
@@ -47,7 +47,7 @@ export function usePeople() {
   return {
     list,
     people,
-    rename: useCallback((id: number, name: string) => run(service.rename(id, name), false), [run, service]),
+    update: useCallback((id: number, body: Parameters<typeof service.update>[1]) => run(service.update(id, body), false), [run, service]),
     merge: useCallback((id: number, duplicateId: number) => run(service.merge(id, duplicateId), true), [run, service]),
     remove: useCallback((id: number) => run(service.remove(id), true), [run, service]),
   };

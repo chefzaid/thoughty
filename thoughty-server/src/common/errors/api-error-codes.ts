@@ -102,6 +102,9 @@ export const API_ERROR_MESSAGES = {
   // People mentioned in entries.
   PERSON_NOT_FOUND: 'Person not found',
   PERSON_MERGE_SAME: 'A person cannot be merged into themselves',
+  PERSON_DATE_INVALID: 'This day does not exist in that month',
+  PERSON_DATE_YEAR_INVALID: 'Write the year with four digits, from 1000',
+  PERSON_DATE_IN_FUTURE: 'A date with its year cannot be in the future',
 
   // Attachments and audio transcription.
   ATTACHMENT_NOT_FOUND: 'Attachment not found',

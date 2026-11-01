@@ -22,7 +22,7 @@ vi.mock('./RandomEntryButton', async () => ({ default: (await import('./JournalV
 vi.mock('../LifeEras/useLifeEras', async () => ({ useLifeEraList: (await import('./JournalView.test-helpers')).mockUseLifeEraList }));
 vi.mock('../People/usePeople', async () => ({ usePeopleList: (await import('./JournalView.test-helpers')).mockUsePeopleList }));
 
-const marie: Person = { id: 12, name: 'Marie', handles: ['marie', 'mariec'], entryCount: 3, lastMentionedOn: '2026-10-20', createdAt: '', updatedAt: '' };
+const marie: Person = { id: 12, name: 'Marie', handles: ['marie', 'mariec'], entryCount: 3, lastMentionedOn: '2026-10-20', date: null, createdAt: '', updatedAt: '' };
 
 function Location() {
   return <output data-testid="location">{useLocation().search}</output>;

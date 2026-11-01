@@ -362,19 +362,19 @@ describe('UserDataExportService', () => {
     expect(lifeEraRepository.find).toHaveBeenCalledWith({ where: { userId: 1 }, order: { startDate: 'ASC', id: 'ASC' } });
   });
 
-  it('includes the people with their handles and the entries that mention them, recycle bin included', async () => {
+  it('includes the people with their handles, their date and the entries that mention them, recycle bin included', async () => {
     for (const repository of [diaryRepository, entryRepository, revisionRepository, attachmentRepository, settingRepository]) {
       repository.find.mockResolvedValue([]);
     }
     const createdAt = new Date('2026-10-01T10:00:00Z');
     personRepository.query.mockResolvedValue([
-      { id: 12, name: 'Marie', handles: ['marie', 'marie-c'], entryIds: ['3', '9'], createdAt, updatedAt: createdAt },
+      { id: 12, name: 'Marie', handles: ['marie', 'marie-c'], entryIds: ['3', '9'], dateKind: 'birthday', dateMonth: 3, dateDay: 14, dateYear: 1992, createdAt, updatedAt: createdAt },
     ]);
 
     const result = await service.downloadData(1);
 
     expect(result.people).toEqual([
-      { id: 12, name: 'Marie', handles: ['marie', 'marie-c'], entryIds: [3, 9], createdAt, updatedAt: createdAt },
+      { id: 12, name: 'Marie', handles: ['marie', 'marie-c'], date: { kind: 'birthday', month: 3, day: 14, year: 1992 }, entryIds: [3, 9], createdAt, updatedAt: createdAt },
     ]);
     expect(personRepository.query).toHaveBeenCalledWith(expect.stringContaining('FROM people p'), [1]);
   });

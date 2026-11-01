@@ -18,6 +18,7 @@ import { LIFE_ERA_LIMIT } from './dto';
 import { LifeErasService } from './life-eras.service';
 import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
 import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
+import { personDatesServiceOn } from '@/modules/people/person-dates.test-helpers';
 
 const anyFilters = {
   search: '',
@@ -49,7 +50,7 @@ describePostgres('PostgreSQL life eras', () => {
     const entries = dataSource.getRepository(Entry);
     const search = new EntrySearchService(entries);
     service = new LifeErasService(dataSource.getRepository(LifeEra));
-    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), search, timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource));
+    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), search, timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
     calendar = new EntryCalendarService(entries, search);
     savedSearches = new SavedSearchesService(dataSource.getRepository(SavedSearch), dataSource.getRepository(BookVersion));
     const source = new BookEntrySourceService(entries, dataSource.getRepository(Diary), savedSearches, search);

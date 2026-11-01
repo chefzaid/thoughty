@@ -18,6 +18,7 @@ import { SavedSearchesService } from '@/modules/saved-searches';
 import { PeopleService } from './people.service';
 import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
 import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
+import { personDatesServiceOn } from '@/modules/people/person-dates.test-helpers';
 
 const anyFilters = {
   search: '',
@@ -61,7 +62,7 @@ describePostgres('PostgreSQL people', () => {
       new EntryInlineImagesService(dataSource.getRepository(Attachment), entries),
     );
     const search = new EntrySearchService(entries);
-    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), search, timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource));
+    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), search, timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
     calendar = new EntryCalendarService(entries, search);
     bin = new RecycleBinService(
       dataSource,
@@ -158,8 +159,8 @@ describePostgres('PostgreSQL people', () => {
     const duplicate = await personNamed('MarieC');
     const saved = await savedSearches.create(writerId, { name: 'Duplicate', diaryId: null, filters: { ...anyFilters, personId: duplicate.id } });
 
-    await expect(people.rename(writerId, marie.id, { name: 'Marie Curie' })).resolves.toEqual(expect.objectContaining({ name: 'Marie Curie' }));
-    await expectApiError(people.rename(otherId, marie.id, { name: 'Mine' }), NotFoundException, 'PERSON_NOT_FOUND');
+    await expect(people.update(writerId, marie.id, { name: 'Marie Curie' })).resolves.toEqual(expect.objectContaining({ name: 'Marie Curie' }));
+    await expectApiError(people.update(otherId, marie.id, { name: 'Mine' }), NotFoundException, 'PERSON_NOT_FOUND');
     await expectApiError(people.merge(writerId, marie.id, { duplicateId: marie.id }), BadRequestException, 'PERSON_MERGE_SAME');
     await expectApiError(people.merge(otherId, marie.id, { duplicateId: duplicate.id }), NotFoundException, 'PERSON_NOT_FOUND');
 

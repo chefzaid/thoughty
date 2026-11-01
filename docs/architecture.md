@@ -47,7 +47,7 @@ flowchart TD
 | `diaries` | diary containers, ordering, default diary, writing goals, moving entries when a diary is deleted |
 | `saved-searches` | named journal filter combinations with their diary scope: list, save, rename, delete, at most 50 per writer |
 | `life-eras` | named date ranges of the writer's life: list, add, change, delete, at most 100 per writer; the journal's `eraId` filter lives in the entries module's `applyEntryListFilters`, era chapters in `buildBook`, and `books` and `memoir` read eras through `LifeErasService` |
-| `people` | people mentioned with `@handle`: list with counts, rename, merge, delete, at most 1,000 per writer; mentions are parsed and linked on every entry save by `EntryMentionsService` in the entries module (composer, edits and both imports), and the journal's `personId` filter lives in `applyEntryListFilters` |
+| `people` | people mentioned with `@handle`: list with counts, rename and date (a birthday or an anniversary, checked in `person-dates.ts`; Highlights reads the day's people through `PersonDatesService` in `PersonDatesModule`, imported by the entries module), merge, delete, at most 1,000 per writer; mentions are parsed and linked on every entry save by `EntryMentionsService` in the entries module (composer, edits and both imports), and the journal's `personId` filter lives in `applyEntryListFilters` |
 | `attachments` | upload validation, object storage, audio transcription; `sendAttachmentFile` (`attachment-file-response.ts`) streams a stored file with its safe headers and byte ranges for both the owner's file route and a share link's |
 | `share-links` | private share links ([ADR 0024](./adr/0024-private-share-links.md)): `ShareLinksService` makes, lists and revokes the writer's links (`/api/share-links`, at most 100 unexpired), and `SharedContentService` answers the public `GET /api/shared/:token…` routes for a reader without an account (the entry, a book version's file, the entry's own attachments), counting views, with one `404` for every refusal and the headers of `SharedResponseHeadersInterceptor` |
 | `ai` | OpenRouter credentials and usage, tag suggestions, inspiration, rephrasing, summaries, chat, semantic search, duplicates, tag organization, writing insights |
@@ -212,6 +212,9 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 |  | `LIFE_ERA_DATES_INVALID` | A life era cannot end before it starts |
 | People | `PERSON_NOT_FOUND` | Person not found |
 |  | `PERSON_MERGE_SAME` | A person cannot be merged into themselves |
+|  | `PERSON_DATE_INVALID` | This day does not exist in that month |
+|  | `PERSON_DATE_YEAR_INVALID` | Write the year with four digits, from 1000 |
+|  | `PERSON_DATE_IN_FUTURE` | A date with its year cannot be in the future |
 | Attachments and audio transcription | `ATTACHMENT_NOT_FOUND` | Attachment not found |
 |  | `ATTACHMENT_FILE_NOT_FOUND` | File not found |
 |  | `ATTACHMENT_FILE_MISSING` | No file provided |

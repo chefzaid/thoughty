@@ -15,6 +15,23 @@ describe('person DTOs', () => {
     await expect(invalidPropertiesLikeApi(UpdatePersonDto, { name: 'Marie', handles: ['m'] })).resolves.toEqual(['handles']);
   });
 
+  it('takes an optional date with its kind, month and day, and the year when known; null removes it', async () => {
+    const withDate = (date: unknown) => invalidPropertiesLikeApi(UpdatePersonDto, { name: 'Marie', date });
+
+    await expect(withDate({ kind: 'birthday', month: 3, day: 14, year: 1992 })).resolves.toEqual([]);
+    await expect(withDate({ kind: 'anniversary', month: 2, day: 29 })).resolves.toEqual([]);
+    await expect(withDate({ kind: 'birthday', month: 2, day: 29, year: null })).resolves.toEqual([]);
+    await expect(withDate(null)).resolves.toEqual([]);
+    await expect(parseLikeApi(UpdatePersonDto, { name: 'Marie', date: { kind: 'birthday', month: '3', day: '14' } }))
+      .resolves.toMatchObject({ date: { kind: 'birthday', month: 3, day: 14 } });
+    await expect(withDate({ kind: 'nameday', month: 3, day: 14 })).resolves.toEqual(['date.kind']);
+    await expect(withDate({ kind: 'birthday', month: 3.5, day: '' })).resolves.toEqual(['date.month', 'date.day']);
+    await expect(withDate({ kind: 'birthday', month: 3, day: 14, year: 'ninety' })).resolves.toEqual(['date.year']);
+    await expect(withDate({ kind: 'birthday', day: 14 })).resolves.toEqual(['date.month']);
+    await expect(withDate({ kind: 'birthday', month: 3, day: 14, label: 'x' })).resolves.toEqual(['date.label']);
+    await expect(withDate('2026-03-14')).resolves.toEqual(['date']);
+  });
+
   it('takes the duplicate to merge by its ID, as a number or as digits', async () => {
     const merge = (duplicateId: unknown) => invalidPropertiesLikeApi(MergePersonDto, { duplicateId });
 

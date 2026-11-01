@@ -1,6 +1,7 @@
 // Response bodies of the entries API.
 import { ApiProperty, ApiPropertyOptional, getSchemaPath } from '@nestjs/swagger';
 import { MAX_MOOD, MIN_MOOD } from '@/common/utils/entry-mood.util';
+import { PersonDateDto } from '@/modules/people/dto/person.dto';
 
 export class EntryResponseDto {
   @ApiProperty()
@@ -137,6 +138,43 @@ export class EntryHighlightsResponseDto {
       'each stays until marked done',
   })
   rereadReminders: EntryResponseDto[];
+
+  @ApiProperty({
+    type: () => [PersonDateHighlightDto],
+    description:
+      'People whose birthday or anniversary is on the writer’s day (`today`), by name; a 29 February date comes on ' +
+      '28 February in a year without a 29th',
+  })
+  personDates: PersonDateHighlightDto[];
+}
+
+export class PersonDateHighlightDto {
+  @ApiProperty({ example: 12 })
+  id: number;
+
+  @ApiProperty({ example: 'Marie' })
+  name: string;
+
+  @ApiProperty({ type: () => PersonDateDto })
+  date: PersonDateDto;
+
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    example: 34,
+    description: 'The age the birthday marks, or the years since the anniversary, on the writer’s day; null without the year',
+  })
+  years: number | null;
+
+  @ApiProperty({
+    example: 8,
+    minimum: 0,
+    description: 'Entries in every diary that mention the person, leaving out the recycle bin and sealed time capsules',
+  })
+  entryCount: number;
+
+  @ApiProperty({ type: () => EntryResponseDto, nullable: true, description: 'The newest of those entries; null when there is none' })
+  latestEntry: EntryResponseDto | null;
 }
 
 export class OpenedTimeCapsuleDto {

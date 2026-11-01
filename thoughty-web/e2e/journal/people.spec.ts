@@ -114,12 +114,12 @@ test.describe('People', () => {
     await expect(list.getByRole('listitem').filter({ hasText: '@paul' })).toContainText('2 entries · last mentioned Oct 18, 2026');
     await expectNoAxeViolations(page, 'main');
 
-    await page.getByRole('button', { name: 'Rename Marie', exact: true }).click();
+    await page.getByRole('button', { name: 'Edit Marie', exact: true }).click();
     const name = page.getByRole('textbox', { name: 'Name shown for @marie' });
     await name.fill('Marie Curie');
     await name.press('Enter');
     await expect(page.locator('#main-content').getByRole('status')).toHaveText('Renamed to Marie Curie.');
-    await expect(page.getByRole('button', { name: 'Rename Marie Curie', exact: true })).toBeFocused();
+    await expect(page.getByRole('button', { name: 'Edit Marie Curie', exact: true })).toBeFocused();
     expect(state.people.find((person) => person.id === 1)?.name).toBe('Marie Curie');
 
     await page.getByRole('button', { name: 'Merge someone into Marie Curie', exact: true }).click();

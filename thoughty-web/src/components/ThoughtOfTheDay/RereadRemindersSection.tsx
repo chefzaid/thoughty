@@ -19,7 +19,7 @@ interface RereadRemindersSectionProps {
 
 /**
  * The entries the writer asked to reread, due today or earlier, in Highlights after the capsules
- * opened lately. Each stays until **Done rereading**, which takes it off the list.
+ * opened lately and the birthdays and anniversaries of the day. Each stays until **Done rereading**, which takes it off the list.
  */
 export default function RereadRemindersSection({ entries, language, formatDate, onSelectEntry, t }: RereadRemindersSectionProps) {
     const reminders = useRereadReminder();

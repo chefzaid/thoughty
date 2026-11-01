@@ -16,6 +16,7 @@ import { EntryInlineImagesService } from '@/modules/entries/entry-inline-images.
 import { RecycleBinService } from './recycle-bin.service';
 import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
 import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
+import { personDatesServiceOn } from '@/modules/people/person-dates.test-helpers';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -63,7 +64,7 @@ describePostgres('PostgreSQL recycle bin', () => {
       timeCapsuleServiceOn(dataSource),
       new EntryInlineImagesService(attachments, entries),
     );
-    queries = new EntriesQueryService(entries, revisions, new EntrySearchService(entries), timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource));
+    queries = new EntriesQueryService(entries, revisions, new EntrySearchService(entries), timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
     removeStoredFiles = jest.fn().mockResolvedValue(undefined);
     bin = new RecycleBinService(
       dataSource,

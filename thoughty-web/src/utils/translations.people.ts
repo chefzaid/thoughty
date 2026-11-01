@@ -16,7 +16,7 @@ export type PeopleTranslationKey =
   | 'personEntryCount_other'
   | 'personLastMentioned'
   | 'personMentionTitle'
-  | 'personRename'
+  | 'personEdit'
   | 'personNameLabel'
   | 'personNameHelp'
   | 'personNameRequired'
@@ -63,13 +63,13 @@ export const peopleTranslations: Record<Language, Record<PeopleTranslationKey, s
     personEntryCount_other: '{count} entries',
     personLastMentioned: 'last mentioned {date}',
     personMentionTitle: 'Entries that mention {name}',
-    personRename: 'Rename {name}',
+    personEdit: 'Edit {name}',
     personNameLabel: 'Name shown for {handle}',
     personNameHelp: 'Your entries keep the text you wrote; only the name shown here changes.',
     personNameRequired: 'Enter a name.',
     personSaving: 'Saving…',
     personRenamed: 'Renamed to {name}.',
-    personSaveFailed: 'The name could not be saved.',
+    personSaveFailed: 'The changes could not be saved.',
     personMerge: 'Merge someone into {name}',
     personMergeTitle: 'Merge into {name}',
     personMergeDescription: 'The person you choose is deleted: their handles then mention {name}, and their entries move to {name}. Your entries keep the text you wrote.',
@@ -109,13 +109,13 @@ export const peopleTranslations: Record<Language, Record<PeopleTranslationKey, s
     personEntryCount_other: '{count} entrées',
     personLastMentioned: 'dernière mention le {date}',
     personMentionTitle: 'Entrées qui mentionnent {name}',
-    personRename: 'Renommer {name}',
+    personEdit: 'Modifier {name}',
     personNameLabel: 'Nom affiché pour {handle}',
     personNameHelp: 'Vos entrées gardent le texte que vous avez écrit ; seul le nom affiché ici change.',
     personNameRequired: 'Saisissez un nom.',
     personSaving: 'Enregistrement…',
     personRenamed: 'Renommé en {name}.',
-    personSaveFailed: 'Le nom n’a pas pu être enregistré.',
+    personSaveFailed: 'Les modifications n’ont pas pu être enregistrées.',
     personMerge: 'Fusionner quelqu’un avec {name}',
     personMergeTitle: 'Fusionner avec {name}',
     personMergeDescription: 'La personne choisie est supprimée : ses identifiants mentionnent alors {name}, et ses entrées passent à {name}. Vos entrées gardent le texte que vous avez écrit.',

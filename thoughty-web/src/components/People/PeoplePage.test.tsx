@@ -6,13 +6,13 @@ import PeoplePage from './PeoplePage';
 import type { Person } from '../../services/api';
 import { getTranslation } from '../../utils/translations';
 
-const person = (id: number, name: string, handles: string[], entryCount: number, lastMentionedOn: string | null = null): Person => ({
-  id, name, handles, entryCount, lastMentionedOn, createdAt: '', updatedAt: '',
+const person = (id: number, name: string, handles: string[], entryCount: number, lastMentionedOn: string | null = null, date: Person['date'] = null): Person => ({
+  id, name, handles, entryCount, lastMentionedOn, date, createdAt: '', updatedAt: '',
 });
 
 const peopleHook = vi.hoisted(() => ({
   state: { people: [] as Person[], isLoading: false, isError: false, isSuccess: true },
-  rename: vi.fn(),
+  update: vi.fn(),
   merge: vi.fn(),
   remove: vi.fn(),
 }));
@@ -26,7 +26,7 @@ vi.mock('./usePeople', () => ({
       data: peopleHook.state.isSuccess ? { people: peopleHook.state.people, limit: 1000 } : undefined,
     },
     people: peopleHook.state.people,
-    rename: peopleHook.rename,
+    update: peopleHook.update,
     merge: peopleHook.merge,
     remove: peopleHook.remove,
   }),
@@ -35,7 +35,7 @@ vi.mock('./usePeople', () => ({
 const t = (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params);
 const marie = person(12, 'Marie', ['marie'], 3, '2026-10-20');
 const marieC = person(14, 'MarieC', ['mariec'], 1);
-const paul = person(15, 'Paul', ['paul'], 0);
+const paul = person(15, 'Paul', ['paul'], 0, null, { kind: 'anniversary', month: 2, day: 29, year: null });
 
 function renderPage(theme: 'light' | 'dark' = 'dark', language = 'en') {
   render(<MemoryRouter><PeoplePage theme={theme} language={language} t={t} /></MemoryRouter>);
@@ -59,6 +59,66 @@ describe('PeoplePage', () => {
     expect(items[0]).toHaveTextContent('@marie');
     expect(items[0]).toHaveTextContent('3 entries · last mentioned Oct 20, 2026');
     expect(items[2]).toHaveTextContent('0 entries');
+    expect(items[2]).toHaveTextContent('Anniversary: February 29');
+    expect(items[0]).not.toHaveTextContent('Birthday');
+  });
+
+  it('gives a person a birthday with its year, checking the month, day and year before saving', async () => {
+    peopleHook.update
+      .mockResolvedValueOnce({ data: null, error: 'apiError_PERSON_DATE_IN_FUTURE' })
+      .mockResolvedValueOnce({ data: marie, error: null });
+    renderPage('light');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Marie' }));
+    const group = screen.getByRole('group', { name: 'Birthday or anniversary' });
+    expect(group).toHaveAccessibleDescription(/Highlights shows Marie on this day each year/);
+    expect(within(group).queryByRole('combobox', { name: 'Month' })).not.toBeInTheDocument();
+    fireEvent.change(within(group).getByRole('combobox', { name: 'Date' }), { target: { value: 'birthday' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Choose the month and the day.');
+    expect(group).toHaveAccessibleDescription(/Choose the month and the day/);
+    expect(within(group).getByRole('combobox', { name: 'Date' })).toHaveFocus();
+
+    // The days follow the month: 29 in February, and a day the new month lacks is cleared
+    fireEvent.change(within(group).getByRole('combobox', { name: 'Month' }), { target: { value: '1' } });
+    fireEvent.change(within(group).getByRole('combobox', { name: 'Day' }), { target: { value: '31' } });
+    fireEvent.change(within(group).getByRole('combobox', { name: 'Month' }), { target: { value: '2' } });
+    expect(within(group).getByRole('combobox', { name: 'Day' })).toHaveValue('');
+    expect(within(within(group).getByRole('combobox', { name: 'Day' })).getAllByRole('option')).toHaveLength(30);
+    fireEvent.change(within(group).getByRole('combobox', { name: 'Day' }), { target: { value: '14' } });
+    const year = within(group).getByRole('textbox', { name: 'Year (optional)' });
+    expect(year).toHaveAccessibleDescription('Leave it empty if you do not know the year.');
+    fireEvent.change(year, { target: { value: '92' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Write the year with four digits, from 1000.');
+    expect(peopleHook.update).not.toHaveBeenCalled();
+
+    fireEvent.change(year, { target: { value: '2092' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('With its year, the date cannot be in the future.');
+    expect(within(group).getByRole('combobox', { name: 'Date' })).toHaveFocus();
+    fireEvent.change(year, { target: { value: '1992' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(screen.queryByRole('group')).not.toBeInTheDocument());
+    expect(peopleHook.update).toHaveBeenLastCalledWith(12, { name: 'Marie', date: { kind: 'birthday', month: 2, day: 14, year: 1992 } });
+    expect(screen.getByRole('status')).toHaveTextContent('Saved for Marie.');
+    expect(screen.getByRole('button', { name: 'Edit Marie' })).toBeInTheDocument();
+  });
+
+  it('removes a date by choosing None, in French', async () => {
+    peopleHook.update.mockResolvedValueOnce({ data: { ...paul, date: null }, error: null });
+    const fr = (key: string, params?: Record<string, string | number>) => getTranslation('fr', key, params);
+    render(<MemoryRouter><PeoplePage language="fr" t={fr} /></MemoryRouter>);
+
+    expect(screen.getByText('Date anniversaire : 29 février')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Modifier Paul' }));
+    const group = screen.getByRole('group', { name: 'Anniversaire ou date anniversaire' });
+    expect(within(group).getByRole('combobox', { name: 'Mois' })).toHaveDisplayValue('février');
+    fireEvent.change(within(group).getByRole('combobox', { name: 'Date' }), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+
+    await waitFor(() => expect(peopleHook.update).toHaveBeenCalledWith(15, { name: 'Paul', date: null }));
   });
 
   it('finds people by name or handle', () => {
@@ -71,17 +131,17 @@ describe('PeoplePage', () => {
   });
 
   it('renames the name shown in place, refusing an empty name and showing a refused save', async () => {
-    peopleHook.rename
+    peopleHook.update
       .mockResolvedValueOnce({ data: null, error: 'apiError_PERSON_NOT_FOUND' })
       .mockResolvedValueOnce({ data: { ...marie, name: 'Marie Curie' }, error: null });
     renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Rename Marie' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Marie' }));
     const field = screen.getByRole('textbox', { name: 'Name shown for @marie' });
     fireEvent.change(field, { target: { value: '  ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(screen.getByRole('alert')).toHaveTextContent('Enter a name.');
-    expect(peopleHook.rename).not.toHaveBeenCalled();
+    expect(peopleHook.update).not.toHaveBeenCalled();
 
     fireEvent.change(field, { target: { value: ' Marie Curie ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -89,23 +149,23 @@ describe('PeoplePage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => expect(screen.queryByRole('textbox', { name: /Name shown/ })).not.toBeInTheDocument());
-    expect(peopleHook.rename).toHaveBeenLastCalledWith(12, 'Marie Curie');
+    expect(peopleHook.update).toHaveBeenLastCalledWith(12, { name: 'Marie Curie' });
     expect(screen.getByRole('status')).toHaveTextContent('Renamed to Marie Curie.');
   });
 
   it('leaves the name alone when it is unchanged, and cancels with Escape', async () => {
     renderPage();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Rename Paul' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Paul' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(screen.queryByRole('textbox', { name: /Name shown/ })).not.toBeInTheDocument());
 
-    fireEvent.click(screen.getByRole('button', { name: 'Rename Paul' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Paul' }));
     fireEvent.keyDown(screen.getByRole('textbox', { name: 'Name shown for @paul' }), { key: 'Escape' });
     expect(screen.queryByRole('textbox', { name: /Name shown/ })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Rename Paul' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Paul' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(peopleHook.rename).not.toHaveBeenCalled();
+    expect(peopleHook.update).not.toHaveBeenCalled();
   });
 
   it('merges a duplicate chosen in a dialog that explains what merging does', async () => {

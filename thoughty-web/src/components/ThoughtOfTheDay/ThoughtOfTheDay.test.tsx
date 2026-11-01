@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import ThoughtOfTheDay from './ThoughtOfTheDay';
 
 vi.mock('../../contexts/AuthContext', () => {
@@ -88,6 +89,33 @@ describe('ThoughtOfTheDay', () => {
         fireEvent.click(screen.getByRole('button', { name: /2025-10-27/ }));
         expect(onNavigateToEntry).toHaveBeenCalledWith('2025-10-27', 1, null);
         expect(onClose).toHaveBeenCalled();
+    });
+
+    it('shows the birthdays of the day after the opened capsules and before the random entry, and closes on a person', async () => {
+        const capsule = { id: 9, date: '2025-10-27', index: 1, content: 'Dear future me' };
+        const latest = { id: 11, date: '2026-03-01', index: 1, content: 'Tea with @Marie' };
+        (globalThis.fetch as Mock).mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+                randomEntry: { id: 12, date: '2024-01-01', index: 1, content: 'Hello' },
+                onThisDay: {},
+                openedCapsules: [{ entry: capsule, sealed_at: '2025-10-27T12:00:00Z', opened_at: '2026-10-27T07:00:00Z', opened_early: false }],
+                rereadReminders: [],
+                personDates: [{ id: 5, name: 'Marie', date: { kind: 'birthday', month: 3, day: 14, year: 1992 }, years: 34, entryCount: 2, latestEntry: latest }],
+            }),
+        });
+        const onNavigateToEntry = vi.fn();
+        const onClose = vi.fn();
+
+        render(<MemoryRouter><ThoughtOfTheDay isOpen={true} onClose={onClose} theme="dark" t={mockT} onNavigateToEntry={onNavigateToEntry} /></MemoryRouter>);
+
+        expect(await screen.findByText('personDatesHighlightsTitle')).toBeInTheDocument();
+        const titles = screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent);
+        expect(titles).toEqual(['timeCapsuleHighlightsTitle', 'personDatesHighlightsTitle', 'randomThought']);
+        fireEvent.click(screen.getByRole('button', { name: /Tea with @Marie/ }));
+        expect(onNavigateToEntry).toHaveBeenCalledWith('2026-03-01', 1, null);
+        fireEvent.click(screen.getByRole('link', { name: 'personMentionTitle' }));
+        expect(onClose).toHaveBeenCalledTimes(2);
     });
 
     it('shows empty state when no highlights', async () => {

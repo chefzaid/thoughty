@@ -18,7 +18,7 @@ interface GlossaryTerm {
 const GLOSSARY: Record<string, GlossaryTerm> = {
   highlights: {
     name: { en: 'Highlights', fr: 'Moments forts' },
-    keys: ['highlights', 'highlightsTitle', 'seeHighlights', 'noHighlights', 'highlightsError', 'rereadDialogHint'],
+    keys: ['highlights', 'highlightsTitle', 'seeHighlights', 'noHighlights', 'highlightsError', 'rereadDialogHint', 'personDateHelp'],
     never: { fr: ['À la une', 'mises en avant', 'temps forts'] },
   },
   onThisDay: {

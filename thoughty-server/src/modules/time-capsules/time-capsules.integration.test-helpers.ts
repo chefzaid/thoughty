@@ -22,6 +22,7 @@ import { PublicFeedService } from '@/modules/social/public-feed.service';
 import { TimeCapsuleDeliveryService } from './time-capsule-delivery.service';
 import { timeCapsuleServiceOn } from './time-capsules.test-helpers';
 import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
+import { personDatesServiceOn } from '@/modules/people/person-dates.test-helpers';
 
 /** The journal services as the API wires them, on a PostgreSQL integration spec's database, with email captured. */
 export function buildTimeCapsuleBed(dataSource: DataSource) {
@@ -42,7 +43,7 @@ export function buildTimeCapsuleBed(dataSource: DataSource) {
     timeCapsules,
     new EntryInlineImagesService(dataSource.getRepository(Attachment), entries),
   );
-  const queries = new EntriesQueryService(entries, revisions, search, timeCapsules, rereadReminderServiceOn(dataSource));
+  const queries = new EntriesQueryService(entries, revisions, search, timeCapsules, rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
   const journal = new EntriesService(
     queries,
     new EntryLookupService(entries),

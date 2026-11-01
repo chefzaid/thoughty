@@ -2264,8 +2264,8 @@ export interface paths {
         delete: operations["PeopleController_delete"];
         options?: never;
         head?: never;
-        /** Change the name shown for a person; their handles and the entries’ text stay as they are */
-        patch: operations["PeopleController_rename"];
+        /** Change the name shown for a person and their birthday or anniversary; their handles and the entries’ text stay as they are */
+        patch: operations["PeopleController_update"];
         trace?: never;
     };
     "/api/people/{id}/merge": {
@@ -3436,6 +3436,114 @@ export interface components {
             opened_early: boolean;
         };
         /**
+         * @description What the date marks: a birthday or an anniversary (a wedding, a meeting, a loss)
+         * @example birthday
+         * @enum {string}
+         */
+        PersonDateKind: "birthday" | "anniversary";
+        /**
+         * @example {
+         *       "kind": "birthday",
+         *       "month": 3,
+         *       "day": 14,
+         *       "year": 1992
+         *     }
+         */
+        PersonDateDto: {
+            /**
+             * @description What the date marks: a birthday or an anniversary (a wedding, a meeting, a loss)
+             * @example birthday
+             */
+            kind: components["schemas"]["PersonDateKind"];
+            /** @example 3 */
+            month: number;
+            /** @example 14 */
+            day: number;
+            /**
+             * @description Null when the writer does not know the year
+             * @example 1992
+             */
+            year: number | null;
+        };
+        /**
+         * @example {
+         *       "id": 12,
+         *       "name": "Marie",
+         *       "date": {
+         *         "kind": "birthday",
+         *         "month": 3,
+         *         "day": 14,
+         *         "year": 1992
+         *       },
+         *       "years": 34,
+         *       "entryCount": 8,
+         *       "latestEntry": {
+         *         "id": 1,
+         *         "user_id": 1,
+         *         "diary_id": 1,
+         *         "date": "2026-06-24",
+         *         "index": 1,
+         *         "title": "Morning walk by the river",
+         *         "time_of_day": "08:30",
+         *         "mood": 4,
+         *         "feelings": [
+         *           "calm",
+         *           "grateful"
+         *         ],
+         *         "tags": [
+         *           "reflection"
+         *         ],
+         *         "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+         *         "format": "plain",
+         *         "visibility": "private",
+         *         "is_favorite": true,
+         *         "is_archived": true,
+         *         "is_pinned": true,
+         *         "diary_name": "Daily Journal",
+         *         "diary_icon": "journal",
+         *         "diary_color": "#2A9D8F",
+         *         "attachments": [
+         *           {
+         *             "id": 1,
+         *             "original_filename": "Daily Journal",
+         *             "stored_filename": "Daily Journal",
+         *             "mimetype": "example",
+         *             "size": 1,
+         *             "poster_filename": "Daily Journal",
+         *             "transcript": "example",
+         *             "transcribed_at": "2026-06-24T10:00:00.000Z"
+         *           }
+         *         ],
+         *         "created_at": "2026-06-24T10:00:00.000Z",
+         *         "sealed_until": null,
+         *         "reread_on": null,
+         *         "search_matches": [
+         *           "morning run",
+         *           "swimming"
+         *         ]
+         *       }
+         *     }
+         */
+        PersonDateHighlightDto: {
+            /** @example 12 */
+            id: number;
+            /** @example Marie */
+            name: string;
+            date: components["schemas"]["PersonDateDto"];
+            /**
+             * @description The age the birthday marks, or the years since the anniversary, on the writer’s day; null without the year
+             * @example 34
+             */
+            years: number | null;
+            /**
+             * @description Entries in every diary that mention the person, leaving out the recycle bin and sealed time capsules
+             * @example 8
+             */
+            entryCount: number;
+            /** @description The newest of those entries; null when there is none */
+            latestEntry: components["schemas"]["EntryResponseDto"] | null;
+        };
+        /**
          * @example {
          *       "randomEntry": {
          *         "id": 1,
@@ -3588,6 +3696,65 @@ export interface components {
          *             "swimming"
          *           ]
          *         }
+         *       ],
+         *       "personDates": [
+         *         {
+         *           "id": 12,
+         *           "name": "Marie",
+         *           "date": {
+         *             "kind": "birthday",
+         *             "month": 3,
+         *             "day": 14,
+         *             "year": 1992
+         *           },
+         *           "years": 34,
+         *           "entryCount": 8,
+         *           "latestEntry": {
+         *             "id": 1,
+         *             "user_id": 1,
+         *             "diary_id": 1,
+         *             "date": "2026-06-24",
+         *             "index": 1,
+         *             "title": "Morning walk by the river",
+         *             "time_of_day": "08:30",
+         *             "mood": 4,
+         *             "feelings": [
+         *               "calm",
+         *               "grateful"
+         *             ],
+         *             "tags": [
+         *               "reflection"
+         *             ],
+         *             "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+         *             "format": "plain",
+         *             "visibility": "private",
+         *             "is_favorite": true,
+         *             "is_archived": true,
+         *             "is_pinned": true,
+         *             "diary_name": "Daily Journal",
+         *             "diary_icon": "journal",
+         *             "diary_color": "#2A9D8F",
+         *             "attachments": [
+         *               {
+         *                 "id": 1,
+         *                 "original_filename": "Daily Journal",
+         *                 "stored_filename": "Daily Journal",
+         *                 "mimetype": "example",
+         *                 "size": 1,
+         *                 "poster_filename": "Daily Journal",
+         *                 "transcript": "example",
+         *                 "transcribed_at": "2026-06-24T10:00:00.000Z"
+         *               }
+         *             ],
+         *             "created_at": "2026-06-24T10:00:00.000Z",
+         *             "sealed_until": null,
+         *             "reread_on": null,
+         *             "search_matches": [
+         *               "morning run",
+         *               "swimming"
+         *             ]
+         *           }
+         *         }
          *       ]
          *     }
          */
@@ -3608,6 +3775,8 @@ export interface components {
             openedCapsules: components["schemas"]["OpenedTimeCapsuleDto"][];
             /** @description Entries the writer asked to reread on or before their day (`today`), longest waiting first, up to 10; each stays until marked done */
             rereadReminders: components["schemas"]["EntryResponseDto"][];
+            /** @description People whose birthday or anniversary is on the writer’s day (`today`), by name; a 29 February date comes on 28 February in a year without a 29th */
+            personDates: components["schemas"]["PersonDateHighlightDto"][];
         };
         /**
          * @example {
@@ -8835,6 +9004,12 @@ export interface components {
          *       ],
          *       "entryCount": 8,
          *       "lastMentionedOn": "2026-10-21",
+         *       "date": {
+         *         "kind": "birthday",
+         *         "month": 3,
+         *         "day": 14,
+         *         "year": 1992
+         *       },
          *       "createdAt": "2026-10-27T09:30:00.000Z",
          *       "updatedAt": "2026-10-27T09:30:00.000Z"
          *     }
@@ -8866,6 +9041,8 @@ export interface components {
              * @example 2026-10-21
              */
             lastMentionedOn: string | null;
+            /** @description Their birthday or anniversary, shown in Highlights on its day; null when none is set */
+            date: components["schemas"]["PersonDateDto"] | null;
             /**
              * Format: date-time
              * @example 2026-10-27T09:30:00.000Z
@@ -8889,6 +9066,12 @@ export interface components {
          *           ],
          *           "entryCount": 8,
          *           "lastMentionedOn": "2026-10-21",
+         *           "date": {
+         *             "kind": "birthday",
+         *             "month": 3,
+         *             "day": 14,
+         *             "year": 1992
+         *           },
          *           "createdAt": "2026-10-27T09:30:00.000Z",
          *           "updatedAt": "2026-10-27T09:30:00.000Z"
          *         }
@@ -8907,12 +9090,47 @@ export interface components {
         };
         /**
          * @example {
-         *       "name": "Marie Curie"
+         *       "kind": "birthday",
+         *       "month": 3,
+         *       "day": 14,
+         *       "year": 1992
+         *     }
+         */
+        PersonDateInputDto: {
+            /**
+             * @description What the date marks: a birthday or an anniversary (a wedding, a meeting, a loss)
+             * @example birthday
+             */
+            kind: components["schemas"]["PersonDateKind"];
+            /** @example 3 */
+            month: number;
+            /**
+             * @description A day the month has (`400 PERSON_DATE_INVALID` otherwise); 29 February only in a leap year when the year is given
+             * @example 14
+             */
+            day: number;
+            /**
+             * @description The year, when the writer knows it: four digits (`400 PERSON_DATE_YEAR_INVALID`), and with it the date cannot be later than today anywhere on Earth (`400 PERSON_DATE_IN_FUTURE`). Null or left out when unknown.
+             * @example 1992
+             */
+            year?: number | null;
+        };
+        /**
+         * @example {
+         *       "name": "Marie Curie",
+         *       "date": {
+         *         "kind": "birthday",
+         *         "month": 3,
+         *         "day": 14,
+         *         "year": 1992
+         *       }
          *     }
          */
         UpdatePersonDto: {
             /** @example Marie Curie */
             name: string;
+            /** @description Their birthday or anniversary, shown in Highlights each year on its day; null removes it, left out keeps it */
+            date?: components["schemas"]["PersonDateInputDto"] | null;
         };
         /**
          * @example {
@@ -9443,7 +9661,7 @@ export interface components {
          * @example VALIDATION_FAILED
          * @enum {string}
          */
-        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "COMMENT_NOT_FOUND" | "FEATURE_REQUEST_NOT_FOUND";
+        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "COMMENT_NOT_FOUND" | "FEATURE_REQUEST_NOT_FOUND";
         /**
          * @example {
          *       "statusCode": 401,
@@ -11471,6 +11689,65 @@ export interface operations {
                      *             "morning run",
                      *             "swimming"
                      *           ]
+                     *         }
+                     *       ],
+                     *       "personDates": [
+                     *         {
+                     *           "id": 12,
+                     *           "name": "Marie",
+                     *           "date": {
+                     *             "kind": "birthday",
+                     *             "month": 3,
+                     *             "day": 14,
+                     *             "year": 1992
+                     *           },
+                     *           "years": 34,
+                     *           "entryCount": 8,
+                     *           "latestEntry": {
+                     *             "id": 1,
+                     *             "user_id": 1,
+                     *             "diary_id": 1,
+                     *             "date": "2026-06-24",
+                     *             "index": 1,
+                     *             "title": "Morning walk by the river",
+                     *             "time_of_day": "08:30",
+                     *             "mood": 4,
+                     *             "feelings": [
+                     *               "calm",
+                     *               "grateful"
+                     *             ],
+                     *             "tags": [
+                     *               "reflection"
+                     *             ],
+                     *             "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                     *             "format": "plain",
+                     *             "visibility": "private",
+                     *             "is_favorite": true,
+                     *             "is_archived": true,
+                     *             "is_pinned": true,
+                     *             "diary_name": "Daily Journal",
+                     *             "diary_icon": "journal",
+                     *             "diary_color": "#2A9D8F",
+                     *             "attachments": [
+                     *               {
+                     *                 "id": 1,
+                     *                 "original_filename": "Daily Journal",
+                     *                 "stored_filename": "Daily Journal",
+                     *                 "mimetype": "example",
+                     *                 "size": 1,
+                     *                 "poster_filename": "Daily Journal",
+                     *                 "transcript": "example",
+                     *                 "transcribed_at": "2026-06-24T10:00:00.000Z"
+                     *               }
+                     *             ],
+                     *             "created_at": "2026-06-24T10:00:00.000Z",
+                     *             "sealed_until": null,
+                     *             "reread_on": null,
+                     *             "search_matches": [
+                     *               "morning run",
+                     *               "swimming"
+                     *             ]
+                     *           }
                      *         }
                      *       ]
                      *     }
@@ -18234,6 +18511,12 @@ export interface operations {
                      *           ],
                      *           "entryCount": 8,
                      *           "lastMentionedOn": "2026-10-21",
+                     *           "date": {
+                     *             "kind": "birthday",
+                     *             "month": 3,
+                     *             "day": 14,
+                     *             "year": 1992
+                     *           },
                      *           "createdAt": "2026-10-27T09:30:00.000Z",
                      *           "updatedAt": "2026-10-27T09:30:00.000Z"
                      *         }
@@ -18290,7 +18573,7 @@ export interface operations {
             };
         };
     };
-    PeopleController_rename: {
+    PeopleController_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -18303,14 +18586,20 @@ export interface operations {
             content: {
                 /**
                  * @example {
-                 *       "name": "Marie Curie"
+                 *       "name": "Marie Curie",
+                 *       "date": {
+                 *         "kind": "birthday",
+                 *         "month": 3,
+                 *         "day": 14,
+                 *         "year": 1992
+                 *       }
                  *     }
                  */
                 "application/json": components["schemas"]["UpdatePersonDto"];
             };
         };
         responses: {
-            /** @description Person renamed */
+            /** @description Person saved */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -18326,6 +18615,12 @@ export interface operations {
                      *       ],
                      *       "entryCount": 8,
                      *       "lastMentionedOn": "2026-10-21",
+                     *       "date": {
+                     *         "kind": "birthday",
+                     *         "month": 3,
+                     *         "day": 14,
+                     *         "year": 1992
+                     *       },
                      *       "createdAt": "2026-10-27T09:30:00.000Z",
                      *       "updatedAt": "2026-10-27T09:30:00.000Z"
                      *     }
@@ -18333,7 +18628,7 @@ export interface operations {
                     "application/json": components["schemas"]["PersonResponseDto"];
                 };
             };
-            /** @description Invalid name */
+            /** @description Invalid name, or a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -18342,7 +18637,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "statusCode": 400,
-                     *       "message": "Invalid name",
+                     *       "message": "Invalid name, or a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE)",
                      *       "error": "Bad Request",
                      *       "code": "VALIDATION_FAILED"
                      *     }
@@ -18406,6 +18701,12 @@ export interface operations {
                      *       ],
                      *       "entryCount": 8,
                      *       "lastMentionedOn": "2026-10-21",
+                     *       "date": {
+                     *         "kind": "birthday",
+                     *         "month": 3,
+                     *         "day": 14,
+                     *         "year": 1992
+                     *       },
                      *       "createdAt": "2026-10-27T09:30:00.000Z",
                      *       "updatedAt": "2026-10-27T09:30:00.000Z"
                      *     }

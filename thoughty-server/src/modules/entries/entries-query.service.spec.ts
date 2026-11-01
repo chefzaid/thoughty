@@ -9,6 +9,7 @@ describe('EntriesQueryService', () => {
   let entrySearch: Record<string, jest.Mock>;
   let timeCapsules: Record<string, jest.Mock>;
   let rereadReminders: Record<string, jest.Mock>;
+  let personDates: Record<string, jest.Mock>;
 
   beforeEach(() => {
     entryRepository = {
@@ -34,12 +35,14 @@ describe('EntriesQueryService', () => {
 
     timeCapsules = { findRecentlyOpened: jest.fn().mockResolvedValue([]) };
     rereadReminders = { findDue: jest.fn().mockResolvedValue([]) };
+    personDates = { findOn: jest.fn().mockResolvedValue([]) };
     service = new EntriesQueryService(
       entryRepository as never,
       revisionRepository as never,
       entrySearch as never,
       timeCapsules as never,
       rereadReminders as never,
+      personDates as never,
     );
   });
 
@@ -324,6 +327,9 @@ describe('EntriesQueryService', () => {
     expect(onThisDayQb.andWhere).toHaveBeenCalledWith("TO_CHAR(e.date, 'MM-DD') = :mmdd", { mmdd: '01-15' });
     expect(rereadReminders.findDue).toHaveBeenCalledWith(7, 3, '2024-01-15');
     expect(result.rereadReminders).toEqual([]);
+    // People are the writer's, not a diary's: their dates are found by the day alone
+    expect(personDates.findOn).toHaveBeenCalledWith(7, '2024-01-15');
+    expect(result.personDates).toEqual([]);
   });
 
   it.each([
@@ -348,6 +354,25 @@ describe('EntriesQueryService', () => {
     expect(result.currentDate).toEqual(currentDate);
     expect(result.onThisDay).toEqual({ [currentDate.year - 2025]: [expect.objectContaining({ id: 4 })] });
     expect(rereadReminders.findDue).toHaveBeenCalledWith(7, undefined, today);
+    expect(personDates.findOn).toHaveBeenCalledWith(7, today);
+  });
+
+  it('shows the birthdays and anniversaries of the day with the newest entry about each person', async () => {
+    entryRepository.createQueryBuilder
+      .mockReturnValueOnce(createQueryBuilder({ getOne: jest.fn().mockResolvedValue(null) }))
+      .mockReturnValueOnce(createQueryBuilder({ getRawAndEntities: jest.fn().mockResolvedValue({ raw: [], entities: [] }) }));
+    const date = { kind: 'birthday', month: 3, day: 14, year: 1992 };
+    personDates.findOn.mockResolvedValue([
+      { id: 12, name: 'Marie', date, years: 34, entryCount: 2, latestEntry: { id: 21, date: '2026-03-01', content: 'Tea with @Marie', tags: [], sealedUntil: null } },
+      { id: 13, name: 'Paul', date: { ...date, kind: 'anniversary', year: null }, years: null, entryCount: 0, latestEntry: null },
+    ]);
+
+    const result = await service.getHighlights(7, { today: '2026-03-14' });
+
+    expect(result.personDates).toEqual([
+      { id: 12, name: 'Marie', date, years: 34, entryCount: 2, latestEntry: expect.objectContaining({ id: 21, content: 'Tea with @Marie' }) },
+      { id: 13, name: 'Paul', date: { ...date, kind: 'anniversary', year: null }, years: null, entryCount: 0, latestEntry: null },
+    ]);
   });
 
   it('shows the entries the writer asked to reread by their own day', async () => {

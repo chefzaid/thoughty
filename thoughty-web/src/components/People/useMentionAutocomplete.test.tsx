@@ -10,7 +10,7 @@ import { peopleByHandle } from '../../utils/mentions';
 import { getTranslation } from '../../utils/translations';
 
 const person = (id: number, name: string, handles: string[], entryCount: number): Person => ({
-  id, name, handles, entryCount, lastMentionedOn: null, createdAt: '', updatedAt: '',
+  id, name, handles, entryCount, lastMentionedOn: null, date: null, createdAt: '', updatedAt: '',
 });
 const people = [person(1, 'Marie', ['marie'], 4), person(2, 'Martin Dupont', ['martin'], 1), person(3, 'Zoë', ['zoe'], 2)];
 const t = (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params);

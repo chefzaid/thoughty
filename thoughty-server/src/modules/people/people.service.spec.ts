@@ -6,8 +6,9 @@ import { PEOPLE_LIMIT } from '@/modules/entries';
 import { PeopleService } from './people.service';
 
 const createdAt = new Date('2026-10-27T09:00:00Z');
-const marieRow = { id: 12, name: 'Marie', handles: ['marie'], entryCount: '3', lastMentionedOn: '2026-10-20', createdAt, updatedAt: createdAt };
-const marie = { ...marieRow, entryCount: 3 };
+const noDate = { dateKind: null, dateMonth: null, dateDay: null, dateYear: null };
+const marieRow = { id: 12, name: 'Marie', handles: ['marie'], entryCount: '3', lastMentionedOn: '2026-10-20', ...noDate, createdAt, updatedAt: createdAt };
+const marie = { id: 12, name: 'Marie', handles: ['marie'], entryCount: 3, lastMentionedOn: '2026-10-20', date: null, createdAt, updatedAt: createdAt };
 
 describe('PeopleService', () => {
   let repository: Record<string, jest.Mock> & { manager?: unknown };
@@ -39,13 +40,50 @@ describe('PeopleService', () => {
     expect(parameters).toEqual([7, null]);
   });
 
-  it('renames only the writer’s own person', async () => {
-    repository.findOne.mockResolvedValueOnce({ id: 12, userId: 7, name: 'Marie' }).mockResolvedValueOnce(null);
+  it('shows a person’s date with its year, or null for the year when it is not known', async () => {
+    (repository.manager as { query: jest.Mock }).query.mockResolvedValue([
+      { ...marieRow, dateKind: 'birthday', dateMonth: 3, dateDay: 14, dateYear: 1992 },
+      { ...marieRow, id: 13, dateKind: 'anniversary', dateMonth: '2', dateDay: '29', dateYear: null },
+    ]);
 
-    await expect(service.rename(7, 12, { name: 'Marie Curie' })).resolves.toEqual(marie);
+    const { people } = await service.list(7);
+    expect(people.map((person) => person.date)).toEqual([
+      { kind: 'birthday', month: 3, day: 14, year: 1992 },
+      { kind: 'anniversary', month: 2, day: 29, year: null },
+    ]);
+  });
+
+  it('renames only the writer’s own person, keeping their date when none is sent', async () => {
+    repository.findOne.mockResolvedValueOnce({ id: 12, userId: 7, name: 'Marie', ...noDate, dateKind: 'birthday', dateMonth: 3, dateDay: 14 }).mockResolvedValueOnce(null);
+
+    await expect(service.update(7, 12, { name: 'Marie Curie' })).resolves.toEqual(marie);
     expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 12, userId: 7 } });
-    expect(repository.save).toHaveBeenCalledWith({ id: 12, userId: 7, name: 'Marie Curie' });
-    await expectApiError(service.rename(8, 12, { name: 'Mine' }), NotFoundException, 'PERSON_NOT_FOUND');
+    expect(repository.save).toHaveBeenCalledWith({ id: 12, userId: 7, name: 'Marie Curie', ...noDate, dateKind: 'birthday', dateMonth: 3, dateDay: 14 });
+    await expectApiError(service.update(8, 12, { name: 'Mine' }), NotFoundException, 'PERSON_NOT_FOUND');
+  });
+
+  it('sets a birthday or an anniversary with or without its year, and removes it with null', async () => {
+    const now = new Date('2026-11-01T12:00:00Z');
+    repository.findOne.mockImplementation(async () => ({ id: 12, userId: 7, name: 'Marie', ...noDate }));
+
+    await service.update(7, 12, { name: 'Marie', date: { kind: 'birthday', month: 3, day: 14, year: 1992 } }, now);
+    expect(repository.save).toHaveBeenLastCalledWith(expect.objectContaining({ dateKind: 'birthday', dateMonth: 3, dateDay: 14, dateYear: 1992 }));
+    await service.update(7, 12, { name: 'Marie', date: { kind: 'anniversary', month: 2, day: 29 } }, now);
+    expect(repository.save).toHaveBeenLastCalledWith(expect.objectContaining({ dateKind: 'anniversary', dateMonth: 2, dateDay: 29, dateYear: null }));
+    await service.update(7, 12, { name: 'Marie', date: null }, now);
+    expect(repository.save).toHaveBeenLastCalledWith(expect.objectContaining(noDate));
+  });
+
+  it('refuses a date that cannot be, with its own code, and saves nothing', async () => {
+    const now = new Date('2026-11-01T12:00:00Z');
+    repository.findOne.mockImplementation(async () => ({ id: 12, userId: 7, name: 'Marie', ...noDate }));
+    const update = (date: { month: number; day: number; year?: number | null }) => service.update(7, 12, { name: 'Marie', date: { kind: 'birthday', ...date } }, now);
+
+    await expectApiError(update({ month: 4, day: 31 }), BadRequestException, 'PERSON_DATE_INVALID');
+    await expectApiError(update({ month: 2, day: 29, year: 2023 }), BadRequestException, 'PERSON_DATE_INVALID');
+    await expectApiError(update({ month: 3, day: 14, year: 92 }), BadRequestException, 'PERSON_DATE_YEAR_INVALID');
+    await expectApiError(update({ month: 11, day: 3, year: 2026 }), BadRequestException, 'PERSON_DATE_IN_FUTURE');
+    expect(repository.save).not.toHaveBeenCalled();
   });
 
   it('merges a duplicate under the people lock: handles, entries and saved searches move, then it goes', async () => {
@@ -55,8 +93,9 @@ describe('PeopleService', () => {
     expect(statements[0]).toEqual(['SELECT pg_advisory_xact_lock(hashtext($1), $2)', ['people', 7]]);
     expect(repository.count).toHaveBeenCalledWith({ where: { id: In([12, 14]), userId: 7 } });
     expect(statements[1]).toEqual(['UPDATE person_handles SET person_id = $1 WHERE person_id = $2', [12, 14]]);
-    expect(statements[2][0]).toContain('INSERT INTO entry_people (entry_id, person_id) SELECT entry_id, $1 FROM entry_people WHERE person_id = $2 ON CONFLICT DO NOTHING');
-    expect(statements[3]).toEqual([expect.stringContaining("jsonb_set(filters, '{personId}', to_jsonb($2::int))"), [7, 12, '14']]);
+    expect(statements[2]).toEqual([expect.stringContaining('p.date_month IS NULL AND d.date_month IS NOT NULL'), [12, 14]]);
+    expect(statements[3][0]).toContain('INSERT INTO entry_people (entry_id, person_id) SELECT entry_id, $1 FROM entry_people WHERE person_id = $2 ON CONFLICT DO NOTHING');
+    expect(statements[4]).toEqual([expect.stringContaining("jsonb_set(filters, '{personId}', to_jsonb($2::int))"), [7, 12, '14']]);
     expect(manager.getRepository).toHaveBeenCalledWith(Person);
     expect(repository.delete).toHaveBeenCalledWith({ id: 14, userId: 7 });
     expect(repository.update).toHaveBeenCalledWith({ id: 12, userId: 7 }, { updatedAt: expect.any(Date) });

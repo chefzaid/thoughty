@@ -5,6 +5,7 @@ import { AiModule } from '@/modules/ai';
 import { UserConfigModule } from '@/modules/config';
 import { TimeCapsulesModule } from '@/modules/time-capsules/time-capsules.module';
 import { RereadRemindersModule } from '@/modules/reread-reminders/reread-reminders.module';
+import { PersonDatesModule } from '@/modules/people/person-dates.module';
 import { EntriesController } from './entries.controller';
 import { EntriesService } from './entries.service';
 import { EntriesQueryService } from './entries-query.service';
@@ -23,7 +24,7 @@ import { EntryMentionsService } from './entry-mentions.service';
 import { EntryInlineImagesService } from './entry-inline-images.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Entry, EntryRevision, Diary, Attachment]), UserConfigModule, AiModule, TimeCapsulesModule, RereadRemindersModule],
+  imports: [TypeOrmModule.forFeature([Entry, EntryRevision, Diary, Attachment]), UserConfigModule, AiModule, TimeCapsulesModule, RereadRemindersModule, PersonDatesModule],
   controllers: [EntriesController],
   providers: [
     EntriesService,

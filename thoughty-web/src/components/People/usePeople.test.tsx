@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createTestQueryClient } from '../../test/queryClient';
 import { usePeople, usePeopleList } from './usePeople';
 
-const service = vi.hoisted(() => ({ list: vi.fn(), rename: vi.fn(), merge: vi.fn(), remove: vi.fn() }));
+const service = vi.hoisted(() => ({ list: vi.fn(), update: vi.fn(), merge: vi.fn(), remove: vi.fn() }));
 vi.mock('../../hooks/useAuthenticatedService', () => ({ useAuthenticatedService: () => service }));
 
 const marie = { id: 12, name: 'Marie', handles: ['marie'], entryCount: 2, lastMentionedOn: null, createdAt: '', updatedAt: '' };
@@ -36,14 +36,14 @@ describe('usePeople', () => {
 
   it('reloads the people after a rename, and the journal and saved searches after a merge or delete', async () => {
     service.list.mockResolvedValue({ data: { people: [marie], limit: 1000 }, error: null });
-    service.rename.mockResolvedValue({ data: marie, error: null });
+    service.update.mockResolvedValue({ data: marie, error: null });
     service.merge.mockResolvedValueOnce({ data: marie, error: null }).mockResolvedValueOnce({ data: null, error: 'personMergeFailed' });
     service.remove.mockResolvedValue({ data: { success: true }, error: null });
     const { invalidate, wrapper } = setup();
     const { result } = renderHook(() => usePeople(), { wrapper });
 
-    await act(async () => { await result.current.rename(12, 'Marie Curie'); });
-    expect(service.rename).toHaveBeenCalledWith(12, 'Marie Curie');
+    await act(async () => { await result.current.update(12, { name: 'Marie Curie' }); });
+    expect(service.update).toHaveBeenCalledWith(12, { name: 'Marie Curie' });
     expect(invalidatedKeys(invalidate)).toEqual([['app', 'people']]);
 
     invalidate.mockClear();

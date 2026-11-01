@@ -2,6 +2,7 @@ import type { components } from '../../src/generated/openapi';
 import { findMentions } from '../../src/utils/mentions';
 import type { MockAppState, MockEntry } from './mockApp.shared';
 import { fulfillApiError, fulfillJson, type RouteContext } from './mockApp.route-utils';
+import { mockPersonDateRefusal } from './mockApp.person-dates';
 
 export const MOCK_PEOPLE_LIMIT = 1000;
 
@@ -20,6 +21,7 @@ export function addMockMentionedPeople(people: MockPerson[], content: string): v
       id: Math.max(0, ...people.map((person) => person.id)) + 1,
       name: content.slice(mention.start + 1, mention.end),
       handles: [mention.handle],
+      date: null,
       createdAt: now,
       updatedAt: now,
     });
@@ -42,7 +44,8 @@ const byName = (left: MockPerson, right: MockPerson) => left.name.toLowerCase().
 
 /**
  * `/api/people` as the API answers it: people by name with their counts outside the recycle bin, renaming the
- * name shown, merging a duplicate (its handles move, saved searches follow) and deleting (saved searches widen).
+ * name shown and setting their date (refused with the API's codes), merging a duplicate (its handles move, its
+ * date too when the person kept has none, saved searches follow) and deleting (saved searches widen).
  */
 export async function handlePeopleRoutes({ route, request, pathname, state }: RouteContext): Promise<boolean> {
   if (pathname === '/api/people' && request.method() === 'GET') {
@@ -70,6 +73,7 @@ export async function handlePeopleRoutes({ route, request, pathname, state }: Ro
       return true;
     }
     person.handles = [...person.handles, ...duplicate.handles];
+    person.date ??= duplicate.date;
     person.updatedAt = new Date().toISOString();
     state.people = state.people.filter((candidate) => candidate.id !== duplicate.id);
     for (const saved of state.savedSearches) {
@@ -80,8 +84,14 @@ export async function handlePeopleRoutes({ route, request, pathname, state }: Ro
   }
 
   if (!match[2] && request.method() === 'PATCH') {
-    const { name } = request.postDataJSON() as components['schemas']['UpdatePersonDto'];
+    const { name, date } = request.postDataJSON() as components['schemas']['UpdatePersonDto'];
+    const refusal = date ? mockPersonDateRefusal(date) : null;
+    if (refusal) {
+      await fulfillApiError(route, 400, refusal.code, refusal.message);
+      return true;
+    }
     person.name = name.trim();
+    if (date !== undefined) person.date = date ? { ...date, year: date.year ?? null } : null;
     person.updatedAt = new Date().toISOString();
     await fulfillJson(route, toResponse(state, person));
     return true;

@@ -178,7 +178,7 @@ describe('EntriesList.helpers', () => {
     });
 
     it('suggests the writer’s people after @ while editing', () => {
-        const marie = { id: 12, name: 'Marie', handles: ['marie'], entryCount: 1, lastMentionedOn: null, createdAt: '', updatedAt: '' };
+        const marie = { id: 12, name: 'Marie', handles: ['marie'], entryCount: 1, lastMentionedOn: null, date: null, createdAt: '', updatedAt: '' };
         const setEditText = vi.fn();
         render(
             <MentionPeopleContext.Provider value={{ people: [marie], byHandle: peopleByHandle([marie]) }}>

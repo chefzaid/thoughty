@@ -17,6 +17,7 @@ import { MonthlyRecapEmailService } from './monthly-recap-email.service';
 import { MonthlyRecapService } from './monthly-recap.service';
 import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
 import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
+import { personDatesServiceOn } from '@/modules/people/person-dates.test-helpers';
 
 const SECRET = 'i'.repeat(48);
 // 07:00 UTC on 1 November 2026 is 08:00 in Paris, the default hour, on winter time.
@@ -37,7 +38,7 @@ describePostgres('PostgreSQL monthly recap email', () => {
     database = await createPostgresTestDatabase();
     dataSource = database.dataSource;
     const entries = dataSource.getRepository(Entry);
-    const queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries), timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource));
+    const queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries), timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
     const review = new YearReviewService(
       entries,
       dataSource.getRepository(Diary),

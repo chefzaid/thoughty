@@ -11,6 +11,10 @@ import {
 import { Entry } from './entry.entity';
 import { User } from './user.entity';
 
+/** What a date on a person marks. */
+export const PERSON_DATE_KINDS = ['birthday', 'anniversary'] as const;
+export type PersonDateKind = (typeof PERSON_DATE_KINDS)[number];
+
 /**
  * Someone the writer mentions in their entries (`@Marie`). People are the writer's private records:
  * they are never platform users and are never linked to accounts.
@@ -26,6 +30,23 @@ export class Person {
   /** The name shown for the person: the handle as first written, until the writer changes it. */
   @Column({ type: 'varchar', length: 80 })
   name: string;
+
+  /**
+   * A birthday or an anniversary that comes back each year on `dateMonth`/`dateDay`, with `dateYear` when the
+   * writer knows it. Kind, month and day are all set or all null; the database refuses a day that never exists.
+   */
+  @Column({ name: 'date_kind', type: 'varchar', length: 16, nullable: true })
+  dateKind: PersonDateKind | null;
+
+  /** 1 to 12. */
+  @Column({ name: 'date_month', type: 'smallint', nullable: true })
+  dateMonth: number | null;
+
+  @Column({ name: 'date_day', type: 'smallint', nullable: true })
+  dateDay: number | null;
+
+  @Column({ name: 'date_year', type: 'smallint', nullable: true })
+  dateYear: number | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;

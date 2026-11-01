@@ -17,6 +17,7 @@ import { EntrySearchService } from './entry-search.service';
 import { ENTRY_WORDS_SQL } from '@/modules/stats/stats-sql';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 import { RereadReminderService } from '@/modules/reread-reminders/reread-reminders.service';
+import { PersonDatesService } from '@/modules/people/person-dates.service';
 
 /** Entries "On this day" shows at most. */
 export const ON_THIS_DAY_LIMIT = 10;
@@ -57,6 +58,7 @@ export class EntriesQueryService {
     private readonly entrySearch: EntrySearchService,
     private readonly timeCapsules: TimeCapsuleService,
     private readonly rereadReminders: RereadReminderService,
+    private readonly personDates: PersonDatesService,
   ) {}
 
   async getTagUsage(userId: number): Promise<{ tags: Array<{ tag: string; count: number }> }> {
@@ -161,7 +163,7 @@ export class EntriesQueryService {
 
   /**
    * Highlights on the writer's own day (`query.today`, else the UTC day): a random entry, On This Day,
-   * the time capsules opened in the last week and the reread reminders due.
+   * the time capsules opened in the last week, the reread reminders due and the birthdays and anniversaries.
    */
   async getHighlights(userId: number, query: GetHighlightsQueryDto, now = new Date()): Promise<EntryHighlightsResponseDto> {
     const { diaryId } = query;
@@ -180,11 +182,12 @@ export class EntriesQueryService {
       randomQb = randomQb.andWhere('e.diary_id = :diaryId', { diaryId });
     }
 
-    const [randomEntry, onThisDayEntries, openedCapsules, dueReminders] = await Promise.all([
+    const [randomEntry, onThisDayEntries, openedCapsules, dueReminders, peopleOfTheDay] = await Promise.all([
       randomQb.getOne(),
       this.findOnThisDay(userId, { year, month, day, diaryId }),
       this.timeCapsules.findRecentlyOpened(userId, diaryId, now),
       this.rereadReminders.findDue(userId, diaryId, today),
+      this.personDates.findOn(userId, today),
     ]);
 
     const onThisDay: Record<number, EntryResponseDto[]> = {};
@@ -204,6 +207,10 @@ export class EntriesQueryService {
         opened_early: capsule.openedAt! < capsule.openAt,
       })),
       rereadReminders: dueReminders.map(toEntryResponse),
+      personDates: peopleOfTheDay.map(({ latestEntry, ...person }) => ({
+        ...person,
+        latestEntry: latestEntry ? toEntryResponse(latestEntry) : null,
+      })),
     };
   }
 
