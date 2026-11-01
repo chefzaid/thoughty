@@ -251,6 +251,15 @@ export function buildAuthenticatedRoutesProps({
       t,
       tagMetadata,
     },
+    tasksRouteProps: {
+      diaries: diariesState.diaries,
+      currentDiaryId: diariesState.currentDiaryId,
+      onDiaryChange: routingState.handleDiaryChange,
+      onManageDiaries: () => routingState.handleManageDiaries('tasks'),
+      theme: config.theme,
+      language: config.language,
+      t,
+    },
     importExportRouteProps: {
       diaries: diariesState.diaries,
       currentDiaryId: diariesState.currentDiaryId,

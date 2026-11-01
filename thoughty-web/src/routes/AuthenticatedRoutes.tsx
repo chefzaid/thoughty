@@ -13,6 +13,7 @@ import RecycleBinRoute from './RecycleBinRoute';
 import ReviewRoute from './ReviewRoute';
 import StatsRoute from './StatsRoute';
 import TagManagerRoute from './TagManagerRoute';
+import TasksRoute from './TasksRoute';
 
 interface AuthenticatedRoutesProps {
   diariesRouteProps: ComponentProps<typeof DiariesRoute>;
@@ -26,6 +27,7 @@ interface AuthenticatedRoutesProps {
   reviewRouteProps: ComponentProps<typeof ReviewRoute>;
   statsRouteProps: ComponentProps<typeof StatsRoute>;
   tagManagerRouteProps: ComponentProps<typeof TagManagerRoute>;
+  tasksRouteProps: ComponentProps<typeof TasksRoute>;
 }
 
 function AuthenticatedRoutes({
@@ -40,12 +42,14 @@ function AuthenticatedRoutes({
   reviewRouteProps,
   statsRouteProps,
   tagManagerRouteProps,
+  tasksRouteProps,
 }: Readonly<AuthenticatedRoutesProps>) {
   return (
     <Routes>
       <Route path={getPathForView('profile')} element={<ProfileRoute {...profileRouteProps} />} />
       <Route path={getPathForView('tags')} element={<TagManagerRoute {...tagManagerRouteProps} />} />
       <Route path={getPathForView('people')} element={<PeopleRoute {...peopleRouteProps} />} />
+      <Route path={getPathForView('tasks')} element={<TasksRoute {...tasksRouteProps} />} />
       <Route path={getPathForView('diaries')} element={<DiariesRoute {...diariesRouteProps} />} />
       <Route path={getPathForView('feed')} element={<FeedRoute {...feedRouteProps} />} />
       <Route path={getPathForView('memoir')} element={<MemoirRoute {...memoirRouteProps} />} />

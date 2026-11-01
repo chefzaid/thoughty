@@ -7,6 +7,7 @@ import { EntryListCacheService } from './entry-list-cache.service';
 import { EntryTaskListService } from './entry-task-list.service';
 import { EntryCalendarService } from './entry-calendar.service';
 import { EntryRandomService } from './entry-random.service';
+import { EntryOpenTasksService } from './entry-open-tasks.service';
 import type { Entry } from '@/database/entities';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 
@@ -43,6 +44,7 @@ describe('EntriesService', () => {
   let timeCapsuleService: Record<string, jest.Mock>;
   let entryCalendarService: Record<string, jest.Mock>;
   let entryRandomService: Record<string, jest.Mock>;
+  let entryOpenTasksService: Record<string, jest.Mock>;
 
   beforeEach(async () => {
     entriesQueryService = {
@@ -90,6 +92,10 @@ describe('EntriesService', () => {
       pick: jest.fn(),
     };
 
+    entryOpenTasksService = {
+      list: jest.fn(),
+    };
+
     timeCapsuleService = {
       openEarly: jest.fn(),
     };
@@ -104,6 +110,7 @@ describe('EntriesService', () => {
         { provide: EntryTaskListService, useValue: entryTaskListService },
         { provide: EntryCalendarService, useValue: entryCalendarService },
         { provide: EntryRandomService, useValue: entryRandomService },
+        { provide: EntryOpenTasksService, useValue: entryOpenTasksService },
         { provide: TimeCapsuleService, useValue: timeCapsuleService },
       ],
     }).compile();
@@ -243,6 +250,15 @@ describe('EntriesService', () => {
 
     expect(entriesCommandService.update).toHaveBeenCalledWith(1, 1, dto);
     expect(result).toEqual({ success: true, entry: expect.objectContaining({ id: 1, content: 'Updated content' }) });
+  });
+
+  it('lists the open tasks through EntryOpenTasksService without the list cache', async () => {
+    const expected = { tasks: [{ entryId: 4, date: '2026-10-21', title: null, line: 0, text: 'Call' }], total: 1, page: 1, totalPages: 1 };
+    entryOpenTasksService.list.mockResolvedValue(expected);
+
+    await expect(service.getOpenTasks(1, { diaryId: 2 })).resolves.toBe(expected);
+    expect(entryOpenTasksService.list).toHaveBeenCalledWith(1, { diaryId: 2 });
+    expect(entryListCacheService.getOrLoad).not.toHaveBeenCalled();
   });
 
   it('ticks a task through EntryTaskListService', async () => {

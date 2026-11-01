@@ -65,6 +65,7 @@ export const API_ERROR_MESSAGES = {
   ENTRY_REVISION_NOT_FOUND: 'Revision not found',
   ENTRY_TASKS_MARKDOWN_ONLY: 'Only Markdown entries have task lists',
   ENTRY_TASK_CHANGED: 'That line is no longer a task. Reload the entry and try again.',
+  ENTRY_TASK_STALE: 'That task changed in its entry since the list was loaded. Check the list and try again.',
   ENTRY_SEALED: 'This entry is sealed as a time capsule until it opens',
   ENTRY_NOT_SEALED: 'This entry is not sealed',
   ENTRY_RANDOM_NO_MATCH: 'No entry matches these filters',

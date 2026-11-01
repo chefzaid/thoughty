@@ -12,6 +12,8 @@ import {
   EntryCalendarResponseDto,
   GetRandomEntryQueryDto,
   RandomEntryResponseDto,
+  GetOpenTasksQueryDto,
+  OpenTasksResponseDto,
   BulkOperationDto,
   EntriesListResponseDto,
   EntryBacklinksResponseDto,
@@ -25,6 +27,7 @@ import { EntryLookupService } from './entry-lookup.service';
 import { EntriesCommandService } from './entries-command.service';
 import { EntryListCacheService } from './entry-list-cache.service';
 import { EntryTaskListService } from './entry-task-list.service';
+import { EntryOpenTasksService } from './entry-open-tasks.service';
 import { EntryCalendarService } from './entry-calendar.service';
 import { EntryRandomService } from './entry-random.service';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
@@ -37,6 +40,7 @@ export class EntriesService {
     private readonly entriesCommandService: EntriesCommandService,
     private readonly entryListCacheService: EntryListCacheService,
     private readonly entryTaskListService: EntryTaskListService,
+    private readonly entryOpenTasksService: EntryOpenTasksService,
     private readonly entryCalendarService: EntryCalendarService,
     private readonly entryRandomService: EntryRandomService,
     private readonly timeCapsuleService: TimeCapsuleService,
@@ -96,6 +100,10 @@ export class EntriesService {
   ): Promise<EntryMutationResponseDto> {
     const result = await this.entriesCommandService.update(userId, id, dto);
     return { success: result.success, entry: toEntryResponse(result.entry) };
+  }
+
+  async getOpenTasks(userId: number, query: GetOpenTasksQueryDto): Promise<OpenTasksResponseDto> {
+    return this.entryOpenTasksService.list(userId, query);
   }
 
   async setTask(

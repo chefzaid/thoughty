@@ -28,7 +28,7 @@ describe('NavMenu', () => {
     expect(screen.getByText('Thoughty')).toBeInTheDocument();
   });
 
-  it.each(['journal', 'memoir', 'stats', 'tags', 'people', 'importExport'])('renders %s navigation item', (text) => {
+  it.each(['journal', 'memoir', 'stats', 'tags', 'people', 'openTasksNav', 'importExport'])('renders %s navigation item', (text) => {
     render(<NavMenu {...defaultProps} />);
     expect(screen.getByText(text)).toBeInTheDocument();
   });
@@ -89,6 +89,15 @@ describe('NavMenu', () => {
 
     rerender(<NavMenu {...defaultProps} currentView="people" />);
     expect(screen.getByText('people').closest('button')).toHaveClass('active');
+  });
+
+  it('opens the open tasks and highlights them while they are the current view', () => {
+    const { rerender } = render(<NavMenu {...defaultProps} />);
+    fireEvent.click(screen.getByText('openTasksNav'));
+    expect(mockOnViewChange).toHaveBeenCalledWith('tasks');
+
+    rerender(<NavMenu {...defaultProps} currentView="tasks" />);
+    expect(screen.getByText('openTasksNav').closest('button')).toHaveClass('active');
   });
 
   it('opens the memoir and highlights it while it is the current view', () => {

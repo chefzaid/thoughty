@@ -73,6 +73,13 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
                     {t('people')}
                 </button>
                 <button type="button"
+                    className={`nav-item ${currentView === 'tasks' ? 'active' : ''}`}
+                    onClick={() => onViewChange('tasks')}
+                >
+                    <span className="codicon codicon-checklist" aria-hidden="true" />
+                    {t('openTasksNav')}
+                </button>
+                <button type="button"
                     className={`nav-item ${currentView === 'stats' ? 'active' : ''}`}
                     onClick={() => onViewChange('stats')}
                 >

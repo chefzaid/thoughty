@@ -1734,6 +1734,95 @@
         ]
       }
     },
+    "/api/entries/open-tasks": {
+      "get": {
+        "description": "Every unticked task list item (`- [ ]`, `* [ ]`, `+ [ ]` or `1. [ ]`, nested or quoted) of the writer's Markdown entries, newest entries first and top to bottom in each, with the entry's date and title. Lines in code blocks are not tasks. Sealed time capsules and entries in the recycle bin are left out; archived entries count. Tick one with `PATCH /entries/{id}/tasks`, sending its `line` and `text`.",
+        "operationId": "EntriesController_getOpenTasks",
+        "parameters": [
+          {
+            "name": "diaryId",
+            "required": false,
+            "in": "query",
+            "description": "Only the tasks of this diary; all diaries when left out",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of open tasks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenTasksResponseDto"
+                },
+                "example": {
+                  "tasks": [
+                    {
+                      "entryId": 42,
+                      "date": "2026-10-21",
+                      "title": "Errands",
+                      "line": 2,
+                      "text": "Call the bank"
+                    }
+                  ],
+                  "total": 3,
+                  "page": 1,
+                  "totalPages": 1
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The diary, page or page size is invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "The diary, page or page size is invalid",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The unticked task list items across the journal",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
     "/api/entries/random": {
       "get": {
         "description": "Picks one entry, every match equally likely, among those the journal list shows with the same filters, and gives the page of that list (at its page size and order) that shows it. Sealed time capsules and entries in the recycle bin are never picked; with `excludeId`, that entry comes back only when it is the only match.",
@@ -2772,7 +2861,7 @@
     },
     "/api/entries/{id}/tasks": {
       "patch": {
-        "description": "Sets the task on one line of the entry text (`- [ ]` or `- [x]`) as done or not, and changes nothing else. The previous version goes to the revision history, except when the latest revision is under ten minutes old and the entry has changed since only in its ticks, so a run of ticks keeps one revision.",
+        "description": "Sets the task on one line of the entry text (`- [ ]` or `- [x]`) as done or not, and changes nothing else. The previous version goes to the revision history, except when the latest revision is under ten minutes old and the entry has changed since only in its ticks, so a run of ticks keeps one revision. Lines in code blocks are not tasks. With `text`, the task on the line must still read that way.",
         "operationId": "EntriesController_setTask",
         "parameters": [
           {
@@ -2793,7 +2882,8 @@
               },
               "example": {
                 "line": 2,
-                "checked": true
+                "checked": true,
+                "text": "Call the bank"
               }
             }
           }
@@ -2890,7 +2980,7 @@
             }
           },
           "409": {
-            "description": "The line is not a task list item (the entry changed elsewhere), or the entry is a sealed time capsule",
+            "description": "The line is not a task list item (the entry changed elsewhere; `ENTRY_TASK_CHANGED`), the task there no longer reads as `text` (`ENTRY_TASK_STALE`), or the entry is a sealed time capsule",
             "content": {
               "application/json": {
                 "schema": {
@@ -2898,7 +2988,7 @@
                 },
                 "example": {
                   "statusCode": 409,
-                  "message": "The line is not a task list item (the entry changed elsewhere), or the entry is a sealed time capsule",
+                  "message": "The line is not a task list item (the entry changed elsewhere; `ENTRY_TASK_CHANGED`), the task there no longer reads as `text` (`ENTRY_TASK_STALE`), or the entry is a sealed time capsule",
                   "error": "Conflict",
                   "code": "CONFLICT"
                 }
@@ -13562,6 +13652,95 @@
           ]
         }
       },
+      "OpenTaskDto": {
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "number",
+            "description": "The entry holding the task",
+            "example": 42
+          },
+          "date": {
+            "type": "string",
+            "description": "Entry date (YYYY-MM-DD)",
+            "example": "2026-10-21"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "example": "Errands"
+          },
+          "line": {
+            "type": "number",
+            "description": "Line of the entry text holding the task, counted from 0: send it, with `text`, to tick the task",
+            "example": 2
+          },
+          "text": {
+            "type": "string",
+            "description": "What follows the box on that line, as written (Markdown)",
+            "example": "Call the bank"
+          }
+        },
+        "required": [
+          "entryId",
+          "date",
+          "title",
+          "line",
+          "text"
+        ],
+        "example": {
+          "entryId": 42,
+          "date": "2026-10-21",
+          "title": "Errands",
+          "line": 2,
+          "text": "Call the bank"
+        }
+      },
+      "OpenTasksResponseDto": {
+        "type": "object",
+        "properties": {
+          "tasks": {
+            "description": "The page of unticked tasks: newest entries first, and in each entry from top to bottom",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OpenTaskDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "Unticked tasks in all, across the pages",
+            "example": 3
+          },
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "totalPages": {
+            "type": "number",
+            "example": 1
+          }
+        },
+        "required": [
+          "tasks",
+          "total",
+          "page",
+          "totalPages"
+        ],
+        "example": {
+          "tasks": [
+            {
+              "entryId": 42,
+              "date": "2026-10-21",
+              "title": "Errands",
+              "line": 2,
+              "text": "Call the bank"
+            }
+          ],
+          "total": 3,
+          "page": 1,
+          "totalPages": 1
+        }
+      },
       "RandomEntryResponseDto": {
         "type": "object",
         "properties": {
@@ -14652,6 +14831,12 @@
             "type": "boolean",
             "description": "Whether the task is done",
             "example": true
+          },
+          "text": {
+            "type": "string",
+            "description": "The task as last read (an open task's `text`). When given, the tick applies only if the task on `line` still reads this way, so an entry edited meanwhile never has the wrong line ticked.",
+            "maxLength": 10000,
+            "example": "Call the bank"
           }
         },
         "required": [
@@ -14660,7 +14845,8 @@
         ],
         "example": {
           "line": 2,
-          "checked": true
+          "checked": true,
+          "text": "Call the bank"
         }
       },
       "UpdateVisibilityDto": {
@@ -23321,6 +23507,7 @@
           "ENTRY_REVISION_NOT_FOUND",
           "ENTRY_TASKS_MARKDOWN_ONLY",
           "ENTRY_TASK_CHANGED",
+          "ENTRY_TASK_STALE",
           "ENTRY_SEALED",
           "ENTRY_NOT_SEALED",
           "ENTRY_RANDOM_NO_MATCH",

@@ -110,6 +110,27 @@ describe('EntryTaskListService', () => {
     expect(entryRepository.save).not.toHaveBeenCalled();
     expect(revisionRepository.save).not.toHaveBeenCalled();
   });
+
+  it('ticks a task named by its text, and refuses it as stale once the line reads otherwise', async () => {
+    entryRepository.findOne.mockResolvedValueOnce(entry());
+    const result = await service.setTask(1, 4, { line: 0, checked: true, text: 'Call the bank' });
+    expect(result.entry.content).toBe('- [x] Call the bank\n- [ ] Post the letter');
+
+    entryRepository.save.mockClear();
+    revisionRepository.save.mockClear();
+    // Another task now sits on that line, or none does: the open tasks list was stale
+    entryRepository.findOne.mockResolvedValueOnce(entry({ content: '- [ ] Post the letter\n- [ ] Call the bank' }));
+    await expect(service.setTask(1, 4, { line: 0, checked: true, text: 'Call the bank' }))
+      .rejects.toMatchObject({ response: { code: 'ENTRY_TASK_STALE' } });
+    entryRepository.findOne.mockResolvedValueOnce(entry({ content: 'Call the bank' }));
+    await expect(service.setTask(1, 4, { line: 0, checked: true, text: 'Call the bank' }))
+      .rejects.toMatchObject({ response: { code: 'ENTRY_TASK_STALE' } });
+    entryRepository.findOne.mockResolvedValueOnce(entry({ content: 'Call the bank' }));
+    await expect(service.setTask(1, 4, { line: 0, checked: true })).rejects.toMatchObject({ response: { code: 'ENTRY_TASK_CHANGED' } });
+
+    expect(entryRepository.save).not.toHaveBeenCalled();
+    expect(revisionRepository.save).not.toHaveBeenCalled();
+  });
 });
 
 describe('revisionCoversTicks', () => {

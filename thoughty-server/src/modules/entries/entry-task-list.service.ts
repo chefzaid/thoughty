@@ -40,7 +40,7 @@ export class EntryTaskListService {
   constructor(private readonly dataSource: DataSource) {}
 
   /**
-   * Sets one task of an entry as done or not. The entry is locked while it changes, so ticks sent
+   * Sets one task of an entry as done or not, by its line (and, from the open tasks list, its text). The entry is locked while it changes, so ticks sent
    * one after the other never undo each other. Like any edit it keeps the previous version in the
    * history, except within a few minutes of a revision that the ticks alone have moved away from.
    */
@@ -56,9 +56,9 @@ export class EntryTaskListService {
         throw apiError(BadRequestException, 'ENTRY_TASKS_MARKDOWN_ONLY');
       }
 
-      const content = setTaskListItem(entry.content, dto.line, dto.checked);
+      const content = setTaskListItem(entry.content, dto.line, dto.checked, dto.text);
       if (content === null) {
-        throw apiError(ConflictException, 'ENTRY_TASK_CHANGED');
+        throw apiError(ConflictException, dto.text === undefined ? 'ENTRY_TASK_CHANGED' : 'ENTRY_TASK_STALE');
       }
       if (content === entry.content) {
         return { success: true, entry };

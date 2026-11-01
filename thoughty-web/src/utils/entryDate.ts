@@ -1,3 +1,14 @@
+/** A journal date such as 2026-10-21, written out for the reader's language ("October 21, 2026"). */
+export function formatJournalDate(date: string, language: string): string {
+  const [year = 1970, month = 1, day = 1] = date.slice(0, 10).split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString(language, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
 export const formatEntryDate = (date: Date): string => {
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, '0');

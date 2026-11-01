@@ -20,6 +20,9 @@ import { MAX_ENTRY_TITLE_LENGTH, TIME_OF_DAY_PATTERN } from '@/common/utils/entr
 import { MAX_FEELING_LENGTH, MAX_FEELINGS, MAX_MOOD, MIN_MOOD } from '@/common/utils/entry-mood.util';
 import { StrictBoolean, StrictInt } from '@/common/validation';
 
+/** The longest task text a tick can name (a task is one line of an entry). */
+export const MAX_TASK_TEXT_LENGTH = 10_000;
+
 const TITLE_DESCRIPTION = 'Optional one-line title; empty or null removes it';
 const TIME_OF_DAY_DESCRIPTION =
   'Optional time of day on a 24-hour clock (HH:MM); null removes it. Same-day entries without a time ' +
@@ -180,4 +183,16 @@ export class UpdateEntryTaskDto {
   @ApiProperty({ description: 'Whether the task is done', example: true })
   @StrictBoolean()
   checked: boolean;
+
+  @ApiPropertyOptional({
+    description:
+      'The task as last read (an open task\'s `text`). When given, the tick applies only if the task on `line` ' +
+      'still reads this way, so an entry edited meanwhile never has the wrong line ticked.',
+    maxLength: MAX_TASK_TEXT_LENGTH,
+    example: 'Call the bank',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(MAX_TASK_TEXT_LENGTH)
+  text?: string;
 }

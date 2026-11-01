@@ -1,10 +1,10 @@
 import { Type } from '@nestjs/common';
 import { invalidPropertiesLikeApi, parseLikeApi } from '@/common/validation/dto-validation.test-helpers';
-import { BulkOperationDto, CreateEntryDto, GetEntriesQueryDto, ReorderEntriesDto, UpdateEntryDto, UpdateEntryTaskDto } from './entries.dto';
+import { BulkOperationDto, CreateEntryDto, GetEntriesQueryDto, GetOpenTasksQueryDto, ReorderEntriesDto, UpdateEntryDto, UpdateEntryTaskDto } from './entries.dto';
 
 /** The properties the API refuses; GetEntriesQueryDto arrives as a query string, the others as JSON bodies. */
 const invalidProperties = (dto: Type<object>, plain: object) =>
-  invalidPropertiesLikeApi(dto, plain, dto === GetEntriesQueryDto ? 'query' : 'body');
+  invalidPropertiesLikeApi(dto, plain, dto === GetEntriesQueryDto || dto === GetOpenTasksQueryDto ? 'query' : 'body');
 
 describe('GetEntriesQueryDto search options', () => {
   it('accepts a search with operators and either result order', async () => {
@@ -77,6 +77,25 @@ describe('UpdateEntryTaskDto', () => {
     await expect(invalidProperties(UpdateEntryTaskDto, { line: 1.5, checked: true })).resolves.toEqual(['line']);
     await expect(invalidProperties(UpdateEntryTaskDto, { line: 1, checked: 'yes' })).resolves.toEqual(['checked']);
     await expect(invalidProperties(UpdateEntryTaskDto, { line: 1 })).resolves.toEqual(['checked']);
+  });
+
+  it('takes the task text as last read, up to 10,000 characters', async () => {
+    await expect(invalidProperties(UpdateEntryTaskDto, { line: 1, checked: true, text: 'Call the bank' })).resolves.toEqual([]);
+    await expect(invalidProperties(UpdateEntryTaskDto, { line: 1, checked: true, text: 3 })).resolves.toEqual(['text']);
+    await expect(invalidProperties(UpdateEntryTaskDto, { line: 1, checked: true, text: 'a'.repeat(10_001) })).resolves.toEqual(['text']);
+  });
+});
+
+describe('GetOpenTasksQueryDto', () => {
+  it('takes an optional diary, page and page size of at most 100', async () => {
+    await expect(invalidProperties(GetOpenTasksQueryDto, {})).resolves.toEqual([]);
+    await expect(invalidProperties(GetOpenTasksQueryDto, { diaryId: '2', page: '3', limit: '100' })).resolves.toEqual([]);
+    await expect(parseLikeApi(GetOpenTasksQueryDto, {}, 'query')).resolves.toMatchObject({ page: 1, limit: 50 });
+  });
+
+  it('rejects a diary, page or size that is not a positive whole number, and a size over 100', async () => {
+    await expect(invalidProperties(GetOpenTasksQueryDto, { diaryId: '0', page: '0', limit: '101' })).resolves.toEqual(['diaryId', 'page', 'limit']);
+    await expect(invalidProperties(GetOpenTasksQueryDto, { page: '1.5', limit: 'all' })).resolves.toEqual(['page', 'limit']);
   });
 });
 

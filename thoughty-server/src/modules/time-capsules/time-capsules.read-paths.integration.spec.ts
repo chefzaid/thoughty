@@ -91,6 +91,7 @@ describePostgres('PostgreSQL time capsules: every entry read path', () => {
       '/api/entries/first': [() => bed.journal.getFirstEntry(writerId, { year: date.slice(0, 4), month: date.slice(5, 7) } as never)],
       '/api/entries/by-date': [() => bed.journal.getEntryByDate(writerId, { date, index: 1 } as never), () => bed.journal.getEntryByDate(writerId, { id: sealedId } as never)],
       '/api/entries/highlights': [() => bed.journal.getHighlights(writerId, {})],
+      '/api/entries/open-tasks': [() => bed.journal.getOpenTasks(writerId, {})],
       '/api/entries/tags': [() => bed.journal.getTagUsage(writerId)],
       '/api/entries/{id}/backlinks': [() => bed.journal.getBacklinks(writerId, openId), () => bed.journal.getBacklinks(writerId, sealedId)],
       '/api/entries/{id}/history': [() => bed.journal.getRevisions(writerId, sealedId)],

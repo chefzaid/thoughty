@@ -1,7 +1,8 @@
 /**
  * A Markdown task list item (`- [ ] Call the bank`, `* [x] Done`, `1. [ ] First`), also inside block
- * quotes or nested lists. The server reads task lines with the same pattern
- * (`thoughty-server/src/common/utils/entry-task-list.util.ts`).
+ * quotes or nested lists. A line can match without being a task (in a code block, say): the renderer
+ * only offers a box for the lines it renders as tasks, and the server, which reads the whole block
+ * structure (`thoughty-server/src/common/utils/markdown-task-items.util.ts`), refuses any other line.
  */
 const TASK_LINE_PATTERN = /^((?:[\t ]*>)*[\t ]*(?:[*+-]|\d{1,9}[.)])[\t ]+\[)([ xX])(\](?:[\t \r]|$)[^\n]*)$/;
 

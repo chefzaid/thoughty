@@ -1,15 +1,15 @@
 // Navigation and view types
 
-export type ViewType = 'journal' | 'feed' | 'memoir' | 'tags' | 'people' | 'profile' | 'diaries' | 'stats' | 'review' | 'importExport' | 'recycleBin';
+export type ViewType = 'journal' | 'feed' | 'memoir' | 'tags' | 'people' | 'tasks' | 'profile' | 'diaries' | 'stats' | 'review' | 'importExport' | 'recycleBin';
 export type PublicViewType = 'intro' | 'login' | 'register' | 'verifyEmail' | 'unsubscribe' | 'about' | 'privacy' | 'terms' | 'contact' | 'feedback' | 'blog';
-export type DiaryScopedViewType = 'journal' | 'diaries' | 'stats' | 'importExport';
+export type DiaryScopedViewType = 'journal' | 'diaries' | 'tasks' | 'stats' | 'importExport';
 export type DiaryReturnViewType = Exclude<DiaryScopedViewType, 'diaries'>;
 export type ImportExportSection = 'export' | 'import' | 'book';
 export type CloudExportFormat = 'txt' | 'json' | 'md';
 export type ImportExportFormat = CloudExportFormat | 'csv' | 'pdf' | 'html' | 'epub' | 'zip';
 
-const DIARY_SCOPED_VIEWS = new Set<ViewType>(['journal', 'diaries', 'stats', 'importExport']);
-const DIARY_RETURN_VIEWS = new Set<DiaryReturnViewType>(['journal', 'stats', 'importExport']);
+const DIARY_SCOPED_VIEWS = new Set<ViewType>(['journal', 'diaries', 'tasks', 'stats', 'importExport']);
+const DIARY_RETURN_VIEWS = new Set<DiaryReturnViewType>(['journal', 'tasks', 'stats', 'importExport']);
 const IMPORT_EXPORT_SECTIONS = new Set<ImportExportSection>(['export', 'import', 'book']);
 const IMPORT_EXPORT_FORMATS = new Set<ImportExportFormat>(['txt', 'json', 'md', 'csv', 'pdf', 'html', 'epub', 'zip']);
 
@@ -33,6 +33,7 @@ export const VIEW_PATHS: Record<ViewType, string> = {
   memoir: '/memoir',
   tags: '/tags',
   people: '/people',
+  tasks: '/tasks',
   profile: '/profile',
   diaries: '/diaries',
   stats: '/stats',

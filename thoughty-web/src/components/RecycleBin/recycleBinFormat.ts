@@ -1,4 +1,5 @@
 import type { TranslationFunction } from '../../types';
+import { formatJournalDate } from '../../utils/entryDate';
 import { pluralPhrase } from '../../utils/pluralPhrase';
 import type { Language } from '../../utils/translations';
 
@@ -29,13 +30,7 @@ export function binExcerpt(content: string): string {
 
 /** A journal date such as 2026-10-21, written out for the reader's language. */
 export function formatBinDate(date: string, language: Language): string {
-  const [year = 1970, month = 1, day = 1] = date.slice(0, 10).split('-').map(Number);
-  return new Date(Date.UTC(year, month - 1, day)).toLocaleDateString(language, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    timeZone: 'UTC',
-  });
+  return formatJournalDate(date, language);
 }
 
 /** When an entry was deleted, in the reader's time zone. */

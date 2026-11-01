@@ -312,6 +312,41 @@ describeContract('entries', (context) => {
     });
   });
 
+  it('lists the open tasks across the journal and ticks one in place, refusing it once the line moved', async () => {
+    const { alice, bob } = context;
+    const before = await call('GET /api/entries/open-tasks', { as: alice, query: { limit: '50' }, status: 200 });
+    expect(before.body).toEqual({
+      tasks: [
+        { entryId: ids.tasks, date: '2024-03-11', title: null, line: 0, text: 'buy bread' },
+        { entryId: ids.tasks, date: '2024-03-11', title: null, line: 1, text: 'call mum' },
+      ],
+      total: 2,
+      page: 1,
+      totalPages: 1,
+    });
+    await call('PATCH /api/entries/{id}/tasks', {
+      as: alice,
+      params: { id: ids.tasks },
+      json: { line: 1, checked: true, text: 'buy bread' },
+      status: 409,
+      code: 'ENTRY_TASK_STALE',
+    });
+    await call('PATCH /api/entries/{id}/tasks', {
+      as: alice,
+      params: { id: ids.tasks },
+      json: { line: 0, checked: true, text: 'buy bread' },
+      status: 200,
+    });
+    const after = await call('GET /api/entries/open-tasks', { as: alice, status: 200 });
+    expect(after.body).toMatchObject({ tasks: [{ line: 1, text: 'call mum' }], total: 1 });
+    // Unticked again, so the next test finds the entry as it was written
+    await call('PATCH /api/entries/{id}/tasks', { as: alice, params: { id: ids.tasks }, json: { line: 0, checked: false }, status: 200 });
+
+    const others = await call('GET /api/entries/open-tasks', { as: bob, status: 200 });
+    expect(others.body).toEqual({ tasks: [], total: 0, page: 1, totalPages: 0 });
+    await call('GET /api/entries/open-tasks', { as: alice, query: { limit: '101' }, status: 400, code: 'VALIDATION_FAILED' });
+  });
+
   it('ticks a Markdown task and refuses one in a plain entry', async () => {
     const { alice, bob } = context;
     const ticked = await call('PATCH /api/entries/{id}/tasks', {

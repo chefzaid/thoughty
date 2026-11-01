@@ -16,6 +16,7 @@ import { EntryCalendarService } from './entry-calendar.service';
 import { EntryRandomService } from './entry-random.service';
 import { EntryTaggingService } from './entry-tagging.service';
 import { EntryTaskListService } from './entry-task-list.service';
+import { EntryOpenTasksService } from './entry-open-tasks.service';
 import { EntryMentionsService } from './entry-mentions.service';
 import { EntryInlineImagesService } from './entry-inline-images.service';
 
@@ -33,6 +34,7 @@ import { EntryInlineImagesService } from './entry-inline-images.service';
     EntryRandomService,
     EntryTaggingService,
     EntryTaskListService,
+    EntryOpenTasksService,
     EntryMentionsService,
     EntryInlineImagesService,
   ],

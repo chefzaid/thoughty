@@ -1,4 +1,4 @@
-import { setTaskListItem, withoutTaskStates } from './entry-task-list.util';
+import { findTaskListItem, setTaskListItem, withoutTaskStates } from './entry-task-list.util';
 
 describe('entry-task-list.util', () => {
   const content = ['# Errands', '', '- [ ] Call the bank', '- [x] Post the letter', '  * [X] Nested', '> 1. [ ] Quoted', 'Plain line'].join('\n');
@@ -32,6 +32,29 @@ describe('entry-task-list.util', () => {
     expect(setTaskListItem('- [link](https://example.com)', 0, true)).toBeNull();
     expect(setTaskListItem('- [ ]no space', 0, true)).toBeNull();
     expect(setTaskListItem('[ ] no bullet', 0, true)).toBeNull();
+  });
+
+  it('refuses task-like lines in code, which the entry shows as code', () => {
+    const code = ['```', '- [ ] Not a task', '```', '    - [ ] Indented code'].join('\n');
+    expect(setTaskListItem(code, 1, true)).toBeNull();
+    expect(setTaskListItem(`Intro\n\n${code}`, 6, true)).toBeNull();
+  });
+
+  it('ticks a task only while it still reads as expected', () => {
+    expect(setTaskListItem(content, 2, true, 'Call the bank')?.split('\n')[2]).toBe('- [x] Call the bank');
+    expect(setTaskListItem(content, 2, true, '  Call the bank ')?.split('\n')[2]).toBe('- [x] Call the bank');
+    expect(setTaskListItem(content, 2, true, 'Call the plumber')).toBeNull();
+    expect(setTaskListItem(content, 6, true, 'Plain line')).toBeNull();
+  });
+
+  it('ticks a task nested on its bullet line at its own box', () => {
+    expect(setTaskListItem('- - [ ] Nested', 0, true)).toBe('- - [x] Nested');
+  });
+
+  it('finds the task on a line', () => {
+    expect(findTaskListItem(content, 5)).toEqual({ line: 5, column: 6, checked: false, text: 'Quoted' });
+    expect(findTaskListItem(content, 6)).toBeNull();
+    expect(findTaskListItem(content, -1)).toBeNull();
   });
 
   it('empties every box, so versions that differ only in ticks compare equal', () => {

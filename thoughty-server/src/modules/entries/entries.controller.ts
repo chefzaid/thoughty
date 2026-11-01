@@ -36,6 +36,8 @@ import {
   EntryCalendarResponseDto,
   GetRandomEntryQueryDto,
   RandomEntryResponseDto,
+  GetOpenTasksQueryDto,
+  OpenTasksResponseDto,
   DeleteAllQueryDto,
   EntriesListResponseDto,
   EntryDatesResponseDto,
@@ -96,6 +98,24 @@ export class EntriesController {
     @Query() query: GetEntryCalendarQueryDto,
   ): Promise<EntryCalendarResponseDto> {
     return this.entriesService.getCalendarMonth(user.userId, query);
+  }
+
+  @Get('open-tasks')
+  @ApiOperation({
+    summary: 'The unticked task list items across the journal',
+    description:
+      'Every unticked task list item (`- [ ]`, `* [ ]`, `+ [ ]` or `1. [ ]`, nested or quoted) of the writer\'s ' +
+      'Markdown entries, newest entries first and top to bottom in each, with the entry\'s date and title. ' +
+      'Lines in code blocks are not tasks. Sealed time capsules and entries in the recycle bin are left out; ' +
+      'archived entries count. Tick one with `PATCH /entries/{id}/tasks`, sending its `line` and `text`.',
+  })
+  @ApiResponse({ status: 200, description: 'One page of open tasks', type: OpenTasksResponseDto })
+  @ApiResponse({ status: 400, description: 'The diary, page or page size is invalid' })
+  async getOpenTasks(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: GetOpenTasksQueryDto,
+  ): Promise<OpenTasksResponseDto> {
+    return this.entriesService.getOpenTasks(user.userId, query);
   }
 
   @Get('random')
@@ -237,7 +257,8 @@ export class EntriesController {
     description:
       'Sets the task on one line of the entry text (`- [ ]` or `- [x]`) as done or not, and changes nothing ' +
       'else. The previous version goes to the revision history, except when the latest revision is under ten ' +
-      'minutes old and the entry has changed since only in its ticks, so a run of ticks keeps one revision.',
+      'minutes old and the entry has changed since only in its ticks, so a run of ticks keeps one revision. ' +
+      'Lines in code blocks are not tasks. With `text`, the task on the line must still read that way.',
   })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Task updated', type: EntryMutationResponseDto })
@@ -245,7 +266,9 @@ export class EntriesController {
   @ApiResponse({ status: 404, description: 'Entry not found' })
   @ApiResponse({
     status: 409,
-    description: 'The line is not a task list item (the entry changed elsewhere), or the entry is a sealed time capsule',
+    description:
+      'The line is not a task list item (the entry changed elsewhere; `ENTRY_TASK_CHANGED`), the task there no ' +
+      'longer reads as `text` (`ENTRY_TASK_STALE`), or the entry is a sealed time capsule',
   })
   async setTask(
     @CurrentUser() user: AuthenticatedUser,

@@ -5,7 +5,7 @@ import {
   type MockAppState,
   type MockEntry,
 } from './mockApp.shared';
-import { fulfillJson, readQueryFlag, sortStrings, toEntryMutationResponse, toEntryResponse, toRevisionResponse, type RouteContext } from './mockApp.route-utils';
+import { fulfillApiError, fulfillJson, readQueryFlag, sortStrings, toEntryMutationResponse, toEntryResponse, toRevisionResponse, type RouteContext } from './mockApp.route-utils';
 import { matchMockSearch, type MockSearchResult } from './mockApp.search';
 import { getMockBacklinks } from './mockApp.backlinks';
 import { mockEraContains } from './mockApp.routes.life-eras';
@@ -365,11 +365,16 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
   const taskMatch = /^\/api\/entries\/(\d+)\/tasks$/.exec(pathname);
   if (taskMatch && request.method() === 'PATCH') {
     const entryId = Number(taskMatch[1]);
-    const payload = request.postDataJSON() as { line: number; checked: boolean };
+    const payload = request.postDataJSON() as { line: number; checked: boolean; text?: string };
     state.taskRequests.push({ entryId, ...payload });
     const entry = state.entries.find((candidate) => candidate.id === entryId);
     const lines = entry?.content.split('\n') ?? [];
     const match = TASK_LINE.exec(lines[payload.line] ?? '');
+    // Named by its text from the open tasks list, the task must still read that way on its line
+    if (payload.text !== undefined && match?.[3].slice(1).trim() !== payload.text.trim()) {
+      await fulfillApiError(route, 409, 'ENTRY_TASK_STALE', 'That task changed in its entry since the list was loaded.');
+      return true;
+    }
     if (!entry || !match) {
       await fulfillJson(route, { message: 'That line is no longer a task. Reload the entry and try again.' }, { status: 409 });
       return true;

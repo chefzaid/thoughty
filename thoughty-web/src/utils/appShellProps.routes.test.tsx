@@ -135,6 +135,8 @@ describe('appShellProps', () => {
     props.statsRouteProps.onManageDiaries();
     props.statsRouteProps.onDiaryChange(8);
     props.statsRouteProps.onOpenJournalDay?.('2024-01-22');
+    props.tasksRouteProps.onManageDiaries();
+    props.tasksRouteProps.onDiaryChange(10);
     props.importExportRouteProps.onManageDiaries();
     props.importExportRouteProps.onDiaryChange(9);
     props.importExportRouteProps.onRouteStateChange?.({
@@ -150,6 +152,9 @@ describe('appShellProps', () => {
     expect(handleDeleteDiary).toHaveBeenCalledWith(3, expect.any(Function));
     expect(fetchEntries).toHaveBeenCalled();
     expect(handleManageDiaries).toHaveBeenCalledWith('stats');
+    expect(handleManageDiaries).toHaveBeenCalledWith('tasks');
+    expect(handleDiaryChange).toHaveBeenCalledWith(10);
+    expect(props.tasksRouteProps).toMatchObject({ currentDiaryId: 3, diaries: [expect.objectContaining({ id: 3 })] });
     expect(handleManageDiaries).toHaveBeenCalledWith('importExport');
     expect(handleManageDiaries).toHaveBeenCalledWith('journal');
     expect(handleDiaryChange).toHaveBeenCalledWith(8);

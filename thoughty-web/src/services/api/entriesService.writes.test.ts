@@ -375,6 +375,17 @@ describe('entriesService', () => {
       expect(result).toEqual({ success: true });
     });
 
+    it('names the task by its text when it is given, as the open tasks list does', async () => {
+      mockAuthFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ success: true }) });
+
+      await service.setEntryTask(4, 2, true, 'Call the bank');
+
+      expect(mockAuthFetch).toHaveBeenCalledWith('/api/entries/4/tasks', {
+        method: 'PATCH',
+        body: JSON.stringify({ line: 2, checked: true, text: 'Call the bank' }),
+      });
+    });
+
     it('returns the server message when the line is no longer a task', async () => {
       mockAuthFetch.mockResolvedValue({
         ok: false,

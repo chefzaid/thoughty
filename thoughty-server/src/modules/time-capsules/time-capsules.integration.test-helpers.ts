@@ -11,6 +11,7 @@ import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
 import { EntryInlineImagesService } from '@/modules/entries/entry-inline-images.service';
 import { EntrySearchService } from '@/modules/entries/entry-search.service';
 import { EntryTaskListService } from '@/modules/entries/entry-task-list.service';
+import { EntryOpenTasksService } from '@/modules/entries/entry-open-tasks.service';
 import { PeopleService } from '@/modules/people/people.service';
 import { RecycleBinService } from '@/modules/recycle-bin/recycle-bin.service';
 import { CommentsService } from '@/modules/social/comments.service';
@@ -46,6 +47,7 @@ export function buildTimeCapsuleBed(dataSource: DataSource) {
     commands,
     cache,
     new EntryTaskListService(dataSource),
+    new EntryOpenTasksService(entries),
     new EntryCalendarService(entries, search),
     new EntryRandomService(entries, search),
     timeCapsules,

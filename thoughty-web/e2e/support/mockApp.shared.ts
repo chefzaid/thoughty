@@ -230,7 +230,7 @@ export interface MockAppState {
   lastBulkPayload: unknown;
   lastReorderPayload: unknown;
   /** Every task tick sent, in order. */
-  taskRequests: Array<{ entryId: number; line: number; checked: boolean }>;
+  taskRequests: Array<{ entryId: number; line: number; checked: boolean; text?: string }>;
   lastCloudFilesRequestUrl: URL | null;
   lastCloudUploadPayload: unknown;
   lastCloudDownloadPayload: unknown;

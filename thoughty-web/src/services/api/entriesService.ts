@@ -323,11 +323,12 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
   };
 
   /**
-   * Tick or untick the task list item on one line of a Markdown entry
+   * Tick or untick the task list item on one line of a Markdown entry; with `text`, only while the task
+   * there still reads that way (the open tasks list names its tasks so)
    */
-  const setEntryTask = async (id: number, line: number, checked: boolean): Promise<{ success: boolean; error?: string }> => {
+  const setEntryTask = async (id: number, line: number, checked: boolean, text?: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const body: UpdateEntryTaskRequestDto = { line, checked };
+      const body: UpdateEntryTaskRequestDto = text === undefined ? { line, checked } : { line, checked, text };
       const response = await authFetch(`/api/entries/${id}/tasks`, {
         method: 'PATCH',
         body: JSON.stringify(body)

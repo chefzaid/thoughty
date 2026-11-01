@@ -13,6 +13,7 @@ describe('EntriesController', () => {
       getEntries: jest.fn(),
       getDates: jest.fn(),
       getCalendarMonth: jest.fn(),
+      getOpenTasks: jest.fn(),
       getRandomEntry: jest.fn(),
       getFirstEntry: jest.fn(),
       getEntryByDate: jest.fn(),
@@ -80,6 +81,17 @@ describe('EntriesController', () => {
       const result = await controller.getCalendarMonth(mockUser as any, query);
       expect(entriesService.getCalendarMonth).toHaveBeenCalledWith(1, query);
       expect(result).toBe(expected);
+    });
+  });
+
+  describe('getOpenTasks', () => {
+    it("delegates to entriesService.getOpenTasks with the writer's id", async () => {
+      const query = { diaryId: 2, page: 1, limit: 50 };
+      const expected = { tasks: [], total: 0, page: 1, totalPages: 0 };
+      entriesService.getOpenTasks!.mockResolvedValue(expected);
+
+      await expect(controller.getOpenTasks(mockUser as any, query)).resolves.toBe(expected);
+      expect(entriesService.getOpenTasks).toHaveBeenCalledWith(1, query);
     });
   });
 
