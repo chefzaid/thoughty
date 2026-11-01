@@ -21,6 +21,13 @@ vi.mock('../SavedSearches/SavedSearches', async () => ({ default: (await import(
 vi.mock('./RandomEntryButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockRandomEntryButton }));
 vi.mock('../LifeEras/useLifeEras', async () => ({ useLifeEraList: (await import('./JournalView.test-helpers')).mockUseLifeEraList }));
 vi.mock('../People/usePeople', async () => ({ usePeopleList: (await import('./JournalView.test-helpers')).mockUsePeopleList }));
+const personBook = vi.hoisted(() => ({ makeBook: vi.fn(), pendingPersonId: null as number | null, onNotify: null as unknown }));
+vi.mock('./usePersonBook', () => ({
+  usePersonBook: ({ onNotify }: { onNotify: unknown }) => {
+    personBook.onNotify = onNotify;
+    return personBook;
+  },
+}));
 
 const marie: Person = { id: 12, name: 'Marie', handles: ['marie', 'mariec'], entryCount: 3, lastMentionedOn: '2026-10-20', date: null, createdAt: '', updatedAt: '' };
 
@@ -52,6 +59,7 @@ describe('JournalView people', () => {
     vi.clearAllMocks();
     peopleListMock.people = [marie];
     peopleListMock.loaded = true;
+    personBook.pendingPersonId = null;
   });
 
   afterEach(() => {
@@ -121,5 +129,28 @@ describe('JournalView people', () => {
 
     expect(props.filters.setFilterPersonId).toHaveBeenCalledWith(null);
     expect(props.onNotify).toHaveBeenCalledWith('apiError_PERSON_NOT_FOUND');
+  });
+
+  it('makes a book of every entry that mentions the person, waiting while it is prepared', () => {
+    const props = createProps({ filters: { filterPersonId: 12 } });
+    const view = renderJournal(props, '?diary=all&person=12');
+
+    fireEvent.click(screen.getByRole('button', { name: 'personMakeBookLabel' }));
+    expect(personBook.makeBook).toHaveBeenCalledWith(marie);
+    expect(personBook.onNotify).toBe(props.onNotify);
+
+    personBook.pendingPersonId = 12;
+    view.rerender(createProps({ filters: { filterPersonId: 12 } }));
+    const busy = screen.getByRole('button', { name: 'personMakeBookLabel' });
+    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute('aria-busy', 'true');
+  });
+
+  it('offers no book about a person with no entries yet', () => {
+    peopleListMock.people = [{ ...marie, entryCount: 0 }];
+    renderJournal(createProps({ filters: { filterPersonId: 12 } }), '?diary=all&person=12');
+
+    expect(screen.getByRole('region', { name: 'personViewTitle' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /personMakeBook/ })).not.toBeInTheDocument();
   });
 });

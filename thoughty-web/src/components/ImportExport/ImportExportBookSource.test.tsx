@@ -130,4 +130,16 @@ describe('BookSourceControls', () => {
         });
         expect(screen.getByRole('alert')).toHaveTextContent('Trop d’entrées sont choisies pour un seul livre.');
     });
+
+    it('says what a book about a person is built from, in place of the saved search hint', () => {
+        renderSource('en', {
+            options: { ...DEFAULT_BOOK_OPTIONS, source: 'savedSearch', savedSearchId: 4 },
+            savedSearches: { status: 'ready', data: [savedSearch(4, 'Marie', { personId: 12, archiveStatus: 'all' })] },
+            note: 'Every entry that mentions Marie',
+        });
+
+        expect(screen.getByLabelText('Saved search')).toHaveValue('4');
+        expect(screen.getByText('Every entry that mentions Marie')).toBeInTheDocument();
+        expect(screen.queryByText(/The book takes the entries this search finds/)).not.toBeInTheDocument();
+    });
 });

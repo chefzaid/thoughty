@@ -2,6 +2,7 @@ import type { components } from '../../generated/openapi';
 import type { CloudExportFormat, ImportExportFormat, ImportExportSection, TranslationFunction } from '../../types';
 import type { CloudProviderType } from '../../services/api/cloudSyncService';
 import type { Language } from '../../utils/translations';
+import type { BookStart } from '../../utils/appRouting';
 
 export const CLOUD_PROVIDERS = ['google_drive', 'onedrive', 'dropbox'] as const satisfies readonly CloudProviderType[];
 export const EXPORT_FORMAT_OPTIONS: ReadonlyArray<{ value: ImportExportFormat; labelKey: string }> = [
@@ -170,8 +171,8 @@ export interface ImportExportProps {
     readonly initialSection?: ImportExportSection;
     readonly initialExportFormat?: ImportExportFormat;
     readonly initialIncludeVisibility?: boolean;
-    /** Entries picked in the journal, which open the book converter as a hand-picked book. */
-    readonly initialBookEntryIds?: readonly number[];
+    /** What a Make a book action opens the book converter on: entries picked in the journal, or a person's saved search. */
+    readonly initialBookStart?: BookStart | null;
     readonly onRouteStateChange?: (state: ImportExportRouteState) => void;
 }
 

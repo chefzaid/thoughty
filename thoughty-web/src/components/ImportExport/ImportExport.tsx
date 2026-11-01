@@ -33,7 +33,7 @@ function ImportExport({
     initialSection = 'export',
     initialExportFormat = 'txt',
     initialIncludeVisibility = false,
-    initialBookEntryIds,
+    initialBookStart,
     onRouteStateChange,
 }: Readonly<ImportExportProps>) {
     const { authFetch } = useAuth();
@@ -355,7 +355,7 @@ function ImportExport({
                 sectionRef={bookSectionRef}
                 diaryName={diaryName}
                 diaryId={diaryId}
-                initialEntryIds={initialBookEntryIds}
+                initialStart={initialBookStart}
                 isLight={isLight}
                 authFetch={authFetch}
                 connectedProviders={cloud.connectedProviders}

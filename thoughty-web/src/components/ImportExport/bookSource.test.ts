@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { getTranslation } from '../../utils/translations';
-import { appendBookSourceParams, bookVersionsQuery, describeBookVersionSource, isBookSourceReady } from './bookSource';
+import { DEFAULT_BOOK_OPTIONS } from './ImportExport.types';
+import {
+    appendBookSourceParams,
+    bookVersionsQuery,
+    describeBookStart,
+    describeBookVersionSource,
+    initialBookOptions,
+    isBookSourceReady,
+} from './bookSource';
 
 const journal = { source: 'journal' as const, savedSearchId: null, entryIds: [] };
 
@@ -43,5 +51,34 @@ describe('book source', () => {
         expect(describeBookVersionSource({ kind: 'savedSearch' }, en, 'en')).toBe('From the saved search ');
         expect(describeBookVersionSource({ kind: 'entries' }, fr, 'fr')).toBe('0 entrée choisie');
         expect(describeBookVersionSource({ kind: 'entries', entryIds: [1, 2, 3] }, en, 'en')).toBe('3 hand-picked entries');
+    });
+
+    it('opens on the defaults, the picked entries, or a book about a person', () => {
+        const en = (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params);
+        const fr = (key: string, params?: Record<string, string | number>) => getTranslation('fr', key, params);
+        const person = { kind: 'person', name: 'Marie', savedSearchId: 9, savedSearchName: 'Book about Marie' } as const;
+
+        expect(initialBookOptions(null, en)).toBe(DEFAULT_BOOK_OPTIONS);
+        expect(initialBookOptions({ kind: 'entries', entryIds: [] }, en)).toBe(DEFAULT_BOOK_OPTIONS);
+        expect(initialBookOptions({ kind: 'entries', entryIds: [4, 2, 4] }, en)).toEqual({ ...DEFAULT_BOOK_OPTIONS, source: 'entries', entryIds: [4, 2] });
+        expect(initialBookOptions(person, en)).toEqual({
+            ...DEFAULT_BOOK_OPTIONS,
+            source: 'savedSearch',
+            savedSearchId: 9,
+            title: 'Marie',
+            dedication: 'For Marie',
+            chapterMode: 'year',
+        });
+        expect(initialBookOptions(person, fr).dedication).toBe('Pour Marie');
+
+        expect(describeBookStart(person, { source: 'savedSearch', savedSearchId: 9 }, en)).toBe(
+            'Every entry that mentions Marie, from your saved search “Book about Marie”, so each new version adds what you have written since. '
+            + 'Sealed time capsules and the recycle bin stay out.',
+        );
+        expect(describeBookStart(person, { source: 'savedSearch', savedSearchId: 9 }, fr)).toContain('« Book about Marie »');
+        expect(describeBookStart(person, { source: 'savedSearch', savedSearchId: 3 }, en)).toBeUndefined();
+        expect(describeBookStart(person, { source: 'journal', savedSearchId: 9 }, en)).toBeUndefined();
+        expect(describeBookStart({ kind: 'entries', entryIds: [1] }, { source: 'savedSearch', savedSearchId: 9 }, en)).toBeUndefined();
+        expect(describeBookStart(undefined, { source: 'savedSearch', savedSearchId: 9 }, en)).toBeUndefined();
     });
 });

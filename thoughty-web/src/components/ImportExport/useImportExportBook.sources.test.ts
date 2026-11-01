@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, type Mock } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
+import type { BookStart } from '../../utils/appRouting';
 import type { BookVersionData } from './ImportExport.types';
 import { useImportExportBook } from './useImportExportBook';
 
@@ -22,13 +23,13 @@ const pickedVersion: BookVersionData = {
 
 type AuthFetch = (url: string, options?: RequestInit) => Promise<Response>;
 
-function renderBook(authFetch: Mock<AuthFetch>, initialEntryIds?: number[]) {
+function renderBook(authFetch: Mock<AuthFetch>, initialStart?: BookStart) {
     const showMessage = vi.fn();
     const hook = renderHook(() => useImportExportBook({
         authFetch,
         connectedProviders: [],
         diaryId: 2,
-        initialEntryIds,
+        initialStart,
         showMessage,
         t: (key) => `t:${key}`,
     }));
@@ -48,7 +49,7 @@ describe('useImportExportBook sources', () => {
             '/api/books/picked-entries': () => json({ entries: [], missingIds: [] }),
             '/api/books/preview': () => json(preview),
         });
-        const { result } = renderBook(authFetch, [5, 3, 5]);
+        const { result } = renderBook(authFetch, { kind: 'entries', entryIds: [5, 3, 5] });
 
         expect(result.current.options).toEqual(expect.objectContaining({ source: 'entries', entryIds: [5, 3] }));
         expect(result.current.sourceReady).toBe(true);
@@ -79,6 +80,38 @@ describe('useImportExportBook sources', () => {
         expect(authFetch.mock.calls.filter(([url]) => url.startsWith('/api/books/versions'))).toHaveLength(2);
     });
 
+    it('opens a book about a person on their saved search, their name and a dedication to them, all editable', async () => {
+        const authFetch = respond({
+            '/api/saved-searches': () => json({ savedSearches: [], limit: 50 }),
+            '/api/books/preview': () => json(preview),
+        });
+        const { result } = renderBook(authFetch, { kind: 'person', name: 'Marie', savedSearchId: 9, savedSearchName: 'Book about Marie' });
+
+        expect(result.current.options).toEqual(expect.objectContaining({
+            source: 'savedSearch',
+            savedSearchId: 9,
+            title: 'Marie',
+            dedication: 't:bookPersonDedication',
+            chapterMode: 'year',
+        }));
+        expect(result.current.sourceNote).toBe('t:bookPersonNote');
+        await waitFor(() => expect(authFetch).toHaveBeenCalledWith('/api/books/versions?source=savedSearch&savedSearchId=9'));
+
+        await act(async () => { await result.current.handlePreview(); });
+        const previewUrl = new URL(authFetch.mock.calls.find(([url]) => url.startsWith('/api/books/preview'))![0], 'http://test');
+        expect(previewUrl.searchParams.get('savedSearchId')).toBe('9');
+        expect(previewUrl.searchParams.get('title')).toBe('Marie');
+        expect(previewUrl.searchParams.get('chapterMode')).toBe('year');
+
+        act(() => result.current.changeOption('dedication', ''));
+        act(() => result.current.changeOption('source', 'journal'));
+        expect(result.current.sourceNote).toBeUndefined();
+        await act(async () => { await result.current.handlePreview(); });
+        const journalUrl = new URL(authFetch.mock.calls.filter(([url]) => url.startsWith('/api/books/preview')).at(-1)![0], 'http://test');
+        expect(journalUrl.searchParams.has('dedication')).toBe(false);
+        expect(journalUrl.searchParams.has('savedSearchId')).toBe(false);
+    });
+
     it('builds the next hand-picked version from a saved version’s entries', async () => {
         const authFetch = respond({ '/api/books/picked-entries': () => json({ entries: [], missingIds: [] }) });
         const { result } = renderBook(authFetch);
@@ -97,7 +130,7 @@ describe('useImportExportBook sources', () => {
             '/api/books/export': refusal,
             '/api/books/versions': () => json([]),
         });
-        const { result, showMessage } = renderBook(authFetch, [3]);
+        const { result, showMessage } = renderBook(authFetch, { kind: 'entries', entryIds: [3] });
 
         await act(async () => { await result.current.handlePreview(); });
         await act(async () => { await result.current.handleDownload(); });

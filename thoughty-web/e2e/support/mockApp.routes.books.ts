@@ -6,6 +6,7 @@ import { byStart, mockEraContains, type MockLifeEra } from "./mockApp.routes.lif
 import { buildMockBookPdf } from "./mockBookPdf";
 import { bookInlineImages } from "./mockApp.routes.attachments";
 import { MOCK_BOOK_COPY, mockBookDate, mockBookMonth, type MockBookLanguage } from "./mockBookLanguage";
+import { isMockSealed } from "./mockApp.routes.time-capsules";
 
 type BookPreview = components["schemas"]["BookPreviewResponseDto"];
 type BookSource = MockBookVersion["source"];
@@ -37,12 +38,15 @@ function pickedIds(raw: string | null): number[] {
   return ids;
 }
 
-/** The entries a book request selects, as `BookEntrySourceService` selects them. */
+/** The entries a book can hold, as `BookEntrySourceService` reads them: sealed time capsules stay out until they open. */
+const bookableEntries = (state: MockAppState) => state.entries.filter((entry) => !isMockSealed(entry));
+
+/** The entries a book request selects, as `BookEntrySourceService` selects them; the recycle bin is never among them. */
 function selectEntries(state: MockAppState, params: URLSearchParams): BookSelection {
   const source = params.get("source") ?? "journal";
   if (source === "entries") {
     const ids = pickedIds(params.get("entryIds"));
-    const entries = state.entries.filter((entry) => ids.includes(entry.id));
+    const entries = bookableEntries(state).filter((entry) => ids.includes(entry.id));
     if (entries.length !== ids.length) {
       throw new BookRefusal(400, "BOOK_PICKED_ENTRIES_UNAVAILABLE", "Some picked entries no longer exist or are in the recycle bin.");
     }
@@ -70,7 +74,7 @@ function selectEntries(state: MockAppState, params: URLSearchParams): BookSelect
       personId: saved.filters.personId ? String(saved.filters.personId) : "",
     });
     return {
-      entries: getFilteredEntries(state, filters).filtered,
+      entries: getFilteredEntries(state, filters).filtered.filter((entry) => !isMockSealed(entry)),
       source: { kind: "savedSearch", savedSearchId: saved.id, savedSearchName: saved.name },
       defaultTitle: saved.name,
     };
@@ -78,7 +82,7 @@ function selectEntries(state: MockAppState, params: URLSearchParams): BookSelect
 
   const diaryId = params.get("diaryId");
   const diary = state.diaries.find((candidate) => String(candidate.id) === diaryId);
-  const entries = state.entries.filter((entry) => !entry.is_archived && (!diaryId || String(entry.diaryId ?? 1) === diaryId));
+  const entries = bookableEntries(state).filter((entry) => !entry.is_archived && (!diaryId || String(entry.diaryId ?? 1) === diaryId));
   return { entries, source: { kind: "journal", diaryId: diaryId ? Number(diaryId) : null }, defaultTitle: diary?.name };
 }
 
@@ -310,7 +314,7 @@ async function answerBookRoute({ route, request, url, pathname, searchParams, st
 
   if (pathname === "/api/books/picked-entries" && method === "GET") {
     const ids = pickedIds(searchParams.get("entryIds"));
-    const entries = chronological(state.entries.filter((entry) => ids.includes(entry.id)));
+    const entries = chronological(bookableEntries(state).filter((entry) => ids.includes(entry.id)));
     await fulfillJson(route, {
       entries: entries.map((entry) => ({
         id: entry.id,

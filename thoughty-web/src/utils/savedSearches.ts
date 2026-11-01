@@ -7,6 +7,9 @@ import type { LifeEra } from '../services/api/lifeErasService';
 import { eraLabel } from './lifeEras';
 import type { Person } from '../services/api/peopleService';
 
+/** The longest saved search name the API takes. */
+export const SAVED_SEARCH_NAME_MAX_LENGTH = 80;
+
 /** The journal URL parameter that names the saved search being shown. */
 export const SAVED_SEARCH_PARAM = 'view';
 
@@ -70,6 +73,35 @@ export function matchesSavedSearch(filters: SavedSearchFilters, state: JournalFi
     // Searches saved before life eras or people have none
     && current.eraId === (filters.eraId ?? null)
     && current.personId === (filters.personId ?? null);
+}
+
+/**
+ * The filter bar as a person's view shows it: every entry that mentions them, archived ones too, with
+ * no other filter (what opening a person from a mention or the People page sets).
+ */
+export function personViewFilterState(personId: number): JournalFilterState {
+  return {
+    search: '',
+    searchMode: 'keyword',
+    searchSort: 'relevance',
+    filterTags: [],
+    filterDateObj: null,
+    filterVisibility: 'all',
+    filterFavorites: false,
+    filterArchiveStatus: 'all',
+    filterMood: '',
+    filterEraId: null,
+    filterPersonId: personId,
+  };
+}
+
+/** The writer's saved search of exactly a person's view, across all diaries, if they have one. */
+export function findPersonViewSearch<T extends { diaryId: number | null; filters: SavedSearchFilters }>(
+  searches: readonly T[],
+  personId: number,
+): T | undefined {
+  const state = personViewFilterState(personId);
+  return searches.find((saved) => saved.diaryId === null && matchesSavedSearch(saved.filters, state));
 }
 
 /** A short line naming the diary scope and every filter a saved search sets, in the reader's language. */

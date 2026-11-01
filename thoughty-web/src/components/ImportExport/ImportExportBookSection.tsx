@@ -56,6 +56,7 @@ export function BookSection({
     options,
     preview,
     sourceReady,
+    sourceNote,
     savedSearches,
     pickedEntries,
     generating,
@@ -85,6 +86,8 @@ export function BookSection({
     preview: BookPreviewData | null;
     /** Whether the source names its entries, so the book can be previewed and generated. */
     sourceReady: boolean;
+    /** Says what the book is built from when a Make a book action chose it (a person's saved search). */
+    sourceNote?: string;
     savedSearches: BookSourceLoad<SavedSearch[]>;
     pickedEntries: BookSourceLoad<BookPickedEntries>;
     generating: boolean;
@@ -123,6 +126,7 @@ export function BookSection({
                 <BookSourceControls
                     options={options}
                     diaryName={diaryName}
+                    note={sourceNote}
                     savedSearches={savedSearches}
                     pickedEntries={pickedEntries}
                     onOptionChange={onOptionChange}

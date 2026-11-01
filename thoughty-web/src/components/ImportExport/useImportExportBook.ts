@@ -4,11 +4,11 @@ import type { CloudFileInfo, CloudProviderType } from '../../services/api/cloudS
 import { downloadBlob } from '../../utils/downloadFile';
 import { writersToday } from '../../utils/entryDate';
 import { readApiErrorMessage } from '../../services/api/base';
-import { appendBookSourceParams, bookVersionsQuery, isBookSourceReady } from './bookSource';
+import type { BookStart } from '../../utils/appRouting';
+import { appendBookSourceParams, bookVersionsQuery, describeBookStart, initialBookOptions, isBookSourceReady } from './bookSource';
 import { useBookSourceData } from './useBookSourceData';
 import { isCachedPdfFor, pdfSettings, readBookFile, type CachedBookPdf, type GeneratedBookFile } from './bookFile';
 import {
-    DEFAULT_BOOK_OPTIONS,
     type BookOptions,
     type BookPreviewData,
     type BookVersionData,
@@ -26,8 +26,8 @@ interface UseImportExportBookProps {
     authFetch: (url: string, options?: RequestInit) => Promise<Response>;
     connectedProviders: CloudProviderType[];
     diaryId?: number | null;
-    /** Entries picked in the journal (its Make a book action), which open the converter as a hand-picked book. */
-    initialEntryIds?: readonly number[];
+    /** What a Make a book action opens the converter on: entries picked in the journal, or a person's saved search. */
+    initialStart?: BookStart | null;
     showMessage: (type: MessageState['type'], text: string, duration?: number) => void;
     t: TranslationFunction;
 }
@@ -36,13 +36,11 @@ export function useImportExportBook({
     authFetch,
     connectedProviders,
     diaryId,
-    initialEntryIds,
+    initialStart,
     showMessage,
     t,
 }: UseImportExportBookProps) {
-    const [options, setOptions] = useState<BookOptions>(() => (initialEntryIds?.length
-        ? { ...DEFAULT_BOOK_OPTIONS, source: 'entries', entryIds: [...new Set(initialEntryIds)] }
-        : DEFAULT_BOOK_OPTIONS));
+    const [options, setOptions] = useState<BookOptions>(() => initialBookOptions(initialStart, t));
     const sourceData = useBookSourceData({ authFetch, options });
     const sourceReady = isBookSourceReady(options);
     const versionsQuery = bookVersionsQuery(options, diaryId);
@@ -315,6 +313,7 @@ export function useImportExportBook({
         preview,
         savedSearches: sourceData.savedSearches,
         setCloudProvider,
+        sourceNote: describeBookStart(initialStart, options, t),
         sourceReady,
         pickVersionEntries,
         versions,

@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 
 import type FilterControls from '../FilterControls/FilterControls';
 import { JOURNAL_PERSON_PARAM, parseJournalPersonParam } from '../../utils/appRouting';
-import { SAVED_SEARCH_PARAM } from '../../utils/savedSearches';
+import { SAVED_SEARCH_PARAM, personViewFilterState } from '../../utils/savedSearches';
 
 /** The filter bar's setters that opening a person's entries resets, and the person filter itself. */
 export type PersonFilterControls = Pick<ComponentProps<typeof FilterControls>,
@@ -41,17 +41,18 @@ export function usePersonFilterRoute(controls: PersonFilterControls): void {
       if (routePersonId === filterPersonId) return;
       const current = controlsRef.current;
       if (routePersonId !== null && !showsSavedSearch) {
-        current.setSearch('');
-        current.setSearchMode('keyword');
-        current.setSearchSort('relevance');
-        current.setFilterTags([]);
-        current.setFilterDateObj(null);
-        current.setFilterVisibility('all');
-        current.setFilterFavorites(false);
         // Archived entries mention the person too
-        current.setFilterArchiveStatus('all');
-        current.setFilterMood('');
-        current.setFilterEraId(null);
+        const view = personViewFilterState(routePersonId);
+        current.setSearch(view.search);
+        current.setSearchMode(view.searchMode);
+        current.setSearchSort(view.searchSort);
+        current.setFilterTags(view.filterTags);
+        current.setFilterDateObj(view.filterDateObj);
+        current.setFilterVisibility(view.filterVisibility);
+        current.setFilterFavorites(view.filterFavorites);
+        current.setFilterArchiveStatus(view.filterArchiveStatus);
+        current.setFilterMood(view.filterMood);
+        current.setFilterEraId(view.filterEraId);
       }
       current.setFilterPersonId(routePersonId);
       current.setPage(1);

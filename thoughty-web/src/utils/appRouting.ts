@@ -65,13 +65,21 @@ export function buildDiaryRouteSearchParams(
 
   return nextSearchParams;
 }
-/** The navigation state that opens the book converter on entries picked in the journal. */
+/**
+ * How the book converter opens from elsewhere: on entries picked in the journal (its Make a book
+ * action), or on the saved search of a person's entries (the person view's Make a book).
+ */
+export type BookStart =
+  | { readonly kind: 'entries'; readonly entryIds: readonly number[] }
+  | { readonly kind: 'person'; readonly name: string; readonly savedSearchId: number; readonly savedSearchName: string };
+
+/** The navigation state that opens the book converter on a book start. */
 export interface BookConverterRouteState {
-  readonly bookEntryIds: readonly number[];
+  readonly bookStart: BookStart;
 }
 
-/** Where the journal's Make a book action goes: the book converter of the current diary, with the picked entries. */
-export function buildBookConverterRoute(diaryId: number | null, entryIds: readonly number[]): {
+/** Where a Make a book action goes: the book converter of the diary (all diaries for null), with what the book starts from. */
+export function buildBookConverterRoute(diaryId: number | null, start: BookStart): {
   pathname: string;
   search: string;
   state: BookConverterRouteState;
@@ -79,12 +87,22 @@ export function buildBookConverterRoute(diaryId: number | null, entryIds: readon
   return {
     pathname: getPathForView('importExport'),
     search: toSearchString(buildDiaryRouteSearchParams('importExport', diaryId, { importExportSection: 'book' })),
-    state: { bookEntryIds: [...entryIds] },
+    state: { bookStart: start.kind === 'entries' ? { kind: 'entries', entryIds: [...start.entryIds] } : { ...start } },
   };
 }
 
-/** The entry IDs a navigation brought to the book converter, or none. */
-export function readBookConverterEntryIds(state: unknown): number[] {
-  const ids = (state as Partial<BookConverterRouteState> | null)?.bookEntryIds;
-  return Array.isArray(ids) ? ids.filter((id): id is number => Number.isInteger(id) && id > 0) : [];
+const isPositiveId = (id: unknown): id is number => Number.isInteger(id) && (id as number) > 0;
+
+/** What a navigation brought the book converter to start from, or null when it brought nothing usable. */
+export function readBookConverterStart(state: unknown): BookStart | null {
+  const start = (state as Partial<BookConverterRouteState> | null)?.bookStart as Record<string, unknown> | undefined;
+  if (start?.kind === 'entries' && Array.isArray(start.entryIds)) {
+    const entryIds = start.entryIds.filter(isPositiveId);
+    return entryIds.length > 0 ? { kind: 'entries', entryIds } : null;
+  }
+  if (start?.kind === 'person' && isPositiveId(start.savedSearchId)
+    && typeof start.name === 'string' && start.name.trim() !== '' && typeof start.savedSearchName === 'string') {
+    return { kind: 'person', name: start.name, savedSearchId: start.savedSearchId, savedSearchName: start.savedSearchName };
+  }
+  return null;
 }

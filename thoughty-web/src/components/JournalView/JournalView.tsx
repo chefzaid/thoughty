@@ -297,6 +297,7 @@ function JournalView({
         <PersonFilterBanner
           person={selectedPerson}
           onClear={() => { setFilterPersonId(null); filters.setPage(1); }}
+          onNotify={onNotify}
           language={language}
           theme={theme}
           t={t}

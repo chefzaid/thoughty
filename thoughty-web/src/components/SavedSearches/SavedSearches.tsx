@@ -5,7 +5,7 @@ import { useDialogFocus } from '../../hooks/useDialogFocus';
 import type { LifeEra, Person, SavedSearch } from '../../services/api';
 import type { Diary, TranslationFunction } from '../../types';
 import { pluralPhrase } from '../../utils/pluralPhrase';
-import { describeSavedSearch, toSavedSearchFilters } from '../../utils/savedSearches';
+import { SAVED_SEARCH_NAME_MAX_LENGTH, describeSavedSearch, toSavedSearchFilters } from '../../utils/savedSearches';
 import type { Language } from '../../utils/translations';
 import SavedSearchList from './SavedSearchList';
 import { useSavedSearches } from './useSavedSearches';
@@ -25,8 +25,6 @@ interface SavedSearchesProps {
   /** Shows a message in the app's notice toast. */
   readonly notify: (message: string) => void;
 }
-
-const MAX_NAME_LENGTH = 80;
 
 /** The filter bar's saved searches: a button that names the one shown, and a dialog to save, show, rename and delete them. */
 function SavedSearches({ filters, currentDiaryId, diaries, eras = [], people = [], theme, language, t, notify }: SavedSearchesProps) {
@@ -204,7 +202,7 @@ function SavedSearches({ filters, currentDiaryId, diaries, eras = [], people = [
                       ? 'border-gray-300 bg-gray-50 text-gray-900'
                       : 'border-gray-700 bg-gray-900 text-gray-100'}`}
                     value={name}
-                    maxLength={MAX_NAME_LENGTH}
+                    maxLength={SAVED_SEARCH_NAME_MAX_LENGTH}
                     disabled={isFull}
                     aria-invalid={saveError ? true : undefined}
                     aria-describedby={[nameHelpId, saveError ? nameErrorId : ''].filter(Boolean).join(' ')}

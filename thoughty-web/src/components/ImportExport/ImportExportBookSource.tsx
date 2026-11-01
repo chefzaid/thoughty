@@ -14,6 +14,7 @@ const isMeaningSearch = (saved: SavedSearch) => saved.filters.searchMode === 'se
 export function BookSourceControls({
     options,
     diaryName,
+    note,
     savedSearches,
     pickedEntries,
     onOptionChange,
@@ -22,6 +23,8 @@ export function BookSourceControls({
 }: Readonly<{
     options: BookOptions;
     diaryName?: string;
+    /** Says what the book is built from, in place of the saved search hint. */
+    note?: string;
     savedSearches: BookSourceLoad<SavedSearch[]>;
     pickedEntries: BookSourceLoad<BookPickedEntries>;
     onOptionChange: OptionChange;
@@ -48,7 +51,7 @@ export function BookSourceControls({
                     <SavedSearchPicker options={options} savedSearches={savedSearches} onOptionChange={onOptionChange} t={t} />
                 )}
             </div>
-            {options.source === 'savedSearch' && <SavedSearchStatus savedSearches={savedSearches} t={t} />}
+            {options.source === 'savedSearch' && <SavedSearchStatus savedSearches={savedSearches} note={note} t={t} />}
             {options.source === 'entries' && (
                 <PickedEntriesList
                     entryIds={options.entryIds}
@@ -95,12 +98,19 @@ function SavedSearchPicker({
     );
 }
 
-function SavedSearchStatus({ savedSearches, t }: Readonly<{ savedSearches: BookSourceLoad<SavedSearch[]>; t: TranslationFunction }>) {
+function SavedSearchStatus({
+    savedSearches,
+    note,
+    t,
+}: Readonly<{ savedSearches: BookSourceLoad<SavedSearch[]>; note?: string; t: TranslationFunction }>) {
     if (savedSearches.status === 'error') {
         return <p className="book-source__note book-source__note--error" role="alert">{t(savedSearches.error)}</p>;
     }
     if (savedSearches.status !== 'ready') {
         return null;
+    }
+    if (note) {
+        return <p className="book-source__note">{note}</p>;
     }
     return (
         <p className="book-source__note">

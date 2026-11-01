@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import type { SavedSearchFilters } from '../services/api/savedSearchesService';
 import {
   describeSavedSearch,
+  findPersonViewSearch,
   matchesSavedSearch,
+  personViewFilterState,
   parseSavedSearchDate,
   savedSearchMood,
   toSavedSearchFilters,
@@ -108,5 +110,21 @@ describe('saved search filters', () => {
     const none: SavedSearchFilters = { ...saved, search: '  ', tags: [], date: null, visibility: 'all', archiveStatus: 'active', favorites: false, mood: '' };
     expect(describeSavedSearch(none, 9, diaries, t)).toBe('savedSearchNoFilters');
     expect(describeSavedSearch(none, null, diaries, t)).toBe('allDiaries · savedSearchNoFilters');
+  });
+
+  it("finds the search of exactly a person's view, across every diary", () => {
+    const personView = toSavedSearchFilters(personViewFilterState(12));
+    expect(personView).toEqual({
+      search: '', searchMode: 'keyword', sort: 'relevance', tags: [], date: null, visibility: 'all',
+      archiveStatus: 'all', favorites: false, mood: '', eraId: null, personId: 12,
+    });
+    const searches = [
+      { id: 1, diaryId: 2, filters: personView },
+      { id: 2, diaryId: null, filters: { ...personView, archiveStatus: 'active' as const } },
+      { id: 3, diaryId: null, filters: { ...personView, personId: 13 } },
+      { id: 4, diaryId: null, filters: { ...personView, tags: [] as string[], eraId: undefined } },
+    ];
+    expect(findPersonViewSearch(searches, 12)?.id).toBe(4);
+    expect(findPersonViewSearch(searches, 14)).toBeUndefined();
   });
 });

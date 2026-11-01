@@ -132,7 +132,7 @@ export function useAppShellModel(): AppShellModel {
   }, notifier);
 
   const handleMakeBook = useCallback((entryIds: number[]) => {
-    const { state, ...to } = buildBookConverterRoute(currentDiaryId, entryIds);
+    const { state, ...to } = buildBookConverterRoute(currentDiaryId, { kind: 'entries', entryIds });
     navigate(to, { state });
   }, [currentDiaryId, navigate]);
 

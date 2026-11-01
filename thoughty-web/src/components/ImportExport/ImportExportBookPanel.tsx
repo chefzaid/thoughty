@@ -4,6 +4,7 @@ import ShareLinkDialog from '../ShareLinks/ShareLinkDialog';
 import type { CloudProviderType } from '../../services/api/cloudSyncService';
 import type { ImportExportSection, TranslationFunction } from '../../types';
 import type { Language } from '../../utils/translations';
+import type { BookStart } from '../../utils/appRouting';
 import { BookSection } from './ImportExportBookSection';
 import type { MessageState } from './ImportExport.types';
 import { useImportExportBook } from './useImportExportBook';
@@ -16,7 +17,7 @@ export function ImportExportBookPanel({
     connectedProviders,
     diaryId,
     diaryName,
-    initialEntryIds,
+    initialStart,
     isLight,
     language,
     sectionRef,
@@ -28,7 +29,7 @@ export function ImportExportBookPanel({
     connectedProviders: CloudProviderType[];
     diaryId?: number | null;
     diaryName?: string;
-    initialEntryIds?: readonly number[];
+    initialStart?: BookStart | null;
     isLight: boolean;
     language: Language;
     sectionRef: RefObject<HTMLElement | null>;
@@ -39,7 +40,7 @@ export function ImportExportBookPanel({
         authFetch,
         connectedProviders,
         diaryId,
-        initialEntryIds,
+        initialStart,
         showMessage,
         t,
     });
@@ -61,6 +62,7 @@ export function ImportExportBookPanel({
             options={book.options}
             preview={book.preview}
             sourceReady={book.sourceReady}
+            sourceNote={book.sourceNote}
             savedSearches={book.savedSearches}
             pickedEntries={book.pickedEntries}
             generating={book.action !== null}

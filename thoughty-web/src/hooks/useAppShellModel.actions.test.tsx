@@ -178,7 +178,7 @@ describe('useAppShellModel', () => {
 
     expect(navigate).toHaveBeenCalledWith(
       { pathname: '/import-export', search: '?diary=9&section=book&format=txt' },
-      { state: { bookEntryIds: [4, 2] } },
+      { state: { bookStart: { kind: 'entries', entryIds: [4, 2] } } },
     );
   });
 });

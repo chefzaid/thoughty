@@ -4,7 +4,7 @@ import DiaryTabs from '../components/DiaryTabs/DiaryTabs';
 import ImportExport from '../components/ImportExport/ImportExport';
 import type { Diary, ImportExportFormat, ImportExportSection } from '../types';
 import { resolveLanguage } from '../utils/language';
-import { readBookConverterEntryIds } from '../utils/appRouting';
+import { readBookConverterStart } from '../utils/appRouting';
 
 interface ImportExportRouteProps {
   readonly diaries: Diary[];
@@ -40,8 +40,8 @@ function ImportExportRoute({
   onRouteStateChange,
 }: Readonly<ImportExportRouteProps>) {
   const { state } = useLocation();
-  // Entries picked in the journal (Make a book) open the converter as a hand-picked book
-  const bookEntryIds = useMemo(() => readBookConverterEntryIds(state), [state]);
+  // A Make a book action opens the converter on the entries picked in the journal, or on a person's saved search
+  const bookStart = useMemo(() => readBookConverterStart(state), [state]);
   return (
     <>
       <DiaryTabs
@@ -62,7 +62,7 @@ function ImportExportRoute({
         initialSection={initialSection}
         initialExportFormat={initialExportFormat}
         initialIncludeVisibility={initialIncludeVisibility}
-        initialBookEntryIds={bookEntryIds}
+        initialBookStart={bookStart}
         onRouteStateChange={onRouteStateChange}
       />
     </>

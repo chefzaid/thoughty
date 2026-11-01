@@ -1,6 +1,9 @@
 import type { Language } from './translations';
 
-/** Where a book's entries come from: the journal, a saved search or hand-picked entries, and the journal's Make a book action. */
+/**
+ * Where a book's entries come from: the journal, a saved search or hand-picked entries, and the journal's
+ * Make a book actions (on picked entries, and on a person's view).
+ */
 export type BookSourcesTranslationKey =
   | "bookSourceLabel"
   | "bookSourceJournal"
@@ -30,7 +33,11 @@ export type BookSourcesTranslationKey =
   | "bookVersionSourceEntries_other"
   | "bookVersionUseEntries"
   | "bookVersionUseEntriesLabel"
-  | "bulkMakeBook";
+  | "bulkMakeBook"
+  | "personMakeBookLabel"
+  | "personBookSearchName"
+  | "bookPersonDedication"
+  | "bookPersonNote";
 
 export const bookSourcesTranslations: Record<Language, Record<BookSourcesTranslationKey, string>> = {
   en: {
@@ -67,6 +74,11 @@ export const bookSourcesTranslations: Record<Language, Record<BookSourcesTransla
     bookVersionUseEntries: "Use these entries",
     bookVersionUseEntriesLabel: "Use the entries of version {version}",
     bulkMakeBook: "Make a book",
+    personMakeBookLabel: "Make a book about {name}",
+    personBookSearchName: "Book about {name}",
+    bookPersonDedication: "For {name}",
+    bookPersonNote:
+      "Every entry that mentions {name}, from your saved search “{search}”, so each new version adds what you have written since. Sealed time capsules and the recycle bin stay out.",
   },
   fr: {
     bookSourceLabel: "Entrées issues de",
@@ -102,5 +114,10 @@ export const bookSourcesTranslations: Record<Language, Record<BookSourcesTransla
     bookVersionUseEntries: "Reprendre ces entrées",
     bookVersionUseEntriesLabel: "Reprendre les entrées de la version {version}",
     bulkMakeBook: "Faire un livre",
+    personMakeBookLabel: "Faire un livre sur {name}",
+    personBookSearchName: "Livre sur {name}",
+    bookPersonDedication: "Pour {name}",
+    bookPersonNote:
+      "Toutes les entrées qui mentionnent {name}, depuis votre recherche enregistrée « {search} » : chaque nouvelle version ajoute ce que vous avez écrit depuis. Les capsules temporelles scellées et la corbeille restent à l'écart.",
   },
 };

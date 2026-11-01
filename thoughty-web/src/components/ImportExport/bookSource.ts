@@ -1,7 +1,8 @@
 import type { TranslationFunction } from '../../types';
 import { pluralPhrase } from '../../utils/pluralPhrase';
 import type { Language } from '../../utils/translations';
-import type { BookOptions, BookVersionData } from './ImportExport.types';
+import type { BookStart } from '../../utils/appRouting';
+import { DEFAULT_BOOK_OPTIONS, type BookOptions, type BookVersionData } from './ImportExport.types';
 
 type BookSourceOptions = Pick<BookOptions, 'source' | 'savedSearchId' | 'entryIds'>;
 
@@ -55,4 +56,37 @@ export function describeBookVersionSource(
         return pluralPhrase(t, 'bookVersionSourceEntries', source.entryIds?.length ?? 0, language);
     }
     return t('bookVersionSourceJournal');
+}
+
+/**
+ * The settings the converter opens with: the defaults, the entries picked in the journal, or a book about a
+ * person: their saved search, their name as the title, chapters by year and a dedication to them, all editable.
+ */
+export function initialBookOptions(start: BookStart | null | undefined, t: TranslationFunction): BookOptions {
+    if (start?.kind === 'entries' && start.entryIds.length > 0) {
+        return { ...DEFAULT_BOOK_OPTIONS, source: 'entries', entryIds: [...new Set(start.entryIds)] };
+    }
+    if (start?.kind === 'person') {
+        return {
+            ...DEFAULT_BOOK_OPTIONS,
+            source: 'savedSearch',
+            savedSearchId: start.savedSearchId,
+            title: start.name,
+            dedication: t('bookPersonDedication', { name: start.name }),
+            chapterMode: 'year',
+        };
+    }
+    return DEFAULT_BOOK_OPTIONS;
+}
+
+/** What a book about a person is built from, while the converter still uses that person's saved search. */
+export function describeBookStart(
+    start: BookStart | null | undefined,
+    options: Pick<BookOptions, 'source' | 'savedSearchId'>,
+    t: TranslationFunction,
+): string | undefined {
+    if (start?.kind !== 'person' || options.source !== 'savedSearch' || options.savedSearchId !== start.savedSearchId) {
+        return undefined;
+    }
+    return t('bookPersonNote', { name: start.name, search: start.savedSearchName });
 }

@@ -6,18 +6,26 @@ import { getPathForView, type TranslationFunction } from '../../types';
 import { pluralPhrase } from '../../utils/pluralPhrase';
 import type { Language } from '../../utils/translations';
 import { mutedTextClass } from '../../utils/tintedText';
+import { usePersonBook } from './usePersonBook';
 
 interface PersonFilterBannerProps {
   readonly person: Person;
   readonly onClear: () => void;
+  /** Shows why a book about the person could not be started. */
+  readonly onNotify: (message: string) => void;
   readonly language: Language;
   readonly theme: 'light' | 'dark';
   readonly t: TranslationFunction;
 }
 
-/** Heads the journal while it shows the entries that mention one person. */
-export default function PersonFilterBanner({ person, onClear, language, theme, t }: PersonFilterBannerProps) {
+/**
+ * Heads the journal while it shows the entries that mention one person, with the way back to everyone
+ * and, once they have entries, Make a book of every one of them.
+ */
+export default function PersonFilterBanner({ person, onClear, onNotify, language, theme, t }: PersonFilterBannerProps) {
   const titleId = useId();
+  const personBook = usePersonBook({ onNotify, t });
+  const makingBook = personBook.pendingPersonId === person.id;
   const isDark = theme === 'dark';
   const buttonClass = `inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-sm font-medium ${isDark
     ? 'border-gray-600 bg-gray-900 text-gray-200 hover:bg-gray-800'
@@ -41,6 +49,20 @@ export default function PersonFilterBanner({ person, onClear, language, theme, t
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
+        {person.entryCount > 0 && (
+          <button
+            type="button"
+            onClick={() => { void personBook.makeBook(person); }}
+            disabled={makingBook}
+            aria-busy={makingBook || undefined}
+            // The name keeps the visible words while it waits, which aria-busy says
+            aria-label={t('personMakeBookLabel', { name: person.name })}
+            className={`${buttonClass} disabled:cursor-wait disabled:opacity-60`}
+          >
+            <span className={`codicon ${makingBook ? 'codicon-loading codicon-modifier-spin' : 'codicon-book'}`} aria-hidden="true" />
+            {t('bulkMakeBook')}
+          </button>
+        )}
         <Link to={getPathForView('people')} className={buttonClass}>
           <span className="codicon codicon-organization" aria-hidden="true" />
           {t('personViewAllPeople')}
