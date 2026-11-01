@@ -11,8 +11,10 @@ describe('BooksService book pages', () => {
   ];
   let entrySource: { select: jest.Mock };
   let service: BooksService;
+  let config: { getConfig: jest.Mock };
 
   beforeEach(() => {
+    config = { getConfig: jest.fn().mockResolvedValue({ language: 'en' }) };
     entrySource = { select: jest.fn().mockResolvedValue({ entries, source: { kind: 'journal' } }) };
     service = new BooksService(
       entrySource as unknown as BookEntrySourceService,
@@ -20,6 +22,7 @@ describe('BooksService book pages', () => {
       { isConfigured: jest.fn().mockResolvedValue(false) } as never,
       { getFileBuffer: jest.fn() } as never,
       { findAll: jest.fn().mockResolvedValue([]) } as never,
+      config as never,
     );
   });
 
@@ -63,7 +66,7 @@ describe('BooksService book pages', () => {
     expect((await service.buildBookForUser(1, {})).closingPage).toBe(false);
     const file = await service.export(1, { format: 'md', narrative: false, closingPage: true, today: '2026-11-01' });
 
-    expect(file.content).toContain('## About this book\n\nEntries from 2024-01-10 to 2024-03-05\n\n2 entries\n\nMade with Thoughty on 2026-11-01');
+    expect(file.content).toContain('## About this book\n\nEntries from January 10, 2024 to March 5, 2024\n\n2 entries\n\nMade with Thoughty on November 1, 2026');
   });
 
   it('prints them on their own pages of the PDF', async () => {
@@ -72,5 +75,27 @@ describe('BooksService book pages', () => {
 
     expect(raw).toContain('(dedication)');
     expect(raw).toContain('(epigraph)');
+  });
+
+  it('writes a French writer’s book in French, read from their settings', async () => {
+    config.getConfig.mockResolvedValue({ language: 'fr' });
+    const book = await service.buildBookForUser(1, { chapterMode: 'month' });
+    const file = await service.export(1, { format: 'md', narrative: false, closingPage: true, today: '2026-11-01', chapterMode: 'month' });
+
+    expect(config.getConfig).toHaveBeenCalledWith(1);
+    expect(book.language).toBe('fr');
+    expect(book.title).toBe('Mon livre de pensées');
+    expect(book.chapters.map((chapter) => chapter.title)).toEqual(['Janvier 2024', 'Mars 2024']);
+    expect(file.content).toContain('*par jane*\n\n*1 novembre 2026*');
+    expect(file.content).toContain('## Table des matières');
+    expect(file.content).toContain('## Chapitre 1 : Janvier 2024');
+    expect(file.content).toContain('### 10 janvier 2024');
+    expect(file.content).toContain('## À propos de ce livre\n\nEntrées du 10 janvier 2024 au 5 mars 2024\n\n2 entrées\n\nFait avec Thoughty le 1 novembre 2026');
+  });
+
+  it('writes the book in English for any other language setting', async () => {
+    config.getConfig.mockResolvedValue({ language: 'de' });
+
+    expect((await service.buildBookForUser(1, {})).language).toBe('en');
   });
 });

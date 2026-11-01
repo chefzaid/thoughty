@@ -6,12 +6,12 @@ const ENTRIES = [
   { id: 2, date: '2024-06-02', index: 1, content: 'Planning the week', tags: ['work'], visibility: 'private' as const, diaryId: 1 },
 ];
 
-async function openBookConverter(page: Page, quietMode = false) {
-  const { state } = await setupMockApp(page, { startAuthenticated: true, initialEntries: ENTRIES, config: { quietMode } });
+async function openBookConverter(page: Page, quietMode = false, language: 'en' | 'fr' = 'en') {
+  const { state } = await setupMockApp(page, { startAuthenticated: true, initialEntries: ENTRIES, config: { quietMode, language } });
   await page.clock.setFixedTime(new Date('2026-08-01T12:00:00'));
   await page.goto('/import-export?diary=1&section=book');
   const bookSection = page.locator('#book-section');
-  await bookSection.getByLabel('Weave thoughts into flowing prose with AI').uncheck();
+  await bookSection.getByLabel(language === 'fr' ? "Tisser les pensées en prose fluide avec l'IA" : 'Weave thoughts into flowing prose with AI').uncheck();
   return { state, bookSection };
 }
 
@@ -79,9 +79,40 @@ test.describe('Book pages', () => {
     await jump.selectOption({ label: 'About this book' });
     await expect(status).toHaveText('Page 5 of 5');
     const text = dialog.getByTestId('book-preview-page-text');
-    await expect(text).toContainText('Entries from 2024-05-01 to 2024-06-02');
+    await expect(text).toContainText('Entries from May 1, 2024 to June 2, 2024');
     await expect(text).toContainText('2 entries');
-    await expect(text).toContainText('Made with Thoughty on 2026-08-01');
+    await expect(text).toContainText('Made with Thoughty on August 1, 2026');
+  });
+
+  test('writes a French writer’s book in French, its chapters, contents and closing page', async ({ page }) => {
+    const { bookSection } = await openBookConverter(page, false, 'fr');
+    await bookSection.getByLabel('Type de chapitre').selectOption('month');
+    await bookSection.getByRole('checkbox', { name: /À propos de ce livre/ }).check();
+
+    await bookSection.getByRole('button', { name: 'Aperçu du livre' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Aperçu du livre' });
+    const status = dialog.getByRole('toolbar').getByRole('status');
+    await expect(status).toHaveText('Page 1 sur 5');
+    const text = dialog.getByTestId('book-preview-page-text');
+    await expect(text).toContainText('par testuser');
+
+    const jump = dialog.getByLabel('Aller à');
+    await expect(jump.locator('option')).toHaveText([
+      'Page de titre',
+      'Table des matières',
+      'Chapitre 1 : Mai 2024 (page 3)',
+      'Chapitre 2 : Juin 2024 (page 4)',
+      'À propos de ce livre',
+    ]);
+    await jump.selectOption({ label: 'Table des matières' });
+    await expect(text).toContainText('Table des matières');
+    await expect(text).toContainText('1. Mai 2024');
+    await jump.selectOption({ label: 'Chapitre 2 : Juin 2024 (page 4)' });
+    await expect(text).toContainText('Chapitre 2');
+    await jump.selectOption({ label: 'À propos de ce livre' });
+    await expect(text).toContainText('Entrées du 1 mai 2024 au 2 juin 2024');
+    await expect(text).toContainText('2 entrées');
+    await expect(text).toContainText('Fait avec Thoughty le 1 août 2026');
   });
 
   test('sends the pages with a download in another format', async ({ page }) => {

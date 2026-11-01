@@ -6,6 +6,7 @@ import { Entry, Setting, Diary, User } from '@/database/entities';
 import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
 import { noTimeCapsules } from '@/modules/time-capsules/time-capsules.test-helpers';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
+import { ConfigService } from '@/modules/config';
 
 export const mockEntry = {
   id: 1,
@@ -66,6 +67,10 @@ export async function createIoServiceTestBed() {
     getFileBuffer: jest.fn(),
   };
 
+  const configService = {
+    getConfig: jest.fn().mockResolvedValue({ language: 'en' }),
+  };
+
   const module: TestingModule = await Test.createTestingModule({
     providers: [
       IoService,
@@ -77,6 +82,7 @@ export async function createIoServiceTestBed() {
       { provide: EntryMentionsService, useValue: { save: (_userId: number, value: unknown) => entryRepository.save(value) } },
       noTimeCapsules(),
       { provide: AttachmentsService, useValue: attachmentsService },
+      { provide: ConfigService, useValue: configService },
     ],
   }).compile();
 
@@ -88,5 +94,6 @@ export async function createIoServiceTestBed() {
     diaryRepository,
     userRepository,
     attachmentsService,
+    configService,
   };
 }

@@ -1,5 +1,5 @@
 import { buildBook } from './book-converter.util';
-import { compareErasChronologically, eraContains, mostSpecificEra, OUTSIDE_ERAS_CHAPTER_TITLE } from './book-era.util';
+import { compareErasChronologically, eraContains, mostSpecificEra } from './book-era.util';
 
 const university = { name: 'University', startDate: '2010-09-01', endDate: '2014-06-30' };
 const erasmus = { name: 'Erasmus', startDate: '2012-09-01', endDate: '2013-06-30' };
@@ -60,7 +60,7 @@ describe('book-era.util', () => {
         ['University', ['First exams']],
         ['Erasmus', ['Lisbon semester']],
         ['The Paris years', ['Montmartre']],
-        [OUTSIDE_ERAS_CHAPTER_TITLE, ['High school']],
+        ['Other', ['High school']],
       ]);
     });
 
@@ -79,7 +79,7 @@ describe('book-era.util', () => {
       const book = buildBook(entries, { title: 'Life', chapterMode: 'eras' });
 
       expect(book.chapters).toHaveLength(1);
-      expect(book.chapters[0]?.title).toBe(OUTSIDE_ERAS_CHAPTER_TITLE);
+      expect(book.chapters[0]?.title).toBe('Other');
       expect(book.chapters[0]?.entries.map((entry) => entry.date)).toEqual(['2008-05-01', '2011-02-01', '2013-02-01', '2016-03-01']);
     });
   });

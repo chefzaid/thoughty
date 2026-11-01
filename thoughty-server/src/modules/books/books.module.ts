@@ -7,6 +7,7 @@ import { LifeErasModule } from '@/modules/life-eras';
 import { AiModule } from '@/modules/ai';
 import { CloudSyncModule } from '@/modules/cloud-sync';
 import { AttachmentsModule } from '@/modules/attachments';
+import { UserConfigModule } from '@/modules/config';
 import { BooksController } from './books.controller';
 import { BooksService } from './books.service';
 import { BookVersionsService } from './book-versions.service';
@@ -20,6 +21,7 @@ import { BookEntrySourceService } from './book-entry-source.service';
     EntriesModule,
     SavedSearchesModule,
     LifeErasModule,
+    UserConfigModule,
     TypeOrmModule.forFeature([BookVersion, Entry, Diary, User]),
   ],
   controllers: [BooksController],

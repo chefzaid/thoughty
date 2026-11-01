@@ -7,7 +7,8 @@ import {
   type EmbeddedBookImage,
 } from './book-image.util';
 import { inlineImageCaption, layoutBookEntry } from './book-inline-image.util';
-import { BOOK_CLOSING_PAGE_HEADING, bookClosingPageLines } from './book-pages.util';
+import { bookClosingPageLines } from './book-pages.util';
+import { bookCopy, formatBookDate, type BookLanguage } from './book-language.util';
 
 function escapeXml(text: string): string {
   return text
@@ -18,11 +19,16 @@ function escapeXml(text: string): string {
     .replaceAll("'", '&#39;');
 }
 
-function xhtmlDocument(title: string, body: string): string {
+/** The language every document of the book declares, as the package's `dc:language` does. */
+function bookLang(book: Pick<Book, 'language'>): BookLanguage {
+  return book.language ?? 'en';
+}
+
+function xhtmlDocument(title: string, body: string, language: BookLanguage): string {
   return [
     '<?xml version="1.0" encoding="utf-8"?>',
     '<!DOCTYPE html>',
-    '<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">',
+    `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="${language}" lang="${language}">`,
     '<head>',
     `<title>${escapeXml(title)}</title>`,
     '<link rel="stylesheet" type="text/css" href="styles.css"/>',
@@ -55,38 +61,42 @@ const EPUB_STYLES = [
   '.closing-page{padding-top:6em;text-align:center;color:#444}',
 ].join('\n');
 
-/** The book's own pages after the title page, in reading order, with their file names and navigation labels. */
-const FRONT_PAGES = [
-  { kind: 'dedication', label: 'Dedication' },
-  { kind: 'epigraph', label: 'Epigraph' },
-] as const;
+/** The book's own pages after the title page, in reading order. */
+const FRONT_PAGES = ['dedication', 'epigraph'] as const;
 
+/** The book's dedication and epigraph pages it has, with their file names and navigation labels. */
 function frontPages(book: Book) {
-  return FRONT_PAGES.flatMap((page) => {
-    const text = book[page.kind];
-    return text ? [{ ...page, text, href: `${page.kind}.xhtml` }] : [];
+  const copy = bookCopy(book.language);
+  return FRONT_PAGES.flatMap((kind) => {
+    const text = book[kind];
+    return text ? [{ kind, label: copy[kind], text, href: `${kind}.xhtml` }] : [];
   });
 }
 
-function buildFrontPage(page: ReturnType<typeof frontPages>[number]): string {
+function buildFrontPage(page: ReturnType<typeof frontPages>[number], language: BookLanguage): string {
   const paragraphs = page.text.split('\n\n').map((paragraph) => `<p>${escapeXml(paragraph)}</p>`);
-  return xhtmlDocument(page.label, [`<section class="${page.kind}" epub:type="${page.kind}">`, ...paragraphs, '</section>'].join('\n'));
+  return xhtmlDocument(
+    page.label,
+    [`<section class="${page.kind}" epub:type="${page.kind}">`, ...paragraphs, '</section>'].join('\n'),
+    language,
+  );
 }
 
 function buildTitlePage(book: Book): string {
+  const copy = bookCopy(book.language);
   const palette = BOOK_COVER_PALETTES[book.cover?.theme ?? 'classic'];
   const parts = [
     `<main class="title-page" style="background:${palette.background};color:${palette.foreground};border-top:0.75em solid ${palette.accent}">`,
   ];
   if (book.cover?.image) {
-    parts.push(`<img class="cover-image" src="cover.${book.cover.image.mimeType === 'image/png' ? 'png' : 'jpg'}" alt="${escapeXml(book.title)} cover"/>`);
+    parts.push(`<img class="cover-image" src="cover.${book.cover.image.mimeType === 'image/png' ? 'png' : 'jpg'}" alt="${escapeXml(copy.coverAlt(book.title))}"/>`);
   }
   parts.push(`<h1>${escapeXml(book.title)}</h1>`);
   if (book.author) {
-    parts.push(`<p class="author">by ${escapeXml(book.author)}</p>`);
+    parts.push(`<p class="author">${escapeXml(copy.byAuthor(book.author))}</p>`);
   }
-  parts.push(`<p class="date">${escapeXml(book.generatedAt)}</p>`, '</main>');
-  return xhtmlDocument(book.title, parts.join('\n'));
+  parts.push(`<p class="date">${escapeXml(formatBookDate(book.generatedAt, book.language))}</p>`, '</main>');
+  return xhtmlDocument(book.title, parts.join('\n'), bookLang(book));
 }
 
 function buildChapterPage(
@@ -95,12 +105,13 @@ function buildChapterPage(
   includeDates: boolean,
 ): string {
   const chapter = book.chapters[chapterIndex];
-  const parts = [`<h2>Chapter ${chapterIndex + 1}: ${escapeXml(chapter.title)}</h2>`];
+  const copy = bookCopy(book.language);
+  const parts = [`<h2>${escapeXml(copy.chapterHeading(chapterIndex + 1, chapter.title))}</h2>`];
 
   if (chapter.introduction) {
     parts.push(
       '<aside class="chapter-framing chapter-introduction">',
-      '<h3>Introduction</h3>',
+      `<h3>${escapeXml(copy.introduction)}</h3>`,
       `<p>${escapeXml(chapter.introduction)}</p>`,
       '</aside>',
     );
@@ -108,13 +119,13 @@ function buildChapterPage(
   if (chapter.narrative) {
     parts.push(`<div class="entry-content">${escapeXml(chapter.narrative)}</div>`);
     for (const entry of chapter.entries) {
-      renderEntryImages(parts, entry);
+      renderEntryImages(parts, entry, book.language);
     }
   } else {
     for (const entry of chapter.entries) {
       parts.push('<div class="entry">');
       if (includeDates) {
-        parts.push(`<p class="entry-date">${escapeXml(formatBookEntryDate(entry))}</p>`);
+        parts.push(`<p class="entry-date">${escapeXml(formatBookEntryDate(entry, book.language))}</p>`);
       }
       if (entry.title) {
         parts.push(`<h3 class="entry-title">${escapeXml(entry.title)}</h3>`);
@@ -124,27 +135,29 @@ function buildChapterPage(
         ? escapeXml(segment.text)
         : `<figure class="entry-image inline-image"><img src="${imagePath(segment.image)}" alt="${escapeXml(segment.alt)}"/><figcaption>${escapeXml(inlineImageCaption(segment))}</figcaption></figure>`));
       parts.push(`<div class="entry-content">${content.join('')}</div>`);
-      renderEntryImages(parts, entry, trailing);
+      renderEntryImages(parts, entry, book.language, trailing);
       parts.push('</div>');
     }
   }
   if (chapter.summary) {
     parts.push(
       '<aside class="chapter-framing chapter-summary">',
-      '<h3>Chapter Summary</h3>',
+      `<h3>${escapeXml(copy.chapterSummary)}</h3>`,
       `<p>${escapeXml(chapter.summary)}</p>`,
       '</aside>',
     );
   }
 
-  return xhtmlDocument(chapter.title, parts.join('\n'));
+  return xhtmlDocument(chapter.title, parts.join('\n'), bookLang(book));
 }
 
 function buildClosingPage(book: Book): string {
+  const heading = bookCopy(book.language).closingHeading;
   const lines = bookClosingPageLines(book).map((line) => `<p>${escapeXml(line)}</p>`);
   return xhtmlDocument(
-    BOOK_CLOSING_PAGE_HEADING,
-    [`<section class="closing-page" epub:type="colophon">`, `<h2>${escapeXml(BOOK_CLOSING_PAGE_HEADING)}</h2>`, ...lines, '</section>'].join('\n'),
+    heading,
+    [`<section class="closing-page" epub:type="colophon">`, `<h2>${escapeXml(heading)}</h2>`, ...lines, '</section>'].join('\n'),
+    bookLang(book),
   );
 }
 
@@ -155,6 +168,7 @@ function imagePath(image: EmbeddedBookImage): string {
 function renderEntryImages(
   parts: string[],
   entry: Book['chapters'][number]['entries'][number],
+  language: BookLanguage | undefined,
   images: EmbeddedBookImage[] = entry.images ?? [],
 ): void {
   for (const image of images) {
@@ -164,7 +178,7 @@ function renderEntryImages(
     parts.push(
       '<figure class="entry-image">',
       `<img src="${imagePath(image)}" alt="${escapeXml(image.name)}"/>`,
-      `<figcaption>${escapeXml(entry.date)} - ${escapeXml(image.name)}</figcaption>`,
+      `<figcaption>${escapeXml(formatBookDate(entry.date, language))} - ${escapeXml(image.name)}</figcaption>`,
       '</figure>',
     );
   }
@@ -185,27 +199,29 @@ function collectBookImages(book: Book): EmbeddedBookImage[] {
 }
 
 function buildNav(book: Book, includeToc: boolean): string {
+  const copy = bookCopy(book.language);
   const items = [
-    '<li><a href="title.xhtml">Title Page</a></li>',
-    ...frontPages(book).map((page) => `<li><a href="${page.href}">${page.label}</a></li>`),
+    `<li><a href="title.xhtml">${escapeXml(copy.titlePage)}</a></li>`,
+    ...frontPages(book).map((page) => `<li><a href="${page.href}">${escapeXml(page.label)}</a></li>`),
     ...book.chapters.map(
       (chapter, index) =>
         `<li><a href="chapter-${index + 1}.xhtml">${escapeXml(chapter.title)}</a></li>`,
     ),
-    ...(book.closingPage ? [`<li><a href="about.xhtml">${BOOK_CLOSING_PAGE_HEADING}</a></li>`] : []),
+    ...(book.closingPage ? [`<li><a href="about.xhtml">${escapeXml(copy.closingHeading)}</a></li>`] : []),
   ];
   const hidden = includeToc ? '' : ' hidden=""';
 
   return xhtmlDocument(
-    'Table of Contents',
+    copy.tableOfContents,
     [
       `<nav epub:type="toc"${hidden}>`,
-      '<h2>Table of Contents</h2>',
+      `<h2>${escapeXml(copy.tableOfContents)}</h2>`,
       '<ol>',
       ...items,
       '</ol>',
       '</nav>',
     ].join('\n'),
+    bookLang(book),
   );
 }
 
@@ -238,7 +254,7 @@ function buildOpf(book: Book, identifier: string): string {
     `<dc:identifier id="book-id">urn:uuid:${identifier}</dc:identifier>`,
     `<dc:title>${escapeXml(book.title)}</dc:title>`,
     author,
-    '<dc:language>en</dc:language>',
+    `<dc:language>${bookLang(book)}</dc:language>`,
     `<meta property="dcterms:modified">${book.generatedAt}T00:00:00Z</meta>`,
     '</metadata>',
     '<manifest>',
@@ -288,7 +304,7 @@ export async function renderBookEpub(book: Book, options: RenderBookOptions = {}
   zip.file('OEBPS/nav.xhtml', buildNav(book, includeToc));
   zip.file('OEBPS/title.xhtml', buildTitlePage(book));
   for (const page of frontPages(book)) {
-    zip.file(`OEBPS/${page.href}`, buildFrontPage(page));
+    zip.file(`OEBPS/${page.href}`, buildFrontPage(page, bookLang(book)));
   }
   zip.file('OEBPS/styles.css', EPUB_STYLES);
   if (book.cover?.image) {

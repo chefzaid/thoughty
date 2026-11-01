@@ -1,4 +1,5 @@
 import type { Book } from './book-model.util';
+import { bookCopy, formatBookDate, formatBookEntryCount } from './book-language.util';
 
 /** The longest dedication a book takes, in characters: a few lines on its own page. */
 export const MAX_BOOK_DEDICATION_LENGTH = 300;
@@ -41,23 +42,23 @@ export function bookPageMarkdownLines(text: string): string[] {
   });
 }
 
-/** The closing page's heading, in the book's language like the rest of its own words ("by", "Chapter"). */
-export const BOOK_CLOSING_PAGE_HEADING = 'About this book';
-
 /**
  * The closing page's lines, so a printed copy carries its own context: the dates of its first and
  * last entries, how many entries it holds (each counted once, however many chapters it is in), and
- * the writer's day it was made on. The count is the book's own description, so quiet mode keeps it.
+ * the writer's day it was made on, in the book's language. The count is the book's own description,
+ * so quiet mode keeps it.
  */
-export function bookClosingPageLines(book: Pick<Book, 'chapters' | 'generatedAt'>): string[] {
+export function bookClosingPageLines(book: Pick<Book, 'chapters' | 'generatedAt' | 'language'>): string[] {
+  const copy = bookCopy(book.language);
+  const date = (day: string) => formatBookDate(day, book.language);
   const entries = new Set(book.chapters.flatMap((chapter) => chapter.entries.map((entry) => entry.id ?? entry)));
   const dates = book.chapters.flatMap((chapter) => chapter.entries.map((entry) => entry.date)).sort();
   const first = dates[0];
   const last = dates.at(-1);
   const lines: string[] = [];
   if (first && last) {
-    lines.push(first === last ? `Entries from ${first}` : `Entries from ${first} to ${last}`);
+    lines.push(first === last ? copy.entriesOn(date(first)) : copy.entriesBetween(date(first), date(last)));
   }
-  lines.push(entries.size === 1 ? '1 entry' : `${entries.size} entries`, `Made with Thoughty on ${book.generatedAt}`);
+  lines.push(formatBookEntryCount(entries.size, book.language), copy.madeOn(date(book.generatedAt)));
   return lines;
 }

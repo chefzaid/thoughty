@@ -159,7 +159,7 @@ describeContract('books', (context) => {
       status: 200,
       contentType: /^text\/markdown/,
     });
-    expect(markdown.text).toMatch(/## About this book\n\nEntries from 2024-04-01 to 2024-08-01\n\n3 entries\n\nMade with Thoughty on \d{4}-\d{2}-\d{2}\n*$/);
+    expect(markdown.text).toMatch(/## About this book\n\nEntries from April 1, 2024 to August 1, 2024\n\n3 entries\n\nMade with Thoughty on [A-Z][a-z]+ \d{1,2}, \d{4}\n*$/);
     await call('GET /api/books/export', {
       as: alice,
       query: { ...PLAIN_BOOK, closingPage: 'yes' },
@@ -256,5 +256,35 @@ describeContract('books', (context) => {
       status: 400,
       code: 'CLOUD_NOT_CONNECTED',
     });
+  });
+
+  it('writes a French writer’s book in French, from their language setting', async () => {
+    const { bob } = context;
+    await createEntry(context, bob, { text: 'Promenade', date: '2024-05-01' });
+    await createEntry(context, bob, { text: 'Baignade', tags: ['mer'], date: '2024-08-02' });
+    await call('POST /api/config', { as: bob, json: { language: 'fr' }, status: 200 });
+    const query = { ...PLAIN_BOOK, chapterMode: 'month', closingPage: 'true', author: 'Bob' };
+
+    const preview = await call('GET /api/books/preview', { as: bob, query, status: 200 });
+    expect(preview.body).toMatchObject({ title: 'Mon livre de pensées', chapters: [{ title: 'Mai 2024' }, { title: 'Août 2024' }] });
+    const markdown = await call('GET /api/books/export', {
+      as: bob,
+      query: { ...query, format: 'md' },
+      status: 200,
+      contentType: /^text\/markdown/,
+    });
+    expect(markdown.text).toMatch(/\*par Bob\*\n\n\*\d{1,2} \p{L}+ \d{4}\*/u);
+    expect(markdown.text).toContain('## Table des matières');
+    expect(markdown.text).toContain('## Chapitre 2 : Août 2024');
+    expect(markdown.text).toContain('### 1 mai 2024');
+    expect(markdown.text).toMatch(/## À propos de ce livre\n\nEntrées du 1 mai 2024 au 2 août 2024\n\n2 entrées\n\nFait avec Thoughty le \d{1,2} \p{L}+ \d{4}\n*$/u);
+    const html = await call('GET /api/books/export', {
+      as: bob,
+      query: { ...query, format: 'html', chapterMode: 'tags' },
+      status: 200,
+      contentType: /^text\/html/,
+    });
+    expect(html.text).toContain('<html lang="fr">');
+    expect(html.text).toContain('<h2>Chapitre 2 : Pensées sans tag</h2>');
   });
 });

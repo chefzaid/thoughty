@@ -7,9 +7,6 @@ export interface BookEra {
   endDate: string | null;
 }
 
-/** The chapter of an era book that holds the entries dated outside every era. */
-export const OUTSIDE_ERAS_CHAPTER_TITLE = 'Other';
-
 const DAY_MS = 86_400_000;
 
 function dayNumber(date: string): number {

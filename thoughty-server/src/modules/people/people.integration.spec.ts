@@ -70,7 +70,7 @@ describePostgres('PostgreSQL people', () => {
       { removeStoredFiles: jest.fn() } as never,
       configService as never,
     );
-    io = new IoService(entries, dataSource.getRepository(Setting), dataSource.getRepository(Diary), dataSource.getRepository(User), mentions, timeCapsuleServiceOn(dataSource), { getFileBuffer: jest.fn() } as never);
+    io = new IoService(entries, dataSource.getRepository(Setting), dataSource.getRepository(Diary), dataSource.getRepository(User), mentions, timeCapsuleServiceOn(dataSource), { getFileBuffer: jest.fn() } as never, { getConfig: async () => ({}) } as never);
     savedSearches = new SavedSearchesService(dataSource.getRepository(SavedSearch), dataSource.getRepository(BookVersion));
     people = new PeopleService(dataSource.getRepository(Person));
   }, POSTGRES_SETUP_TIMEOUT_MS);

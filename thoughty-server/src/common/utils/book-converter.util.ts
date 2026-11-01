@@ -8,9 +8,9 @@ import {
   type ChapterMode,
   type ChapterOrder,
   type TagScope,
-  UNTAGGED_CHAPTER_TITLE,
 } from './book-model.util';
-import { compareErasChronologically, mostSpecificEra, OUTSIDE_ERAS_CHAPTER_TITLE, type BookEra } from './book-era.util';
+import { compareErasChronologically, mostSpecificEra, type BookEra } from './book-era.util';
+import { bookCopy, formatBookMonth, type BookLanguage } from './book-language.util';
 import { writersDayOr } from './writers-day.util';
 
 // The book model and its Markdown and HTML renderers live in their own modules; this one builds
@@ -93,29 +93,8 @@ function compareChapters(a: BookChapter, b: BookChapter, order: ChapterOrder): n
   }
 }
 
-const MONTH_NAMES = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-
-function createDateChapterTitle(date: string, mode: 'year' | 'month'): string {
-  const [year, month] = date.split('-');
-  if (mode === 'year') {
-    return year;
-  }
-
-  const monthName = MONTH_NAMES[Number.parseInt(month, 10) - 1] ?? month;
-  return `${monthName} ${year}`;
+function createDateChapterTitle(date: string, mode: 'year' | 'month', language?: BookLanguage): string {
+  return mode === 'year' ? date.slice(0, 4) : formatBookMonth(date.slice(0, 7), language);
 }
 
 type CalendarChapterMode = Exclude<ChapterMode, 'tags' | 'eras'>;
@@ -125,12 +104,13 @@ function chronologicalChapter(
   entry: BookEntry,
   mode: CalendarChapterMode,
   bookTitle: string,
+  language?: BookLanguage,
 ): { key: string; title: string } {
   if (mode === 'single') {
     return { key: 'single', title: bookTitle };
   }
   const key = mode === 'year' ? entry.date.slice(0, 4) : entry.date.slice(0, 7);
-  return { key, title: createDateChapterTitle(entry.date, mode) };
+  return { key, title: createDateChapterTitle(entry.date, mode, language) };
 }
 
 function buildChronologicalBook(
@@ -141,7 +121,7 @@ function buildChronologicalBook(
   const chapterMap = new Map<string, BookChapter>();
 
   for (const entry of sortChronologically(normalized)) {
-    const { key, title } = chronologicalChapter(entry, options.chapterMode, options.title);
+    const { key, title } = chronologicalChapter(entry, options.chapterMode, options.title, options.language);
     const chapter = chapterMap.get(key);
     if (chapter) {
       chapter.entries.push(entry);
@@ -155,6 +135,7 @@ function buildChronologicalBook(
     author: options.author,
     generatedAt: writersDayOr(options.today),
     chapters: [...chapterMap.values()],
+    language: options.language,
   };
 }
 
@@ -182,10 +163,10 @@ function buildEraBook(entries: BookEntryInput[], options: BuildBookOptions): Boo
     .filter((era) => byEra.has(era))
     .map((era) => ({ title: era.name, entries: byEra.get(era)! }));
   if (options.includeUntagged !== false && outside.length > 0) {
-    chapters.push({ title: OUTSIDE_ERAS_CHAPTER_TITLE, entries: outside });
+    chapters.push({ title: bookCopy(options.language).outsideErasChapter, entries: outside });
   }
 
-  return { title: options.title, author: options.author, generatedAt, chapters };
+  return { title: options.title, author: options.author, generatedAt, chapters, language: options.language };
 }
 
 /**
@@ -237,7 +218,7 @@ export function buildBook(entries: BookEntryInput[], options: BuildBookOptions):
   chapters.sort((a, b) => compareChapters(a, b, chapterOrder));
 
   if (includeUntagged && untagged.length > 0) {
-    chapters.push({ title: UNTAGGED_CHAPTER_TITLE, entries: sortChronologically(untagged) });
+    chapters.push({ title: bookCopy(options.language).untaggedChapter, entries: sortChronologically(untagged) });
   }
 
   return {
@@ -245,39 +226,20 @@ export function buildBook(entries: BookEntryInput[], options: BuildBookOptions):
     author: options.author,
     generatedAt: writersDayOr(options.today),
     chapters,
+    language: options.language,
   };
 }
 
 /**
- * Group entries chronologically into one chapter per month ("January 2024").
+ * Group entries chronologically into one chapter per month ("January 2024", "Janvier 2024" in French).
  * Used by the plain document exports (PDF, HTML, EPUB) where the journal is
  * presented as a linear, dated record rather than a tag-based book.
  */
 export function buildJournalDocument(
   entries: BookEntryInput[],
-  options: { title: string; author?: string; today?: string },
+  options: { title: string; author?: string; today?: string; language?: BookLanguage },
 ): Book {
-  const normalized = entries.map(normalizeBookEntry).filter((entry) => entry.content.trim());
-
-  const chapterMap = new Map<string, BookChapter>();
-  for (const entry of sortChronologically(normalized)) {
-    const [year, month] = entry.date.split('-');
-    const key = `${year}-${month}`;
-    const chapter = chapterMap.get(key);
-    if (chapter) {
-      chapter.entries.push(entry);
-    } else {
-      const monthName = MONTH_NAMES[Number.parseInt(month, 10) - 1] ?? month;
-      chapterMap.set(key, { title: `${monthName} ${year}`, entries: [entry] });
-    }
-  }
-
-  return {
-    title: options.title,
-    author: options.author,
-    generatedAt: writersDayOr(options.today),
-    chapters: [...chapterMap.values()],
-  };
+  return buildChronologicalBook(entries, { ...options, chapterMode: 'month' });
 }
 
 /**

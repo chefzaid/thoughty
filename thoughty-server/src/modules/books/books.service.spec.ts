@@ -9,6 +9,7 @@ import { EntrySearchService } from '@/modules/entries';
 import { SavedSearchesService } from '@/modules/saved-searches';
 import { BookEntrySourceService } from './book-entry-source.service';
 import { LifeErasService } from '@/modules/life-eras';
+import { ConfigService } from '@/modules/config';
 
 describe('BooksService', () => {
   const png = Buffer.from(
@@ -22,6 +23,7 @@ describe('BooksService', () => {
   let aiService: any;
   let attachmentsService: any;
   let lifeErasService: { findAll: jest.Mock };
+  let configService: { getConfig: jest.Mock };
   let mockQueryBuilder: any;
 
   const mockEntries = [
@@ -82,6 +84,7 @@ describe('BooksService', () => {
     };
 
     lifeErasService = { findAll: jest.fn().mockResolvedValue([]) };
+    configService = { getConfig: jest.fn().mockResolvedValue({ language: 'en' }) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -95,6 +98,7 @@ describe('BooksService', () => {
         { provide: AiBookComposerService, useValue: aiService },
         { provide: AttachmentsService, useValue: attachmentsService },
         { provide: LifeErasService, useValue: lifeErasService },
+        { provide: ConfigService, useValue: configService },
       ],
     }).compile();
 

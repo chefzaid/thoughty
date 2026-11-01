@@ -7,9 +7,10 @@ describe('IoService', () => {
   let settingRepository: any;
   let diaryRepository: any;
   let timeCapsules: Record<string, jest.Mock>;
+  let configService: { getConfig: jest.Mock };
 
   beforeEach(async () => {
-    ({ service, entryRepository, settingRepository, diaryRepository, timeCapsules } = await createIoServiceTestBed());
+    ({ service, entryRepository, settingRepository, diaryRepository, timeCapsules, configService } = await createIoServiceTestBed());
   });
 
   afterEach(() => {
@@ -219,6 +220,21 @@ describe('IoService', () => {
 
       expect(result.content).toContain('Test Diary');
       expect(result.content).toContain('by jane');
+    });
+
+    it('writes a French writer’s reading copy in French', async () => {
+      configService.getConfig.mockResolvedValue({ language: 'fr' });
+      entryRepository.createQueryBuilder().getMany.mockResolvedValue([mockEntry]);
+
+      const result = await service.export(1, undefined, false, 'html', '2026-11-01');
+
+      expect(configService.getConfig).toHaveBeenCalledWith(1);
+      expect(result.content).toContain('<html lang="fr">');
+      expect(result.content).toContain('<h1>Mon journal</h1>');
+      expect(result.content).toContain('<p class="author">par jane</p>');
+      expect(result.content).toContain('<p class="date">1 novembre 2026</p>');
+      expect(result.content).toContain('<h2>Chapitre 1 : Janvier 2024</h2>');
+      expect(result.content).toContain('<div class="entry-date">15 janvier 2024</div>');
     });
 
     it('should include diary names when exporting all diaries as JSON', async () => {

@@ -1,3 +1,5 @@
+import { MOCK_BOOK_COPY, type MockBookLanguage } from "./mockBookLanguage";
+
 /** A chapter of the mock book: its title and the text of each entry. */
 export interface MockPdfChapter {
   title: string;
@@ -13,6 +15,8 @@ interface MockPdfBook {
   epigraph?: string;
   /** The closing page's lines, under its "About this book" heading, when the book ends with one. */
   closingPage?: string[];
+  /** The language of the words the book writes itself; English without one. */
+  language?: MockBookLanguage;
 }
 
 const PAGE_WIDTH = 595;
@@ -51,9 +55,9 @@ interface MockPage {
 }
 
 /** The pages of one chapter: its heading, then its entries, continued on new pages as the server's PDF does. */
-function chapterPages(chapter: MockPdfChapter, number: number): MockPage[] {
+function chapterPages(chapter: MockPdfChapter, number: number, language: MockBookLanguage): MockPage[] {
   const lines = [
-    { text: `Chapter ${number}`, size: 20 },
+    { text: MOCK_BOOK_COPY[language].chapterNumber(number), size: 20 },
     { text: chapter.title, size: 16 },
     ...chapter.paragraphs.flatMap((paragraph) => [...wrap(paragraph).map((text) => ({ text, size: 11 })), { text: "", size: 11 }]),
   ];
@@ -86,10 +90,13 @@ function textPage(text: string): MockPage {
  * pages, a table of contents with chapter page numbers, each chapter starting on a new page, its
  * closing page, page
  * numbers from page 2, one outline item per chapter ("Chapter N: title") pointing at its first page,
- * and the server's named destinations for the book's own pages (`BOOK_PDF_DESTINATIONS`).
+ * and the server's named destinations for the book's own pages (`BOOK_PDF_DESTINATIONS`), its own
+ * words in the book's language.
  */
 export function buildMockBookPdf(book: MockPdfBook): Buffer {
-  const pages: MockPage[] = [{ lines: [{ text: book.title, size: 28 }, { text: `by ${book.author}`, size: 14 }] }];
+  const language = book.language ?? "en";
+  const copy = MOCK_BOOK_COPY[language];
+  const pages: MockPage[] = [{ lines: [{ text: book.title, size: 28 }, { text: copy.byAuthor(book.author), size: 14 }] }];
   const named: Array<[string, number]> = [];
   for (const [name, text] of [["dedication", book.dedication], ["epigraph", book.epigraph]] as const) {
     if (text) named.push([name, pages.push(textPage(text)) - 1]);
@@ -99,15 +106,15 @@ export function buildMockBookPdf(book: MockPdfBook): Buffer {
   const chapterStarts: number[] = [];
   book.chapters.forEach((chapter, index) => {
     chapterStarts.push(pages.length + 1);
-    pages.push(...chapterPages(chapter, index + 1));
+    pages.push(...chapterPages(chapter, index + 1, language));
   });
   if (book.closingPage) {
-    named.push(["about", pages.push({ lines: [{ text: "About this book", size: 16 }, ...book.closingPage.map((text) => ({ text, size: 11 }))] }) - 1]);
+    named.push(["about", pages.push({ lines: [{ text: copy.closingHeading, size: 16 }, ...book.closingPage.map((text) => ({ text, size: 11 }))] }) - 1]);
   }
   if (tocIndex >= 0) {
     pages[tocIndex] = {
       lines: [
-        { text: "Table of Contents", size: 20 },
+        { text: copy.tableOfContents, size: 20 },
         ...book.chapters.map((chapter, index) => ({ text: `${index + 1}. ${chapter.title} .... ${chapterStarts[index]}`, size: 11 })),
       ],
     };
@@ -137,7 +144,7 @@ export function buildMockBookPdf(book: MockPdfBook): Buffer {
       index < count - 1 ? `/Next ${outlineObject(index + 1)} 0 R` : "",
     ].filter(Boolean).join(" ");
     objects[outlineObject(index)] =
-      `<< /Title (${pdfText(`Chapter ${index + 1}: ${chapter.title}`)}) /Parent 4 0 R ${links} /Dest [${pageObject(chapterStarts[index]! - 1)} 0 R /XYZ null null null] >>`;
+      `<< /Title (${pdfText(copy.chapterHeading(index + 1, chapter.title))}) /Parent 4 0 R ${links} /Dest [${pageObject(chapterStarts[index]! - 1)} 0 R /XYZ null null null] >>`;
   });
 
   let body = "%PDF-1.4\n";

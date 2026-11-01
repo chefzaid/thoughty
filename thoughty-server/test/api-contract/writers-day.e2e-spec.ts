@@ -72,7 +72,9 @@ describeContract('writers-day', (context) => {
       contentType: /^text\/markdown/,
     });
     expect(String(book.headers['content-disposition'])).toBe(`attachment; filename="thoughty_book_Days_${today}.md"`);
-    expect(book.text).toContain(`*${today}*`);
+    // The title page writes the writer's day out in their language (English here)
+    const writtenDay = new Intl.DateTimeFormat('en', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${today}T00:00:00Z`));
+    expect(book.text).toContain(`*${writtenDay}*`);
   });
 
   it('reads when the writer writes in their own time zone: typed times as they are, creation times converted', async () => {

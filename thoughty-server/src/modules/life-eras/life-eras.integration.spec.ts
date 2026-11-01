@@ -54,7 +54,7 @@ describePostgres('PostgreSQL life eras', () => {
     savedSearches = new SavedSearchesService(dataSource.getRepository(SavedSearch), dataSource.getRepository(BookVersion));
     const source = new BookEntrySourceService(entries, dataSource.getRepository(Diary), savedSearches, search);
     const noAi = { isConfigured: jest.fn().mockResolvedValue(false) };
-    books = new BooksService(source, dataSource.getRepository(User), noAi as never, {} as never, service);
+    books = new BooksService(source, dataSource.getRepository(User), noAi as never, {} as never, service, { getConfig: async () => ({}) } as never);
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });
 

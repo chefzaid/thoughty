@@ -26,10 +26,13 @@ import {
   inlineImageIds,
   inlineImagesToAltText,
   writersDayOr,
+  bookCopy,
+  resolveBookLanguage,
 } from '@/common/utils';
 import { AttachmentsService } from '@/modules/attachments';
 import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
+import { ConfigService } from '@/modules/config';
 import { FormatConfigDto, PreviewImportDto, ImportDto, PreviewResponseDto, ImportResponseDto } from './dto';
 
 const MAX_IMPORT_SIZE = 5 * 1024 * 1024; // 5MB
@@ -62,6 +65,7 @@ export class IoService {
     private readonly entryMentions: EntryMentionsService,
     private readonly timeCapsules: TimeCapsuleService,
     private readonly attachmentsService: AttachmentsService,
+    private readonly configService: ConfigService,
   ) {}
 
   private async getFormatConfig(userId: number): Promise<FormatConfig> {
@@ -242,11 +246,17 @@ export class IoService {
     diary: Diary | null,
     today: string,
   ): Promise<{ content: string | Buffer; extension: string; contentType: string }> {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
+    // The document's own words follow the writer's app language, as books and the opt-in emails do
+    const [user, config] = await Promise.all([
+      this.userRepository.findOne({ where: { id: userId } }),
+      this.configService.getConfig(userId),
+    ]);
+    const language = resolveBookLanguage(config.language);
     const document = buildJournalDocument(entries, {
-      title: diary?.name ?? 'My Journal',
+      title: diary?.name ?? bookCopy(language).defaultJournalTitle,
       author: user?.username,
       today,
+      language,
     });
     // Documents show attachments only where the text places them, within the books' image budgets
     for (const chapter of document.chapters) {

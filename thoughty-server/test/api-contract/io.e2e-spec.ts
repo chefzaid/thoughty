@@ -404,4 +404,22 @@ describeContract('io', (context) => {
     });
     expect(context.api.storage.keys(CONTRACT_BUCKET)).not.toContain(attachment.stored_filename);
   });
+
+  it('writes a French writer’s reading copy in French, from their language setting', async () => {
+    const { bob } = context;
+    await createEntry(context, bob, { text: 'Promenade au port', date: '2024-08-02' });
+    await call('POST /api/config', { as: bob, json: { language: 'fr' }, status: 200 });
+
+    const html = await call('GET /api/io/export', {
+      as: bob,
+      query: { format: 'html' },
+      status: 200,
+      contentType: /^text\/html/,
+    });
+    expect(html.text).toContain('<html lang="fr">');
+    expect(html.text).toContain('<h1>Mon journal</h1>');
+    expect(html.text).toMatch(/<p class="date">\d{1,2} \p{L}+ \d{4}<\/p>/u);
+    expect(html.text).toMatch(/<h2>Chapitre \d+ : Août 2024<\/h2>/);
+    expect(html.text).toContain('<div class="entry-date">2 août 2024</div>');
+  });
 });

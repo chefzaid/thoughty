@@ -1,13 +1,12 @@
 import type { BookCover } from './book-cover-style.util';
 import type { EmbeddedBookImage } from './book-image.util';
 import type { BookEra } from './book-era.util';
+import { formatBookDate, type BookLanguage } from './book-language.util';
 
 export type ChapterOrder = 'alpha' | 'entries' | 'chrono';
 export type TagScope = 'all' | 'first';
 /** One chapter per tag, per calendar year or month, per life era, or the whole book as a single chapter. */
 export type ChapterMode = 'tags' | 'year' | 'month' | 'single' | 'eras';
-
-export const UNTAGGED_CHAPTER_TITLE = 'Untagged Thoughts';
 
 export interface BookEntry {
   id?: number;
@@ -44,6 +43,8 @@ export interface Book {
   epigraph?: string;
   /** Ends the book with an "About this book" page: its dates, entry count and the day it was made. */
   closingPage?: boolean;
+  /** The language of the words the book writes itself (headings, labels, dates); English without one. */
+  language?: BookLanguage;
 }
 
 export interface BuildBookOptions {
@@ -59,19 +60,25 @@ export interface BuildBookOptions {
   eras?: BookEra[];
   /** The writer's day the book is made on: its date, and the end of an ongoing era. The UTC day without it. */
   today?: string;
+  /** The writer's language, for the chapter titles the book writes itself (months, untagged, other). */
+  language?: BookLanguage;
 }
 
-/** The entry's date followed by its time of day when it has one, as books and documents print it. */
-export function formatBookEntryDate(entry: Pick<BookEntry, 'date' | 'timeOfDay'>): string {
-  return entry.timeOfDay ? `${entry.date} ${entry.timeOfDay}` : entry.date;
+/** The entry's date, with its time of day when it has one, as books and documents print it in their language. */
+export function formatBookEntryDate(entry: Pick<BookEntry, 'date' | 'timeOfDay'>, language?: BookLanguage): string {
+  return formatBookDate(entry.date, language, entry.timeOfDay);
 }
 
 /**
  * An entry's section heading in a book: its date and time when dates are printed, then its title.
  * Null when dates are left out and the entry has no title.
  */
-export function bookEntryHeading(entry: Pick<BookEntry, 'date' | 'timeOfDay' | 'title'>, includeDates: boolean): string | null {
-  const parts = [includeDates ? formatBookEntryDate(entry) : null, entry.title || null].filter(Boolean);
+export function bookEntryHeading(
+  entry: Pick<BookEntry, 'date' | 'timeOfDay' | 'title'>,
+  includeDates: boolean,
+  language?: BookLanguage,
+): string | null {
+  const parts = [includeDates ? formatBookEntryDate(entry, language) : null, entry.title || null].filter(Boolean);
   return parts.length > 0 ? parts.join(' · ') : null;
 }
 

@@ -5,6 +5,7 @@ import { getFilteredEntries } from "./mockApp.routes.entries";
 import { byStart, mockEraContains, type MockLifeEra } from "./mockApp.routes.life-eras";
 import { buildMockBookPdf } from "./mockBookPdf";
 import { bookInlineImages } from "./mockApp.routes.attachments";
+import { MOCK_BOOK_COPY, mockBookDate, mockBookMonth, type MockBookLanguage } from "./mockBookLanguage";
 
 type BookPreview = components["schemas"]["BookPreviewResponseDto"];
 type BookSource = MockBookVersion["source"];
@@ -15,7 +16,6 @@ const BOOK_PAGE_TEXTS = [
   { name: "dedication", max: 300, code: "BOOK_DEDICATION_TOO_LONG" },
   { name: "epigraph", max: 500, code: "BOOK_EPIGRAPH_TOO_LONG" },
 ] as const;
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 interface BookSelection {
   entries: MockEntry[];
@@ -100,7 +100,7 @@ function mostSpecificEra(eras: MockLifeEra[], date: string): MockLifeEra | undef
 }
 
 /** One chapter per life era in era order, each entry in its most specific era, then "Other" unless left out. */
-function buildEraChapters(entries: MockEntry[], eras: MockLifeEra[], params: URLSearchParams): MockChapter[] {
+function buildEraChapters(entries: MockEntry[], eras: MockLifeEra[], params: URLSearchParams, language: MockBookLanguage): MockChapter[] {
   const ordered = [...eras].sort(byStart);
   const chapters = new Map<number, MockChapter>();
   const outside: MockEntry[] = [];
@@ -115,14 +115,14 @@ function buildEraChapters(entries: MockEntry[], eras: MockLifeEra[], params: URL
     chapters.set(era.id, chapter);
   }
   const result = ordered.flatMap((era) => chapters.get(era.id) ?? []);
-  if (outside.length > 0 && readQueryFlag(params, "includeUntagged", true)) result.push({ title: "Other", entries: outside });
+  if (outside.length > 0 && readQueryFlag(params, "includeUntagged", true)) result.push({ title: MOCK_BOOK_COPY[language].outsideErasChapter, entries: outside });
   return result;
 }
 
 /** Chapters as `buildBook` groups them: by tag (alphabetical, untagged last), year, month, era, or one chapter. */
-function buildChapters(entries: MockEntry[], params: URLSearchParams, title: string, eras: MockLifeEra[]): MockChapter[] {
+function buildChapters(entries: MockEntry[], params: URLSearchParams, title: string, eras: MockLifeEra[], language: MockBookLanguage): MockChapter[] {
   const mode = params.get("chapterMode") ?? "tags";
-  if (mode === "eras") return buildEraChapters(entries, eras, params);
+  if (mode === "eras") return buildEraChapters(entries, eras, params, language);
   const chapters = new Map<string, MockChapter>();
   const place = (key: string, chapterTitle: string, entry: MockEntry) => {
     const chapter = chapters.get(key) ?? { title: chapterTitle, entries: [] };
@@ -134,9 +134,9 @@ function buildChapters(entries: MockEntry[], params: URLSearchParams, title: str
     const [year, month] = entry.date.split("-");
     if (mode === "single") place("single", title, entry);
     else if (mode === "year") place(year!, year!, entry);
-    else if (mode === "month") place(`${year}-${month}`, `${MONTHS[Number(month) - 1]} ${year}`, entry);
+    else if (mode === "month") place(`${year}-${month}`, mockBookMonth(`${year}-${month}`, language), entry);
     else if (entry.tags.length > 0) entry.tags.forEach((tag) => place(`tag:${tag.toLowerCase()}`, tag, entry));
-    else if (readQueryFlag(params, "includeUntagged", true)) place("~untagged", "Untagged Thoughts", entry);
+    else if (readQueryFlag(params, "includeUntagged", true)) place("~untagged", MOCK_BOOK_COPY[language].untaggedChapter, entry);
   }
 
   const result = [...chapters.entries()];
@@ -154,11 +154,14 @@ function bookPageTexts(params: URLSearchParams): { dedication?: string; epigraph
   return texts;
 }
 
+/** The book in the writer's language setting, as `BooksService` reads it. */
 function buildBook(state: MockAppState, params: URLSearchParams) {
   const pages = bookPageTexts(params);
   const selection = selectEntries(state, params);
-  const title = params.get("title")?.trim() || selection.defaultTitle || "My Book of Thoughts";
-  return { title, ...pages, source: selection.source, chapters: buildChapters(selection.entries, params, title, state.lifeEras) };
+  const language: MockBookLanguage = state.config.language === "fr" ? "fr" : "en";
+  const title = params.get("title")?.trim() || selection.defaultTitle || MOCK_BOOK_COPY[language].defaultBookTitle;
+  const chapters = buildChapters(selection.entries, params, title, state.lifeEras, language);
+  return { title, ...pages, language, source: selection.source, chapters };
 }
 
 function toPreview(book: ReturnType<typeof buildBook>): BookPreview {
@@ -184,11 +187,14 @@ const BOOK_CONTENT_TYPES: Record<string, string> = {
 };
 
 /** The closing page's lines, as `bookClosingPageLines` writes them: the entries' dates, their count, the writer's day. */
-function closingPageLines(book: ReturnType<typeof buildBook>, today: string | null): string[] {
+function closingPageLines(book: ReturnType<typeof buildBook>, today: string): string[] {
+  const copy = MOCK_BOOK_COPY[book.language];
+  const date = (day: string) => mockBookDate(day, book.language);
   const entries = [...new Map(book.chapters.flatMap((chapter) => chapter.entries).map((entry) => [entry.id, entry])).values()];
   const dates = entries.map((entry) => entry.date).sort();
-  const range = dates.length === 0 ? [] : [dates[0] === dates.at(-1) ? `Entries from ${dates[0]}` : `Entries from ${dates[0]} to ${dates.at(-1)}`];
-  return [...range, entries.length === 1 ? "1 entry" : `${entries.length} entries`, `Made with Thoughty on ${today}`];
+  const [first, last] = [dates[0], dates.at(-1)];
+  const range = first && last ? [first === last ? copy.entriesOn(date(first)) : copy.entriesBetween(date(first), date(last))] : [];
+  return [...range, copy.entryCount(entries.length), copy.madeOn(date(today))];
 }
 
 /** The generated book file, as `BooksService.export` names it: a real PDF, or the other formats' text. */
@@ -197,7 +203,7 @@ function exportBook(state: MockAppState, params: URLSearchParams) {
   const format = params.get("format") || "pdf";
   const embed = readQueryFlag(params, "embedImages", false);
   const chapters = book.chapters.map((chapter) => ({ title: chapter.title, paragraphs: chapter.entries.map((entry) => bookInlineImages(entry, embed)) }));
-  const closingPage = readQueryFlag(params, "closingPage", false) ? closingPageLines(book, params.get("today")) : undefined;
+  const closingPage = readQueryFlag(params, "closingPage", false) ? closingPageLines(book, params.get("today") ?? new Date().toISOString().slice(0, 10)) : undefined;
   const body = format === "pdf"
     ? buildMockBookPdf({
       title: book.title,
@@ -207,12 +213,13 @@ function exportBook(state: MockAppState, params: URLSearchParams) {
       dedication: book.dedication,
       epigraph: book.epigraph,
       closingPage,
+      language: book.language,
     })
     : [
       `# ${book.title}`,
       ...[book.dedication, book.epigraph].filter(Boolean),
-      ...chapters.map((chapter) => `## ${chapter.title}\n\n${chapter.paragraphs.join("\n\n")}`),
-      ...(closingPage ? ["## About this book", ...closingPage] : []),
+      ...chapters.map((chapter, index) => `## ${MOCK_BOOK_COPY[book.language].chapterHeading(index + 1, chapter.title)}\n\n${chapter.paragraphs.join("\n\n")}`),
+      ...(closingPage ? [`## ${MOCK_BOOK_COPY[book.language].closingHeading}`, ...closingPage] : []),
     ].join("\n\n");
   return {
     body,

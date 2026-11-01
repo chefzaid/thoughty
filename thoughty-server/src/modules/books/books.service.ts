@@ -16,6 +16,8 @@ import {
   MAX_BOOK_DEDICATION_LENGTH,
   MAX_BOOK_EPIGRAPH_LENGTH,
   normalizeBookPageText,
+  bookCopy,
+  resolveBookLanguage,
 } from '@/common/utils';
 import { BookQueryDto, BookPreviewResponseDto } from './dto';
 import type { BookVersionManifest, BookVersionSource } from '@/database/entities';
@@ -23,6 +25,7 @@ import { createBookCover } from './book-cover.util';
 import { AttachmentsService } from '@/modules/attachments';
 import { BookEntrySourceService } from './book-entry-source.service';
 import { LifeErasService } from '@/modules/life-eras';
+import { ConfigService } from '@/modules/config';
 
 export type BookFormat = 'pdf' | 'epub' | 'html' | 'md';
 
@@ -42,8 +45,6 @@ interface SourcedBook {
   book: Book;
   source: BookVersionSource;
 }
-
-const DEFAULT_BOOK_TITLE = 'My Book of Thoughts';
 
 /** A dedication or epigraph as the book prints it, refused with `code` when it is longer than `maxLength`. */
 function bookPageText(text: string | undefined, maxLength: number, code: ApiErrorCode, name: string): string | undefined {
@@ -65,6 +66,7 @@ export class BooksService {
     private readonly aiBookComposer: AiBookComposerService,
     private readonly attachmentsService: AttachmentsService,
     private readonly lifeEras: LifeErasService,
+    private readonly configService: ConfigService,
   ) {}
 
   private async resolveAuthor(userId: number, provided?: string): Promise<string | undefined> {
@@ -92,13 +94,16 @@ export class BooksService {
     // Checked first, so a refused text costs no query
     const dedication = bookPageText(query.dedication, MAX_BOOK_DEDICATION_LENGTH, 'BOOK_DEDICATION_TOO_LONG', 'dedication');
     const epigraph = bookPageText(query.epigraph, MAX_BOOK_EPIGRAPH_LENGTH, 'BOOK_EPIGRAPH_TOO_LONG', 'epigraph');
-    const [{ entries, source, defaultTitle }, author, eras] = await Promise.all([
+    // The book's own words follow the writer's app language, as the opt-in emails do
+    const [{ entries, source, defaultTitle }, author, eras, config] = await Promise.all([
       this.entrySource.select(userId, query),
       this.resolveAuthor(userId, query.author),
       query.chapterMode === 'eras' ? this.lifeEras.findAll(userId) : Promise.resolve([]),
+      this.configService.getConfig(userId),
     ]);
+    const language = resolveBookLanguage(config.language);
 
-    const title = query.title?.trim() || defaultTitle || DEFAULT_BOOK_TITLE;
+    const title = query.title?.trim() || defaultTitle || bookCopy(language).defaultBookTitle;
 
     const book = buildBook(entries, {
       title,
@@ -110,6 +115,7 @@ export class BooksService {
       tags: this.parseTagFilter(query.tags),
       eras,
       today: query.today,
+      language,
     });
     return { book: { ...book, dedication, epigraph, closingPage: query.closingPage === true }, source };
   }

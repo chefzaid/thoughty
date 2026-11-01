@@ -106,8 +106,8 @@ describe('renderBookEpub', () => {
     const chapterWith = await readZipEntry(await JSZip.loadAsync(withDates), 'OEBPS/chapter-1.xhtml');
     const chapterWithout = await readZipEntry(await JSZip.loadAsync(withoutDates), 'OEBPS/chapter-1.xhtml');
 
-    expect(chapterWith).toContain('2024-01-10');
-    expect(chapterWithout).not.toContain('2024-01-10');
+    expect(chapterWith).toContain('January 10, 2024');
+    expect(chapterWithout).not.toContain('January 10, 2024');
   });
 
   it('should package the custom cover image and selected palette', async () => {

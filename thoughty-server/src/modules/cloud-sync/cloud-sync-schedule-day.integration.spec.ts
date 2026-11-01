@@ -33,7 +33,8 @@ describePostgres('PostgreSQL scheduled cloud sync on the writer’s day', () => 
     const entries = dataSource.getRepository(Entry);
     const settings = dataSource.getRepository(Setting);
     const io = new IoService(entries, settings, dataSource.getRepository(Diary), dataSource.getRepository(User),
-      new EntryMentionsService(entries), timeCapsuleServiceOn(dataSource), { getFileBuffer: jest.fn() } as never);
+      new EntryMentionsService(entries), timeCapsuleServiceOn(dataSource), { getFileBuffer: jest.fn() } as never,
+      { getConfig: async () => ({}) } as never);
     const googleDrive = {
       isConfigured: () => true,
       exchangeCode: async () => ({ accessToken: 'access', refreshToken: 'refresh', expiresAt: Date.now() + 3_600_000 }),

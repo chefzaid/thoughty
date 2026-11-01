@@ -8,7 +8,8 @@ import {
 import { BOOK_COVER_PALETTES } from './book-cover-style.util';
 import type { EmbeddedBookImage } from './book-image.util';
 import { inlineImageCaption, layoutBookEntry } from './book-inline-image.util';
-import { BOOK_CLOSING_PAGE_HEADING, bookClosingPageLines } from './book-pages.util';
+import { bookClosingPageLines } from './book-pages.util';
+import { bookCopy, formatBookDate, type BookLanguage } from './book-language.util';
 
 const PAGE_MARGIN = 72;
 const TITLE_FONT_SIZE = 28;
@@ -58,10 +59,10 @@ function renderTitlePage(doc: PDFKit.PDFDocument, book: Book): void {
   doc.fillColor(palette.foreground).font('Helvetica-Bold').fontSize(TITLE_FONT_SIZE).text(book.title, { align: 'center' });
   doc.moveDown(1);
   if (book.author) {
-    doc.font('Helvetica-Oblique').fontSize(14).text(`by ${book.author}`, { align: 'center' });
+    doc.font('Helvetica-Oblique').fontSize(14).text(bookCopy(book.language).byAuthor(book.author), { align: 'center' });
     doc.moveDown(1);
   }
-  doc.font('Helvetica').fontSize(11).fillColor(palette.accent).text(book.generatedAt, { align: 'center' });
+  doc.font('Helvetica').fontSize(11).fillColor(palette.accent).text(formatBookDate(book.generatedAt, book.language), { align: 'center' });
   doc.fillColor('#000000');
 }
 
@@ -93,7 +94,7 @@ function renderFrontPage(doc: PDFKit.PDFDocument, kind: 'dedication' | 'epigraph
 function renderTableOfContents(doc: PDFKit.PDFDocument, book: Book): TocLinePosition[] {
   doc.addPage();
   doc.addNamedDestination(BOOK_PDF_DESTINATIONS.contents);
-  doc.font('Helvetica-Bold').fontSize(CHAPTER_FONT_SIZE).text('Table of Contents');
+  doc.font('Helvetica-Bold').fontSize(CHAPTER_FONT_SIZE).text(bookCopy(book.language).tableOfContents);
   doc.moveDown(1);
   doc.font('Helvetica').fontSize(BODY_FONT_SIZE);
 
@@ -137,6 +138,7 @@ function renderChapterBody(
   doc: PDFKit.PDFDocument,
   chapter: Book['chapters'][number],
   includeDates: boolean,
+  language: BookLanguage | undefined,
 ): void {
   if (chapter.narrative) {
     doc.font('Helvetica').fontSize(BODY_FONT_SIZE).fillColor('#000000').text(chapter.narrative, {
@@ -145,14 +147,14 @@ function renderChapterBody(
       paragraphGap: 8,
     });
     for (const entry of chapter.entries) {
-      renderEntryImages(doc, entry);
+      renderEntryImages(doc, entry, language);
     }
     return;
   }
 
   for (const entry of chapter.entries) {
     if (includeDates) {
-      doc.font('Helvetica-Oblique').fontSize(DATE_FONT_SIZE).fillColor('#888888').text(formatBookEntryDate(entry));
+      doc.font('Helvetica-Oblique').fontSize(DATE_FONT_SIZE).fillColor('#888888').text(formatBookEntryDate(entry, language));
       doc.moveDown(0.3);
     }
     if (entry.title) {
@@ -175,17 +177,18 @@ function renderChapterBody(
       }
     }
     doc.moveDown(1.2);
-    renderEntryImages(doc, entry, trailing);
+    renderEntryImages(doc, entry, language, trailing);
   }
 }
 
 function renderEntryImages(
   doc: PDFKit.PDFDocument,
   entry: Book['chapters'][number]['entries'][number],
+  language: BookLanguage | undefined,
   images: EmbeddedBookImage[] = entry.images ?? [],
 ): void {
   for (const image of images) {
-    drawEntryImage(doc, image, `${entry.date} - ${image.name}`);
+    drawEntryImage(doc, image, `${formatBookDate(entry.date, language)} - ${image.name}`);
   }
 }
 
@@ -232,22 +235,24 @@ function renderChapter(
   chapter: Book['chapters'][number],
   chapterNumber: number,
   includeDates: boolean,
+  language: BookLanguage | undefined,
 ): number {
+  const copy = bookCopy(language);
   doc.addPage();
   const startPageNumber = doc.bufferedPageRange().count;
-  doc.outline.addItem(`Chapter ${chapterNumber}: ${chapter.title}`);
-  doc.font('Helvetica-Bold').fontSize(CHAPTER_FONT_SIZE).text(`Chapter ${chapterNumber}`);
+  doc.outline.addItem(copy.chapterHeading(chapterNumber, chapter.title));
+  doc.font('Helvetica-Bold').fontSize(CHAPTER_FONT_SIZE).text(copy.chapterNumber(chapterNumber));
   doc.moveDown(0.2);
   doc.fontSize(CHAPTER_FONT_SIZE - 4).text(chapter.title);
   doc.moveDown(1.5);
 
   if (chapter.introduction) {
-    renderChapterFraming(doc, 'Introduction', chapter.introduction);
+    renderChapterFraming(doc, copy.introduction, chapter.introduction);
   }
-  renderChapterBody(doc, chapter, includeDates);
+  renderChapterBody(doc, chapter, includeDates, language);
   if (chapter.summary) {
     doc.moveDown(0.8);
-    renderChapterFraming(doc, 'Chapter Summary', chapter.summary);
+    renderChapterFraming(doc, copy.chapterSummary, chapter.summary);
   }
 
   return startPageNumber;
@@ -259,7 +264,7 @@ function renderClosingPage(doc: PDFKit.PDFDocument, book: Book): void {
   doc.addNamedDestination(BOOK_PDF_DESTINATIONS.about);
   const width = doc.page.width - doc.page.margins.left - doc.page.margins.right;
   doc.font('Helvetica-Bold').fontSize(CHAPTER_FONT_SIZE - 4).fillColor('#000000')
-    .text(BOOK_CLOSING_PAGE_HEADING, doc.page.margins.left, doc.page.height / 3, { width, align: 'center' });
+    .text(bookCopy(book.language).closingHeading, doc.page.margins.left, doc.page.height / 3, { width, align: 'center' });
   doc.moveDown(1);
   doc.font('Helvetica').fontSize(BODY_FONT_SIZE).fillColor('#444444');
   for (const line of bookClosingPageLines(book)) {
@@ -302,6 +307,7 @@ export function renderBookPdf(book: Book, options: RenderBookOptions = {}): Prom
       size: 'A4',
       margin: PAGE_MARGIN,
       bufferPages: true,
+      lang: book.language ?? 'en',
       info: {
         Title: book.title,
         ...(book.author && { Author: book.author }),
@@ -330,7 +336,7 @@ export function renderBookPdf(book: Book, options: RenderBookOptions = {}): Prom
 
     const chapterPageNumbers: number[] = [];
     for (const [index, chapter] of book.chapters.entries()) {
-      chapterPageNumbers.push(renderChapter(doc, chapter, index + 1, includeDates));
+      chapterPageNumbers.push(renderChapter(doc, chapter, index + 1, includeDates, book.language));
     }
 
     if (book.closingPage) {

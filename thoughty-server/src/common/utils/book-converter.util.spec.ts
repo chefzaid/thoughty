@@ -5,7 +5,6 @@ import {
   stripMarkdown,
   renderBookMarkdown,
   renderBookHtml,
-  UNTAGGED_CHAPTER_TITLE,
 } from './book-converter.util';
 
 describe('book-converter.util', () => {
@@ -52,14 +51,14 @@ describe('book-converter.util', () => {
       const book = buildBook(entries, { title: 'My Book' });
 
       const lastChapter = book.chapters.at(-1);
-      expect(lastChapter!.title).toBe(UNTAGGED_CHAPTER_TITLE);
+      expect(lastChapter!.title).toBe('Untagged Thoughts');
       expect(lastChapter!.entries.map((e) => e.content)).toEqual(['Random thought']);
     });
 
     it('should omit untagged entries when includeUntagged is false', () => {
       const book = buildBook(entries, { title: 'My Book', includeUntagged: false });
 
-      expect(book.chapters.some((c) => c.title === UNTAGGED_CHAPTER_TITLE)).toBe(false);
+      expect(book.chapters.some((c) => c.title === 'Untagged Thoughts')).toBe(false);
     });
 
     it('should sort chapters alphabetically by default', () => {
@@ -218,7 +217,7 @@ describe('book-converter.util', () => {
       expect(output).toContain('### Chapter Summary');
       expect(output).toContain('A concise chapter recap.');
       expect(output).not.toContain('Raw entry');
-      expect(output).not.toContain('### 2024-01-10');
+      expect(output).not.toContain('### January 10, 2024');
     });
 
     it('should render the narrative instead of listing entries in HTML', () => {
@@ -230,7 +229,7 @@ describe('book-converter.util', () => {
       expect(output).toContain('<h3>Chapter Summary</h3>');
       expect(output).toContain('A concise chapter recap.');
       expect(output).not.toContain('Raw entry');
-      expect(output).not.toContain('2024-01-10');
+      expect(output).not.toContain('January 10, 2024');
     });
   });
 
@@ -265,7 +264,7 @@ describe('book-converter.util', () => {
       expect(output).toContain('*by Jane*');
       expect(output).toContain('## Table of Contents');
       expect(output).toContain('## Chapter 1: food');
-      expect(output).toContain('### 2024-01-10');
+      expect(output).toContain('### January 10, 2024');
       expect(output).toContain('Pasta in Naples');
     });
 
@@ -274,7 +273,7 @@ describe('book-converter.util', () => {
       const output = renderBookMarkdown(book, { includeDates: false, includeToc: false });
 
       expect(output).not.toContain('## Table of Contents');
-      expect(output).not.toContain('### 2024-01-10');
+      expect(output).not.toContain('### January 10, 2024');
     });
 
     it('should embed an uploaded cover image', () => {
@@ -319,7 +318,7 @@ describe('book-converter.util', () => {
       const output = renderBookMarkdown(book);
 
       expect(output).toContain('![day\\.png](data:image/png;base64,cG5n)');
-      expect(output).toContain('*2024-01-01 \\- day\\.png*');
+      expect(output).toContain('*January 1, 2024 \\- day\\.png*');
       expect(output).not.toContain('unsafe.svg');
     });
   });
@@ -389,7 +388,7 @@ describe('book-converter.util', () => {
 
       expect(output).toContain('data:image/png;base64,cG5n');
       expect(output).toContain('alt="&lt;day&gt;.png"');
-      expect(output).toContain('2024-01-10 - &lt;day&gt;.png');
+      expect(output).toContain('January 10, 2024 - &lt;day&gt;.png');
       expect(output).toContain('Woven prose');
     });
   });
@@ -413,17 +412,17 @@ describe('book-converter.util', () => {
       const markdown = renderBookMarkdown(book);
       const html = renderBookHtml(book);
 
-      expect(markdown).toContain('### 2024-04-02 21:30 · Night <walk>');
-      expect(markdown).toContain('### 2024-04-02 07:05\n');
-      expect(markdown).toContain('### 2024-04-02\n\nUntimed');
-      expect(html).toContain('<div class="entry-date">2024-04-02 21:30</div>');
+      expect(markdown).toContain('### April 2, 2024 at 9:30 PM · Night <walk>');
+      expect(markdown).toContain('### April 2, 2024 at 7:05 AM\n');
+      expect(markdown).toContain('### April 2, 2024\n\nUntimed');
+      expect(html).toContain('<div class="entry-date">April 2, 2024 at 9:30 PM</div>');
       expect(html).toContain('<h3 class="entry-title">Night &lt;walk&gt;</h3>');
       expect(renderBookMarkdown(book, { includeDates: false })).toContain('### Night <walk>');
     });
 
     it('leaves the heading out without dates or a title', () => {
       expect(bookEntryHeading({ date: '2024-04-02', timeOfDay: null, title: null }, false)).toBeNull();
-      expect(bookEntryHeading({ date: '2024-04-02', timeOfDay: '07:05', title: 'Dawn' }, true)).toBe('2024-04-02 07:05 · Dawn');
+      expect(bookEntryHeading({ date: '2024-04-02', timeOfDay: '07:05', title: 'Dawn' }, true)).toBe('April 2, 2024 at 7:05 AM · Dawn');
     });
   });
 });
