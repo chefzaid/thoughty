@@ -28,6 +28,7 @@ import { resolveLanguage } from '../../utils/language';
 import TimeCapsuleField from './TimeCapsuleField';
 import { defaultTimeCapsule, type TimeCapsuleDraft } from '../../utils/timeCapsule';
 import { useInlineImageInsert } from '../InlineImages/useInlineImageInsert';
+import { useDictationField } from '../Dictation/useDictationField';
 
 const LazyMDEditor = lazy(() => import('../MarkdownEditor/MarkdownEditor'));
 
@@ -162,6 +163,7 @@ function EntryForm({
         text: newEntryText, setText: setNewEntryText, pendingFiles: pendingFiles ?? [], attachments: uploadedAttachments ?? [], theme, t,
     });
     const mentions = useMentionAutocomplete(newEntryText, setNewEntryText);
+    const dictation = useDictationField({ fieldRef: inlineImages.fieldRef, text: newEntryText, setText: setNewEntryText, language, theme, t });
     const mentionSuggestions = (
         <MentionSuggestions suggestions={mentions.suggestions} theme={theme} language={resolveLanguage(language)} t={t} />
     );
@@ -282,6 +284,7 @@ function EntryForm({
                         </div>
                     )}
                 </div>
+                {dictation.preview}
                 {setMood && setFeelings && (
                     <EntryMoodField
                         id="composer-mood"
@@ -394,6 +397,7 @@ function EntryForm({
                         placeholder={t('whatsOnYourMind')}
                         t={t}
                     />
+                    {dictation.button}
                     {onAddFile && (
                         <AttachmentUpload
                             pendingFiles={pendingFiles || []}
