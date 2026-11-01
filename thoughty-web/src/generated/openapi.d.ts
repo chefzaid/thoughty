@@ -14178,6 +14178,8 @@ export interface operations {
                 dedication?: string;
                 /** @description A short epigraph (a quotation and who said it) on its own page after the dedication; line breaks are kept. Longer than 500 characters (once trimmed) is a 400 BOOK_EPIGRAPH_TOO_LONG */
                 epigraph?: string;
+                /** @description End the book with an "About this book" page: the dates of its first and last entries, how many entries it holds, and the writer’s day it was made on (`today`) */
+                closingPage?: boolean;
                 /** @description Journal books: only include entries on or after this date (YYYY-MM-DD) */
                 dateFrom?: string;
                 /** @description Journal books: only include entries on or before this date (YYYY-MM-DD) */
@@ -14337,6 +14339,8 @@ export interface operations {
                 dedication?: string;
                 /** @description A short epigraph (a quotation and who said it) on its own page after the dedication; line breaks are kept. Longer than 500 characters (once trimmed) is a 400 BOOK_EPIGRAPH_TOO_LONG */
                 epigraph?: string;
+                /** @description End the book with an "About this book" page: the dates of its first and last entries, how many entries it holds, and the writer’s day it was made on (`today`) */
+                closingPage?: boolean;
                 /** @description Journal books: only include entries on or after this date (YYYY-MM-DD) */
                 dateFrom?: string;
                 /** @description Journal books: only include entries on or before this date (YYYY-MM-DD) */
@@ -14422,6 +14426,8 @@ export interface operations {
                 dedication?: string;
                 /** @description A short epigraph (a quotation and who said it) on its own page after the dedication; line breaks are kept. Longer than 500 characters (once trimmed) is a 400 BOOK_EPIGRAPH_TOO_LONG */
                 epigraph?: string;
+                /** @description End the book with an "About this book" page: the dates of its first and last entries, how many entries it holds, and the writer’s day it was made on (`today`) */
+                closingPage?: boolean;
                 /** @description Journal books: only include entries on or after this date (YYYY-MM-DD) */
                 dateFrom?: string;
                 /** @description Journal books: only include entries on or before this date (YYYY-MM-DD) */
@@ -14489,6 +14495,8 @@ export interface operations {
                 dedication?: string;
                 /** @description A short epigraph (a quotation and who said it) on its own page after the dedication; line breaks are kept. Longer than 500 characters (once trimmed) is a 400 BOOK_EPIGRAPH_TOO_LONG */
                 epigraph?: string;
+                /** @description End the book with an "About this book" page: the dates of its first and last entries, how many entries it holds, and the writer’s day it was made on (`today`) */
+                closingPage?: boolean;
                 /** @description Journal books: only include entries on or after this date (YYYY-MM-DD) */
                 dateFrom?: string;
                 /** @description Journal books: only include entries on or before this date (YYYY-MM-DD) */
@@ -14563,6 +14571,8 @@ export interface operations {
                 dedication?: string;
                 /** @description A short epigraph (a quotation and who said it) on its own page after the dedication; line breaks are kept. Longer than 500 characters (once trimmed) is a 400 BOOK_EPIGRAPH_TOO_LONG */
                 epigraph?: string;
+                /** @description End the book with an "About this book" page: the dates of its first and last entries, how many entries it holds, and the writer’s day it was made on (`today`) */
+                closingPage?: boolean;
                 /** @description Journal books: only include entries on or after this date (YYYY-MM-DD) */
                 dateFrom?: string;
                 /** @description Journal books: only include entries on or before this date (YYYY-MM-DD) */

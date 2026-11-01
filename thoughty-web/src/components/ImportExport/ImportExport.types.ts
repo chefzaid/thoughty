@@ -84,6 +84,8 @@ export interface BookOptions {
     dedication: string;
     /** A short epigraph on its own page after the dedication; empty for none. */
     epigraph: string;
+    /** Ends the book with an "About this book" page: its dates, entry count and the day it was made. */
+    closingPage: boolean;
     format: BookFormat;
     chapterMode: BookChapterMode;
     chapterOrder: BookChapterOrder;
@@ -107,6 +109,7 @@ export const DEFAULT_BOOK_OPTIONS: BookOptions = {
     author: '',
     dedication: '',
     epigraph: '',
+    closingPage: false,
     format: 'pdf',
     chapterMode: 'tags',
     chapterOrder: 'alpha',

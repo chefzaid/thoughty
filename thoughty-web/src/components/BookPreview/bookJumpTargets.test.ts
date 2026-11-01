@@ -29,6 +29,17 @@ describe('bookJumpTargets', () => {
         expect(currentJumpTarget(targets, 3)?.label).toBe('bookPagePreviewEpigraph');
     });
 
+    it('lists the closing page last', () => {
+        const targets = bookJumpTargets([{ title: 'Chapter 1: ideas', pageNumber: 2 }], { about: 4 }, t);
+
+        expect(targets.map((target) => target.label)).toEqual([
+            'bookPagePreviewTitlePage',
+            'bookPagePreviewChapterOption:Chapter 1: ideas@2',
+            'bookPagePreviewAbout',
+        ]);
+        expect(currentJumpTarget(targets, 3)?.label).toBe('bookPagePreviewChapterOption:Chapter 1: ideas@2');
+    });
+
     it('offers only the title page for a book without chapters', () => {
         expect(bookJumpTargets([], {}, t)).toEqual([{ label: 'bookPagePreviewTitlePage', pageNumber: 1 }]);
     });

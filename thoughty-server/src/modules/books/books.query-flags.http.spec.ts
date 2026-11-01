@@ -7,8 +7,9 @@ import { BooksService } from './books.service';
 import { BookVersionsService } from './book-versions.service';
 import { BookEntrySourceService } from './book-entry-source.service';
 
-const OFF = 'narrative=false&includeToc=false&includeDates=false&includeUntagged=false&chapterFraming=false&embedImages=false';
+const OFF = 'narrative=false&includeToc=false&includeDates=false&includeUntagged=false&chapterFraming=false&embedImages=false&closingPage=false';
 const ALL_OFF = {
+  closingPage: false,
   narrative: false,
   includeToc: false,
   includeDates: false,
@@ -52,9 +53,12 @@ describe('BooksController query flags over HTTP', () => {
   });
 
   it('reads true and 1 as on', async () => {
-    await request(app.getHttpServer()).get('/api/books/export?narrative=true&chapterFraming=1').expect(200);
+    await request(app.getHttpServer()).get('/api/books/export?narrative=true&chapterFraming=1&closingPage=1').expect(200);
 
-    expect(booksService.export).toHaveBeenCalledWith(HTTP_SPEC_USER.userId, expect.objectContaining({ narrative: true, chapterFraming: true }));
+    expect(booksService.export).toHaveBeenCalledWith(
+      HTTP_SPEC_USER.userId,
+      expect.objectContaining({ narrative: true, chapterFraming: true, closingPage: true }),
+    );
   });
 
   it('leaves options it is not sent unset, for the service defaults', async () => {

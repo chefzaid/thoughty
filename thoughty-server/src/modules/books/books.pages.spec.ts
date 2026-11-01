@@ -59,6 +59,13 @@ describe('BooksService book pages', () => {
     expect(content.indexOf('Pavese')).toBeLessThan(content.indexOf('Pasta in Naples'));
   });
 
+  it('ends the book with the closing page only when asked, made on the writer’s day', async () => {
+    expect((await service.buildBookForUser(1, {})).closingPage).toBe(false);
+    const file = await service.export(1, { format: 'md', narrative: false, closingPage: true, today: '2026-11-01' });
+
+    expect(file.content).toContain('## About this book\n\nEntries from 2024-01-10 to 2024-03-05\n\n2 entries\n\nMade with Thoughty on 2026-11-01');
+  });
+
   it('prints them on their own pages of the PDF', async () => {
     const file = await service.export(1, { narrative: false, dedication: 'For Marie', epigraph: 'A quotation' });
     const raw = (file.content as Buffer).toString('latin1');

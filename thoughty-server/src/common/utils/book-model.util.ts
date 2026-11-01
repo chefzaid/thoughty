@@ -42,6 +42,8 @@ export interface Book {
   dedication?: string;
   /** A short epigraph (a quotation and who said it), on its own page after the dedication. */
   epigraph?: string;
+  /** Ends the book with an "About this book" page: its dates, entry count and the day it was made. */
+  closingPage?: boolean;
 }
 
 export interface BuildBookOptions {

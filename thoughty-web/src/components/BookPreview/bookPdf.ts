@@ -7,7 +7,7 @@ export interface BookPdfChapter {
 }
 
 /** The book's own pages the server names in the PDF (its named destinations), in reading order. */
-export const BOOK_PDF_SECTIONS = ['dedication', 'epigraph', 'contents'] as const;
+export const BOOK_PDF_SECTIONS = ['dedication', 'epigraph', 'contents', 'about'] as const;
 export type BookPdfSection = (typeof BOOK_PDF_SECTIONS)[number];
 /** The page each of the book's own pages is on (1-based), for those it has. */
 export type BookPdfSections = Readonly<Partial<Record<BookPdfSection, number>>>;

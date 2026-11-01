@@ -38,6 +38,7 @@ export type BookTranslationKey =
   | "bookDedicationPlaceholder"
   | "bookEpigraphLabel"
   | "bookEpigraphPlaceholder"
+  | "bookClosingPage"
   | "bookCover"
   | "bookCoverTheme"
   | "bookCoverThemeClassic"
@@ -126,6 +127,7 @@ export const bookTranslations: Record<Language, Record<BookTranslationKey, strin
     bookDedicationPlaceholder: "For Marie, who listened.",
     bookEpigraphLabel: "Epigraph",
     bookEpigraphPlaceholder: "A quotation, and who said it",
+    bookClosingPage: "End with an “About this book” page: the dates of the entries, how many there are, and the day the book was made",
     bookCover: "Cover",
     bookCoverTheme: "Cover color theme",
     bookCoverThemeClassic: "Classic",
@@ -217,6 +219,7 @@ export const bookTranslations: Record<Language, Record<BookTranslationKey, strin
     bookDedicationPlaceholder: "Pour Marie, qui savait écouter.",
     bookEpigraphLabel: "Épigraphe",
     bookEpigraphPlaceholder: "Une citation, et qui l’a dite",
+    bookClosingPage: "Terminer par une page « À propos de ce livre » : les dates des entrées, leur nombre et le jour où le livre a été fait",
     bookCover: "Couverture",
     bookCoverTheme: "Thème coloré de la couverture",
     bookCoverThemeClassic: "Classique",

@@ -61,13 +61,13 @@ describe('openBookPdf', () => {
 
     it('finds the book’s own pages by the names the server gives them, skipping those it cannot resolve', async () => {
         const document = fakeDocument([]);
-        const destinations: Record<string, Array<ReturnType<typeof ref>>> = { dedication: [ref(20)], contents: [ref(30)], epigraph: [ref(99)] };
+        const destinations: Record<string, Array<ReturnType<typeof ref>>> = { dedication: [ref(20)], contents: [ref(30)], epigraph: [ref(99)], about: [ref(50)] };
         document.getDestination.mockImplementation(async (name: string) => destinations[name] ?? null);
         load(document);
 
         const pdf = await openBookPdf(new ArrayBuffer(4));
 
-        expect(pdf.sections).toEqual({ dedication: 3, contents: 4 });
+        expect(pdf.sections).toEqual({ dedication: 3, contents: 4, about: 6 });
         expect(document.getDestination).toHaveBeenCalledWith('epigraph');
     });
 

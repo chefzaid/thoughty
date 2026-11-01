@@ -6472,6 +6472,16 @@
             }
           },
           {
+            "name": "closingPage",
+            "required": false,
+            "in": "query",
+            "description": "End the book with an \"About this book\" page: the dates of its first and last entries, how many entries it holds, and the writer’s day it was made on (`today`)",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
             "name": "dateFrom",
             "required": false,
             "in": "query",
@@ -6893,6 +6903,16 @@
             }
           },
           {
+            "name": "closingPage",
+            "required": false,
+            "in": "query",
+            "description": "End the book with an \"About this book\" page: the dates of its first and last entries, how many entries it holds, and the writer’s day it was made on (`today`)",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
             "name": "dateFrom",
             "required": false,
             "in": "query",
@@ -7209,6 +7229,16 @@
             }
           },
           {
+            "name": "closingPage",
+            "required": false,
+            "in": "query",
+            "description": "End the book with an \"About this book\" page: the dates of its first and last entries, how many entries it holds, and the writer’s day it was made on (`today`)",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
             "name": "dateFrom",
             "required": false,
             "in": "query",
@@ -7499,6 +7529,16 @@
               "maxLength": 500,
               "example": "We do not remember days, we remember moments.\n— Cesare Pavese",
               "type": "string"
+            }
+          },
+          {
+            "name": "closingPage",
+            "required": false,
+            "in": "query",
+            "description": "End the book with an \"About this book\" page: the dates of its first and last entries, how many entries it holds, and the writer’s day it was made on (`today`)",
+            "schema": {
+              "default": false,
+              "type": "boolean"
             }
           },
           {
@@ -7810,6 +7850,16 @@
               "maxLength": 500,
               "example": "We do not remember days, we remember moments.\n— Cesare Pavese",
               "type": "string"
+            }
+          },
+          {
+            "name": "closingPage",
+            "required": false,
+            "in": "query",
+            "description": "End the book with an \"About this book\" page: the dates of its first and last entries, how many entries it holds, and the writer’s day it was made on (`today`)",
+            "schema": {
+              "default": false,
+              "type": "boolean"
             }
           },
           {

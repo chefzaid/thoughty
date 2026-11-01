@@ -11,11 +11,12 @@ const SECTION_LABEL_KEYS: Record<BookPdfSection, string> = {
     dedication: 'bookPagePreviewDedication',
     epigraph: 'bookPagePreviewEpigraph',
     contents: 'bookPagePreviewContents',
+    about: 'bookPagePreviewAbout',
 };
 
 /**
  * The book's own contents for the jump list, in page order: the title page, the pages the PDF names
- * (dedication, epigraph, table of contents, when the book has them), then the chapters.
+ * (dedication, epigraph, table of contents, when the book has them), the chapters, then the closing page.
  */
 export function bookJumpTargets(
     chapters: readonly BookPdfChapter[],

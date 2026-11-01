@@ -6,7 +6,7 @@ const PAGE_FIELDS = [
     { key: 'epigraph', labelKey: 'bookEpigraphLabel', placeholderKey: 'bookEpigraphPlaceholder', maxLength: BOOK_EPIGRAPH_MAX_LENGTH, rows: 3 },
 ] as const;
 
-/** The book's own pages: an optional dedication and epigraph after the title page. */
+/** The book's own pages: an optional dedication and epigraph after the title page, and a closing page. */
 export function BookPagesControls({
     options,
     onOptionChange,
@@ -37,6 +37,14 @@ export function BookPagesControls({
                     </div>
                 ))}
             </div>
+            <label className="checkbox-label book-pages-controls__closing">
+                <input
+                    type="checkbox"
+                    checked={options.closingPage}
+                    onChange={(event) => onOptionChange('closingPage', event.target.checked)}
+                />
+                {t('bookClosingPage')}
+            </label>
         </fieldset>
     );
 }

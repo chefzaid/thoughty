@@ -42,6 +42,17 @@ describe('useImportExportBook book pages', () => {
 
         expect(previewParams(authFetch).has('dedication')).toBe(false);
         expect(previewParams(authFetch).has('epigraph')).toBe(false);
+        expect(previewParams(authFetch).has('closingPage')).toBe(false);
+    });
+
+    it('asks for the closing page only when it is on', async () => {
+        const authFetch = vi.fn<AuthFetch>(async () => json(preview));
+        const { result } = renderBook(authFetch);
+
+        act(() => result.current.changeOption('closingPage', true));
+        await act(async () => { await result.current.handlePreview(); });
+
+        expect(previewParams(authFetch).get('closingPage')).toBe('true');
     });
 
     it('says why the API refused a text that is too long, in the reader’s language', async () => {

@@ -57,6 +57,16 @@ export class BookQueryDto extends BookSourceQueryDto {
   @IsString()
   epigraph?: string;
 
+  @ApiPropertyOptional({
+    description:
+      'End the book with an "About this book" page: the dates of its first and last entries, how many entries it ' +
+      'holds, and the writer’s day it was made on (`today`)',
+    default: false,
+  })
+  @IsOptional()
+  @StrictBoolean()
+  closingPage?: boolean;
+
   @ApiPropertyOptional({ description: 'Journal books: only include entries on or after this date (YYYY-MM-DD)' })
   @IsOptional()
   @Matches(DATE_PATTERN, { message: 'dateFrom must be in YYYY-MM-DD format' })

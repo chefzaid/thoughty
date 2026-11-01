@@ -11,6 +11,8 @@ interface MockPdfBook {
   chapters: MockPdfChapter[];
   dedication?: string;
   epigraph?: string;
+  /** The closing page's lines, under its "About this book" heading, when the book ends with one. */
+  closingPage?: string[];
 }
 
 const PAGE_WIDTH = 595;
@@ -81,7 +83,8 @@ function textPage(text: string): MockPage {
 
 /**
  * A real, multi-page PDF laid out like the server's book: a title page, its dedication and epigraph
- * pages, a table of contents with chapter page numbers, each chapter starting on a new page, page
+ * pages, a table of contents with chapter page numbers, each chapter starting on a new page, its
+ * closing page, page
  * numbers from page 2, one outline item per chapter ("Chapter N: title") pointing at its first page,
  * and the server's named destinations for the book's own pages (`BOOK_PDF_DESTINATIONS`).
  */
@@ -98,6 +101,9 @@ export function buildMockBookPdf(book: MockPdfBook): Buffer {
     chapterStarts.push(pages.length + 1);
     pages.push(...chapterPages(chapter, index + 1));
   });
+  if (book.closingPage) {
+    named.push(["about", pages.push({ lines: [{ text: "About this book", size: 16 }, ...book.closingPage.map((text) => ({ text, size: 11 }))] }) - 1]);
+  }
   if (tocIndex >= 0) {
     pages[tocIndex] = {
       lines: [

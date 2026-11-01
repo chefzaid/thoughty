@@ -151,6 +151,23 @@ describeContract('books', (context) => {
     });
   });
 
+  it('ends the book with its closing page when asked, made on the writer’s day', async () => {
+    const { alice } = context;
+    const markdown = await call('GET /api/books/export', {
+      as: alice,
+      query: { ...PLAIN_BOOK, format: 'md', closingPage: 'true', today: new Date().toISOString().slice(0, 10) },
+      status: 200,
+      contentType: /^text\/markdown/,
+    });
+    expect(markdown.text).toMatch(/## About this book\n\nEntries from 2024-04-01 to 2024-08-01\n\n3 entries\n\nMade with Thoughty on \d{4}-\d{2}-\d{2}\n*$/);
+    await call('GET /api/books/export', {
+      as: alice,
+      query: { ...PLAIN_BOOK, closingPage: 'yes' },
+      status: 400,
+      code: 'VALIDATION_FAILED',
+    });
+  });
+
   it('makes a book of hand-picked entries, never another writer’s', async () => {
     const { alice, bob } = context;
     const picked = await call('GET /api/books/picked-entries', {

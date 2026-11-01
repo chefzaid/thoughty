@@ -2,7 +2,7 @@ import { BOOK_COVER_PALETTES } from './book-cover-style.util';
 import { bookImageDataUri, escapeBookImageMarkdownText, type EmbeddedBookImage } from './book-image.util';
 import { bookEntryMarkdown, inlineImageCaption, layoutBookEntry } from './book-inline-image.util';
 import { escapeHtml } from './sanitize.util';
-import { bookPageMarkdownLines } from './book-pages.util';
+import { BOOK_CLOSING_PAGE_HEADING, bookClosingPageLines, bookPageMarkdownLines } from './book-pages.util';
 import {
   type Book,
   type BookChapter,
@@ -56,6 +56,12 @@ export function renderBookMarkdown(book: Book, options: RenderBookOptions = {}):
   }
 
   for (const [index, chapter] of book.chapters.entries()) { renderMarkdownChapter(lines, chapter, index, includeDates); }
+  if (book.closingPage) {
+    lines.push('---', '', `## ${BOOK_CLOSING_PAGE_HEADING}`, '');
+    for (const line of bookClosingPageLines(book)) {
+      lines.push(line, '');
+    }
+  }
 
   return lines.join('\n');
 }
@@ -111,6 +117,7 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
     '.dedication{text-align:center;font-size:1.15em}',
     '.epigraph{max-width:28em;margin:0 auto}',
     '.dedication p,.epigraph p{white-space:pre-line}',
+    '.closing-page{page-break-before:always;padding-top:10em;text-align:center;color:#444}',
     '</style>',
     '</head>',
     '<body>',
@@ -140,6 +147,14 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
   }
 
   for (const [index, chapter] of book.chapters.entries()) { renderHtmlChapter(parts, chapter, index, includeDates); }
+  if (book.closingPage) {
+    parts.push(
+      '<section class="closing-page">',
+      `<h2>${escapeHtml(BOOK_CLOSING_PAGE_HEADING)}</h2>`,
+      ...bookClosingPageLines(book).map((line) => `<p>${escapeHtml(line)}</p>`),
+      '</section>',
+    );
+  }
 
   parts.push('</body>', '</html>');
   return parts.join('\n');

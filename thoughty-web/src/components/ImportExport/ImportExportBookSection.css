@@ -112,6 +112,10 @@
     border-bottom: 1px solid var(--border-color, rgba(148, 163, 184, 0.22));
 }
 
+.book-pages-controls__closing {
+    margin-top: 0.9rem;
+}
+
 .book-pages-controls > legend {
     padding: 0 0.4rem 0 0;
     font-weight: 600;

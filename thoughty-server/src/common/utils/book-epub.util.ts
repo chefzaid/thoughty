@@ -7,6 +7,7 @@ import {
   type EmbeddedBookImage,
 } from './book-image.util';
 import { inlineImageCaption, layoutBookEntry } from './book-inline-image.util';
+import { BOOK_CLOSING_PAGE_HEADING, bookClosingPageLines } from './book-pages.util';
 
 function escapeXml(text: string): string {
   return text
@@ -51,6 +52,7 @@ const EPUB_STYLES = [
   '.dedication,.epigraph{padding:6em 1.5em 0;font-style:italic}',
   '.dedication{text-align:center}',
   '.dedication p,.epigraph p{white-space:pre-line}',
+  '.closing-page{padding-top:6em;text-align:center;color:#444}',
 ].join('\n');
 
 /** The book's own pages after the title page, in reading order, with their file names and navigation labels. */
@@ -138,6 +140,14 @@ function buildChapterPage(
   return xhtmlDocument(chapter.title, parts.join('\n'));
 }
 
+function buildClosingPage(book: Book): string {
+  const lines = bookClosingPageLines(book).map((line) => `<p>${escapeXml(line)}</p>`);
+  return xhtmlDocument(
+    BOOK_CLOSING_PAGE_HEADING,
+    [`<section class="closing-page" epub:type="colophon">`, `<h2>${escapeXml(BOOK_CLOSING_PAGE_HEADING)}</h2>`, ...lines, '</section>'].join('\n'),
+  );
+}
+
 function imagePath(image: EmbeddedBookImage): string {
   return `images/attachment-${image.id}.${bookImageExtension(image)}`;
 }
@@ -182,6 +192,7 @@ function buildNav(book: Book, includeToc: boolean): string {
       (chapter, index) =>
         `<li><a href="chapter-${index + 1}.xhtml">${escapeXml(chapter.title)}</a></li>`,
     ),
+    ...(book.closingPage ? [`<li><a href="about.xhtml">${BOOK_CLOSING_PAGE_HEADING}</a></li>`] : []),
   ];
   const hidden = includeToc ? '' : ' hidden=""';
 
@@ -238,12 +249,14 @@ function buildOpf(book: Book, identifier: string): string {
     coverManifest,
     imageManifest,
     chapterManifest,
+    book.closingPage ? '<item id="about" href="about.xhtml" media-type="application/xhtml+xml"/>' : '',
     '</manifest>',
     '<spine>',
     '<itemref idref="title"/>',
     ...frontPages(book).map((page) => `<itemref idref="${page.kind}"/>`),
     '<itemref idref="nav"/>',
     chapterSpine,
+    book.closingPage ? '<itemref idref="about"/>' : '',
     '</spine>',
     '</package>',
   ]
@@ -288,6 +301,9 @@ export async function renderBookEpub(book: Book, options: RenderBookOptions = {}
 
   for (let index = 0; index < book.chapters.length; index++) {
     zip.file(`OEBPS/chapter-${index + 1}.xhtml`, buildChapterPage(book, index, includeDates));
+  }
+  if (book.closingPage) {
+    zip.file('OEBPS/about.xhtml', buildClosingPage(book));
   }
 
   return zip.generateAsync({

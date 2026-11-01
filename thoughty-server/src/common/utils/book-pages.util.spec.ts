@@ -2,7 +2,7 @@ import JSZip from 'jszip';
 import { Book, renderBookHtml, renderBookMarkdown } from './book-converter.util';
 import { renderBookEpub } from './book-epub.util';
 import { renderBookPdf } from './book-pdf.util';
-import { bookPageMarkdownLines, escapeBookMarkdownText, normalizeBookPageText } from './book-pages.util';
+import { bookClosingPageLines, bookPageMarkdownLines, escapeBookMarkdownText, normalizeBookPageText } from './book-pages.util';
 
 const book: Book = {
   title: 'My Book',
@@ -113,5 +113,54 @@ describe('dedication and epigraph pages', () => {
     expect(raw).toContain('(epigraph)');
     expect(raw).not.toContain('(dedication)');
     expect(raw).not.toContain('(contents)');
+  });
+});
+
+describe('the closing page', () => {
+  const shared = { id: 7, date: '2023-12-31', index: 1, tags: ['a', 'b'], content: 'In two chapters', format: 'plain' as const };
+  const longBook: Book = {
+    ...book,
+    title: 'Notes <b>',
+    closingPage: true,
+    chapters: [
+      { title: 'A', entries: [shared, { date: '2024-02-01', index: 1, tags: ['a'], content: 'Later', format: 'plain' }] },
+      { title: 'B', entries: [shared] },
+    ],
+  };
+
+  it('gives the dates of the first and last entries, each entry once, and the day the book was made', () => {
+    expect(bookClosingPageLines(longBook)).toEqual(['Entries from 2023-12-31 to 2024-02-01', '2 entries', 'Made with Thoughty on 2024-06-01']);
+    expect(bookClosingPageLines(book)).toEqual(['Entries from 2024-01-10', '1 entry', 'Made with Thoughty on 2024-06-01']);
+    expect(bookClosingPageLines({ ...book, chapters: [] })).toEqual(['0 entries', 'Made with Thoughty on 2024-06-01']);
+  });
+
+  it('ends the Markdown and HTML books', () => {
+    const markdown = renderBookMarkdown(longBook);
+    const html = renderBookHtml(longBook);
+
+    expect(markdown.trimEnd().endsWith('## About this book\n\nEntries from 2023-12-31 to 2024-02-01\n\n2 entries\n\nMade with Thoughty on 2024-06-01')).toBe(true);
+    expect(html).toContain('<section class="closing-page">\n<h2>About this book</h2>\n<p>Entries from 2023-12-31 to 2024-02-01</p>\n<p>2 entries</p>');
+    expect(html.indexOf('class="closing-page"')).toBeGreaterThan(html.lastIndexOf('class="chapter"'));
+    expect(renderBookHtml(book)).not.toContain('<section class="closing-page"');
+    expect(renderBookMarkdown(book)).not.toContain('About this book');
+  });
+
+  it('is the last EPUB document, in the navigation, as a colophon', async () => {
+    const zip = await JSZip.loadAsync(await renderBookEpub(longBook));
+    const opf = await zip.file('OEBPS/content.opf')!.async('string');
+
+    expect(opf).toContain('<itemref idref="chapter-2"/>\n<itemref idref="about"/>\n</spine>');
+    expect(await zip.file('OEBPS/nav.xhtml')!.async('string')).toContain('<li><a href="about.xhtml">About this book</a></li>');
+    expect(await zip.file('OEBPS/about.xhtml')!.async('string')).toContain('<section class="closing-page" epub:type="colophon">\n<h2>About this book</h2>\n<p>Entries from 2023-12-31 to 2024-02-01</p>');
+    expect((await JSZip.loadAsync(await renderBookEpub(book))).file('OEBPS/about.xhtml')).toBeNull();
+  });
+
+  it('is the last PDF page, named so a reader can find it', async () => {
+    const plain = await renderBookPdf(book);
+    const pdf = await renderBookPdf({ ...book, closingPage: true });
+
+    expect(pdfPageCount(pdf)).toBe(pdfPageCount(plain) + 1);
+    expect(pdf.toString('latin1')).toContain('(about)');
+    expect(plain.toString('latin1')).not.toContain('(about)');
   });
 });

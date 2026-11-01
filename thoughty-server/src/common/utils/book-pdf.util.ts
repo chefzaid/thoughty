@@ -8,6 +8,7 @@ import {
 import { BOOK_COVER_PALETTES } from './book-cover-style.util';
 import type { EmbeddedBookImage } from './book-image.util';
 import { inlineImageCaption, layoutBookEntry } from './book-inline-image.util';
+import { BOOK_CLOSING_PAGE_HEADING, bookClosingPageLines } from './book-pages.util';
 
 const PAGE_MARGIN = 72;
 const TITLE_FONT_SIZE = 28;
@@ -30,6 +31,7 @@ export const BOOK_PDF_DESTINATIONS = {
   dedication: 'dedication',
   epigraph: 'epigraph',
   contents: 'contents',
+  about: 'about',
 } as const;
 
 interface TocLinePosition {
@@ -251,6 +253,21 @@ function renderChapter(
   return startPageNumber;
 }
 
+/** The "About this book" page that closes the book, a third of the way down, centred. */
+function renderClosingPage(doc: PDFKit.PDFDocument, book: Book): void {
+  doc.addPage();
+  doc.addNamedDestination(BOOK_PDF_DESTINATIONS.about);
+  const width = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+  doc.font('Helvetica-Bold').fontSize(CHAPTER_FONT_SIZE - 4).fillColor('#000000')
+    .text(BOOK_CLOSING_PAGE_HEADING, doc.page.margins.left, doc.page.height / 3, { width, align: 'center' });
+  doc.moveDown(1);
+  doc.font('Helvetica').fontSize(BODY_FONT_SIZE).fillColor('#444444');
+  for (const line of bookClosingPageLines(book)) {
+    doc.text(line, { width, align: 'center', paragraphGap: 6 });
+  }
+  doc.fillColor('#000000');
+}
+
 /** Numbers every page from the second, as printed books count them, except the dedication and epigraph pages. */
 function renderPageNumbers(doc: PDFKit.PDFDocument, unnumbered: ReadonlySet<number>): void {
   const range = doc.bufferedPageRange();
@@ -273,7 +290,8 @@ function renderPageNumbers(doc: PDFKit.PDFDocument, unnumbered: ReadonlySet<numb
 
 /**
  * Render a book as a PDF document with a title page, its dedication and epigraph pages, table of
- * contents (with chapter page numbers), one section per chapter, and centered page numbers.
+ * contents (with chapter page numbers), one section per chapter, its closing page, and centered
+ * page numbers.
  */
 export function renderBookPdf(book: Book, options: RenderBookOptions = {}): Promise<Buffer> {
   const includeDates = options.includeDates !== false;
@@ -313,6 +331,10 @@ export function renderBookPdf(book: Book, options: RenderBookOptions = {}): Prom
     const chapterPageNumbers: number[] = [];
     for (const [index, chapter] of book.chapters.entries()) {
       chapterPageNumbers.push(renderChapter(doc, chapter, index + 1, includeDates));
+    }
+
+    if (book.closingPage) {
+      renderClosingPage(doc, book);
     }
 
     if (tocPositions.length > 0) {

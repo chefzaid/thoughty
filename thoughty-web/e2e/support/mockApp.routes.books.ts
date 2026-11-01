@@ -183,12 +183,21 @@ const BOOK_CONTENT_TYPES: Record<string, string> = {
   md: "text/markdown; charset=utf-8",
 };
 
+/** The closing page's lines, as `bookClosingPageLines` writes them: the entries' dates, their count, the writer's day. */
+function closingPageLines(book: ReturnType<typeof buildBook>, today: string | null): string[] {
+  const entries = [...new Map(book.chapters.flatMap((chapter) => chapter.entries).map((entry) => [entry.id, entry])).values()];
+  const dates = entries.map((entry) => entry.date).sort();
+  const range = dates.length === 0 ? [] : [dates[0] === dates.at(-1) ? `Entries from ${dates[0]}` : `Entries from ${dates[0]} to ${dates.at(-1)}`];
+  return [...range, entries.length === 1 ? "1 entry" : `${entries.length} entries`, `Made with Thoughty on ${today}`];
+}
+
 /** The generated book file, as `BooksService.export` names it: a real PDF, or the other formats' text. */
 function exportBook(state: MockAppState, params: URLSearchParams) {
   const book = buildBook(state, params);
   const format = params.get("format") || "pdf";
   const embed = readQueryFlag(params, "embedImages", false);
   const chapters = book.chapters.map((chapter) => ({ title: chapter.title, paragraphs: chapter.entries.map((entry) => bookInlineImages(entry, embed)) }));
+  const closingPage = readQueryFlag(params, "closingPage", false) ? closingPageLines(book, params.get("today")) : undefined;
   const body = format === "pdf"
     ? buildMockBookPdf({
       title: book.title,
@@ -197,11 +206,13 @@ function exportBook(state: MockAppState, params: URLSearchParams) {
       chapters,
       dedication: book.dedication,
       epigraph: book.epigraph,
+      closingPage,
     })
     : [
       `# ${book.title}`,
       ...[book.dedication, book.epigraph].filter(Boolean),
       ...chapters.map((chapter) => `## ${chapter.title}\n\n${chapter.paragraphs.join("\n\n")}`),
+      ...(closingPage ? ["## About this book", ...closingPage] : []),
     ].join("\n\n");
   return {
     body,

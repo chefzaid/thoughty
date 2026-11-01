@@ -24,9 +24,19 @@ describe('BookPagesControls', () => {
         expect(screen.getByRole('group', { name: 'Book pages' })).toHaveAccessibleDescription(/up to 300 characters, an epigraph up to 500/);
     });
 
+    it('turns the closing page on and off', () => {
+        const onOptionChange = renderPages('en');
+        const closing = screen.getByRole('checkbox', { name: /About this book/ });
+
+        expect(closing).not.toBeChecked();
+        fireEvent.click(closing);
+        expect(onOptionChange).toHaveBeenCalledWith('closingPage', true);
+    });
+
     it('speaks French', () => {
         renderPages('fr');
 
+        expect(screen.getByRole('checkbox', { name: /À propos de ce livre/ })).toBeInTheDocument();
         expect(screen.getByRole('group', { name: 'Pages du livre' })).toBeInTheDocument();
         expect(screen.getByLabelText('Dédicace')).toBeInTheDocument();
         expect(screen.getByLabelText('Épigraphe')).toBeInTheDocument();

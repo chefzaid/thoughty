@@ -543,7 +543,7 @@ Small, relatable additions that reuse what already exists (entries, tags, moods,
 ### Books
 
 - [x] Dedication and epigraph pages: optional short texts (up to 300 and 500 characters) on their own pages after the title page, in every book format, escaped, and listed in the page preview's **Go to**.
-- [ ] A closing page: an optional "About this book" page at the end listing the date range, number of entries and when the book was made, so printed copies carry their own context.
+- [x] A closing page: an optional "About this book" page at the end of every book format listing the date range, number of entries (kept in quiet mode) and the writer's day the book was made, so printed copies carry their own context.
 
 ### Bringing notes in
 

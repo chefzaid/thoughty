@@ -111,7 +111,7 @@ export class BooksService {
       eras,
       today: query.today,
     });
-    return { book: { ...book, dedication, epigraph }, source };
+    return { book: { ...book, dedication, epigraph, closingPage: query.closingPage === true }, source };
   }
 
   async preview(userId: number, query: BookQueryDto): Promise<BookPreviewResponseDto> {
