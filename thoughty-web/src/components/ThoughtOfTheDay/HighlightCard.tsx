@@ -47,7 +47,9 @@ function HighlightCard({ entry, formattedDate, maxLength, compact = false, onOpe
             </div>
             <div id={contentId} className="entry-content">
                 {entry.title && <p className="entry-title">{entry.title}</p>}
-                <EntryContentRenderer content={entry.content} format={entry.format} maxLength={maxLength} />
+                <div className="privacy-text">
+                    <EntryContentRenderer content={entry.content} format={entry.format} maxLength={maxLength} />
+                </div>
             </div>
             {children}
         </article>

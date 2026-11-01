@@ -526,7 +526,7 @@ Small, relatable additions that reuse what already exists (entries, tags, moods,
 
 ### Comfort and privacy
 
-- [ ] Privacy blur: a keyboard shortcut and a button that blur every entry text on screen at once (titles stay readable), for when someone walks by; pressing it again shows them.
+- [x] Privacy blur: `Ctrl+Shift+E` (`Cmd+Shift+E` on a Mac) and the eye button beside the profile in the menu blur every entry text on screen at once (titles stay readable), for when someone walks by; pressing it again shows them. Screen-only, so prints are never blurred.
 - [ ] Quiet mode: one setting that hides streaks, badges, karma, counts and goal progress for writers who find numbers stressful, while keeping everything else.
 - [ ] Reading comfort: line spacing and letter spacing settings next to the font settings, and an easy-to-read font option (self-hosted, so the CSP stays as it is).
 - [ ] A kinder low day: after a writer records a very low mood, offer (never force) to reread up to three past entries they marked as favorites or tagged with gratitude, with a one-tap "not now".

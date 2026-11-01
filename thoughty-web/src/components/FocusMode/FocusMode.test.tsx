@@ -109,8 +109,11 @@ describe('FocusMode', () => {
         await user.tab();
         expect(screen.getByRole('textbox', { name: 'Entry text' })).toHaveFocus();
         await user.keyboard('{ArrowLeft}');
+        // The privacy blur still reaches the page, so the draft can be blurred
+        await user.keyboard('{Control>}{Shift>}E{/Shift}{/Control}');
 
-        expect(journalShortcut.mock.calls.map(([event]) => (event as KeyboardEvent).key)).toEqual(['Tab', 'Tab', 'Tab', 'Tab']);
+        expect(journalShortcut.mock.calls.map(([event]) => (event as KeyboardEvent).key)).toEqual(['Tab', 'Tab', 'Tab', 'Tab', 'E']);
+        expect(screen.getByRole('textbox', { name: 'Entry text' })).toHaveClass('privacy-text');
         document.removeEventListener('keydown', journalShortcut);
     });
 

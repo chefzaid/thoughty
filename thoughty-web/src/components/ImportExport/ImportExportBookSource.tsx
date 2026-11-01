@@ -162,7 +162,7 @@ function PickedEntriesList({
                                     <span className="book-picked__meta">
                                         {[entry.date, entry.diaryName, entry.isArchived ? t('archived') : null].filter(Boolean).join(' · ')}
                                     </span>
-                                    {entry.title && entry.excerpt && <span className="book-picked__excerpt">{entry.excerpt}</span>}
+                                    {entry.title && entry.excerpt && <span className="book-picked__excerpt privacy-text">{entry.excerpt}</span>}
                                 </div>
                                 <RemoveButton label={t('bookPickedRemove', { entry: `${entry.date} ${heading}` })} onClick={() => remove(entry.id)} />
                             </li>

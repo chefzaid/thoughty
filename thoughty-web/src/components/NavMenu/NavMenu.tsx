@@ -1,5 +1,7 @@
 import './NavMenu.css';
 import type { ViewType } from '../../types';
+import PrivacyBlurButton from '../PrivacyBlur/PrivacyBlurButton';
+import type { PrivacyBlurState } from '../PrivacyBlur/usePrivacyBlur';
 
 interface NavMenuProps {
     readonly currentView: ViewType;
@@ -10,9 +12,11 @@ interface NavMenuProps {
     readonly isEmailVerified?: boolean;
     readonly t: (key: string, params?: Record<string, string | number>) => string;
     readonly onLogout?: () => void;
+    /** The privacy blur its button toggles, beside the profile. */
+    readonly privacyBlur?: PrivacyBlurState;
 }
 
-function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVerified, t, onLogout }: NavMenuProps) {
+function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVerified, t, onLogout, privacyBlur }: NavMenuProps) {
     const initial = (name || t('user')).charAt(0).toUpperCase();
     const isLight = theme === 'light';
 
@@ -90,6 +94,7 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
 
             {/* User Profile Section */}
             <div className="nav-user-section">
+                {privacyBlur && <PrivacyBlurButton privacyBlur={privacyBlur} className="nav-icon-btn nav-privacy-btn" t={t} />}
                 <button type="button"
                     className={`nav-profile-btn ${currentView === 'profile' ? 'active' : ''}`}
                     onClick={() => onViewChange('profile')}
@@ -111,7 +116,7 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
                 </button>
                 {onLogout && (
                     <button type="button"
-                        className="nav-logout-btn"
+                        className="nav-icon-btn nav-logout-btn"
                         onClick={onLogout}
                         title={t('logout')}
                     >

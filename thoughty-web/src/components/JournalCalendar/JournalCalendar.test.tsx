@@ -103,6 +103,10 @@ describe('JournalCalendar', () => {
       'Open 07:30 Harbor run, mood: Good',
       'Open Entry 3',
     ]);
+    // Only the start of an entry's text is blurred by the privacy blur, never its title
+    expect(within(busy).getByText('Errands in town')).toHaveClass('privacy-text');
+    expect(within(busy).getByText('07:30 Harbor run')).not.toHaveClass('privacy-text');
+    expect(within(busy).getByText('Entry 3')).not.toHaveClass('privacy-text');
     expect(within(busy).getByText('+1')).toBeInTheDocument();
     expect(cell('Monday, October 5, 2026: 1 entry')).toBeInTheDocument();
 

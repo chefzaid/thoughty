@@ -221,7 +221,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
           {entry.tags.length > 0 && (
             <span className="ml-2 text-xs">#{entry.tags.join(' #')}</span>
           )}
-          <p className="mt-1 whitespace-pre-wrap line-clamp-3">{entryPreview}</p>
+          <p className="privacy-text mt-1 whitespace-pre-wrap line-clamp-3">{entryPreview}</p>
         </div>
 
         {/* Messages */}
@@ -253,7 +253,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
                       : assistantMessageClassName
                   }`}
                 >
-                  {msg.content}
+                  <span className="privacy-text">{msg.content}</span>
                 </div>
               </div>
             );

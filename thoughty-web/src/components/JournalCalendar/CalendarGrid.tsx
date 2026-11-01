@@ -48,6 +48,11 @@ function calendarEntryName(entry: EntryCalendarItem, t: TranslationFunction): st
   return entry.time_of_day ? `${entry.time_of_day} ${name}` : name;
 }
 
+/** Whether the grid names an entry by the start of its text, which the privacy blur hides (a title stays readable). */
+function namedBySnippet(entry: EntryCalendarItem): boolean {
+  return !entry.sealed && !entry.title && Boolean(entry.snippet);
+}
+
 function entryLabel(entry: EntryCalendarItem, t: TranslationFunction): string {
   const name = calendarEntryName(entry, t);
   const withMood = isMoodLevel(entry.mood)
@@ -188,7 +193,7 @@ function CalendarGrid({
                                 : 'bg-blue-500/15 text-blue-100 hover:bg-blue-500/25'}`}
                               onClick={(event) => { event.stopPropagation(); onOpenEntry(entry); }}
                             >
-                              <span className="truncate">{calendarEntryName(entry, t)}</span>
+                              <span className={`truncate${namedBySnippet(entry) ? ' privacy-text' : ''}`}>{calendarEntryName(entry, t)}</span>
                               {isMoodLevel(entry.mood) && <span aria-hidden="true" className="shrink-0">{moodEmoji(entry.mood)}</span>}
                             </button>
                           </li>

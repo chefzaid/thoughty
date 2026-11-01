@@ -203,7 +203,7 @@ function FeedPage({ theme = 'dark', language, readDates = true, ttsVoiceUri, onO
               }}
             />
             {entry.title && <h2 className="feed-entry-title">{entry.title}</h2>}
-            <div className="feed-content">
+            <div className="feed-content privacy-text">
               <EntryContentRenderer content={entry.content} format={entry.format} />
             </div>
             {entry.tags.length > 0 && (

@@ -117,6 +117,7 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
       <label htmlFor={fieldId} className="memoir-answer-label">{t('memoirYourAnswer')}</label>
       <textarea
         id={fieldId}
+        className="privacy-text"
         value={text}
         rows={7}
         maxLength={45000}

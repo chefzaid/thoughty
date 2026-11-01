@@ -124,7 +124,7 @@ function ShareImagePanel({ entry, initialExcerpt, isDark, language, onClose, t }
               role="img"
               aria-label={altText}
               data-testid="share-image-preview"
-              className={`h-auto max-h-[60vh] w-auto max-w-full rounded-lg border shadow-lg ${borderClass}`}
+              className={`privacy-text h-auto max-h-[60vh] w-auto max-w-full rounded-lg border shadow-lg ${borderClass}`}
             />
           </div>
           <div className="space-y-4">

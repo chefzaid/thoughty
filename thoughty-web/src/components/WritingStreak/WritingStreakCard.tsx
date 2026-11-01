@@ -78,7 +78,7 @@ function WritingStreakCard({ diaryId, enabled, onWriteNow, onOpenEntry, language
             </p>
             <blockquote className="mt-2 border-l-2 border-amber-400/60 pl-3 text-sm">
               <p className="font-medium">{view.entry.title || t('writingStreakUntitled')}</p>
-              {view.entry.snippet && <p className={`line-clamp-2 ${muted}`}>{view.entry.snippet}</p>}
+              {view.entry.snippet && <p className={`privacy-text line-clamp-2 ${muted}`}>{view.entry.snippet}</p>}
             </blockquote>
             <div className="mt-3 flex flex-wrap gap-2">
               <button type="button" className={buttonClass} onClick={onWriteNow}>

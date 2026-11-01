@@ -71,7 +71,7 @@ function TrashedEntryCard({ entry, defaultDiaryName, language, busy, onRestore, 
             {t('timeCapsuleSealedLabel')} · {t('timeCapsuleSealedUntil', { date: formatTimeCapsuleMoment(entry.sealedUntil, language) })}
           </p>
         ) : (
-          <p className="recycle-bin-excerpt">{binExcerpt(entry.content)}</p>
+          <p className="recycle-bin-excerpt privacy-text">{binExcerpt(entry.content)}</p>
         )}
         <p className="recycle-bin-meta">
           <span>{t('recycleBinDeletedOn', { date: formatDeletedOn(entry.deletedAt, language) })}</span>

@@ -243,7 +243,7 @@ export function EditForm({
                             <textarea
                                 ref={editArea.ref}
                                 onPointerUp={editArea.onPointerUp}
-                                className={`w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-y ${inputClass}`}
+                                className={`privacy-text w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-y ${inputClass}`}
                                 style={{ color: writingTextColor }}
                                 rows={3}
                                 value={editText}
@@ -271,7 +271,7 @@ export function EditForm({
                         <textarea
                             ref={editArea.ref}
                             onPointerUp={editArea.onPointerUp}
-                            className={`w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-y ${inputClass}`}
+                            className={`privacy-text w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-y ${inputClass}`}
                             style={{ color: writingTextColor }}
                             rows={3}
                             aria-label={t('entryTextLabel')}

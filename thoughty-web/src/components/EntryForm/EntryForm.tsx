@@ -291,7 +291,7 @@ function EntryForm({
                                 <textarea
                                     ref={writingArea.ref}
                                     onPointerUp={writingArea.onPointerUp}
-                                    className={`w-full border p-4 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-colors resize-y ${theme === 'light'
+                                    className={`privacy-text w-full border p-4 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-colors resize-y ${theme === 'light'
                                         ? 'bg-gray-50 border-gray-300 text-gray-900'
                                         : 'bg-gray-900 border-gray-700 text-gray-100'
                                         }`}
@@ -329,7 +329,7 @@ function EntryForm({
                             <textarea
                                 ref={writingArea.ref}
                                 onPointerUp={writingArea.onPointerUp}
-                                className={`w-full border p-4 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-colors resize-y ${theme === 'light'
+                                className={`privacy-text w-full border p-4 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-colors resize-y ${theme === 'light'
                                     ? 'bg-gray-50 border-gray-300 text-gray-900'
                                     : 'bg-gray-900 border-gray-700 text-gray-100'
                                     }`}

@@ -47,6 +47,27 @@ describe('AuthenticatedAppLayout', () => {
     expect(main).toHaveFocus();
   });
 
+  it('blurs entry text from any view with the privacy blur button or shortcut, until the app goes away', () => {
+    const { unmount } = render(
+      <AuthenticatedAppLayout {...defaultProps}>
+        <p className="privacy-text">Entry text</p>
+      </AuthenticatedAppLayout>,
+    );
+    const button = screen.getByRole('button', { name: 'privacyBlur' });
+
+    fireEvent.click(button);
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+    expect(document.documentElement).toHaveAttribute('data-privacy-blur');
+
+    fireEvent.keyDown(document.body, { key: 'E', ctrlKey: true, shiftKey: true });
+    expect(button).toHaveAttribute('aria-pressed', 'false');
+    expect(document.documentElement).not.toHaveAttribute('data-privacy-blur');
+
+    fireEvent.keyDown(document.body, { key: 'E', ctrlKey: true, shiftKey: true });
+    unmount();
+    expect(document.documentElement).not.toHaveAttribute('data-privacy-blur');
+  });
+
   it('keeps the app content inside the main landmark', () => {
     render(
       <AuthenticatedAppLayout {...defaultProps}>
@@ -173,7 +194,7 @@ describe('AuthenticatedAppLayout', () => {
       </AuthenticatedAppLayout>,
     );
 
-    expect(screen.getByRole('status')).toHaveTextContent('Entrée placée dans la corbeille');
+    expect(screen.getAllByRole('status').some((status) => status.textContent?.includes('Entrée placée dans la corbeille'))).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
     expect(run).toHaveBeenCalledTimes(1);
   });

@@ -56,7 +56,7 @@ function YearReviewHighlights({ review, language, onOpenEntry, t }: YearReviewHi
               <article key={`${highlight.kind}-${highlight.entryId}`} className="review-highlight" aria-labelledby={`review-highlight-${highlight.entryId}`}>
                 <h3 id={`review-highlight-${highlight.entryId}`}>{t(KIND_KEYS[highlight.kind])}</h3>
                 <p className="review-highlight-date">{formatDay(highlight.date)}</p>
-                <p className="review-highlight-excerpt">{highlight.excerpt}</p>
+                <p className="review-highlight-excerpt privacy-text">{highlight.excerpt}</p>
                 <button type="button" className="review-link" onClick={() => onOpenEntry(highlight.entryId)}>
                   {t('reviewReadEntry')}
                 </button>

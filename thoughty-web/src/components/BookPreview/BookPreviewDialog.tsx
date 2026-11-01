@@ -133,7 +133,7 @@ export function BookPreviewDialog({
                             aria-describedby={hintId}
                             tabIndex={0}
                         >
-                            <canvas ref={reader.canvasRef} className="book-reader__page" aria-hidden="true" />
+                            <canvas ref={reader.canvasRef} className="book-reader__page privacy-text" aria-hidden="true" />
                             <div className="sr-only" data-testid="book-preview-page-text">{reader.pageText}</div>
                         </div>
                     </>

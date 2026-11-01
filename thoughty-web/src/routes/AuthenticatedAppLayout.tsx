@@ -8,6 +8,7 @@ import NoticeToast from '../components/NoticeToast/NoticeToast';
 import type { ViewType, Config, Entry } from '../types';
 import { normalizeFontSize, resolveFontFamily } from '../types/config';
 import { useRouteChangeFocus } from '../hooks/useRouteChangeFocus';
+import { usePrivacyBlur } from '../components/PrivacyBlur/usePrivacyBlur';
 import { resolveLanguage } from '../utils/language';
 import { pluralPhrase } from '../utils/pluralPhrase';
 import { tintedTextClass } from '../utils/tintedText';
@@ -76,6 +77,7 @@ function AuthenticatedAppLayout({
   };
 
   useRouteChangeFocus(currentView, mainContentRef);
+  const privacyBlur = usePrivacyBlur();
   const isLight = config.theme === 'light';
   const toastClassName = `pointer-events-auto rounded-xl border px-4 py-3 shadow-xl backdrop-blur ${isLight ? 'border-amber-200 bg-white/95 text-gray-900' : 'border-amber-400/30 bg-gray-800/95 text-gray-100'}`;
   const toastTextClassName = isLight ? 'text-gray-600' : 'text-gray-300';
@@ -102,6 +104,7 @@ function AuthenticatedAppLayout({
           isEmailVerified={isEmailVerified}
           t={t}
           onLogout={onLogout}
+          privacyBlur={privacyBlur}
         />
 
         <ConfirmModal

@@ -116,7 +116,7 @@ export default function ShareImageOptions({ choices, wholeText, hasTitle, isDark
           maxLength={CARD_TEXT_MAX_LENGTH}
           rows={5}
           aria-describedby={hintId}
-          className={`w-full resize-y rounded border px-3 py-2 text-sm outline-none focus:border-sky-500 ${inputClass}`}
+          className={`privacy-text w-full resize-y rounded border px-3 py-2 text-sm outline-none focus:border-sky-500 ${inputClass}`}
         />
         <p id={hintId} className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{t('shareImageTextHint')}</p>
       </div>

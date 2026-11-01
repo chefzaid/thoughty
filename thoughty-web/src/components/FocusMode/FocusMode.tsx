@@ -9,6 +9,7 @@ import { pluralPhrase } from '../../utils/pluralPhrase';
 import MentionSuggestions from '../People/MentionSuggestions';
 import { useMentionAutocomplete } from '../People/useMentionAutocomplete';
 import { belowCaretLine, centerCaretLine } from './typewriter';
+import { isPrivacyBlurShortcut } from '../PrivacyBlur/privacyBlur';
 import { isFocusModeShortcut } from './focusModeShortcut';
 import { MAX_WORD_GOAL, parseWordGoal, readSavedGoal, saveGoal, wordsPhrase } from './focusModeSession';
 import { SprintCountdown, SprintEndNotice, SprintPicker } from './FocusSprint';
@@ -128,8 +129,8 @@ export default function FocusMode({
             onClose();
         }
         // Journal shortcuts (pages, search, new entry) never act behind focus mode; Esc and Tab
-        // still reach the dialog's own handling.
-        if (event.key !== 'Escape' && event.key !== 'Tab') {
+        // still reach the dialog's own handling, and the privacy blur still blurs the text.
+        if (event.key !== 'Escape' && event.key !== 'Tab' && !isPrivacyBlurShortcut(event)) {
             event.stopPropagation();
         }
     };
@@ -174,7 +175,7 @@ export default function FocusMode({
             <div className="focus-mode-writing" {...mentions.wrapperProps}>
                 <textarea
                     ref={textareaRef}
-                    className="focus-mode-text"
+                    className="focus-mode-text privacy-text"
                     aria-label={t('focusModeTextLabel')}
                     aria-describedby={`${titleId}-hint`}
                     placeholder={placeholder}

@@ -36,7 +36,7 @@ function EntryRanking({ id, title, icon, countKey, entries, t }: EntryRankingPro
         <ol className="leaderboard-list">
           {entries.map((entry) => (
             <li key={entry.id} className="leaderboard-entry">
-              <p className="leaderboard-excerpt">{entry.excerpt}</p>
+              <p className="leaderboard-excerpt privacy-text">{entry.excerpt}</p>
               <div className="leaderboard-meta">
                 <FeedAvatar author={entry.author} />
                 <strong>{entry.author.username}</strong>

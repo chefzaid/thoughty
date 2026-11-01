@@ -171,7 +171,7 @@ export default function EntrySummaryDialog({
                     )}
                     {summary && (
                         <div className={`space-y-3 border-t pt-4 ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-                            <p className="whitespace-pre-wrap text-sm leading-6" aria-live="polite">{summary}</p>
+                            <p className="privacy-text whitespace-pre-wrap text-sm leading-6" aria-live="polite">{summary}</p>
                             <button
                                 type="button"
                                 onClick={() => void handleCopy()}

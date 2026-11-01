@@ -96,7 +96,7 @@ export function EntryHistorySection({
                                 {t('revisionMood', { mood: describeMood(rev.mood, rev.feelings, t) })}
                             </p>
                         )}
-                        <div className={`whitespace-pre-wrap ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <div className={`privacy-text whitespace-pre-wrap ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                             {rev.content}
                         </div>
                         {rev.tags.length > 0 && (
@@ -285,7 +285,7 @@ export function EntryBodySection({
                 </h3>
             )}
             <div
-                className={`leading-relaxed text-sm ${entry.format === 'markdown' ? '' : 'whitespace-pre-wrap'} ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
+                className={`privacy-text leading-relaxed text-sm ${entry.format === 'markdown' ? '' : 'whitespace-pre-wrap'} ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
                 style={{ color: readingTextColor }}
             >
                 <EntryContentRenderer
@@ -415,7 +415,7 @@ export function EntryBacklinksSection({
                                     />
                                 ))}
                             </div>
-                            <p className={`line-clamp-2 text-xs leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                            <p className={`privacy-text line-clamp-2 text-xs leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                                 {backlink.content.length > 180 ? `${backlink.content.slice(0, 180)}...` : backlink.content}
                             </p>
                         </button>

@@ -36,6 +36,19 @@ describe('NavMenu', () => {
 
 
 
+  it('offers the privacy blur beside the profile when given one', () => {
+    const toggle = vi.fn();
+    const { rerender } = render(<NavMenu {...defaultProps} />);
+    expect(screen.queryByRole('button', { name: 'privacyBlur' })).not.toBeInTheDocument();
+
+    rerender(<NavMenu {...defaultProps} privacyBlur={{ blurred: true, changed: true, toggle }} />);
+    const button = screen.getByRole('button', { name: 'privacyBlur' });
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('status')).toHaveTextContent('privacyBlurOnAnnouncement');
+    fireEvent.click(button);
+    expect(toggle).toHaveBeenCalledTimes(1);
+  });
+
   it('highlights active navigation item', () => {
     render(<NavMenu {...defaultProps} currentView="journal" />);
     const journalButton = screen.getByText('journal').closest('button');

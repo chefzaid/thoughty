@@ -1,0 +1,25 @@
+/*
+ * The privacy blur: while <html data-privacy-blur> is set, every element showing entry text
+ * (.privacy-text) is blurred, and so is the text of the Markdown editor, which only ever edits
+ * entry text. Titles never take the class. Screens only, so printing never blurs.
+ */
+@media screen {
+    :root[data-privacy-blur] .privacy-text:not(textarea),
+    :root[data-privacy-blur] .w-md-editor-text {
+        filter: blur(0.4em);
+    }
+
+    /* A writing field keeps its frame and caret: only its letters blur. */
+    :root[data-privacy-blur] textarea.privacy-text {
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 0.5em currentColor;
+    }
+}
+
+/* Writing fields keep their own color transitions. */
+@media screen and (prefers-reduced-motion: no-preference) {
+    .privacy-text:not(textarea),
+    .w-md-editor-text {
+        transition: filter 0.15s ease;
+    }
+}

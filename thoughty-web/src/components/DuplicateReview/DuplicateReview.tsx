@@ -138,7 +138,7 @@ function DuplicateReview({
                         <article className="duplicate-entry-row" key={entry.id}>
                           <div className="duplicate-entry-copy">
                             <time dateTime={entry.date}>{entry.date}</time>
-                            <p>{entry.content}</p>
+                            <p className="privacy-text">{entry.content}</p>
                             {entry.tags.length > 0 && <small>{entry.tags.join(', ')}</small>}
                           </div>
                           <div className="duplicate-entry-actions">
