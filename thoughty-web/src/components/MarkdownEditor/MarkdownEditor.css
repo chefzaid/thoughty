@@ -1,0 +1,9 @@
+/*
+ * The writer's line and letter spacing (set as custom properties by MarkdownEditor). The editor fixes
+ * its text box at 18px lines with !important, which its textarea inherits, so the spacing goes there;
+ * without the properties the editor keeps its own lines.
+ */
+.w-md-editor.entry-text-spacing .w-md-editor-text {
+  line-height: var(--entry-line-height, 18px) !important;
+  letter-spacing: var(--entry-letter-spacing, normal);
+}

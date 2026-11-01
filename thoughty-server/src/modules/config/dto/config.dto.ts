@@ -15,6 +15,10 @@ const ToSettingText = () =>
   });
 
 export const BOOLEAN_TEXT = ['true', 'false'] as const;
+export const FONT_FAMILIES = ['system', 'serif', 'modern', 'mono', 'legible'] as const;
+/** Named steps rather than numbers, so every value the web shows is one it can draw well. */
+export const LINE_SPACINGS = ['normal', 'relaxed', 'loose'] as const;
+export const LETTER_SPACINGS = ['normal', 'wide', 'wider'] as const;
 export const SMALL_NUMBER = /^\d{1,3}$/;
 /** Prompt card ids (`theme-number`), comma-separated, or empty. */
 export const PROMPT_CARD_IDS = /^(?:[a-zA-Z]{1,20}-\d{1,3}(?:,[a-zA-Z]{1,20}-\d{1,3})*)?$/;
@@ -82,7 +86,7 @@ export class UpdateConfigDto {
   )
   avatarUrl?: string;
 
-  @SettingChoice(['system', 'serif', 'modern', 'mono'], 'Font family')
+  @SettingChoice(FONT_FAMILIES, 'Font family; `legible` is Atkinson Hyperlegible, served by the web app itself')
   fontFamily?: string;
 
   @SettingText(3, 'Font size in pixels', SMALL_NUMBER)
@@ -90,6 +94,12 @@ export class UpdateConfigDto {
 
   @SettingText(7, 'Text color as #rrggbb, or empty for the theme default', /^(#[0-9a-fA-F]{6})?$/)
   fontColor?: string;
+
+  @SettingChoice(LINE_SPACINGS, 'Line spacing of entry text; `normal` keeps each view’s own spacing')
+  lineSpacing?: string;
+
+  @SettingChoice(LETTER_SPACINGS, 'Letter spacing of entry text; `normal` keeps the font’s own spacing')
+  letterSpacing?: string;
 
   @SettingChoice(BOOLEAN_TEXT, 'High contrast mode')
   highContrast?: string;
@@ -177,6 +187,8 @@ export const USER_CONFIG_KEYS: ReadonlySet<string> = new Set<keyof UpdateConfigD
   'fontFamily',
   'fontSize',
   'fontColor',
+  'lineSpacing',
+  'letterSpacing',
   'highContrast',
   'ttsVoiceUri',
   'language',

@@ -5,7 +5,7 @@ import { MentionPeopleContext, NO_MENTION_PEOPLE } from '../People/PeopleContext
 import { formatEntryDay } from '../ShareLinks/shareLinkText';
 import { extractDate } from '../EntriesList/EntriesList.utils';
 import type { Attachment, Entry, TranslationFunction as TranslationFn } from '../../types';
-import { resolveFontFamily, type FontFamilyPreference } from '../../types/config';
+import { entrySpacingStyle, resolveFontFamily, type EntrySpacing, type FontFamilyPreference } from '../../types/config';
 import { isImageAttachment, isVideoAttachment } from '../../utils/attachments';
 import { describeMood } from '../../utils/entryMood';
 import { formatTimeOfDay } from '../../utils/entryTime';
@@ -34,6 +34,7 @@ interface PrintedEntryProps {
     readonly options: PrintOptions;
     readonly language: Language;
     readonly urls: ReadonlyMap<string, string>;
+    readonly spacing: EntrySpacing;
     readonly t: TranslationFn;
 }
 
@@ -57,7 +58,8 @@ function PrintedAttachment({ attachment, urls, t }: Readonly<{ attachment: Attac
     return <p className="print-attached">{t('printAttached', { name })}</p>;
 }
 
-function PrintedEntry({ entry, options, language, urls, t }: PrintedEntryProps) {
+function PrintedEntry({ entry, options, language, urls, spacing, t }: PrintedEntryProps) {
+    const { lineHeight, letterSpacing } = entrySpacingStyle(spacing);
     const attachments = entry.attachments ?? [];
     const placed = entry.format === 'markdown' ? placedAttachmentIds(entry.content) : new Set<number>();
     // The text's own pictures show where it places them, once loaded; a picture that failed to load is missing there
@@ -73,9 +75,9 @@ function PrintedEntry({ entry, options, language, urls, t }: PrintedEntryProps) 
                     <time dateTime={entry.time_of_day}>{formatTimeOfDay(entry.time_of_day, language)}</time>
                 </p>
             )}
-            {entry.title && <h2 className="print-entry-title">{entry.title}</h2>}
+            {entry.title && <h2 className="print-entry-title" style={{ letterSpacing }}>{entry.title}</h2>}
             {mood && <p className="print-entry-meta">{t('moodLabel')}: {mood}</p>}
-            <div className={`print-entry-text${entry.format === 'markdown' ? '' : ' whitespace-pre-wrap'}`}>
+            <div className={`print-entry-text${entry.format === 'markdown' ? '' : ' whitespace-pre-wrap'}`} style={{ lineHeight, letterSpacing }}>
                 <EntryContentRenderer
                     content={entry.content}
                     format={entry.format}
@@ -99,6 +101,8 @@ interface PrintSheetProps {
     readonly options: PrintOptions;
     readonly language: Language;
     readonly fontFamily?: FontFamilyPreference;
+    /** The writer's line and letter spacing, which the printed text keeps as on screen. */
+    readonly spacing?: EntrySpacing;
     readonly t: TranslationFn;
     /** Called once, when every picture has loaded and the sheet can be printed. */
     readonly onReady: () => void;
@@ -107,10 +111,10 @@ interface PrintSheetProps {
 /**
  * The entries as printed pages, set beside the app and shown only when printing: the day, then each
  * entry's time, title, text (as in the journal, with task lists as boxes and mentions as plain text)
- * and pictures, in the writer's font, black on white whatever the theme. Pictures load with the
+ * and pictures, in the writer's font and spacing, black on white whatever the theme. Pictures load with the
  * session before `onReady`, so they are all on the paper.
  */
-export default function PrintSheet({ entries, options, language, fontFamily, t, onReady }: PrintSheetProps) {
+export default function PrintSheet({ entries, options, language, fontFamily, spacing = {}, t, onReady }: PrintSheetProps) {
     const sheetRef = useRef<HTMLDivElement>(null);
     const onReadyRef = useRef(onReady);
     onReadyRef.current = onReady;
@@ -139,7 +143,7 @@ export default function PrintSheet({ entries, options, language, fontFamily, t, 
                                 <time dateTime={day.date}>{formatEntryDay(day.date, language)}</time>
                             </h1>
                             {day.entries.map((entry) => (
-                                <PrintedEntry key={entry.id} entry={entry} options={options} language={language} urls={urls} t={t} />
+                                <PrintedEntry key={entry.id} entry={entry} options={options} language={language} urls={urls} spacing={spacing} t={t} />
                             ))}
                         </section>
                     ))}

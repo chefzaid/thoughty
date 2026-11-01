@@ -127,6 +127,15 @@ describe('EntryForm', () => {
             });
         });
 
+        it('spaces the plain textarea as the writer chose, and the title only between its letters', () => {
+            render(<EntryForm {...defaultProps} format="plain" title="" setTitle={vi.fn()} lineSpacing="loose" letterSpacing="wider" />);
+
+            expect(screen.getByPlaceholderText("What's on your mind?")).toHaveStyle({ lineHeight: '2.2', letterSpacing: '0.12em' });
+            const title = screen.getByLabelText('Title (optional)');
+            expect(title.style.letterSpacing).toBe('0.12em');
+            expect(title.style.lineHeight).toBe('');
+        });
+
         it('shows markdown editor when format is markdown', () => {
             render(<EntryForm {...defaultProps} format="markdown" />);
 
@@ -168,6 +177,16 @@ describe('EntryForm', () => {
             expect(editor.querySelector('textarea')).toHaveStyle({
                 color: 'rgb(18, 52, 86)',
             });
+        });
+
+        it('spaces the markdown editor through its stylesheet, not the textarea’s own style', async () => {
+            render(<EntryForm {...defaultProps} format="markdown" lineSpacing="relaxed" letterSpacing="wide" />);
+
+            const editor = await screen.findByTestId('md-editor');
+            expect(editor).toHaveClass('entry-text-spacing');
+            expect(editor.style.getPropertyValue('--entry-line-height')).toBe('1.9');
+            expect(editor.style.getPropertyValue('--entry-letter-spacing')).toBe('0.06em');
+            expect(editor.querySelector('textarea')?.style.lineHeight).toBe('');
         });
     });
 

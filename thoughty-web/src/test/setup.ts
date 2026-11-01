@@ -83,6 +83,8 @@ interface MDEditorMockProps {
   preview?: string;
   height?: number;
   visibleDragbar?: boolean;
+  className?: string;
+  style?: Record<string, string>;
   textareaProps?: {
     placeholder?: string;
     title?: string;
@@ -92,8 +94,8 @@ interface MDEditorMockProps {
 
 function createMDEditorMock() {
   return {
-    default: function MockMDEditor({ value, onChange, textareaProps }: MDEditorMockProps) {
-      return createElement('div', { 'data-color-mode': 'dark', 'data-testid': 'md-editor' },
+    default: function MockMDEditor({ value, onChange, className, style, textareaProps }: MDEditorMockProps) {
+      return createElement('div', { 'data-color-mode': 'dark', 'data-testid': 'md-editor', className, style },
         createElement('textarea', {
           value: value || '',
           onChange: (e: ChangeEvent<HTMLTextAreaElement>) => onChange?.(e.target.value),

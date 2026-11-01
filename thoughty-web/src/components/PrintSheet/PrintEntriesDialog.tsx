@@ -13,7 +13,7 @@ interface PrintEntriesDialogProps {
     /** One entry, or the entries of a day. */
     readonly what: 'entry' | 'day';
     readonly entries: readonly Entry[];
-    readonly config: Pick<Config, 'theme' | 'language' | 'fontFamily'>;
+    readonly config: Pick<Config, 'theme' | 'language' | 'fontFamily' | 'lineSpacing' | 'letterSpacing'>;
     readonly onClose: () => void;
     readonly t: TranslationFn;
 }
@@ -123,6 +123,7 @@ export default function PrintEntriesDialog({ what, entries, config, onClose, t }
                     options={{ mood: offerMood && options.mood, tags: offerTags && options.tags }}
                     language={language}
                     fontFamily={config.fontFamily}
+                    spacing={config}
                     t={t}
                     onReady={print}
                 />

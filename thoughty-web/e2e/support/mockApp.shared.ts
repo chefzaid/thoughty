@@ -160,9 +160,11 @@ export interface MockAppState {
     name?: string;
     bio?: string;
     email?: string;
-    fontFamily?: "system" | "serif" | "modern" | "mono";
+    fontFamily?: "system" | "serif" | "modern" | "mono" | "legible";
     fontSize?: string | number;
     fontColor?: string;
+    lineSpacing?: "normal" | "relaxed" | "loose";
+    letterSpacing?: "normal" | "wide" | "wider";
     highContrast?: boolean | string;
     readDates?: boolean;
     streakCard?: boolean;

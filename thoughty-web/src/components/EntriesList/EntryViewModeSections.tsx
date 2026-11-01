@@ -18,7 +18,7 @@ import { formatTimeOfDay } from '../../utils/entryTime';
 import { pluralPhrase } from '../../utils/pluralPhrase';
 import type { Language } from '../../utils/translations';
 import { describeMood, feelingLabel, isMoodLevel, moodEmoji, moodLabelKey } from '../../utils/entryMood';
-import { resolveFontColor } from '../../types/config';
+import { entryTextStyle, type EntrySpacing } from '../../types/config';
 import { mutedTextClass } from '../../utils/tintedText';
 import { placedAttachmentIds } from '../../utils/inlineImages';
 import { isImageAttachment } from '../../utils/attachments';
@@ -234,6 +234,7 @@ export function EntryBodySection({
     isDark,
     theme,
     fontColor,
+    spacing,
     language,
     onNavigateToEntry,
     onToggleTask,
@@ -251,6 +252,8 @@ export function EntryBodySection({
     isDark: boolean;
     theme: Config['theme'];
     fontColor?: string;
+    /** The writer's line and letter spacing for the entry's text. */
+    spacing: EntrySpacing;
     language: Language;
     onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
     onToggleTask?: (line: number, checked: boolean) => void;
@@ -264,7 +267,8 @@ export function EntryBodySection({
     onHandleDeleteRevision: (revisionId: number) => Promise<void>;
     t: TranslationFn;
 }>) {
-    const readingTextColor = resolveFontColor(fontColor, theme);
+    const readingTextStyle = entryTextStyle({ fontColor, ...spacing }, theme);
+    const titleTextStyle = entryTextStyle({ fontColor, ...spacing }, theme, { title: true });
     const quiet = useQuietMode();
     const { wordCount, readingTimeMinutes } = getEntryMetrics(entry.content);
     const readingTimeLabel = readingTimeMinutes > 0
@@ -281,14 +285,14 @@ export function EntryBodySection({
             {entry.title && (
                 <h3
                     className={`mb-2 text-lg font-semibold leading-snug break-words ${isDark ? 'text-gray-100' : 'text-gray-900'}`}
-                    style={{ color: readingTextColor }}
+                    style={titleTextStyle}
                 >
                     <HighlightedText text={entry.title} searchTerm={searchTerm} searchMatches={entry.search_matches} />
                 </h3>
             )}
             <div
                 className={`privacy-text leading-relaxed text-sm ${entry.format === 'markdown' ? '' : 'whitespace-pre-wrap'} ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
-                style={{ color: readingTextColor }}
+                style={readingTextStyle}
             >
                 <EntryContentRenderer
                     content={entry.content}

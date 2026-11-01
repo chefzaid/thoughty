@@ -4040,6 +4040,8 @@ export interface components {
          *       "avatarUrl": "https://thoughty.example.com/callback",
          *       "fontFamily": "system",
          *       "fontColor": "#2A9D8F",
+         *       "lineSpacing": "normal",
+         *       "letterSpacing": "normal",
          *       "ttsVoiceUri": "https://thoughty.example.com/callback",
          *       "language": "en",
          *       "defaultVisibility": "public",
@@ -4085,12 +4087,22 @@ export interface components {
             /** @description Profile picture as a base64 image data URL or an http(s) URL, or empty */
             avatarUrl?: string;
             /**
-             * @description Font family
+             * @description Font family; `legible` is Atkinson Hyperlegible, served by the web app itself
              * @enum {string}
              */
-            fontFamily?: "system" | "serif" | "modern" | "mono";
+            fontFamily?: "system" | "serif" | "modern" | "mono" | "legible";
             /** @description Text color as #rrggbb, or empty for the theme default */
             fontColor?: string;
+            /**
+             * @description Line spacing of entry text; `normal` keeps each view’s own spacing
+             * @enum {string}
+             */
+            lineSpacing?: "normal" | "relaxed" | "loose";
+            /**
+             * @description Letter spacing of entry text; `normal` keeps the font’s own spacing
+             * @enum {string}
+             */
+            letterSpacing?: "normal" | "wide" | "wider";
             /** @description Text-to-speech voice URI, or empty for the default */
             ttsVoiceUri?: string;
             /**
@@ -4173,6 +4185,8 @@ export interface components {
          *       "fontFamily": "system",
          *       "fontSize": "example",
          *       "fontColor": "#2A9D8F",
+         *       "lineSpacing": "normal",
+         *       "letterSpacing": "normal",
          *       "highContrast": "true",
          *       "ttsVoiceUri": "https://thoughty.example.com/callback",
          *       "language": "en",
@@ -4217,14 +4231,24 @@ export interface components {
             /** @description Profile picture as a base64 image data URL or an http(s) URL, or empty */
             avatarUrl?: string;
             /**
-             * @description Font family
+             * @description Font family; `legible` is Atkinson Hyperlegible, served by the web app itself
              * @enum {string}
              */
-            fontFamily?: "system" | "serif" | "modern" | "mono";
+            fontFamily?: "system" | "serif" | "modern" | "mono" | "legible";
             /** @description Font size in pixels */
             fontSize?: string | number;
             /** @description Text color as #rrggbb, or empty for the theme default */
             fontColor?: string;
+            /**
+             * @description Line spacing of entry text; `normal` keeps each view’s own spacing
+             * @enum {string}
+             */
+            lineSpacing?: "normal" | "relaxed" | "loose";
+            /**
+             * @description Letter spacing of entry text; `normal` keeps the font’s own spacing
+             * @enum {string}
+             */
+            letterSpacing?: "normal" | "wide" | "wider";
             /** @description High contrast mode */
             highContrast?: ("true" | "false") | boolean;
             /** @description Text-to-speech voice URI, or empty for the default */
@@ -12393,6 +12417,8 @@ export interface operations {
                      *       "avatarUrl": "https://thoughty.example.com/callback",
                      *       "fontFamily": "system",
                      *       "fontColor": "#2A9D8F",
+                     *       "lineSpacing": "normal",
+                     *       "letterSpacing": "normal",
                      *       "ttsVoiceUri": "https://thoughty.example.com/callback",
                      *       "language": "en",
                      *       "defaultVisibility": "public",
@@ -12445,6 +12471,8 @@ export interface operations {
                  *       "fontFamily": "system",
                  *       "fontSize": "example",
                  *       "fontColor": "#2A9D8F",
+                 *       "lineSpacing": "normal",
+                 *       "letterSpacing": "normal",
                  *       "highContrast": "true",
                  *       "ttsVoiceUri": "https://thoughty.example.com/callback",
                  *       "language": "en",

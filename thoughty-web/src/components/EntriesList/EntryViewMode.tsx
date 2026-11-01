@@ -295,6 +295,7 @@ function OpenEntryViewMode({
                 isDark={isDark}
                 theme={config.theme}
                 fontColor={config.fontColor}
+                spacing={config}
                 language={resolveLanguage(config.language)}
                 onNavigateToEntry={onNavigateToEntry}
                 onToggleTask={onToggleTask ? (line, checked) => onToggleTask(entry, line, checked) : undefined}

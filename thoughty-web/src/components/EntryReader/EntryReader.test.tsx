@@ -188,6 +188,21 @@ describe('EntryReader', () => {
     expect(sheet().style.fontFamily).toContain('monospace');
   });
 
+  it('reads with the writer’s spacing, or the reader’s own leading when it is normal', async () => {
+    const sheet = () => document.querySelector<HTMLElement>('.entry-reader-sheet')!;
+    const { unmount } = renderReader({ initialEntryId: 1, config: { theme: 'dark', language: 'en', lineSpacing: 'loose', letterSpacing: 'wide' } });
+    await screen.findByText('Entry 1 text');
+    expect(sheet().style.lineHeight).toBe('2.2');
+    expect(sheet().style.letterSpacing).toBe('0.06em');
+    unmount();
+
+    renderReader({ initialEntryId: 1, config: { theme: 'dark', language: 'en', fontFamily: 'legible' } });
+    await screen.findByText('Entry 1 text');
+    expect(sheet().style.lineHeight).toBe('');
+    expect(sheet().style.letterSpacing).toBe('');
+    expect(sheet().style.fontFamily).toContain('Atkinson Hyperlegible');
+  });
+
   it('marks the page for printing and holds it still while open', async () => {
     const { unmount } = renderReader({ initialEntryId: 1 });
     await screen.findByText('Entry 1 text');

@@ -35,6 +35,17 @@ export type SettingsTranslationKey =
   | "fontTypeSerif"
   | "fontTypeModern"
   | "fontTypeMono"
+  | "fontTypeLegible"
+  | "lineSpacing"
+  | "lineSpacingDescription"
+  | "lineSpacingNormal"
+  | "lineSpacingRelaxed"
+  | "lineSpacingLoose"
+  | "letterSpacing"
+  | "letterSpacingDescription"
+  | "letterSpacingNormal"
+  | "letterSpacingWide"
+  | "letterSpacingWider"
   | "fontSize"
   | "fontSizeDescription"
   | "fontColor"
@@ -105,6 +116,17 @@ export const settingsTranslations: Record<Language, Record<SettingsTranslationKe
     fontTypeSerif: "Classic serif",
     fontTypeModern: "Modern sans",
     fontTypeMono: "Monospace",
+    fontTypeLegible: "Easy to read (Atkinson Hyperlegible)",
+    lineSpacing: "Line spacing",
+    lineSpacingDescription: "Room between the lines of your entries",
+    lineSpacingNormal: "Normal",
+    lineSpacingRelaxed: "Relaxed",
+    lineSpacingLoose: "Loose",
+    letterSpacing: "Letter spacing",
+    letterSpacingDescription: "Room between the letters of your entries",
+    letterSpacingNormal: "Normal",
+    letterSpacingWide: "Wide",
+    letterSpacingWider: "Wider",
     fontSize: "Font size",
     fontSizeDescription: "Adjust the base text size used across the app",
     fontColor: "Font color",
@@ -114,7 +136,7 @@ export const settingsTranslations: Record<Language, Record<SettingsTranslationKe
       "Increase outlines and contrast across the app for easier reading.",
     fontPreview: "Preview",
     fontPreviewDescription:
-      "Check how your chosen type, size, and color look together before saving.",
+      "Check how your chosen type, size, color, and spacing look together before saving.",
     fontPreviewKicker: "Sample entry",
     fontPreviewSample:
       "Quiet details become easier to notice when the page matches how you like to read and write.",
@@ -181,6 +203,17 @@ export const settingsTranslations: Record<Language, Record<SettingsTranslationKe
     fontTypeSerif: "Serif classique",
     fontTypeModern: "Sans moderne",
     fontTypeMono: "Monospace",
+    fontTypeLegible: "Facile à lire (Atkinson Hyperlegible)",
+    lineSpacing: "Interligne",
+    lineSpacingDescription: "L’espace entre les lignes de vos notes",
+    lineSpacingNormal: "Normal",
+    lineSpacingRelaxed: "Aéré",
+    lineSpacingLoose: "Très aéré",
+    letterSpacing: "Espacement des lettres",
+    letterSpacingDescription: "L’espace entre les lettres de vos notes",
+    letterSpacingNormal: "Normal",
+    letterSpacingWide: "Large",
+    letterSpacingWider: "Très large",
     fontSize: "Taille du texte",
     fontSizeDescription:
       "Ajustez la taille de texte de base utilisée dans l’application",
@@ -192,7 +225,7 @@ export const settingsTranslations: Record<Language, Record<SettingsTranslationKe
       "Renforce les contours et le contraste dans l'application pour faciliter la lecture.",
     fontPreview: "Aperçu",
     fontPreviewDescription:
-      "Vérifiez l’ensemble police, taille et couleur avant d’enregistrer.",
+      "Vérifiez l’ensemble police, taille, couleur et espacement avant d’enregistrer.",
     fontPreviewKicker: "Exemple de note",
     fontPreviewSample:
       "Les détails calmes deviennent plus faciles à voir quand la page correspond à votre façon de lire et d’écrire.",

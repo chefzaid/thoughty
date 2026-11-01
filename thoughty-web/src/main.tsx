@@ -1,6 +1,10 @@
 import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@vscode/codicons/dist/codicon.css';
+// The easy-to-read font, regular and bold, bundled so it is served from the app's own origin.
+// Each face downloads only once text uses it, and only the subsets that text needs.
+import '@fontsource/atkinson-hyperlegible/400.css';
+import '@fontsource/atkinson-hyperlegible/700.css';
 import './index.css';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';

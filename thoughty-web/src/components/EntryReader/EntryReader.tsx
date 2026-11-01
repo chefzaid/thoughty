@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 
 import { useDialogFocus } from '../../hooks/useDialogFocus';
 import type { Config, TranslationFunction } from '../../types';
-import { normalizeFontSize, resolveFontColor, resolveFontFamily } from '../../types/config';
+import { entryTextStyle, normalizeFontSize, resolveFontFamily } from '../../types/config';
 import { resolveLanguage } from '../../utils/language';
 import { formatEntryDay } from '../ShareLinks/shareLinkText';
 import { isPrivacyBlurShortcut } from '../PrivacyBlur/privacyBlur';
@@ -137,7 +137,7 @@ export default function EntryReader({ scope, entryId, onShow, onClose, config, t
         <div
           className="entry-reader-sheet"
           style={{
-            color: resolveFontColor(config.fontColor, theme),
+            ...entryTextStyle(config, theme),
             fontFamily: resolveFontFamily(config.fontFamily && config.fontFamily !== 'system' ? config.fontFamily : 'serif'),
             fontSize: `${normalizeFontSize(config.fontSize) * TEXT_SCALE}px`,
           }}

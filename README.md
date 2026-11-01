@@ -49,3 +49,5 @@ GitLab builds and tests every push; releases are started manually (or automatica
 ## License
 
 MIT. See [LICENSE](./LICENSE).
+
+The bundled Atkinson Hyperlegible font (Braille Institute of America) is under the SIL Open Font License 1.1: [thoughty-web/public/licenses/atkinson-hyperlegible-OFL.txt](./thoughty-web/public/licenses/atkinson-hyperlegible-OFL.txt).

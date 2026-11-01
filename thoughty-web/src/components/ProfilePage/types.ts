@@ -1,4 +1,4 @@
-import type { TranslationFunction } from '../../types';
+import type { FontFamilyPreference, LetterSpacingPreference, LineSpacingPreference, TranslationFunction } from '../../types';
 import type { User } from '../../contexts/authTypes';
 import { formatEntryDate } from '../../utils/entryDate';
 
@@ -12,9 +12,11 @@ export interface ProfileConfig {
   gender?: string;
   avatarUrl?: string;
   theme?: 'light' | 'dark';
-  fontFamily?: 'system' | 'serif' | 'modern' | 'mono';
+  fontFamily?: FontFamilyPreference;
   fontSize?: number | string;
   fontColor?: string;
+  lineSpacing?: LineSpacingPreference;
+  letterSpacing?: LetterSpacingPreference;
   highContrast?: boolean | string;
   ttsVoiceUri?: string;
   language?: string;

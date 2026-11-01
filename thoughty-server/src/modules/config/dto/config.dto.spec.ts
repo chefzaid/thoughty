@@ -27,6 +27,8 @@ describe('UpdateConfigDto', () => {
       fontFamily: 'serif',
       fontSize: 18,
       fontColor: '#112233',
+      lineSpacing: 'relaxed',
+      letterSpacing: 'wider',
       highContrast: true,
       ttsVoiceUri: '',
       language: 'fr',
@@ -62,6 +64,16 @@ describe('UpdateConfigDto', () => {
     });
   });
 
+  it.each([
+    ['fontFamily', ['system', 'serif', 'modern', 'mono', 'legible']],
+    ['lineSpacing', ['normal', 'relaxed', 'loose']],
+    ['letterSpacing', ['normal', 'wide', 'wider']],
+  ])('accepts every %s step', async (key, values) => {
+    for (const value of values) {
+      await expect(validate({ [key]: value })).resolves.toMatchObject({ [key]: value });
+    }
+  });
+
   it('accepts the prompt cards drawn, or none', async () => {
     await expect(validate({ promptCardsDrawn: 'people-1,places-12,smallJoys-7' })).resolves.toBeDefined();
     await expect(validate({ promptCardsDrawn: '' })).resolves.toBeDefined();
@@ -95,6 +107,12 @@ describe('UpdateConfigDto', () => {
     ['quietMode', 1],
     ['fontColor', 'red'],
     ['fontSize', '1e9'],
+    ['fontFamily', 'comic'],
+    ['lineSpacing', '2'],
+    ['lineSpacing', 2],
+    ['lineSpacing', ''],
+    ['letterSpacing', 'huge'],
+    ['letterSpacing', '0.1em'],
     ['birthday', 'tomorrow'],
     ['avatarUrl', 'javascript:alert(1)'],
     ['name', 'x'.repeat(201)],

@@ -2,7 +2,13 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type 
 import { createPortal } from 'react-dom';
 import { useDialogFocus } from '../../hooks/useDialogFocus';
 import type { FontFamilyPreference, TranslationFunction } from '../../types';
-import { normalizeFontSize, resolveFontColor, resolveFontFamily } from '../../types/config';
+import {
+    entryTextStyle,
+    normalizeFontSize,
+    resolveFontFamily,
+    type LetterSpacingPreference,
+    type LineSpacingPreference,
+} from '../../types/config';
 import { countEntryWords } from '../../utils/entryMetrics';
 import { resolveLanguage } from '../../utils/language';
 import { pluralPhrase } from '../../utils/pluralPhrase';
@@ -27,6 +33,8 @@ interface FocusModeProps {
     readonly onClose: () => void;
     readonly theme?: 'light' | 'dark';
     readonly fontColor?: string;
+    readonly lineSpacing?: LineSpacingPreference;
+    readonly letterSpacing?: LetterSpacingPreference;
     readonly fontFamily?: FontFamilyPreference;
     readonly fontSize?: string | number;
     readonly language?: string;
@@ -48,6 +56,8 @@ export default function FocusMode({
     onClose,
     theme = 'dark',
     fontColor,
+    lineSpacing,
+    letterSpacing,
     fontFamily,
     fontSize,
     language = 'en',
@@ -196,7 +206,7 @@ export default function FocusMode({
                     onScroll={suggestionsOpen ? placeSuggestions : undefined}
                     spellCheck
                     style={{
-                        color: resolveFontColor(fontColor, theme),
+                        ...entryTextStyle({ fontColor, lineSpacing, letterSpacing }, theme),
                         fontFamily: resolveFontFamily(fontFamily),
                         fontSize: `${normalizeFontSize(fontSize) * TEXT_SCALE}px`,
                     }}

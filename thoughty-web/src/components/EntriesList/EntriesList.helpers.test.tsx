@@ -273,6 +273,38 @@ describe('EntriesList.helpers', () => {
         expect(screen.getByTestId('visibility-icon')).toHaveTextContent('private');
     });
 
+    it('spaces the entry being edited, its title and its focus mode as the writer chose', () => {
+        render(
+            <EditForm
+                config={{ theme: 'light', fontColor: '#123456', lineSpacing: 'relaxed', letterSpacing: 'wide' } as never}
+                editText="Spaced text"
+                setEditText={vi.fn()}
+                editTitle="Spaced title"
+                setEditTitle={vi.fn()}
+                editDate={new Date('2024-01-15')}
+                setEditDate={vi.fn()}
+                allTags={[]}
+                tagMetadata={{}}
+                editTags={[]}
+                setEditTags={vi.fn()}
+                editVisibility="private"
+                setEditVisibility={vi.fn()}
+                editFormat="plain"
+                setEditFormat={vi.fn()}
+                onSaveEdit={vi.fn()}
+                onCancelEdit={vi.fn()}
+                t={t}
+            />,
+        );
+
+        expect(screen.getByDisplayValue('Spaced text')).toHaveStyle({ color: 'rgb(18, 52, 86)', lineHeight: '1.9', letterSpacing: '0.06em' });
+        const title = screen.getByDisplayValue('Spaced title');
+        expect(title.style.letterSpacing).toBe('0.06em');
+        expect(title.style.lineHeight).toBe('');
+        fireEvent.click(screen.getByRole('button', { name: 'focusModeOpen' }));
+        expect(screen.getByRole('textbox', { name: 'focusModeTextLabel' })).toHaveStyle({ lineHeight: '1.9', letterSpacing: '0.06em' });
+    });
+
     it('renders the markdown edit form branch', async () => {
         const setEditText = vi.fn();
 

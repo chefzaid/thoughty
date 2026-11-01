@@ -41,6 +41,8 @@ describe('ConfigService', () => {
         name: 'User',
         fontFamily: 'system',
         fontSize: '16',
+        lineSpacing: 'normal',
+        letterSpacing: 'normal',
         highContrast: 'false',
         quietMode: 'false',
         entriesPerPage: '10',
@@ -65,6 +67,8 @@ describe('ConfigService', () => {
       expect(result.name).toBe('John Doe');
       expect(result.fontFamily).toBe('system');
       expect(result.fontSize).toBe('16');
+      expect(result.lineSpacing).toBe('normal');
+      expect(result.letterSpacing).toBe('normal');
       expect(result.highContrast).toBe('false');
       expect(result.entriesPerPage).toBe('10'); // default
       expect(result.language).toBe('en'); // default
@@ -78,6 +82,8 @@ describe('ConfigService', () => {
         { key: 'name', value: 'Jane Doe' },
         { key: 'fontFamily', value: 'serif' },
         { key: 'fontSize', value: '18' },
+        { key: 'lineSpacing', value: 'loose' },
+        { key: 'letterSpacing', value: 'wide' },
         { key: 'highContrast', value: 'true' },
         { key: 'quietMode', value: 'true' },
         { key: 'entriesPerPage', value: '20' },
@@ -93,6 +99,8 @@ describe('ConfigService', () => {
         name: 'Jane Doe',
         fontFamily: 'serif',
         fontSize: '18',
+        lineSpacing: 'loose',
+        letterSpacing: 'wide',
         highContrast: 'true',
         quietMode: 'true',
         entriesPerPage: '20',
@@ -129,6 +137,8 @@ describe('ConfigService', () => {
         { key: 'theme', value: 'purple' },
         { key: 'language', value: 'es' },
         { key: 'fontColor', value: 'red' },
+        { key: 'lineSpacing', value: '3' },
+        { key: 'letterSpacing', value: 'huge' },
         { key: 'name', value: 'Kept' },
       ]);
 
@@ -137,6 +147,8 @@ describe('ConfigService', () => {
       expect(result.theme).toBe('dark');
       expect(result.language).toBe('en');
       expect(result.fontColor).toBeUndefined();
+      expect(result.lineSpacing).toBe('normal');
+      expect(result.letterSpacing).toBe('normal');
       expect(result.name).toBe('Kept');
     });
 

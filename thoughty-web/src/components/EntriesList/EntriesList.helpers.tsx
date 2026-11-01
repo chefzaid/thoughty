@@ -6,7 +6,7 @@ import VisibilityIcon from '../VisibilityIcon/VisibilityIcon';
 import type { Attachment, Config, TranslationFunction as TranslationFn } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import { getEditFormatButtonClass, getVisibilityButtonClass } from './EntriesList.utils';
-import { resolveFontColor } from '../../types/config';
+import { entryTextStyle } from '../../types/config';
 import { useAutoGrowTextarea } from '../../hooks/useAutoGrowTextarea';
 import EntryTimeField from '../EntryForm/EntryTimeField';
 import EntryMoodField from '../EntryForm/EntryMoodField';
@@ -198,7 +198,8 @@ export function EditForm({
     t,
 }: Readonly<EditFormProps>) {
     const isDark = config.theme !== 'light';
-    const writingTextColor = resolveFontColor(config.fontColor, config.theme);
+    const writingTextStyle = entryTextStyle(config, config.theme);
+    const titleTextStyle = entryTextStyle(config, config.theme, { title: true });
     const inputClass = isDark
         ? 'bg-gray-900 border-gray-700 text-gray-100'
         : 'bg-gray-50 border-gray-300 text-gray-900';
@@ -232,7 +233,7 @@ export function EditForm({
                         maxLength={MAX_ENTRY_TITLE_LENGTH}
                         placeholder={t('entryTitlePlaceholder')}
                         className={`w-full border rounded-lg px-3 py-2 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none ${inputClass}`}
-                        style={{ color: writingTextColor }}
+                        style={titleTextStyle}
                     />
                 </div>
             )}
@@ -244,7 +245,7 @@ export function EditForm({
                                 ref={editArea.ref}
                                 onPointerUp={editArea.onPointerUp}
                                 className={`privacy-text w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-y ${inputClass}`}
-                                style={{ color: writingTextColor }}
+                                style={writingTextStyle}
                                 rows={3}
                                 value={editText}
                                 onChange={(e) => setEditText(e.target.value)}
@@ -258,7 +259,8 @@ export function EditForm({
                                 onChange={(val) => setEditText(val ?? '')}
                                 preview="edit"
                                 height={200}
-                                textareaProps={{ 'aria-label': t('entryTextLabel'), style: { color: writingTextColor }, ...mentions.fieldProps }}
+                                textareaProps={{ 'aria-label': t('entryTextLabel'), style: { color: writingTextStyle.color }, ...mentions.fieldProps }}
+                                spacing={config}
                                 onInsertImage={inlineImages.open}
                                 t={t}
                             />
@@ -272,7 +274,7 @@ export function EditForm({
                             ref={editArea.ref}
                             onPointerUp={editArea.onPointerUp}
                             className={`privacy-text w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-y ${inputClass}`}
-                            style={{ color: writingTextColor }}
+                            style={writingTextStyle}
                             rows={3}
                             aria-label={t('entryTextLabel')}
                             value={editText}
@@ -339,6 +341,8 @@ export function EditForm({
                     onTextChange={setEditText}
                     theme={config.theme}
                     fontColor={config.fontColor}
+                    lineSpacing={config.lineSpacing}
+                    letterSpacing={config.letterSpacing}
                     fontFamily={config.fontFamily}
                     fontSize={config.fontSize}
                     language={config.language}

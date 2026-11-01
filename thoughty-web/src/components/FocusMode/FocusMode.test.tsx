@@ -143,6 +143,16 @@ describe('FocusMode', () => {
         });
     });
 
+    it('writes with the writer’s line and letter spacing, which the caret line follows', () => {
+        render(<ControlledFocusMode lineSpacing="relaxed" letterSpacing="wider" fontFamily="legible" />);
+
+        expect(screen.getByRole('textbox', { name: 'Entry text' })).toHaveStyle({
+            lineHeight: '1.9',
+            letterSpacing: '0.12em',
+            fontFamily: '"Atkinson Hyperlegible", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        });
+    });
+
     it('speaks French', () => {
         render(<ControlledFocusMode t={french} language="fr" initialText="Bonjour" />);
 

@@ -30,6 +30,8 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   name: 'User',
   fontFamily: 'system',
   fontSize: '16',
+  lineSpacing: 'normal',
+  letterSpacing: 'normal',
   highContrast: 'false',
   quietMode: 'false',
   entriesPerPage: '10',

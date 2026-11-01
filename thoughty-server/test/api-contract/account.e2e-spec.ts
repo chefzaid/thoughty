@@ -35,6 +35,9 @@ describeContract('account', (context) => {
         quietMode: true,
         readDates: false,
         promptCardsDrawn: 'gratitude-3,smallJoys-12',
+        fontFamily: 'legible',
+        lineSpacing: 'loose',
+        letterSpacing: 'wide',
       },
       status: 200,
     });
@@ -48,10 +51,21 @@ describeContract('account', (context) => {
       streakCard: 'true',
       quietMode: 'true',
       promptCardsDrawn: 'gratitude-3,smallJoys-12',
+      fontFamily: 'legible',
+      lineSpacing: 'loose',
+      letterSpacing: 'wide',
     });
     const other = await call('GET /api/config', { as: bob, status: 200 });
     // Quiet mode is off until the writer turns it on
     expect(other.body).toMatchObject({ theme: 'dark', language: 'en', quietMode: 'false' });
+    // Reading comfort keeps today's look until the writer picks a step
+    expect(other.body).toMatchObject({ fontFamily: 'system', lineSpacing: 'normal', letterSpacing: 'normal' });
+    for (const json of [{ lineSpacing: '2.5' }, { lineSpacing: 2 }, { letterSpacing: '0.12em' }, { fontFamily: 'comic' }]) {
+      await call('POST /api/config', { as: alice, json, status: 400, code: 'VALIDATION_FAILED' });
+    }
+    // A refused value leaves the saved one as it was
+    const unchanged = await call('GET /api/config', { as: alice, status: 200 });
+    expect(unchanged.body).toMatchObject({ fontFamily: 'legible', lineSpacing: 'loose', letterSpacing: 'wide' });
     await call('POST /api/config', {
       as: alice,
       json: { entriesPerPage: '' },

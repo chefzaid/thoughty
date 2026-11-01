@@ -1,6 +1,6 @@
 import { fireEvent, render, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Entry } from '../../types';
+import type { Entry, EntrySpacing } from '../../types';
 import type { Person } from '../../services/api/peopleService';
 import { getTranslation } from '../../utils/translations';
 import { MentionPeopleContext } from '../People/PeopleContext';
@@ -39,10 +39,10 @@ const capsule: Entry = { id: 3, date: '2026-10-20', index: 3, content: '', tags:
 
 const marie = { id: 5, name: 'Marie', handles: ['marie'] } as unknown as Person;
 
-function renderSheet(entries: Entry[], options = { mood: true, tags: true }, onReady = vi.fn()) {
+function renderSheet(entries: Entry[], options = { mood: true, tags: true }, onReady = vi.fn(), spacing?: EntrySpacing) {
     const result = render(
         <MentionPeopleContext.Provider value={{ people: [marie], byHandle: new Map([['marie', marie]]) }}>
-            <PrintSheet entries={entries} options={options} language="en" fontFamily="serif" t={t} onReady={onReady} />
+            <PrintSheet entries={entries} options={options} language="en" fontFamily="serif" spacing={spacing} t={t} onReady={onReady} />
         </MentionPeopleContext.Provider>,
     );
     return { ...result, onReady };
@@ -153,6 +153,34 @@ describe('PrintSheet', () => {
 
         await waitFor(() => expect(onReady).toHaveBeenCalled());
         expect(within(sheet()).getByText('Attached: harbour.png')).toBeInTheDocument();
+    });
+
+    it('prints the text with the writer’s line and letter spacing, and the title with the letter spacing', async () => {
+        const titled: Entry = { ...evening, title: 'Tea time' };
+        renderSheet([titled], undefined, undefined, { lineSpacing: 'relaxed', letterSpacing: 'wider' });
+
+        const text = await waitFor(() => {
+            const printed = sheet().querySelector<HTMLElement>('.print-entry-text');
+            expect(printed).not.toBeNull();
+            return printed!;
+        });
+        expect(text.style.lineHeight).toBe('1.9');
+        expect(text.style.letterSpacing).toBe('0.12em');
+        const title = within(sheet()).getByRole('heading', { level: 2, name: 'Tea time' });
+        expect(title.style.letterSpacing).toBe('0.12em');
+        expect(title.style.lineHeight).toBe('');
+    });
+
+    it('keeps the print sheet’s own leading for normal spacing', async () => {
+        renderSheet([evening]);
+
+        const text = await waitFor(() => {
+            const printed = sheet().querySelector<HTMLElement>('.print-entry-text');
+            expect(printed).not.toBeNull();
+            return printed!;
+        });
+        expect(text.style.lineHeight).toBe('');
+        expect(text.style.letterSpacing).toBe('');
     });
 });
 

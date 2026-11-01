@@ -6,7 +6,7 @@ import VisibilityIcon from '../VisibilityIcon/VisibilityIcon';
 import type { Attachment } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import { getVisibilityButtonClass } from '../../utils/entryVisibility';
-import { resolveFontColor } from '../../types/config';
+import { entryTextStyle, type LetterSpacingPreference, type LineSpacingPreference } from '../../types/config';
 import type { EntryTemplate, EntryTemplateDraft } from '../../utils/entryTemplates';
 import AiSparkleIcon from '../AiSparkleIcon/AiSparkleIcon';
 import GetInspiredMenu from './GetInspiredMenu';
@@ -76,6 +76,9 @@ interface EntryFormProps {
     readonly onRemovePendingFile?: (index: number) => void;
     readonly onRemoveUploadedAttachment?: (id: number) => void;
     readonly fontColor?: string;
+    /** The writer's spacing of entry text, here and in focus mode. */
+    readonly lineSpacing?: LineSpacingPreference;
+    readonly letterSpacing?: LetterSpacingPreference;
     /** The writer's font settings and language, used by focus mode. */
     readonly fontFamily?: FontFamilyPreference;
     readonly fontSize?: string | number;
@@ -145,6 +148,8 @@ function EntryForm({
     onRemovePendingFile,
     onRemoveUploadedAttachment,
     fontColor,
+    lineSpacing,
+    letterSpacing,
     fontFamily,
     fontSize,
     language,
@@ -160,7 +165,8 @@ function EntryForm({
     const mentionSuggestions = (
         <MentionSuggestions suggestions={mentions.suggestions} theme={theme} language={resolveLanguage(language)} t={t} />
     );
-    const writingTextColor = resolveFontColor(fontColor, theme);
+    const writingTextStyle = entryTextStyle({ fontColor, lineSpacing, letterSpacing }, theme);
+    const titleTextStyle = entryTextStyle({ fontColor, lineSpacing, letterSpacing }, theme, { title: true });
 
     const { inputClass, containerClass, markdownToggleClass } = entryFormClasses({ theme, format, visibility });
 
@@ -210,7 +216,7 @@ function EntryForm({
                             maxLength={MAX_ENTRY_TITLE_LENGTH}
                             placeholder={t('entryTitlePlaceholder')}
                             className={`${inputClass} font-semibold`}
-                            style={{ color: writingTextColor }}
+                            style={titleTextStyle}
                         />
                     </div>
                 )}
@@ -225,7 +231,7 @@ function EntryForm({
                                         ? 'bg-gray-50 border-gray-300 text-gray-900'
                                         : 'bg-gray-900 border-gray-700 text-gray-100'
                                         }`}
-                                    style={{ color: writingTextColor }}
+                                    style={writingTextStyle}
                                     rows={3}
                                     placeholder={t('whatsOnYourMind')}
                                     title={t('entryReferenceHint')}
@@ -244,9 +250,10 @@ function EntryForm({
                                     textareaProps={{
                                         placeholder: t('whatsOnYourMind'),
                                         title: t('entryReferenceHint'),
-                                        style: { color: writingTextColor },
+                                        style: { color: writingTextStyle.color },
                                         ...mentions.fieldProps,
                                     }}
+                                    spacing={{ lineSpacing, letterSpacing }}
                                     onInsertImage={inlineImages.open}
                                     t={t}
                                 />
@@ -263,7 +270,7 @@ function EntryForm({
                                     ? 'bg-gray-50 border-gray-300 text-gray-900'
                                     : 'bg-gray-900 border-gray-700 text-gray-100'
                                     }`}
-                                style={{ color: writingTextColor }}
+                                style={writingTextStyle}
                                 rows={3}
                                 placeholder={t('whatsOnYourMind')}
                                 title={t('entryReferenceHint')}
@@ -379,6 +386,8 @@ function EntryForm({
                         onTextChange={setNewEntryText}
                         theme={theme}
                         fontColor={fontColor}
+                        lineSpacing={lineSpacing}
+                        letterSpacing={letterSpacing}
                         fontFamily={fontFamily}
                         fontSize={fontSize}
                         language={language}

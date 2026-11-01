@@ -7,9 +7,9 @@ import MarkdownEditor from './MarkdownEditor';
 import MarkdownHelp from './MarkdownHelp';
 
 vi.mock('@uiw/react-md-editor/nohighlight', () => ({
-    default: ({ commands = [] }: { commands?: ICommand[] }) => createElement(
+    default: ({ commands = [], className, style }: { commands?: ICommand[]; className?: string; style?: object }) => createElement(
         'div',
-        { role: 'toolbar' },
+        { role: 'toolbar', className, style },
         commands
             .filter((command) => command.buttonProps?.['aria-label'])
             .map((command) => createElement('button', { key: command.name, type: 'button' }, command.buttonProps?.['aria-label'])),
@@ -22,6 +22,24 @@ describe('MarkdownEditor', () => {
 
         expect(screen.getByRole('button', { name: 'Ajouter une liste de tâches' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'markdownHelpButton' })).toBeInTheDocument();
+    });
+
+    it('hands the writer’s spacing to the editor as custom properties, beside its own class and style', () => {
+        render(<MarkdownEditor value="" t={(key) => key} className="mine" style={{ minHeight: '10px' }} spacing={{ lineSpacing: 'loose', letterSpacing: 'wide' }} />);
+
+        const editor = screen.getByRole('toolbar');
+        expect(editor).toHaveClass('entry-text-spacing', 'mine');
+        expect(editor.style.minHeight).toBe('10px');
+        expect(editor.style.getPropertyValue('--entry-line-height')).toBe('2.2');
+        expect(editor.style.getPropertyValue('--entry-letter-spacing')).toBe('0.06em');
+    });
+
+    it('sets no spacing properties when the writer keeps normal spacing', () => {
+        render(<MarkdownEditor value="" t={(key) => key} />);
+
+        const editor = screen.getByRole('toolbar');
+        expect(editor).toHaveClass('entry-text-spacing');
+        expect(editor.style.getPropertyValue('--entry-line-height')).toBe('');
     });
 });
 

@@ -3954,6 +3954,8 @@
                   "avatarUrl": "https://thoughty.example.com/callback",
                   "fontFamily": "system",
                   "fontColor": "#2A9D8F",
+                  "lineSpacing": "normal",
+                  "letterSpacing": "normal",
                   "ttsVoiceUri": "https://thoughty.example.com/callback",
                   "language": "en",
                   "defaultVisibility": "public",
@@ -4015,6 +4017,8 @@
                 "fontFamily": "system",
                 "fontSize": "example",
                 "fontColor": "#2A9D8F",
+                "lineSpacing": "normal",
+                "letterSpacing": "normal",
                 "highContrast": "true",
                 "ttsVoiceUri": "https://thoughty.example.com/callback",
                 "language": "en",
@@ -15456,15 +15460,34 @@
               "system",
               "serif",
               "modern",
-              "mono"
+              "mono",
+              "legible"
             ],
-            "description": "Font family"
+            "description": "Font family; `legible` is Atkinson Hyperlegible, served by the web app itself"
           },
           "fontColor": {
             "type": "string",
             "maxLength": 7,
             "description": "Text color as #rrggbb, or empty for the theme default",
             "pattern": "^(#[0-9a-fA-F]{6})?$"
+          },
+          "lineSpacing": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "relaxed",
+              "loose"
+            ],
+            "description": "Line spacing of entry text; `normal` keeps each view’s own spacing"
+          },
+          "letterSpacing": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "wide",
+              "wider"
+            ],
+            "description": "Letter spacing of entry text; `normal` keeps the font’s own spacing"
           },
           "ttsVoiceUri": {
             "type": "string",
@@ -15620,6 +15643,8 @@
           "avatarUrl": "https://thoughty.example.com/callback",
           "fontFamily": "system",
           "fontColor": "#2A9D8F",
+          "lineSpacing": "normal",
+          "letterSpacing": "normal",
           "ttsVoiceUri": "https://thoughty.example.com/callback",
           "language": "en",
           "defaultVisibility": "public",
@@ -15695,9 +15720,10 @@
               "system",
               "serif",
               "modern",
-              "mono"
+              "mono",
+              "legible"
             ],
-            "description": "Font family"
+            "description": "Font family; `legible` is Atkinson Hyperlegible, served by the web app itself"
           },
           "fontSize": {
             "oneOf": [
@@ -15719,6 +15745,24 @@
             "maxLength": 7,
             "description": "Text color as #rrggbb, or empty for the theme default",
             "pattern": "^(#[0-9a-fA-F]{6})?$"
+          },
+          "lineSpacing": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "relaxed",
+              "loose"
+            ],
+            "description": "Line spacing of entry text; `normal` keeps each view’s own spacing"
+          },
+          "letterSpacing": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "wide",
+              "wider"
+            ],
+            "description": "Letter spacing of entry text; `normal` keeps the font’s own spacing"
           },
           "highContrast": {
             "oneOf": [
@@ -15928,6 +15972,8 @@
           "fontFamily": "system",
           "fontSize": "example",
           "fontColor": "#2A9D8F",
+          "lineSpacing": "normal",
+          "letterSpacing": "normal",
           "highContrast": "true",
           "ttsVoiceUri": "https://thoughty.example.com/callback",
           "language": "en",

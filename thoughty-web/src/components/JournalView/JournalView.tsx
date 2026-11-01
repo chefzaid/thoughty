@@ -38,7 +38,10 @@ interface ThoughtOfDayProps {
   diaryId: number | null;
   onNavigateToEntry: ComponentProps<typeof ThoughtOfTheDay>['onNavigateToEntry'];
 }
-type EntryFormProps = Omit<ComponentProps<typeof EntryForm>, 'theme' | 't' | 'fontColor' | 'fontFamily' | 'fontSize' | 'language'>;
+type EntryFormProps = Omit<
+  ComponentProps<typeof EntryForm>,
+  'theme' | 't' | 'fontColor' | 'lineSpacing' | 'letterSpacing' | 'fontFamily' | 'fontSize' | 'language'
+>;
 type FilterControlsProps = Omit<ComponentProps<typeof FilterControls>, 'theme' | 't' | 'onOpenHighlights' | 'actions' | 'eras' | 'onManageEras' | 'people' | 'onManagePeople'>;
 type EntriesListProps = Omit<ComponentProps<typeof EntriesList>, 'config' | 't' | 'searchTerm'>;
 type PaginationProps = Pick<ComponentProps<typeof Pagination>, 'page' | 'totalPages' | 'setPage' | 'inputPage' | 'setInputPage'>;
@@ -203,6 +206,8 @@ function JournalView({
           theme={config.theme}
           t={t}
           fontColor={config.fontColor}
+          lineSpacing={config.lineSpacing}
+          letterSpacing={config.letterSpacing}
           fontFamily={config.fontFamily}
           fontSize={config.fontSize}
           language={config.language}
