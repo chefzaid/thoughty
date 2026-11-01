@@ -103,20 +103,30 @@ export function useAppShellModel(): AppShellModel {
     routePersonId,
   });
 
+  const { fetchEntries, refreshBacklinks, refreshEntryQueries } = entriesState;
   const entryFormState = useEntryForm(config, currentDiaryId, () => {
     entriesState.setPage(1);
-    // The list, its dates, and every view measured from the entries (calendar, writing streak) read them again
-    void entriesState.refreshEntryQueries();
+    // The list, its dates, and every view measured from the entries (calendar, writing streak) read them again,
+    // and so do the backlinks, which the new entry's links (a reply's, say) add to
+    refreshBacklinks();
+    void refreshEntryQueries();
   });
 
-  const entryEditState = useEntryEdit(config, entriesState.fetchEntries, notifier);
+  // An edit can add or remove links as well
+  const entryEditState = useEntryEdit(config, useCallback(() => {
+    refreshBacklinks();
+    void fetchEntries();
+  }, [fetchEntries, refreshBacklinks]), notifier);
 
-  const { refreshEntryQueries } = entriesState;
-  // An undone delete brings the entries back to every view measured from them (calendar, writing streak)
-  const offerDeleteUndo = useDeleteUndo(useCallback(() => { void refreshEntryQueries(); }, [refreshEntryQueries]), notifier);
+  // An undone delete brings the entries back to every view measured from them (calendar, writing streak, backlinks)
+  const offerDeleteUndo = useDeleteUndo(useCallback(() => {
+    refreshBacklinks();
+    void refreshEntryQueries();
+  }, [refreshBacklinks, refreshEntryQueries]), notifier);
 
-  // A deleted entry leaves every view measured from the entries (calendar, writing streak) too
+  // A deleted entry leaves every view measured from the entries (calendar, writing streak, backlinks) too
   const deleteModalState = useDeleteModal((entryId) => {
+    refreshBacklinks();
     void refreshEntryQueries();
     offerDeleteUndo([entryId]);
   }, notifier);

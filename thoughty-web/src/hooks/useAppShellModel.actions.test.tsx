@@ -21,6 +21,7 @@ import {
   navigateToFirst,
   offerDeleteUndo,
   refreshEntryQueries,
+  refreshBacklinks,
   navigate,
 } from './useAppShellModel.test-helpers';
 import type { MockedRoutesProps } from './useAppShellModel.test-helpers';
@@ -151,6 +152,22 @@ describe('useAppShellModel', () => {
 
     act(() => onRestored());
     expect(refreshEntryQueries).toHaveBeenCalledTimes(2);
+    // Backlinks follow the entries that point at them
+    expect(refreshBacklinks).toHaveBeenCalledTimes(2);
+  });
+
+  it('reads the backlinks and the list again once an entry is saved or edited', () => {
+    renderHook(() => useAppShellModel());
+    const onSaved = mocks.useEntryForm.mock.calls.at(-1)![2] as () => void;
+    const onEdited = mocks.useEntryEdit.mock.calls.at(-1)![1] as () => void;
+
+    act(() => onSaved());
+    expect(refreshBacklinks).toHaveBeenCalledTimes(1);
+    expect(refreshEntryQueries).toHaveBeenCalledTimes(1);
+
+    act(() => onEdited());
+    expect(refreshBacklinks).toHaveBeenCalledTimes(2);
+    expect(fetchEntries).toHaveBeenCalled();
   });
 
   it('opens the book converter of the current diary on the entries picked in the journal', () => {

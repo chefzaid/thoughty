@@ -88,6 +88,10 @@ export type JournalTranslationKey =
   | "startFromEntryReplaceTitle"
   | "startFromEntryReplaceMessage"
   | "startFromEntryReplaceConfirm"
+  | "writeReply"
+  | "writeReplyToEntry"
+  | "writeReplyToNumberedEntry"
+  | "replyReplaceMessage"
   | "dragToReorder"
   | "history"
   | "viewHistory"
@@ -189,6 +193,11 @@ export const journalTranslations: Record<Language, Record<JournalTranslationKey,
     startFromEntryReplaceMessage:
       "The new entry form already holds a draft. Starting from this entry replaces its text, title, tags, time and mood with this entry's text, tags and format, every task unticked.",
     startFromEntryReplaceConfirm: "Replace draft",
+    writeReply: "Write a reply",
+    writeReplyToEntry: "Write a reply to the entry of {date}",
+    writeReplyToNumberedEntry: "Write a reply to entry {index} of {date}",
+    replyReplaceMessage:
+      "The new entry form already holds a draft. Writing a reply replaces its text, title, tags, time and mood with a short quote of this entry and a link to it, dated today.",
     dragToReorder: "Drag to reorder",
     history: "History",
     viewHistory: "View history",
@@ -290,6 +299,11 @@ export const journalTranslations: Record<Language, Record<JournalTranslationKey,
     startFromEntryReplaceMessage:
       "Le formulaire de nouvelle entrée contient déjà un brouillon. Partir de cette entrée remplace son texte, son titre, ses tags, son heure et son humeur par le texte, les tags et le format de cette entrée, toutes les tâches décochées.",
     startFromEntryReplaceConfirm: "Remplacer le brouillon",
+    writeReply: "Écrire une réponse",
+    writeReplyToEntry: "Écrire une réponse à l'entrée du {date}",
+    writeReplyToNumberedEntry: "Écrire une réponse à l'entrée {index} du {date}",
+    replyReplaceMessage:
+      "Le formulaire de nouvelle entrée contient déjà un brouillon. Écrire une réponse remplace son texte, son titre, ses tags, son heure et son humeur par une courte citation de cette entrée et un lien vers elle, à la date d'aujourd'hui.",
     dragToReorder: "Glisser pour réorganiser",
     history: "Historique",
     viewHistory: "Voir l'historique",

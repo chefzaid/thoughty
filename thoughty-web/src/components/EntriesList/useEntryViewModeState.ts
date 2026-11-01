@@ -6,6 +6,8 @@ interface UseEntryViewModeStateParams {
     entry: Entry;
     onFetchHistory?: (entryId: number) => Promise<EntryRevision[]>;
     onFetchBacklinks?: (entryId: number) => Promise<EntryBacklink[]>;
+    /** Changes whenever an entry was written or removed, so the backlinks are read again. */
+    backlinksVersion?: number;
     onDeleteRevision?: (entryId: number, revisionId: number) => Promise<boolean>;
     onRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
 }
@@ -14,6 +16,7 @@ export default function useEntryViewModeState({
     entry,
     onFetchHistory,
     onFetchBacklinks,
+    backlinksVersion,
     onDeleteRevision,
     onRephrase,
 }: Readonly<UseEntryViewModeStateParams>) {
@@ -45,7 +48,7 @@ export default function useEntryViewModeState({
         return () => {
             cancelled = true;
         };
-    }, [entry.id, onFetchBacklinks, setBacklinks]);
+    }, [backlinksVersion, entry.id, onFetchBacklinks, setBacklinks]);
 
     const handleToggleHistory = useCallback(async () => {
         if (showHistory) {

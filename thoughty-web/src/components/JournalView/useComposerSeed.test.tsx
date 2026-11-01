@@ -5,7 +5,8 @@ import userEvent from '@testing-library/user-event';
 import type { Entry } from '../../types';
 import type { TimeCapsuleDraft } from '../../utils/timeCapsule';
 import { getTranslation } from '../../utils/translations';
-import { useStartFromEntry } from './useStartFromEntry';
+import { formatEntryDate } from '../../utils/entryDate';
+import { useComposerSeed } from './useComposerSeed';
 
 const t = (key: string) => getTranslation('en', key);
 
@@ -21,14 +22,25 @@ const packingList: Entry = {
     format: 'plain',
 };
 
+const markdownNote: Entry = {
+    id: 10,
+    date: '2024-05-02T00:00:00.000Z',
+    index: 2,
+    content: 'The **old town** at dusk. Then dinner.\n\n## Later',
+    tags: ['travel'],
+    visibility: 'public',
+    format: 'markdown',
+};
+
 interface HarnessProps {
     readonly initialText?: string;
     readonly defaultVisibility?: 'public' | 'private';
     /** Renders a second field in place of the first once the form is filled, as the Markdown editor does. */
     readonly swapFieldOnFill?: boolean;
+    readonly language?: string;
 }
 
-function Harness({ initialText = '', defaultVisibility, swapFieldOnFill = false }: HarnessProps) {
+function Harness({ initialText = '', defaultVisibility, swapFieldOnFill = false, language }: HarnessProps) {
     const formRef = useRef<HTMLDivElement>(null);
     const [newEntryText, setNewEntryText] = useState(initialText);
     const [title, setTitle] = useState(initialText ? 'Old title' : '');
@@ -39,18 +51,20 @@ function Harness({ initialText = '', defaultVisibility, swapFieldOnFill = false 
     const [timeCapsule, setTimeCapsule] = useState<TimeCapsuleDraft | null>(null);
     const [visibility, setVisibility] = useState<'public' | 'private' | null>('private');
     const [format, setFormat] = useState<'plain' | 'markdown'>('plain');
+    const [selectedDate, setSelectedDate] = useState(new Date(2024, 0, 2));
     const [swapped, setSwapped] = useState(false);
-    const { startFromEntry, dialog } = useStartFromEntry({
+    const { startFromEntry, replyToEntry, dialog } = useComposerSeed({
         composer: {
             newEntryText, setNewEntryText: (value) => {
                 setNewEntryText(value);
                 if (swapFieldOnFill) globalThis.setTimeout(() => setSwapped(true), 0);
             },
             title, setTitle, timeOfDay, setTimeOfDay, mood, setMood, feelings, setFeelings,
-            tags, setTags, timeCapsule, setTimeCapsule, setVisibility, setFormat,
+            tags, setTags, timeCapsule, setTimeCapsule, setVisibility, setFormat, setSelectedDate,
         },
         defaultVisibility,
         formRef,
+        language,
         t,
     });
 
@@ -62,8 +76,12 @@ function Harness({ initialText = '', defaultVisibility, swapFieldOnFill = false 
                     : <textarea key="field" aria-label="Writing" value={newEntryText} readOnly />}
             </div>
             <output data-testid="state">{JSON.stringify({ title, timeOfDay, mood, tags, visibility, format, timeCapsule })}</output>
+            <output data-testid="date">{formatEntryDate(selectedDate)}</output>
             <button type="button" onClick={() => startFromEntry(packingList)}>Start</button>
             <button type="button" onClick={() => startFromEntry({ ...packingList, sealed_until: '2030-01-01T00:00:00Z' })}>Sealed</button>
+            <button type="button" onClick={() => replyToEntry(packingList)}>Reply</button>
+            <button type="button" onClick={() => replyToEntry({ ...markdownNote, visibility: 'private' })}>Reply private</button>
+            <button type="button" onClick={() => replyToEntry({ ...packingList, sealed_until: '2030-01-01T00:00:00Z' })}>Reply sealed</button>
             {dialog}
         </>
     );
@@ -71,7 +89,7 @@ function Harness({ initialText = '', defaultVisibility, swapFieldOnFill = false 
 
 const state = () => JSON.parse(screen.getByTestId('state').textContent ?? '{}');
 
-describe('useStartFromEntry', () => {
+describe('useComposerSeed', () => {
     it('fills an empty form with the text, tags and format, the default visibility, and focuses it', async () => {
         const user = userEvent.setup();
         const scrollIntoView = vi.fn();
@@ -130,5 +148,49 @@ describe('useStartFromEntry', () => {
             await new Promise((resolve) => globalThis.setTimeout(resolve, 10));
         });
         expect(screen.getByLabelText('Editor')).toHaveFocus();
+    });
+
+    it('writes a reply on today: a quote and a link, no tags, the default visibility, the caret at the end', async () => {
+        const user = userEvent.setup();
+        render(<Harness defaultVisibility="public" />);
+
+        await user.click(screen.getByRole('button', { name: 'Reply' }));
+
+        const field = screen.getByLabelText<HTMLTextAreaElement>('Writing');
+        const reply = '“Packing” — [[2024-05-01#1]]\n\n';
+        expect(field).toHaveValue(reply);
+        expect(field).toHaveFocus();
+        expect(field.selectionStart).toBe(reply.length);
+        expect(screen.getByTestId('date')).toHaveTextContent(formatEntryDate(new Date()));
+        expect(state()).toEqual({ title: '', timeOfDay: '', mood: null, tags: [], visibility: 'public', format: 'plain', timeCapsule: null });
+    });
+
+    it('quotes a Markdown entry as a blockquote, keeps a reply to a private entry private, and quotes in French', async () => {
+        const user = userEvent.setup();
+        const { unmount } = render(<Harness defaultVisibility="public" />);
+
+        await user.click(screen.getByRole('button', { name: 'Reply private' }));
+        expect(screen.getByLabelText('Writing')).toHaveValue('> The old town at dusk.\n\n— [[2024-05-02#2]]\n\n');
+        expect(state()).toMatchObject({ visibility: 'private', format: 'markdown', tags: [] });
+        unmount();
+
+        render(<Harness language="fr" />);
+        await user.click(screen.getByRole('button', { name: 'Reply' }));
+        expect(screen.getByLabelText('Writing')).toHaveValue('«\u00A0Packing\u00A0» — [[2024-05-01#1]]\n\n');
+    });
+
+    it('asks before a reply replaces a draft, saying what it writes, and never quotes a sealed time capsule', async () => {
+        const user = userEvent.setup();
+        render(<Harness initialText="My own draft" />);
+
+        await user.click(screen.getByRole('button', { name: 'Reply sealed' }));
+        expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+        expect(screen.getByLabelText('Writing')).toHaveValue('My own draft');
+
+        await user.click(screen.getByRole('button', { name: 'Reply' }));
+        const dialog = screen.getByRole('alertdialog', { name: 'Replace your draft?' });
+        expect(dialog).toHaveAccessibleDescription(/short quote of this entry and a link to it, dated today/);
+        await user.click(screen.getByRole('button', { name: 'Replace draft' }));
+        expect(screen.getByLabelText('Writing')).toHaveValue('“Packing” — [[2024-05-01#1]]\n\n');
     });
 });

@@ -468,5 +468,13 @@ describe("useAppState Hooks", () => {
       expect(typeof result.current.deleteRevision).toBe("function");
       expect(typeof result.current.reorderEntries).toBe("function");
     });
+
+    it("moves the backlinks on once asked, so every card reads them again", () => {
+      const { result } = renderHook(() => useEntries(false, mockConfig, null, notifier));
+
+      expect(result.current.backlinksVersion).toBe(0);
+      act(() => result.current.refreshBacklinks());
+      expect(result.current.backlinksVersion).toBe(1);
+    });
   });
 });

@@ -1,10 +1,9 @@
 import { memo, useCallback, useEffect, useMemo, useState as useLocalState, type Dispatch, type KeyboardEvent, type PointerEvent, type SetStateAction } from 'react';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useSpeech, type SpeechEntry } from '../../hooks/useSpeech';
-import type { RephraseMode, SummaryGuidance } from '../../services/api/aiService';
-import type { Attachment, Config, Diary, Entry, EntryBacklink, EntryRevision, GroupedEntries, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
+import type { Attachment, Config, Diary, Entry, GroupedEntries, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
-import EntryViewMode from './EntryViewMode';
+import EntryViewMode, { type EntryCardActions } from './EntryViewMode';
 import EntryDayHeading from './EntryDayHeading';
 import { resolveLanguage } from '../../utils/language';
 import { isManuallyOrdered } from '../../utils/entryTime';
@@ -21,7 +20,8 @@ import {
     type EntryDisplayGroup,
 } from './EntriesList.utils';
 
-interface EntriesListProps {
+/** The card actions are handed to each entry card as they are. */
+interface EntriesListProps extends EntryCardActions {
     loading: boolean;
     entries: Entry[];
     groupedEntries: GroupedEntries;
@@ -34,9 +34,6 @@ interface EntriesListProps {
     onToggleFavorite: (entry: Entry) => void;
     onToggleArchived: (entry: Entry) => void;
     onTogglePinned: (entry: Entry) => void;
-    /** Ticks a task list item of a Markdown entry, by its line in the text. */
-    onToggleTask?: (entry: Entry, line: number, checked: boolean) => void;
-    onUnseal?: (entry: Entry) => void;
     editingEntry: Entry | null;
     editText: string;
     setEditText: Dispatch<SetStateAction<string>>;
@@ -66,8 +63,6 @@ interface EntriesListProps {
     onRemoveEditPendingFile?: (index: number) => void;
     onRemoveEditAttachment?: (id: number) => void;
     onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
-    onShareEntry?: (entry: Entry) => Promise<boolean>;
-    getEntryPermalink?: (entryId: number) => string;
     sourceEntry: SourceEntryInfo | null;
     targetEntryId: number | null;
     activeTargetId: number | null;
@@ -81,15 +76,7 @@ interface EntriesListProps {
     onBulkAction?: (action: BulkAction, options?: BulkActionOptions) => void;
     onToggleBulkMode?: () => void;
     diaries?: Diary[];
-    onFetchHistory?: (entryId: number) => Promise<EntryRevision[]>;
-    onFetchBacklinks?: (entryId: number) => Promise<EntryBacklink[]>;
-    onDeleteRevision?: (entryId: number, revisionId: number) => Promise<boolean>;
     onReorderEntries?: (date: string, orderedIds: number[]) => void;
-    onDiscuss?: (entry: Entry) => void;
-    onRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
-    onSummarize?: (entryId: number, guidance: SummaryGuidance) => Promise<string | null>;
-    /** Copies an entry's text, tags and format into the new entry form. */
-    onUseAsStartingPoint?: (entry: Entry) => void;
     t: TranslationFn;
 }
 
@@ -105,8 +92,6 @@ function EntriesList({
     onToggleFavorite,
     onToggleArchived,
     onTogglePinned,
-    onToggleTask,
-    onUnseal,
     editingEntry,
     editText,
     setEditText,
@@ -136,8 +121,6 @@ function EntriesList({
     onRemoveEditPendingFile,
     onRemoveEditAttachment,
     onNavigateToEntry,
-    onShareEntry,
-    getEntryPermalink,
     sourceEntry,
     targetEntryId,
     activeTargetId,
@@ -151,15 +134,9 @@ function EntriesList({
     onBulkAction,
     onToggleBulkMode,
     diaries,
-    onFetchHistory,
-    onFetchBacklinks,
-    onDeleteRevision,
     onReorderEntries,
-    onDiscuss,
-    onRephrase,
-    onSummarize,
-    onUseAsStartingPoint,
     t,
+    ...cardActions
 }: Readonly<EntriesListProps>) {
     const [dragEntryId, setDragEntryId] = useLocalState<number | null>(null);
     const [dragDate, setDragDate] = useLocalState<string | null>(null);
@@ -458,21 +435,11 @@ function EntriesList({
                                                     onToggleFavorite={onToggleFavorite}
                                                     onToggleArchived={onToggleArchived}
                                                     onTogglePinned={onTogglePinned}
-                                                    onToggleTask={onToggleTask}
-                                                    onUnseal={onUnseal}
                                                     onEdit={onEdit}
                                                     onDelete={onDelete}
                                                     onNavigateToEntry={onNavigateToEntry}
-                                                    onShareEntry={onShareEntry}
-                                                    getEntryPermalink={getEntryPermalink}
                                                     onBackToSource={onBackToSource}
-                                                    onFetchHistory={onFetchHistory}
-                                                    onFetchBacklinks={onFetchBacklinks}
-                                                    onDeleteRevision={onDeleteRevision}
-                                                    onDiscuss={onDiscuss}
-                                                    onRephrase={onRephrase}
-                                                    onSummarize={onSummarize}
-                                                    onUseAsStartingPoint={onUseAsStartingPoint}
+                                                    {...cardActions}
                                                     searchTerm={searchTerm}
                                                     showDiaryLabel={showDiaryAccent}
                                                     tagMetadata={tagMetadata}

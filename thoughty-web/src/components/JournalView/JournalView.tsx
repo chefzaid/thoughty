@@ -24,7 +24,7 @@ import { usePeopleList } from '../People/usePeople';
 import { peopleByHandle } from '../../utils/mentions';
 import PersonFilterBanner from './PersonFilterBanner';
 import { usePersonFilterRoute } from './usePersonFilterRoute';
-import { useStartFromEntry } from './useStartFromEntry';
+import { useComposerSeed } from './useComposerSeed';
 import RandomEntryButton from './RandomEntryButton';
 
 type DiaryTabsProps = Pick<ComponentProps<typeof DiaryTabs>, 'diaries' | 'currentDiaryId' | 'onDiaryChange' | 'onManageDiaries'>;
@@ -124,10 +124,11 @@ function JournalView({
     pageKeysEnabled: !showCalendar,
   });
 
-  const startingPoint = useStartFromEntry({
+  const composerSeed = useComposerSeed({
     composer: entryForm,
     defaultVisibility: config.defaultVisibility,
     formRef: entryFormRef,
+    language: config.language,
     theme: config.theme,
     t,
   });
@@ -199,7 +200,7 @@ function JournalView({
           language={config.language}
         />
       </div>
-      {startingPoint.dialog}
+      {composerSeed.dialog}
 
       <div ref={searchRef}>
         <FilterControls
@@ -288,7 +289,8 @@ function JournalView({
         <>
           <EntriesList
             {...entriesList}
-            onUseAsStartingPoint={startingPoint.startFromEntry}
+            onUseAsStartingPoint={composerSeed.startFromEntry}
+            onReply={composerSeed.replyToEntry}
             config={config}
             searchTerm={filters.searchMode === 'keyword' ? filters.search : undefined}
             t={t}

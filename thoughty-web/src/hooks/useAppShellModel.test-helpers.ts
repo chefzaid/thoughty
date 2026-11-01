@@ -98,6 +98,7 @@ export const deleteTag = vi.fn().mockResolvedValue({ success: true, affectedCoun
 export const fetchTagUsage = vi.fn().mockResolvedValue([{ tag: 'current', count: 2 }]);
 export const offerDeleteUndo = vi.fn();
 export const refreshEntryQueries = vi.fn().mockResolvedValue(undefined);
+export const refreshBacklinks = vi.fn();
 export const navigateToFirst = vi.fn().mockResolvedValue({ found: true, page: 4, entryId: 77 });
 
 export type MockedLayoutProps = ReturnType<typeof mocks.buildAuthenticatedLayoutProps>;
@@ -151,6 +152,7 @@ export function stubShellModelHooks() {
   });
   mocks.useEntries.mockReturnValue({
     refreshEntryQueries,
+    refreshBacklinks,
     activeTargetId: null,
     allTags: ['current', 'later'],
     availableMonths: ['2024-01'],

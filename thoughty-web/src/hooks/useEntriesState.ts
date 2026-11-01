@@ -317,6 +317,10 @@ export const useEntries = (
     return entriesService.fetchEntryBacklinks(entryId);
   }, [entriesService]);
 
+  // Bumped once an entry is written or removed, so every card shown reads its backlinks again
+  const [backlinksVersion, setBacklinksVersion] = useState(0);
+  const refreshBacklinks = useCallback(() => setBacklinksVersion((version) => version + 1), []);
+
   const deleteRevision = useCallback(async (entryId: number, revisionId: number) => {
     return entriesService.deleteRevision(entryId, revisionId);
   }, [entriesService]);
@@ -466,6 +470,8 @@ export const useEntries = (
     setEntryTask,
     fetchEntryHistory,
     fetchEntryBacklinks,
+    backlinksVersion,
+    refreshBacklinks,
     deleteRevision,
     reorderEntries,
   };

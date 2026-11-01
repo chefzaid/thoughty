@@ -26,6 +26,7 @@ import AuthenticatedShareLinkDialog from '../ShareLinks/AuthenticatedShareLinkDi
 import PrintEntriesDialog from '../PrintSheet/PrintEntriesDialog';
 import RereadReminderDialog from '../RereadReminder/RereadReminderDialog';
 import RereadReminderBadge from '../RereadReminder/RereadReminderBadge';
+import { canReplyToEntry, replyLabel } from './entryReply';
 
 
 interface EntryViewModeProps {
@@ -43,6 +44,7 @@ interface EntryViewModeProps {
     onToggleFavorite: (entry: Entry) => void;
     onToggleArchived: (entry: Entry) => void;
     onTogglePinned: (entry: Entry) => void;
+    /** Ticks a task list item of a Markdown entry, by its line in the text. */
     onToggleTask?: (entry: Entry, line: number, checked: boolean) => void;
     /** Opens a sealed time capsule early. */
     onUnseal?: (entry: Entry) => void;
@@ -54,16 +56,26 @@ interface EntryViewModeProps {
     onBackToSource: () => void;
     onFetchHistory?: (entryId: number) => Promise<EntryRevision[]>;
     onFetchBacklinks?: (entryId: number) => Promise<EntryBacklink[]>;
+    /** Changes whenever an entry was written or removed, so the backlinks are read again. */
+    backlinksVersion?: number;
     onDeleteRevision?: (entryId: number, revisionId: number) => Promise<boolean>;
     onDiscuss?: (entry: Entry) => void;
     onRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
     onSummarize?: (entryId: number, guidance: SummaryGuidance) => Promise<string | null>;
+    /** Copies an entry's text, tags and format into the new entry form. */
     onUseAsStartingPoint?: (entry: Entry) => void;
+    /** Opens the new entry form on a reply: a short quote of the entry and a link to it. */
+    onReply?: (entry: Entry) => void;
     searchTerm?: string;
     showDiaryLabel: boolean;
     tagMetadata: TagMetadataMap;
     t: TranslationFn;
 }
+
+/** The actions an entry list hands to each of its cards as they are. */
+export type EntryCardActions = Pick<EntryViewModeProps,
+    'onToggleTask' | 'onUnseal' | 'onShareEntry' | 'getEntryPermalink' | 'onFetchHistory' | 'onFetchBacklinks'
+    | 'backlinksVersion' | 'onDeleteRevision' | 'onDiscuss' | 'onRephrase' | 'onSummarize' | 'onUseAsStartingPoint' | 'onReply'>;
 
 /** An entry card's content: a sealed time capsule shows only its placeholder, any other entry all of itself. */
 export default function EntryViewMode(props: Readonly<EntryViewModeProps>) {
@@ -105,11 +117,13 @@ function OpenEntryViewMode({
     onBackToSource,
     onFetchHistory,
     onFetchBacklinks,
+    backlinksVersion,
     onDeleteRevision,
     onDiscuss,
     onRephrase,
     onSummarize,
     onUseAsStartingPoint,
+    onReply,
     searchTerm,
     showDiaryLabel,
     tagMetadata,
@@ -136,6 +150,7 @@ function OpenEntryViewMode({
         entry,
         onFetchHistory,
         onFetchBacklinks,
+        backlinksVersion,
         onDeleteRevision,
         onRephrase,
     });
@@ -232,6 +247,18 @@ function OpenEntryViewMode({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                     </IconActionButton>
+                    {onReply && canReplyToEntry(entry) && (
+                        <IconActionButton
+                            onClick={() => onReply(entry)}
+                            className={`p-1.5 ${isDark ? 'text-violet-400 hover:text-violet-300' : 'text-violet-600 hover:text-violet-700'} hover:bg-violet-500/10`}
+                            title={t('writeReply')}
+                            ariaLabel={replyLabel(entry, resolveLanguage(config.language), t)}
+                        >
+                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 010 11H11" />
+                            </svg>
+                        </IconActionButton>
+                    )}
                     <EntrySecondaryActionsMenu
                         isDark={isDark}
                         entryPermalink={entryPermalink}

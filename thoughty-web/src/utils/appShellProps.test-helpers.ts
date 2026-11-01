@@ -88,6 +88,7 @@ export function createRoutesParams(
       allTags: ['focus', 'work'],
       availableMonths: ['2024-01'],
       availableYears: [2024],
+      backlinksVersion: 0,
       deleteRevision: vi.fn().mockResolvedValue(true),
       entries: [],
       fetchEntries: vi.fn().mockResolvedValue(undefined),
