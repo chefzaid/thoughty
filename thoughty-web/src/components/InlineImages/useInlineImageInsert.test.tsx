@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import type { Attachment } from '../../types';
@@ -29,6 +29,7 @@ function Harness({ initial, attachments = [stored, notes], pendingFiles = [memo,
                     : <output aria-label="Entry">{text}</output>}
             </div>
             <button type="button" onClick={() => inline.open(target)}>Open</button>
+            <input aria-label="Tags" />
             {inline.dialog}
         </div>
     );
@@ -63,6 +64,28 @@ describe('useInlineImageInsert', () => {
         await waitFor(() => expect(field).toHaveFocus());
         expect(field.selectionStart).toBe('Hello ![The pier](attachment:5)'.length);
         expect(screen.queryByRole('dialog')).toBeNull();
+    });
+
+    it('leaves focus, and the page, where the writer went if they move on before the caret is placed', async () => {
+        const user = userEvent.setup();
+        render(<Harness initial="Hello world" target={{ attachment: 5 }} />);
+        const field = screen.getByRole('textbox', { name: 'Entry' }) as HTMLTextAreaElement;
+        const tags = screen.getByRole('textbox', { name: 'Tags' });
+        const focusCalls = vi.spyOn(HTMLElement.prototype, 'focus');
+
+        await user.click(screen.getByRole('button', { name: 'Open' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Insert' }));
+        // Closing the dialog put focus back in the field; the writer goes on to the tags at once
+        expect(field).toHaveFocus();
+        focusCalls.mockClear();
+        tags.focus();
+        await new Promise((resolve) => globalThis.setTimeout(resolve, 20));
+
+        expect(field.value).toBe('Hello world![](attachment:5)');
+        expect(tags).toHaveFocus();
+        // Only the writer's own move: nothing took focus back to the field, which would scroll the page to it
+        expect(focusCalls).toHaveBeenCalledTimes(1);
+        focusCalls.mockRestore();
     });
 
     it('starts on the alt text of the picture a card asked for, and names a picked file until it is saved', async () => {

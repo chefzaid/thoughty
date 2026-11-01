@@ -82,15 +82,17 @@ export function useInlineImageInsert({ text, setText, pendingFiles, attachments,
         setInitialKey(undefined);
     }, [setText, text]);
 
-    // The caret goes after the picture once the field shows the new text
+    // The caret goes after the picture once the field shows the new text (the editor shows it a
+    // moment later, which puts the caret at its end). Closing the dialog has already put focus back
+    // in the field; if the writer has moved on by then (to the tags, or Save), focus and the page
+    // stay where they are: taking focus back would scroll the page up to the field.
     useEffect(() => {
         const caret = pendingCaret.current;
         if (caret === null) return undefined;
         const timeoutId = globalThis.setTimeout(() => {
             pendingCaret.current = null;
             const field = textareaRef.current;
-            field?.focus();
-            field?.setSelectionRange(caret, caret);
+            if (field && document.activeElement === field) field.setSelectionRange(caret, caret);
         }, 0);
         return () => globalThis.clearTimeout(timeoutId);
     }, [text]);
