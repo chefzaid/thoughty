@@ -21,6 +21,8 @@ const EMBED = /!\[\[([^\]\n]+)\]\]|!\[((?:\\.|[^\\\]\n])*)\]\(([^)\n]*)\)/g;
 const WIKILINK = /\[\[([^\]\n]+)\]\]/g;
 const EXTERNAL_TARGET = /^(?:[a-z][a-z\d+.-]*:|\/\/)/i;
 const OBSIDIAN_IMAGE_SIZE = /^\d+(?:x\d+)?$/;
+// CommonMark's backslash escapes: a backslash before any other character is a backslash
+const MARKDOWN_ESCAPE = /\\([!-/:-@[-`{-~])/g;
 
 /** The day `year-month-day` names, or null when there is no such day. */
 function calendarDay(year: string, month: string, day: string): string | null {
@@ -73,15 +75,35 @@ export function frontMatterTags(frontMatter: string): string[] {
   return items.filter(Boolean);
 }
 
+/** Where a part of the text outside code sits: one beside code begins or ends partway through a line. */
+interface PartEdges {
+  readonly followsCode: boolean;
+  readonly precedesCode: boolean;
+}
+
 /** Runs `change` on the text outside code, leaving code exactly as written. */
-function outsideCode(text: string, change: (part: string) => string): string {
+function outsideCode(text: string, change: (part: string, edges: PartEdges) => string): string {
   let result = '';
   let at = 0;
   for (const match of text.matchAll(CODE)) {
-    result += change(text.slice(at, match.index)) + match[0];
+    result += change(text.slice(at, match.index), { followsCode: at > 0, precedesCode: true }) + match[0];
     at = match.index + match[0].length;
   }
-  return result + change(text.slice(at));
+  return result + change(text.slice(at), { followsCode: at > 0, precedesCode: false });
+}
+
+/**
+ * Runs `change` on the lines of the part that are whole lines of the note, so that what follows or
+ * comes before inline code on its line is never read as a line of its own (a `tags::` property, an
+ * empty bullet).
+ */
+function onWholeLines(part: string, edges: PartEdges, change: (lines: string) => string): string {
+  const start = edges.followsCode ? part.indexOf('\n') : 0;
+  const end = edges.precedesCode ? part.lastIndexOf('\n') + 1 : part.length;
+  if (start < 0 || end <= start) {
+    return part;
+  }
+  return part.slice(0, start) + change(part.slice(start, end)) + part.slice(end);
 }
 
 /** `#tag`, `#nested/tag` and Logseq's `#[[two words]]`; a number alone (`#1`) is not a tag. */
@@ -179,7 +201,8 @@ export function parseDailyNote(text: string, notePath: readonly string[], files:
   const media = new NoteMedia();
   let skippedMedia = 0;
 
-  const place = (file: ZipEntry | undefined, alt: string, raw: string): string => {
+  /** `alt` is Markdown, kept as text when the file is not there; `plainAlt` the same without its escapes. */
+  const place = (file: ZipEntry | undefined, alt: string, raw: string, plainAlt = alt): string => {
     const type = file ? attachmentTypeFor(file.name) : null;
     if (!file || !type) {
       skippedMedia++;
@@ -187,38 +210,44 @@ export function parseDailyNote(text: string, notePath: readonly string[], files:
     }
     const imported = media.add(file, type);
     if (type.mimetype.startsWith('image/')) {
-      return inlineImageMarkdown(storedMediaName(imported), alt);
+      return inlineImageMarkdown(storedMediaName(imported), plainAlt);
     }
     return raw.startsWith('![[') ? '' : alt;
   };
 
-  const content = outsideCode(body, (part) => part
-    .replaceAll(LOGSEQ_TAGS, (_line: string, values: string) => {
-      tags.push(...values.split(',').map(tagName).filter(Boolean));
-      return '';
-    })
-    .replaceAll(LOGSEQ_HIDDEN_PROPERTY, '')
-    .replaceAll(EMBED, (raw: string, wiki: string | undefined, alt: string | undefined, target: string | undefined) => {
-      if (wiki !== undefined) {
-        const [name = '', label = ''] = wiki.split('|');
-        const fileName = name.split('#')[0]!.trim();
-        if (!attachmentTypeFor(fileName)) {
-          // An embedded note or a file Thoughty cannot keep: its name stays as text
-          return linkText(wiki);
-        }
-        const description = OBSIDIAN_IMAGE_SIZE.test(label.trim()) ? baseName(fileName) : label.trim() || baseName(fileName);
-        return place(files.byName(fileName), description, raw);
+  const embedded = (raw: string, wiki: string | undefined, alt: string | undefined, target: string | undefined): string => {
+    if (wiki !== undefined) {
+      const [name = '', label = ''] = wiki.split('|');
+      const fileName = name.split('#')[0]!.trim();
+      if (!attachmentTypeFor(fileName)) {
+        // An embedded note or a file Thoughty cannot keep: its name stays as text
+        return linkText(wiki);
       }
-      const path = decodedPath(target ?? '');
-      if (!path || EXTERNAL_TARGET.test(path)) {
-        return raw;
-      }
-      return place(files.byPath(folder, path), (alt ?? '').trim() || baseName(path), raw);
-    })
-    .replaceAll(WIKILINK, (_link: string, inner: string) => linkText(inner))
-    .replaceAll(EMPTY_BULLET, '')
-    .replaceAll(/\n[ \t]*(?:\n[ \t]*){2,}/g, '\n\n'))
-    .trim();
+      const description = OBSIDIAN_IMAGE_SIZE.test(label.trim()) ? baseName(fileName) : label.trim() || baseName(fileName);
+      return place(files.byName(fileName), description, raw);
+    }
+    const path = decodedPath(target ?? '');
+    if (!path || EXTERNAL_TARGET.test(path)) {
+      return raw;
+    }
+    const description = (alt ?? '').trim();
+    const plainDescription = description.replaceAll(MARKDOWN_ESCAPE, '$1');
+    return place(files.byPath(folder, path), description || baseName(path), raw, plainDescription || baseName(path));
+  };
+
+  const content = outsideCode(body, (text, edges) => {
+    const withoutProperties = onWholeLines(text, edges, (lines) => lines
+      .replaceAll(LOGSEQ_TAGS, (_line: string, values: string) => {
+        tags.push(...values.split(',').map(tagName).filter(Boolean));
+        return '';
+      })
+      .replaceAll(LOGSEQ_HIDDEN_PROPERTY, ''));
+    const linked = withoutProperties
+      .replaceAll(EMBED, embedded)
+      .replaceAll(WIKILINK, (_link: string, inner: string) => linkText(inner));
+    return onWholeLines(linked, edges, (lines) => lines.replaceAll(EMPTY_BULLET, ''))
+      .replaceAll(/\n[ \t]*(?:\n[ \t]*){2,}/g, '\n\n');
+  }).trim();
 
   return { content, tags: cleanTags([...tags, ...hashTags(body)]), media: media.media, skippedMedia };
 }

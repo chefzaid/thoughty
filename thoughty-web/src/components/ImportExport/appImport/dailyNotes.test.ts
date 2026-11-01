@@ -168,6 +168,29 @@ describe('parseDailyNote', () => {
     expect(parsed.media).toEqual([]);
   });
 
+  it('escapes a picture\'s alt text once, reading its Markdown escapes first', () => {
+    const photo = zipEntry('pic.png');
+    const files: DailyNoteFiles = { byName: () => undefined, byPath: () => photo };
+    const note = String.raw`![A \[draft\] \*map\* C:\Users](pic.png) ![\\](pic.png)`;
+
+    expect(parseDailyNote(note, ['2024-03-14.md'], files).content).toBe(
+      String.raw`![A \[draft\] *map* C:\\Users](attachment:pic.png) ![\\](attachment:pic.png)`,
+    );
+  });
+
+  it('keeps the escaped description of a missing picture as written', () => {
+    expect(parseDailyNote(String.raw`![A \[draft\]](gone.png)`, ['2024-03-14.md'], noFiles).content).toBe(String.raw`A \[draft\]`);
+  });
+
+  it('reads tags:: and block properties only at the start of a line, never beside inline code', () => {
+    const note = 'Use `x`tags:: kept\n`y` id:: kept too\n- `z`\ntags:: after code `w`\ntags:: real\n- \n';
+
+    expect(parseDailyNote(note, ['journals', '2024_03_14.md'], noFiles)).toEqual(expect.objectContaining({
+      content: 'Use `x`tags:: kept\n`y` id:: kept too\n- `z`\ntags:: after code `w`',
+      tags: ['real'],
+    }));
+  });
+
   it('finds nothing to keep in a note of empty bullets and front matter', () => {
     expect(parseDailyNote('---\ntags: [x]\n---\n-\n- \n\n', ['2024-03-14.md'], noFiles).content).toBe('');
   });
