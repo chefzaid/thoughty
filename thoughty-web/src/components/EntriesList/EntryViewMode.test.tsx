@@ -10,6 +10,7 @@ import {
     mockSourceEntry,
 } from './EntriesList.test-utils';
 import { getTranslation } from '../../utils/translations';
+import { QuietModeOn } from '../../test/quietMode';
 
 const renderEntryViewMode = (
     overrides: Partial<Parameters<typeof createEntryViewModeProps>[0]> = {},
@@ -45,6 +46,15 @@ describe('EntryViewMode', () => {
         expect(screen.getByText('Work')).toBeInTheDocument();
         expect(screen.getByText('2 words')).toBeInTheDocument();
         expect(screen.getByText('1 min read')).toBeInTheDocument();
+    });
+
+    it('leaves out the word count and reading time in quiet mode, and keeps the entry', () => {
+        render(<EntryViewMode {...createEntryViewModeProps()} />, { wrapper: QuietModeOn });
+
+        expect(screen.getByText('First entry')).toBeInTheDocument();
+        expect(screen.getByText('#1')).toBeInTheDocument();
+        expect(screen.queryByText('2 words')).not.toBeInTheDocument();
+        expect(screen.queryByText('1 min read')).not.toBeInTheDocument();
     });
 
     it('ticks a task list item of a Markdown entry with the entry and its line', async () => {

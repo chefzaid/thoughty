@@ -17,6 +17,7 @@ export class UserConfigDto extends OmitType(UpdateConfigDto, [
   'highContrast',
   'readDates',
   'streakCard',
+  'quietMode',
 ] as const) {
   @NumberText('Font size in pixels')
   fontSize?: string;
@@ -38,6 +39,9 @@ export class UserConfigDto extends OmitType(UpdateConfigDto, [
 
   @BooleanText('Show the writing streak card above the journal; shown unless false')
   streakCard?: string;
+
+  @BooleanText('Quiet mode: hide streaks, badges, karma, likes, counts and goal progress; off unless true')
+  quietMode?: string;
 }
 
 /** The runtime feature flags by name: `ai`, `bookConverter`, `cloudSync`, `publicSharing`, and any the provider adds. */

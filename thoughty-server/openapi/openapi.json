@@ -3628,7 +3628,8 @@
                   "autoTagMaxTags": "reflection",
                   "highContrast": "true",
                   "readDates": "true",
-                  "streakCard": "true"
+                  "streakCard": "true",
+                  "quietMode": "true"
                 }
               }
             }
@@ -3674,6 +3675,7 @@
                 "defaultVisibility": "public",
                 "readDates": "true",
                 "streakCard": "true",
+                "quietMode": "true",
                 "openRouterModel": "example",
                 "openRouterTagModel": "reflection",
                 "openRouterWritingModel": "example",
@@ -14675,6 +14677,14 @@
               "false"
             ],
             "description": "Show the writing streak card above the journal; shown unless false"
+          },
+          "quietMode": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "description": "Quiet mode: hide streaks, badges, karma, likes, counts and goal progress; off unless true"
           }
         },
         "example": {
@@ -14708,7 +14718,8 @@
           "autoTagMaxTags": "reflection",
           "highContrast": "true",
           "readDates": "true",
-          "streakCard": "true"
+          "streakCard": "true",
+          "quietMode": "true"
         }
       },
       "UpdateConfigDto": {
@@ -14881,6 +14892,21 @@
             ],
             "description": "Show the writing streak card above the journal; shown unless false"
           },
+          "quietMode": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "true",
+                  "false"
+                ]
+              },
+              {
+                "type": "boolean"
+              }
+            ],
+            "description": "Quiet mode: hide streaks, badges, karma, likes, counts and goal progress; off unless true"
+          },
           "openRouterModel": {
             "type": "string",
             "maxLength": 300,
@@ -14980,6 +15006,7 @@
           "defaultVisibility": "public",
           "readDates": "true",
           "streakCard": "true",
+          "quietMode": "true",
           "openRouterModel": "example",
           "openRouterTagModel": "reflection",
           "openRouterWritingModel": "example",

@@ -174,6 +174,21 @@ describe('AppearanceSection', () => {
     expect(defaultProps.handleChange).toHaveBeenLastCalledWith({ target: { name: 'streakCard', value: 'true' } });
   });
 
+  it('turns quiet mode on and off, off by default', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<AppearanceSection {...defaultProps} />);
+
+    const toggle = screen.getByRole('switch', { name: 'quietModeSetting' });
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByText('quietModeSettingDescription')).toBeInTheDocument();
+    await user.click(toggle);
+    expect(defaultProps.handleChange).toHaveBeenLastCalledWith({ target: { name: 'quietMode', value: 'true' } });
+
+    rerender(<AppearanceSection {...defaultProps} localConfig={{ ...defaultProps.localConfig, quietMode: true }} />);
+    await user.click(screen.getByRole('switch', { name: 'quietModeSetting' }));
+    expect(defaultProps.handleChange).toHaveBeenLastCalledWith({ target: { name: 'quietMode', value: 'false' } });
+  });
+
   it('calls handleChange to toggle high contrast mode', async () => {
     const user = userEvent.setup();
     render(<AppearanceSection {...defaultProps} />);

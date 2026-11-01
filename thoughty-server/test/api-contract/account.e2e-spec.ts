@@ -32,6 +32,7 @@ describeContract('account', (context) => {
         entriesPerPage: 20,
         highContrast: false,
         streakCard: true,
+        quietMode: true,
         readDates: false,
       },
       status: 200,
@@ -44,9 +45,11 @@ describeContract('account', (context) => {
       entriesPerPage: '20',
       highContrast: 'false',
       streakCard: 'true',
+      quietMode: 'true',
     });
     const other = await call('GET /api/config', { as: bob, status: 200 });
-    expect(other.body).toMatchObject({ theme: 'dark', language: 'en' });
+    // Quiet mode is off until the writer turns it on
+    expect(other.body).toMatchObject({ theme: 'dark', language: 'en', quietMode: 'false' });
     await call('POST /api/config', {
       as: alice,
       json: { entriesPerPage: '' },

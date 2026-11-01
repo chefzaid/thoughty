@@ -3844,7 +3844,8 @@ export interface components {
          *       "autoTagMaxTags": "reflection",
          *       "highContrast": "true",
          *       "readDates": "true",
-         *       "streakCard": "true"
+         *       "streakCard": "true",
+         *       "quietMode": "true"
          *     }
          */
         UserConfigDto: {
@@ -3934,6 +3935,11 @@ export interface components {
              * @enum {string}
              */
             streakCard?: "true" | "false";
+            /**
+             * @description Quiet mode: hide streaks, badges, karma, likes, counts and goal progress; off unless true
+             * @enum {string}
+             */
+            quietMode?: "true" | "false";
         };
         /**
          * @example {
@@ -3955,6 +3961,7 @@ export interface components {
          *       "defaultVisibility": "public",
          *       "readDates": "true",
          *       "streakCard": "true",
+         *       "quietMode": "true",
          *       "openRouterModel": "example",
          *       "openRouterTagModel": "reflection",
          *       "openRouterWritingModel": "example",
@@ -4019,6 +4026,8 @@ export interface components {
             readDates?: ("true" | "false") | boolean;
             /** @description Show the writing streak card above the journal; shown unless false */
             streakCard?: ("true" | "false") | boolean;
+            /** @description Quiet mode: hide streaks, badges, karma, likes, counts and goal progress; off unless true */
+            quietMode?: ("true" | "false") | boolean;
             /** @description OpenRouter model id, or empty for the default */
             openRouterModel?: string;
             /** @description OpenRouter model id, or empty for the default */
@@ -11565,7 +11574,8 @@ export interface operations {
                      *       "autoTagMaxTags": "reflection",
                      *       "highContrast": "true",
                      *       "readDates": "true",
-                     *       "streakCard": "true"
+                     *       "streakCard": "true",
+                     *       "quietMode": "true"
                      *     }
                      */
                     "application/json": components["schemas"]["UserConfigDto"];
@@ -11602,6 +11612,7 @@ export interface operations {
                  *       "defaultVisibility": "public",
                  *       "readDates": "true",
                  *       "streakCard": "true",
+                 *       "quietMode": "true",
                  *       "openRouterModel": "example",
                  *       "openRouterTagModel": "reflection",
                  *       "openRouterWritingModel": "example",

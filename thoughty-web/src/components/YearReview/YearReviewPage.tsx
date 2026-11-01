@@ -10,6 +10,8 @@ import YearReviewMood from './YearReviewMood';
 import YearReviewShare from './YearReviewShare';
 import { defaultReviewYear } from './yearReviewFormat';
 import { useYearReview } from './useYearReview';
+import QuietModeNote from '../QuietMode/QuietModeNote';
+import { useQuietMode } from '../QuietMode/quietMode';
 import './YearReviewPage.css';
 
 /** Marks the page while the review is shown, so that its booklet print rules apply to it and nowhere else. */
@@ -31,6 +33,8 @@ export interface YearReviewPageProps {
 /** A private look back at one year of writing. */
 function YearReviewPage({ theme, language: rawLanguage, diaries, year, diaryId, onChangeYear, onChangeDiary, onOpenEntry, t }: YearReviewPageProps) {
   const language = resolveLanguage(rawLanguage);
+  // Quiet mode keeps the themes, the entries worth rereading and the mood, without the year in numbers
+  const quiet = useQuietMode();
   const activeYear = year ?? defaultReviewYear();
   const { review, mood } = useYearReview(activeYear, diaryId);
   const data = review.data;
@@ -66,8 +70,12 @@ function YearReviewPage({ theme, language: rawLanguage, diaries, year, diaryId, 
   } else {
     body = (
       <>
-        <YearReviewHero review={data} language={language} t={t} />
-        <YearReviewCharts review={data} language={language} t={t} />
+        {quiet ? <QuietModeNote theme={theme} className="review-print-hidden" t={t} /> : (
+          <>
+            <YearReviewHero review={data} language={language} t={t} />
+            <YearReviewCharts review={data} language={language} t={t} />
+          </>
+        )}
         <YearReviewHighlights review={data} language={language} onOpenEntry={onOpenEntry} t={t} />
         <YearReviewMood
           mood={data.mood}

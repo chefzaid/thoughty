@@ -4,6 +4,7 @@ import type { EntryComment, FeedService } from '../../services/api';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import { FeedAvatar } from './FeedAuthor';
 import LikeButton from './LikeButton';
+import { useQuietMode } from '../QuietMode/quietMode';
 import './EntryComments.css';
 
 export const COMMENT_MAX_LENGTH = 1000;
@@ -165,6 +166,7 @@ interface EntryCommentsProps {
 
 function EntryComments({ entryId, commentCount, currentUserId, actions, feedService, theme, t }: EntryCommentsProps) {
   const threadId = useId();
+  const quiet = useQuietMode();
   const [open, setOpen] = useState(false);
   const [total, setTotal] = useState(commentCount);
 
@@ -181,7 +183,7 @@ function EntryComments({ entryId, commentCount, currentUserId, actions, feedServ
           onClick={() => setOpen((current) => !current)}
         >
           <span className="codicon codicon-comment" aria-hidden="true" />
-          {t('commentsCount', { count: total })}
+          {quiet ? t('quietModeComments') : t('commentsCount', { count: total })}
         </button>
       </div>
       <div id={threadId} hidden={!open}>

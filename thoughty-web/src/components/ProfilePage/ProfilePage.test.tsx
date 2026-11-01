@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ProfilePage from './ProfilePage';
+import { QuietModeOn } from '../../test/quietMode';
 
 const authContextMock = vi.hoisted(() => ({
     useAuth: vi.fn(),
@@ -360,6 +361,28 @@ describe('ProfilePage', () => {
             expect(defaultProps.onUpdateConfig).toHaveBeenCalledWith(
                 expect.objectContaining({ streakCard: false })
             );
+        });
+
+        it('saves quiet mode turned on, off until then', async () => {
+            const user = userEvent.setup();
+            render(<ProfilePage {...defaultProps} />);
+
+            const quiet = screen.getByRole('switch', { name: 'quietModeSetting' });
+            expect(quiet).toHaveAttribute('aria-checked', 'false');
+            expect(screen.getByRole('region', { name: 'achievements' })).toBeInTheDocument();
+            await user.click(quiet);
+            await user.click(screen.getByText('saveSettings'));
+
+            expect(defaultProps.onUpdateConfig).toHaveBeenCalledWith(
+                expect.objectContaining({ quietMode: true })
+            );
+        });
+
+        it('leaves out karma and badges once quiet mode is on', () => {
+            render(<ProfilePage {...defaultProps} config={{ ...defaultProps.config, quietMode: true }} />, { wrapper: QuietModeOn });
+
+            expect(screen.queryByRole('region', { name: 'achievements' })).not.toBeInTheDocument();
+            expect(screen.getByRole('switch', { name: 'quietModeSetting' })).toHaveAttribute('aria-checked', 'true');
         });
 
         it('saves the automatic tag limit', async () => {

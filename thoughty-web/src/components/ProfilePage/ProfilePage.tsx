@@ -21,6 +21,7 @@ import type { Diary } from '../../types';
 import { resolveLanguage } from '../../utils/language';
 import { useTransientMessage } from '../../hooks/useTransientMessage';
 import AutoDismiss from '../AutoDismiss/AutoDismiss';
+import { useQuietMode } from '../QuietMode/quietMode';
 
 // Import types and utilities
 import type { 
@@ -54,6 +55,8 @@ type FormSubmitHandler = NonNullable<ComponentProps<'form'>['onSubmit']>;
 
 function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats, diaries = NO_DIARIES }: ProfilePageProps) {
   const { user, changePassword, deleteAccount } = useAuth();
+  // Quiet mode, once saved, leaves out karma and badges
+  const quiet = useQuietMode();
   const [localConfig, setLocalConfig] = useState<ProfileConfig>(config);
 
   // Password change state
@@ -172,7 +175,7 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats,
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> | { target: { name: string; value: string } }
   ): void => {
     const { name, value } = e.target;
-    if (name === 'readDates' || name === 'highContrast' || name === 'streakCard') {
+    if (name === 'readDates' || name === 'highContrast' || name === 'streakCard' || name === 'quietMode') {
       setLocalConfig({ ...localConfig, [name]: value === 'true' });
     } else {
       setLocalConfig({ ...localConfig, [name]: value });
@@ -224,7 +227,7 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats,
         uploadingPicture={uploadingPicture}
       />
 
-      <AchievementsSection t={t} />
+      {!quiet && <AchievementsSection t={t} />}
 
       <div className="profile-two-column">
         <PersonalSection

@@ -1,6 +1,7 @@
 import type { MemoirChapter, MemoirProgress as Progress } from '../../services/api';
 import type { TranslationFunction } from '../../types';
 import { localize, type MemoirLanguage } from './memoirFormat';
+import { useQuietMode } from '../QuietMode/quietMode';
 
 interface MemoirProgressProps {
   readonly progress: Progress;
@@ -11,7 +12,9 @@ interface MemoirProgressProps {
   readonly t: TranslationFunction;
 }
 
+/** How far the memoir has come, and the way to its book; quiet mode keeps only the way to the book. */
 function MemoirProgress({ progress, chapters, language, canMakeBook, onMakeBook, t }: MemoirProgressProps) {
+  const quiet = useQuietMode();
   const chapterCounts = chapters.map((chapter) => ({
     id: chapter.id,
     title: localize(chapter.title, language),
@@ -19,6 +22,22 @@ function MemoirProgress({ progress, chapters, language, canMakeBook, onMakeBook,
     total: chapter.questions.length,
   }));
   const chaptersStarted = chapterCounts.filter((chapter) => chapter.answered > 0).length;
+
+  const makeBook = (
+    <button type="button" className="memoir-primary" onClick={onMakeBook} disabled={!canMakeBook}>
+      <span className="codicon codicon-book" aria-hidden="true" />
+      {t('memoirMakeBook')}
+    </button>
+  );
+
+  if (quiet) {
+    return (
+      <section className="memoir-card memoir-progress" aria-labelledby="memoir-progress-heading">
+        <h2 id="memoir-progress-heading">{t('quietModeMemoirTitle')}</h2>
+        {makeBook}
+      </section>
+    );
+  }
 
   return (
     <section className="memoir-card memoir-progress" aria-labelledby="memoir-progress-heading">
@@ -58,10 +77,7 @@ function MemoirProgress({ progress, chapters, language, canMakeBook, onMakeBook,
           </li>
         ))}
       </ul>
-      <button type="button" className="memoir-primary" onClick={onMakeBook} disabled={!canMakeBook}>
-        <span className="codicon codicon-book" aria-hidden="true" />
-        {t('memoirMakeBook')}
-      </button>
+      {makeBook}
     </section>
   );
 }

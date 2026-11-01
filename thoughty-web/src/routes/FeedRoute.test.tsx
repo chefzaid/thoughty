@@ -3,10 +3,19 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import FeedRoute from './FeedRoute';
+import { QuietModeContext } from '../components/QuietMode/quietMode';
 
 vi.mock('../components/FeedPage/FeedPage', () => ({
-  default: ({ onOpenLeaderboard, readDates, ttsVoiceUri }: { onOpenLeaderboard: () => void; readDates?: boolean; ttsVoiceUri?: string }) => (
-    <button type="button" onClick={onOpenLeaderboard} data-read-dates={String(readDates)} data-voice={ttsVoiceUri}>feed page</button>
+  default: ({ onOpenLeaderboard, readDates, ttsVoiceUri }: { onOpenLeaderboard?: () => void; readDates?: boolean; ttsVoiceUri?: string }) => (
+    <button
+      type="button"
+      onClick={onOpenLeaderboard}
+      data-leaderboard={String(Boolean(onOpenLeaderboard))}
+      data-read-dates={String(readDates)}
+      data-voice={ttsVoiceUri}
+    >
+      feed page
+    </button>
   ),
 }));
 
@@ -37,6 +46,22 @@ describe('FeedRoute', () => {
     fireEvent.click(screen.getByRole('button', { name: 'leaderboard page' }));
     expect(screen.getByRole('status')).toHaveTextContent('/feed');
     expect(screen.getByRole('button', { name: 'feed page' })).toBeInTheDocument();
+  });
+
+  it('has no leaderboard in quiet mode, and shows the feed at its address', () => {
+    render(
+      <QuietModeContext.Provider value>
+        <MemoryRouter initialEntries={['/feed?view=leaderboard']}>
+          <Routes>
+            <Route path="/feed" element={<><FeedRoute t={(key) => key} /><LocationProbe /></>} />
+          </Routes>
+        </MemoryRouter>
+      </QuietModeContext.Provider>,
+    );
+
+    expect(screen.queryByRole('button', { name: 'leaderboard page' })).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(/^\/feed$/);
+    expect(screen.getByRole('button', { name: 'feed page' })).toHaveAttribute('data-leaderboard', 'false');
   });
 
   it('passes the reading-aloud settings to the feed', () => {

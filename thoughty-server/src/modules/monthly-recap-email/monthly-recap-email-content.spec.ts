@@ -87,6 +87,30 @@ describe('monthly recap email content', () => {
     expect(email.html).toContain('Untitled entry');
   });
 
+  it('tells the month without a number in quiet mode: top tags by name and the mood in words', () => {
+    const email = buildMonthlyRecapEmail({ ...links, language: 'en', quietMode: true, recap: recap() });
+
+    expect(email.html).toContain('>Your month</h2>');
+    expect(email.html).toContain('<li>Top tags: #family, #work&lt;b&gt;</li><li>Your mood on the whole: Good.</li></ul>');
+    expect(email.html).not.toContain('Your month in numbers');
+    expect(email.text).toContain('Your month\n- Top tags: #family, #work<b>\n- Your mood on the whole: Good.');
+    for (const count of ['12 entries', '4,321', '9 days', '(5)', '3.6', '7 entries']) {
+      expect(email.text).not.toContain(count);
+      expect(email.html).not.toContain(count);
+    }
+    // The memory and the way back to the year in review stay
+    expect(email.text).toContain('A memory from October 2019');
+    expect(email.text).toContain('See your 2026 in review');
+
+    const french = buildMonthlyRecapEmail({ ...links, language: 'fr', quietMode: true, recap: recap({ topTags: [], mood: { average: 1.2, entries: 1 } }) });
+    expect(french.text).toContain('Votre mois\n- Votre humeur dans l’ensemble : Très basse.');
+    expect(french.text).not.toContain('Tags populaires');
+
+    const bare = buildMonthlyRecapEmail({ ...links, language: 'en', quietMode: true, recap: recap({ topTags: [], mood: null }) });
+    expect(bare.text).not.toContain('Your month\n');
+    expect(bare.html).not.toContain('>Your month</h2>');
+  });
+
   it('writes the email in French, with French numbers and elision', () => {
     const email = buildMonthlyRecapEmail({ ...links, language: 'fr', recap: recap({ entries: 1, writingDays: 1, mood: { average: 1.2, entries: 1 } }) });
 

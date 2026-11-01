@@ -8,6 +8,7 @@ import FocusModeLauncher from './FocusModeLauncher';
 import { MentionPeopleContext } from '../People/PeopleContext';
 import type { Person } from '../../services/api';
 import { peopleByHandle } from '../../utils/mentions';
+import { QuietModeOn } from '../../test/quietMode';
 
 const english = (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params);
 const french = (key: string, params?: Record<string, string | number>) => getTranslation('fr', key, params);
@@ -68,6 +69,20 @@ describe('FocusMode', () => {
         expect(progress).toHaveAttribute('aria-valuenow', '3');
         expect(goalStatus()).toHaveTextContent('Session goal reached');
         expect(localStorage.getItem('thoughty.focusModeGoal')).toBe('3');
+    });
+
+    it('leaves out the word count and the session goal in quiet mode, even a goal set before', async () => {
+        const user = userEvent.setup();
+        localStorage.setItem('thoughty.focusModeGoal', '3');
+        render(<ControlledFocusMode initialText="Already here" />, { wrapper: QuietModeOn });
+
+        await user.type(screen.getByRole('textbox', { name: 'Entry text' }), ' and more words');
+        expect(screen.queryByText(/\d+ words?$/)).not.toBeInTheDocument();
+        expect(screen.queryByLabelText('Session goal in words')).not.toBeInTheDocument();
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+        expect(goalStatus()).toBeEmptyDOMElement();
+        expect(screen.getByLabelText('Timed sprint')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Done' })).toBeInTheDocument();
     });
 
     it('offers the last goal again, and forgets it when cleared', async () => {

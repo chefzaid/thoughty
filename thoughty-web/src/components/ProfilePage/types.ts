@@ -23,6 +23,7 @@ export interface ProfileConfig {
   defaultVisibility?: 'public' | 'private';
   readDates?: boolean;
   streakCard?: boolean;
+  quietMode?: boolean;
   openRouterModel?: string;
   openRouterTagModel?: string;
   openRouterWritingModel?: string;

@@ -6,6 +6,7 @@ import { formatEntryDate } from '../../utils/entryDate';
 import { pluralPhrase } from '../../utils/pluralPhrase';
 import { mutedTextClass } from '../../utils/tintedText';
 import { formatBinDate } from '../RecycleBin/recycleBinFormat';
+import { useQuietMode } from '../QuietMode/quietMode';
 import { useWritingStreak } from './useWritingStreak';
 import { dismissOn, isDismissedOn, writingStreakView } from './writingStreakState';
 
@@ -26,15 +27,17 @@ interface WritingStreakCardProps {
 /**
  * A small card above the composer: the days in a row the writer has written, or after a break an offer
  * to pick up from the last entry. Warm and optional: it never mentions a streak that ended, and it can
- * be hidden for the day here or turned off in Profile.
+ * be hidden for the day here or turned off in Profile. Quiet mode keeps only the offer to pick up.
  */
 function WritingStreakCard({ diaryId, enabled, onWriteNow, onOpenEntry, language, theme, t }: WritingStreakCardProps) {
   const today = formatEntryDate(new Date());
   const headingId = useId();
   const [dismissedOn, setDismissedOn] = useState<string | null>(() => (isDismissedOn(today) ? today : null));
   const hidden = !enabled || dismissedOn === today;
+  const quiet = useQuietMode();
   const { data } = useWritingStreak(diaryId, today, !hidden);
-  const view = hidden ? null : writingStreakView(data);
+  const shown = hidden ? null : writingStreakView(data);
+  const view = quiet && shown?.kind === 'streak' ? null : shown;
   if (!view) return null;
 
   const isDark = theme !== 'light';

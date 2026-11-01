@@ -31,9 +31,14 @@ export interface DueOptInEmail {
   localDate: string;
 }
 
-/** What an email needs to link back: the app, its unsubscribe page, and the one-click address mail apps post to. */
+/**
+ * What an email needs beyond its content: the writer's language and quiet mode, the app, its unsubscribe
+ * page, and the one-click address mail apps post to.
+ */
 export interface OptInEmailLinks {
   language: EmailLanguage;
+  /** The writer turned on quiet mode, so the email leaves out counts. */
+  quietMode: boolean;
   frontendUrl: string;
   unsubscribeUrl: string;
   oneClickUnsubscribeUrl: string;
@@ -147,7 +152,8 @@ export abstract class OptInEmailDeliveryService<TContent> {
   /** Logs only the writer's ID: never the address or anything from the journal. */
   private async send({ due, email, content }: PendingEmail<TContent>): Promise<boolean> {
     try {
-      const language = resolveEmailLanguage((await this.configService.getConfig(due.userId)).language);
+      const config = await this.configService.getConfig(due.userId);
+      const language = resolveEmailLanguage(config.language);
       const frontendUrl = this.nestConfigService.get<string>('FRONTEND_URL', 'http://localhost:5173');
       const token = createEmailUnsubscribeToken(this.kind, due.userId, this.unsubscribeSecret);
       const unsubscribeUrl = new URL('/unsubscribe', frontendUrl);
@@ -159,6 +165,7 @@ export abstract class OptInEmailDeliveryService<TContent> {
         email,
         this.render(content, due, {
           language,
+          quietMode: config.quietMode === 'true',
           frontendUrl,
           unsubscribeUrl: unsubscribeUrl.toString(),
           oneClickUnsubscribeUrl: oneClickUrl.toString(),

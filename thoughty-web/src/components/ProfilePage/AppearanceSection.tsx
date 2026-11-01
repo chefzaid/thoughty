@@ -469,6 +469,14 @@ function AppearanceSection({
         handleChange={handleChange}
       />
 
+      <SettingSwitch
+        name="quietMode"
+        label={t('quietModeSetting')}
+        description={t('quietModeSettingDescription')}
+        enabled={localConfig.quietMode === true}
+        handleChange={handleChange}
+      />
+
       <SpeechSettings
         handleChange={handleChange}
         isDark={isDark}

@@ -1,6 +1,7 @@
 import type { YearReview, YearReviewHighlight } from '../../services/api';
 import type { TranslationFunction } from '../../types';
 import type { Language } from '../../utils/translations';
+import { useQuietMode } from '../QuietMode/quietMode';
 import './YearReviewHighlights.css';
 
 const KIND_KEYS: Record<YearReviewHighlight['kind'], string> = {
@@ -17,8 +18,9 @@ interface YearReviewHighlightsProps {
   readonly t: TranslationFunction;
 }
 
-/** Themes of the year, then the entries worth reopening. */
+/** Themes of the year (by name alone in quiet mode), then the entries worth reopening. */
 function YearReviewHighlights({ review, language, onOpenEntry, t }: YearReviewHighlightsProps) {
+  const quiet = useQuietMode();
   const formatDay = (date: string) =>
     new Intl.DateTimeFormat(language, { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`));
 
@@ -33,7 +35,7 @@ function YearReviewHighlights({ review, language, onOpenEntry, t }: YearReviewHi
             {review.topTags.map(({ tag, count }) => (
               <li key={tag}>
                 <span className="review-tag-name">{tag}</span>
-                <span className="review-tag-count">{count.toLocaleString(language)}</span>
+                {!quiet && <span className="review-tag-count">{count.toLocaleString(language)}</span>}
               </li>
             ))}
           </ul>

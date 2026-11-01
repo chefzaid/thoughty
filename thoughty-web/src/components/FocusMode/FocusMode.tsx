@@ -14,6 +14,7 @@ import { isFocusModeShortcut } from './focusModeShortcut';
 import { MAX_WORD_GOAL, parseWordGoal, readSavedGoal, saveGoal, wordsPhrase } from './focusModeSession';
 import { SprintCountdown, SprintEndNotice, SprintPicker } from './FocusSprint';
 import { useFocusSprint } from './useFocusSprint';
+import { useQuietMode } from '../QuietMode/quietMode';
 import './FocusMode.css';
 
 /** The writing text is larger than the base size, as on a page held at reading distance. */
@@ -39,6 +40,7 @@ interface FocusModeProps {
  * The caret's line stays near the middle of the screen (typewriter scrolling).
  * Typing `@` offers the writer's people as in the composer, in a list just under the caret's line.
  * Esc, the Done button, or the shortcut leave it, and the text stays in the composer or editor.
+ * Quiet mode leaves out the word count and the goal, and keeps the sprint's countdown.
  */
 export default function FocusMode({
     text,
@@ -107,10 +109,11 @@ export default function FocusMode({
         };
     }, []);
 
+    const quiet = useQuietMode();
     const words = countEntryWords(text);
     const sprint = useFocusSprint(words);
     const uiLanguage = resolveLanguage(language);
-    const goal = parseWordGoal(goalInput);
+    const goal = quiet ? null : parseWordGoal(goalInput);
     const written = Math.max(0, words - wordsAtStart);
     const reached = goal !== null && written >= goal;
     const progressText = goal === null
@@ -120,7 +123,7 @@ export default function FocusMode({
     const sprintAnnouncement = {
         running: '',
         halfway: t('focusModeSprintHalfway'),
-        ended: `${t('focusModeSprintEnded')}. ${sprintWordsText}`,
+        ended: quiet ? t('focusModeSprintEnded') : `${t('focusModeSprintEnded')}. ${sprintWordsText}`,
     }[sprint.stage ?? 'running'];
 
     const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -146,27 +149,31 @@ export default function FocusMode({
         >
             <header className="focus-mode-bar">
                 <h2 id={titleId} className="focus-mode-title">{t('focusMode')}</h2>
-                <div className="focus-mode-stats">
-                    <p className="focus-mode-count">{wordsPhrase(t, words, language)}</p>
-                    {sprint.sprint && <SprintCountdown key={sprint.sprint.startedAt} sprint={sprint.sprint} t={t} />}
-                </div>
-                <div className="focus-mode-goal">
-                    <label htmlFor={goalId}>{t('focusModeGoalLabel')}</label>
-                    <input
-                        id={goalId}
-                        type="number"
-                        inputMode="numeric"
-                        min={1}
-                        max={MAX_WORD_GOAL}
-                        step={1}
-                        value={goalInput}
-                        placeholder={t('focusModeGoalPlaceholder')}
-                        onChange={(event) => {
-                            setGoalInput(event.target.value);
-                            saveGoal(parseWordGoal(event.target.value) === null ? '' : event.target.value);
-                        }}
-                    />
-                </div>
+                {(!quiet || sprint.sprint) && (
+                    <div className="focus-mode-stats">
+                        {!quiet && <p className="focus-mode-count">{wordsPhrase(t, words, language)}</p>}
+                        {sprint.sprint && <SprintCountdown key={sprint.sprint.startedAt} sprint={sprint.sprint} t={t} />}
+                    </div>
+                )}
+                {!quiet && (
+                    <div className="focus-mode-goal">
+                        <label htmlFor={goalId}>{t('focusModeGoalLabel')}</label>
+                        <input
+                            id={goalId}
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            max={MAX_WORD_GOAL}
+                            step={1}
+                            value={goalInput}
+                            placeholder={t('focusModeGoalPlaceholder')}
+                            onChange={(event) => {
+                                setGoalInput(event.target.value);
+                                saveGoal(parseWordGoal(event.target.value) === null ? '' : event.target.value);
+                            }}
+                        />
+                    </div>
+                )}
                 <SprintPicker minutes={sprint.minutes} onChoose={sprint.choose} language={uiLanguage} t={t} />
                 <button type="button" className="focus-mode-done" onClick={onClose} title={t('focusModeLeave')}>
                     {t('focusModeDone')}
@@ -205,7 +212,7 @@ export default function FocusMode({
             <footer className="focus-mode-footer">
                 {sprint.stage === 'ended' && (
                     <SprintEndNotice
-                        words={sprint.wordsInSprint}
+                        words={quiet ? null : sprint.wordsInSprint}
                         onKeepGoing={() => {
                             sprint.keepGoing();
                             // The notice and its buttons go; writing picks up where the caret was

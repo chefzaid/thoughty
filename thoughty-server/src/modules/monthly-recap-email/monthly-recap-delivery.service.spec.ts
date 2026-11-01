@@ -34,6 +34,7 @@ describe('MonthlyRecapDeliveryService', () => {
   let dataSource: { transaction: jest.Mock };
   let monthlyRecapService: { build: jest.Mock };
   let emailService: { isConfigured: jest.Mock; sendRenderedEmail: jest.Mock };
+  let configService: { getConfig: jest.Mock };
   let service: MonthlyRecapDeliveryService;
 
   const row = (overrides: Partial<DueRow> = {}): DueRow => ({
@@ -56,12 +57,13 @@ describe('MonthlyRecapDeliveryService', () => {
     manager = { query: jest.fn() };
     dataSource = { transaction: jest.fn(async (work: (value: typeof manager) => unknown) => work(manager)) };
     monthlyRecapService = { build: jest.fn().mockResolvedValue(recap()) };
+    configService = { getConfig: jest.fn().mockResolvedValue({ language: 'en' }) };
     emailService = { isConfigured: jest.fn().mockReturnValue(true), sendRenderedEmail: jest.fn().mockResolvedValue(undefined) };
     const values: Record<string, string> = { FRONTEND_URL: 'https://thoughty.example.com', UNSUBSCRIBE_SECRET: secret };
     service = new MonthlyRecapDeliveryService(
       dataSource as never,
       monthlyRecapService as never,
-      { getConfig: jest.fn().mockResolvedValue({ language: 'en' }) } as never,
+      configService as never,
       emailService as never,
       { get: jest.fn((key: string, fallback?: string) => values[key] ?? fallback) } as never,
     );
@@ -92,6 +94,19 @@ describe('MonthlyRecapDeliveryService', () => {
     const token = new URL(/href="([^"]*unsubscribe[^"]*)"/.exec(email.html)![1].replaceAll('&amp;', '&')).searchParams.get('token')!;
     expect(verifyEmailUnsubscribeToken(token, secret)).toEqual({ kind: 'monthly-recap', userId: 3 });
     expect(email.headers['List-Unsubscribe']).toBe(`<https://thoughty.example.com/api/email-unsubscribe?token=${encodeURIComponent(token)}>`);
+  });
+
+  it('leaves the counts out for a writer in quiet mode', async () => {
+    configService.getConfig.mockResolvedValue({ language: 'en', quietMode: 'true' });
+    monthlyRecapService.build.mockResolvedValue(recap({ topTags: [{ tag: 'family', count: 2 }] }));
+    withBatches([row()]);
+
+    await expect(service.deliverDue(now)).resolves.toBe(1);
+
+    const [, email] = emailService.sendRenderedEmail.mock.calls[0];
+    expect(email.text).toContain('Your month\n- Top tags: #family');
+    expect(email.text).not.toContain('3 entries');
+    expect(email.text).not.toContain('(2)');
   });
 
   it('dates the month on the writer’s clock: already December in Tokyo, still November in Los Angeles', async () => {

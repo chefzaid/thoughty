@@ -527,7 +527,7 @@ Small, relatable additions that reuse what already exists (entries, tags, moods,
 ### Comfort and privacy
 
 - [x] Privacy blur: `Ctrl+Shift+E` (`Cmd+Shift+E` on a Mac) and the eye button beside the profile in the menu blur every entry text on screen at once (titles stay readable), for when someone walks by; pressing it again shows them. Screen-only, so prints are never blurred.
-- [ ] Quiet mode: one setting that hides streaks, badges, karma, counts and goal progress for writers who find numbers stressful, while keeping everything else.
+- [x] Quiet mode: **Profile › Appearance › Quiet mode** (`quietMode` setting, off by default) hides streaks, badges, karma, likes, word and entry counts and goal progress for writers who find numbers stressful, while keeping everything else: the streak's days in a row (the pick-up offer stays), entry word counts and reading time, focus mode's word count and goal, Achievements, the Stats numbers, goals, heatmap and count charts, the year in review's numbers and summary sharing, the memoir's progress counts, feed like, comment and follow counts, and the leaderboard. Stats and the year in review explain it in a note. The monthly recap email tells the month without numbers in quiet mode. English and French.
 - [ ] Reading comfort: line spacing and letter spacing settings next to the font settings, and an easy-to-read font option (self-hosted, so the CSP stays as it is).
 - [ ] A kinder low day: after a writer records a very low mood, offer (never force) to reread up to three past entries they marked as favorites or tagged with gratitude, with a one-tap "not now".
 

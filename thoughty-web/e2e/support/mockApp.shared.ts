@@ -14,6 +14,9 @@ import {
   DEFAULT_DIARIES,
   DEFAULT_FEATURE_REQUESTS,
 } from "./mockApp.defaults";
+import type { MockCloudFile, MockCloudProvider, MockCloudProviderStatus, MockCloudSchedule } from "./mockApp.cloud";
+
+export type { MockCloudFile, MockCloudProvider, MockCloudProviderStatus, MockCloudSchedule } from "./mockApp.cloud";
 
 type AuthPayload = {
   email?: string;
@@ -21,35 +24,6 @@ type AuthPayload = {
   username?: string;
   identifier?: string;
 };
-
-export type MockCloudProvider = "google_drive" | "onedrive" | "dropbox";
-
-export interface MockCloudProviderStatus {
-  connected: boolean;
-  connectedAt?: string;
-}
-
-export interface MockCloudSchedule {
-  enabled: boolean;
-  frequency?: "every_6h" | "every_12h" | "daily" | "weekly";
-  format?: "txt" | "json" | "md";
-  diaryId?: number;
-  includeVisibility?: boolean;
-  /** The writer's time zone saved with the schedule, whose day names the files it syncs. */
-  timeZone?: string;
-  lastSyncAt?: string;
-  lastSyncHash?: string;
-  nextSyncAt?: string;
-}
-
-export interface MockCloudFile {
-  id: string;
-  provider: MockCloudProvider;
-  name: string;
-  size: number;
-  modifiedAt: string;
-  content?: string;
-}
 
 export interface MockEntry {
   id: number;
@@ -192,6 +166,8 @@ export interface MockAppState {
     highContrast?: boolean | string;
     readDates?: boolean;
     streakCard?: boolean;
+    /** Off unless turned on, as the API answers it for a new account. */
+    quietMode?: boolean;
     ttsVoiceUri?: string;
     openRouterModel?: string;
   };
@@ -424,6 +400,7 @@ export function createMockAppState(
       // The fixtures are dated 2024, so the card would offer to pick up from them on every journal
       // page; specs about the card turn it on
       streakCard: false,
+      quietMode: false,
       ...options.config,
     },
     // Copied, so diaries a test creates never leak into the next test's defaults

@@ -42,6 +42,7 @@ describe('ConfigService', () => {
         fontFamily: 'system',
         fontSize: '16',
         highContrast: 'false',
+        quietMode: 'false',
         entriesPerPage: '10',
         maxPinnedEntries: '3',
         defaultVisibility: 'private',
@@ -68,6 +69,7 @@ describe('ConfigService', () => {
       expect(result.entriesPerPage).toBe('10'); // default
       expect(result.language).toBe('en'); // default
       expect(result.autoTagMaxTags).toBe('0');
+      expect(result.quietMode).toBe('false'); // off by default
     });
 
     it('should override all defaults when all settings exist', async () => {
@@ -77,6 +79,7 @@ describe('ConfigService', () => {
         { key: 'fontFamily', value: 'serif' },
         { key: 'fontSize', value: '18' },
         { key: 'highContrast', value: 'true' },
+        { key: 'quietMode', value: 'true' },
         { key: 'entriesPerPage', value: '20' },
         { key: 'defaultVisibility', value: 'public' },
         { key: 'language', value: 'fr' },
@@ -91,6 +94,7 @@ describe('ConfigService', () => {
         fontFamily: 'serif',
         fontSize: '18',
         highContrast: 'true',
+        quietMode: 'true',
         entriesPerPage: '20',
         maxPinnedEntries: '3',
         defaultVisibility: 'public',

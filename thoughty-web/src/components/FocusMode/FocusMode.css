@@ -66,6 +66,11 @@ body.high-contrast-mode .focus-mode {
   margin-right: auto;
 }
 
+/* Quiet mode without a sprint shows no word count: the controls still keep to the right */
+.focus-mode-title + .focus-mode-goal {
+  margin-left: auto;
+}
+
 .focus-mode-count {
   margin: 0;
   font-variant-numeric: tabular-nums;

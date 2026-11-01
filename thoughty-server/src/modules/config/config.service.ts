@@ -31,6 +31,7 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   fontFamily: 'system',
   fontSize: '16',
   highContrast: 'false',
+  quietMode: 'false',
   entriesPerPage: '10',
   maxPinnedEntries: '3',
   defaultVisibility: 'private',

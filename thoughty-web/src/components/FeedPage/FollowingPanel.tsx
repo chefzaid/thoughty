@@ -1,5 +1,6 @@
 import type { FollowedUser } from '../../services/api';
 import { FeedAvatar } from './FeedAuthor';
+import { useQuietMode } from '../QuietMode/quietMode';
 import './FollowingPanel.css';
 
 interface FollowingPanelProps {
@@ -12,15 +13,19 @@ interface FollowingPanelProps {
   readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 
+/** The writers followed, with how many follow and are followed except in quiet mode. */
 function FollowingPanel({ following, followerCount, loaded, loadError, pendingIds, onUnfollow, t }: FollowingPanelProps) {
+  const quiet = useQuietMode();
   return (
     <section className="feed-following" aria-labelledby="feed-following-heading">
       <div className="feed-following-header">
         <h2 id="feed-following-heading">{t('followingListTitle')}</h2>
-        <p>
-          <span>{t('followingCount', { count: following.length })}</span>
-          <span>{t('followersCount', { count: followerCount })}</span>
-        </p>
+        {!quiet && (
+          <p>
+            <span>{t('followingCount', { count: following.length })}</span>
+            <span>{t('followersCount', { count: followerCount })}</span>
+          </p>
+        )}
       </div>
       {loadError && <p className="feed-following-note" role="alert">{t('followsLoadError')}</p>}
       {loaded && !loadError && following.length === 0 && (

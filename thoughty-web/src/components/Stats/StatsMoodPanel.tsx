@@ -4,6 +4,7 @@ import type { components } from '../../generated/openapi';
 import { monthName, weekdayName } from '../../utils/calendarNames';
 import { feelingLabel, moodEmoji, moodLabelKey, nearestMoodLevel, MOOD_LEVELS } from '../../utils/entryMood';
 import { pluralPhrase } from '../../utils/pluralPhrase';
+import { useQuietMode } from '../QuietMode/quietMode';
 import type { Language } from '../../utils/translations';
 
 type StatsMood = components['schemas']['StatsMoodDto'];
@@ -150,12 +151,14 @@ function MoodOverTime({ months, language, t, themeClass }: Readonly<{ months: Mo
 
 /**
  * The moods writers chose themselves, summed up without AI: the average and how many entries
- * have one, the average by month, by weekday, and the feeling words named most.
+ * have one, the average by month, by weekday, and the feeling words named most. Quiet mode leaves out
+ * the counts: how many entries have a mood, and how often each feeling was named.
  */
 function StatsMoodPanel({ moods, themeClass, language, t }: StatsMoodPanelProps) {
     const maxFeeling = useMemo(() => Math.max(1, ...moods.topFeelings.map((feeling) => feeling.count)), [moods.topFeelings]);
     const hasMoods = moods.recordedEntries > 0;
     const hasFeelings = moods.topFeelings.length > 0;
+    const quiet = useQuietMode();
 
     return (
         <section className={`chart-card mood-card ${themeClass}`} aria-labelledby="stats-mood-heading">
@@ -171,7 +174,7 @@ function StatsMoodPanel({ moods, themeClass, language, t }: StatsMoodPanelProps)
             ) : (
                 <>
                     {hasMoods && moods.averageMood !== null && (
-                        <div className="tone-mood-highlights">
+                        <div className={`tone-mood-highlights${quiet ? ' single' : ''}`}>
                             <div className={`tone-mood-highlight ${themeClass}`}>
                                 <span className="tone-mood-highlight-label">{t('statsMoodAverage')}</span>
                                 <strong>
@@ -181,10 +184,12 @@ function StatsMoodPanel({ moods, themeClass, language, t }: StatsMoodPanelProps)
                                     {t(moodLabelKey(nearestMoodLevel(moods.averageMood)))}
                                 </strong>
                             </div>
-                            <div className={`tone-mood-highlight ${themeClass}`}>
-                                <span className="tone-mood-highlight-label">{t('statsMoodRecorded')}</span>
-                                <strong>{moods.recordedEntries.toLocaleString(language)}</strong>
-                            </div>
+                            {!quiet && (
+                                <div className={`tone-mood-highlight ${themeClass}`}>
+                                    <span className="tone-mood-highlight-label">{t('statsMoodRecorded')}</span>
+                                    <strong>{moods.recordedEntries.toLocaleString(language)}</strong>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -228,9 +233,9 @@ function StatsMoodPanel({ moods, themeClass, language, t }: StatsMoodPanelProps)
                                             <li key={feeling.feeling} className="tone-mood-list-item">
                                                 <div className="tone-mood-list-labels">
                                                     <span>{label}</span>
-                                                    <span aria-hidden="true">{feeling.count.toLocaleString(language)}</span>
+                                                    {!quiet && <span aria-hidden="true">{feeling.count.toLocaleString(language)}</span>}
                                                 </div>
-                                                <span className="sr-only">{pluralPhrase(t, 'statsFeelingRow', feeling.count, language, { feeling: label })}</span>
+                                                {!quiet && <span className="sr-only">{pluralPhrase(t, 'statsFeelingRow', feeling.count, language, { feeling: label })}</span>}
                                                 <span className="tone-mood-bar-track" aria-hidden="true">
                                                     <span className="tone-mood-bar-fill recorded-feeling" style={{ width: `${(feeling.count / maxFeeling) * 100}%` }} />
                                                 </span>

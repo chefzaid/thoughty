@@ -86,7 +86,8 @@ export function SprintCountdown({ sprint, t }: SprintCountdownProps) {
 }
 
 interface SprintEndNoticeProps {
-    readonly words: number;
+    /** The words written in the sprint, or null to leave the count out (quiet mode). */
+    readonly words: number | null;
     readonly onKeepGoing: () => void;
     readonly onStop: () => void;
     readonly language: Language;
@@ -99,7 +100,7 @@ export function SprintEndNotice({ words, onKeepGoing, onStop, language, t }: Spr
     return (
         <section className="focus-mode-sprint-end" aria-labelledby={titleId}>
             <h3 id={titleId} className="focus-mode-sprint-end-title">{t('focusModeSprintEnded')}</h3>
-            <p className="focus-mode-sprint-end-words">{pluralPhrase(t, 'focusModeSprintWords', words, language)}</p>
+            {words !== null && <p className="focus-mode-sprint-end-words">{pluralPhrase(t, 'focusModeSprintWords', words, language)}</p>}
             <div className="focus-mode-sprint-end-actions">
                 <button type="button" className="focus-mode-done" onClick={onKeepGoing}>{t('focusModeSprintKeepGoing')}</button>
                 <button type="button" className="focus-mode-done" onClick={onStop}>{t('focusModeSprintStop')}</button>

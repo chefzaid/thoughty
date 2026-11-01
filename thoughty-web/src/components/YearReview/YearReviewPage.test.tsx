@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createReviewService, type YearReview } from '../../services/api';
 import { createTestQueryClient } from '../../test/queryClient';
+import { QuietModeOn } from '../../test/quietMode';
 import YearReviewPage, { type YearReviewPageProps } from './YearReviewPage';
 
 const reviewService = { fetchReview: vi.fn(), readMood: vi.fn() };
@@ -36,7 +37,7 @@ const review = (overrides: Partial<YearReview> = {}): YearReview => ({
   ...overrides,
 });
 
-function renderPage(props: Partial<YearReviewPageProps> = {}) {
+function renderPage(props: Partial<YearReviewPageProps> = {}, quiet = false) {
   const handlers = { onChangeYear: vi.fn(), onChangeDiary: vi.fn(), onOpenEntry: vi.fn() };
   const view = render(
     <QueryClientProvider client={createTestQueryClient()}>
@@ -50,6 +51,7 @@ function renderPage(props: Partial<YearReviewPageProps> = {}) {
         {...props}
       />
     </QueryClientProvider>,
+    quiet ? { wrapper: QuietModeOn } : undefined,
   );
   return { ...handlers, unmount: view.unmount };
 }
@@ -77,6 +79,23 @@ describe('YearReviewPage', () => {
 
     fireEvent.click(within(highlights).getAllByRole('button', { name: 'reviewReadEntry' })[1]!);
     expect(onOpenEntry).toHaveBeenCalledWith(12);
+  });
+
+  it('keeps the themes by name, the moments to reread and the booklet in quiet mode, without the year in numbers', async () => {
+    renderPage({}, true);
+
+    const themes = await screen.findByRole('region', { name: 'reviewThemesTitle' });
+    expect(within(themes).getByText('travel')).toBeInTheDocument();
+    expect(within(themes).queryByText('40')).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'reviewHighlightsTitle' })).toHaveTextContent('The lake with everyone.');
+    // The note is for the screen; the printed booklet leaves it out
+    expect(screen.getByText('quietModeNote').closest('p')).toHaveClass('quiet-mode-note', 'review-print-hidden');
+    expect(screen.queryByText('214')).not.toBeInTheDocument();
+    expect(screen.queryByText(/reviewCompared/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/reviewBusiestMonth/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'reviewRhythmTitle' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'reviewShareAction' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'reviewPrint' })).toBeInTheDocument();
   });
 
   it('changes the year and the diaries in view', async () => {

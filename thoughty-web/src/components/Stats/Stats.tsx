@@ -24,6 +24,9 @@ import StatsMoodPanel from './StatsMoodPanel';
 import StatsGoalPanel from './StatsGoalPanel';
 import StatsPagination from './StatsPagination';
 import StatsBarChart, { type StatsChartPoint } from './StatsBarChart';
+import StatsSummaryCards from './StatsSummaryCards';
+import QuietModeNote from '../QuietMode/QuietModeNote';
+import { useQuietMode } from '../QuietMode/quietMode';
 import { monthName } from '../../utils/calendarNames';
 import { writersToday } from '../../utils/entryDate';
 import { resolveLanguage } from '../../utils/language';
@@ -104,6 +107,8 @@ const EMPTY_STATS: StatsData = {
 
 function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetadata, language, teaser }: StatsProps) {
     const { authFetch } = useAuth();
+    // Quiet mode keeps the readings of the journal (insights, moods, personality, links) and leaves out its counts and goals
+    const quiet = useQuietMode();
     const [stats, setStats] = useState<StatsData | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -256,41 +261,9 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetada
         <div className={`stats-container ${themeClass}`}>
             {header}
 
-            {/* Summary Cards */}
-            <div className="stats-summary">
-                <div className={`stat-card ${themeClass}`}>
-                    <div className="stat-value">{stats.totalThoughts}</div>
-                    <div className="stat-label">{t('totalEntries')}</div>
-                </div>
-                <div className={`stat-card ${themeClass}`}>
-                    <div className="stat-value">{stats.uniqueTagsCount}</div>
-                    <div className="stat-label">{t('uniqueTags')}</div>
-                </div>
-                <div className={`stat-card ${themeClass}`}>
-                    <div className="stat-value">{allYearLabels.length}</div>
-                    <div className="stat-label">{t('yearsActive')}</div>
-                </div>
-                <div className={`stat-card ${themeClass}`}>
-                    <div className="stat-value">
-                        {stats.totalThoughts && allYearLabels.length
-                            ? Math.round(stats.totalThoughts / allYearLabels.length)
-                            : 0}
-                    </div>
-                    <div className="stat-label">{t('avgPerYear')}</div>
-                </div>
-                <div className={`stat-card ${themeClass}`}>
-                    <div className="stat-value">{stats.averageWordsPerEntry}</div>
-                    <div className="stat-label">{t('avgWordsPerEntry')}</div>
-                </div>
-                <div className={`stat-card ${themeClass}`}>
-                    <div className="stat-value">
-                        {stats.averageReadingTimeMinutes > 0
-                            ? `${stats.averageReadingTimeMinutes} min`
-                            : '<1 min'}
-                    </div>
-                    <div className="stat-label">{t('avgReadingTime')}</div>
-                </div>
-            </div>
+            {quiet ? <QuietModeNote theme={themeClass} t={t} /> : (
+                <StatsSummaryCards stats={stats} yearsActive={allYearLabels.length} themeClass={themeClass} t={t} />
+            )}
 
             {teaser}
 
@@ -325,25 +298,29 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetada
                     </>
                 )}
 
-                <StatsGoalPanel
-                    goals={goals}
-                    diaryId={diaryId}
-                    themeClass={themeClass}
-                    language={uiLanguage}
-                    t={t}
-                    onManageDiaries={onManageDiaries}
-                />
+                {!quiet && (
+                    <StatsGoalPanel
+                        goals={goals}
+                        diaryId={diaryId}
+                        themeClass={themeClass}
+                        language={uiLanguage}
+                        t={t}
+                        onManageDiaries={onManageDiaries}
+                    />
+                )}
 
-                <StatsActivityHeatmap
-                    thoughtsPerDay={thoughtsPerDay}
-                    goal={diaryGoal}
-                    themeClass={themeClass}
-                    language={uiLanguage}
-                    t={t}
-                    onOpenJournalDay={onOpenJournalDay}
-                />
+                {!quiet && (
+                    <StatsActivityHeatmap
+                        thoughtsPerDay={thoughtsPerDay}
+                        goal={diaryGoal}
+                        themeClass={themeClass}
+                        language={uiLanguage}
+                        t={t}
+                        onOpenJournalDay={onOpenJournalDay}
+                    />
+                )}
 
-                {stats.totalThoughts > 0 && (
+                {!quiet && stats.totalThoughts > 0 && (
                     <>
                         <div className="charts-row">
                             <StatsBarChart

@@ -3,6 +3,11 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { getTranslation } from '../utils/translations';
 import AuthenticatedAppLayout from './AuthenticatedAppLayout';
+import { useQuietMode } from '../components/QuietMode/quietMode';
+
+function QuietProbe() {
+  return <p data-testid="quiet-probe">{useQuietMode() ? 'quiet' : 'counting'}</p>;
+}
 
 const defaultProps = {
   config: { theme: 'dark' as const },
@@ -66,6 +71,22 @@ describe('AuthenticatedAppLayout', () => {
     fireEvent.keyDown(document.body, { key: 'E', ctrlKey: true, shiftKey: true });
     unmount();
     expect(document.documentElement).not.toHaveAttribute('data-privacy-blur');
+  });
+
+  it('gives every view quiet mode from the saved settings, off unless turned on', () => {
+    const { rerender } = render(
+      <AuthenticatedAppLayout {...defaultProps}>
+        <QuietProbe />
+      </AuthenticatedAppLayout>,
+    );
+    expect(screen.getByTestId('quiet-probe')).toHaveTextContent('counting');
+
+    rerender(
+      <AuthenticatedAppLayout {...defaultProps} config={{ theme: 'dark', quietMode: true }}>
+        <QuietProbe />
+      </AuthenticatedAppLayout>,
+    );
+    expect(screen.getByTestId('quiet-probe')).toHaveTextContent('quiet');
   });
 
   it('keeps the app content inside the main landmark', () => {

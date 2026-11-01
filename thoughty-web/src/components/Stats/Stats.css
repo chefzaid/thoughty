@@ -141,6 +141,11 @@
     margin-bottom: 1rem;
 }
 
+/* Quiet mode keeps only the average mood */
+.tone-mood-highlights.single {
+    grid-template-columns: minmax(0, 1fr);
+}
+
 .tone-mood-highlight {
     padding: 1rem;
     border-radius: 0.9rem;

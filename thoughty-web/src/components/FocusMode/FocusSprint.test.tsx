@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { useState, type ComponentProps } from 'react';
 import { getTranslation } from '../../utils/translations';
 import FocusMode from './FocusMode';
+import { QuietModeOn } from '../../test/quietMode';
 
 const english = (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params);
 const french = (key: string, params?: Record<string, string | number>) => getTranslation('fr', key, params);
@@ -73,6 +74,18 @@ describe('FocusMode timed sprints', () => {
 
         fireEvent.click(screen.getByRole('button', { name: 'Stop here' }));
         expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps the countdown in quiet mode, and ends the sprint without a word count', () => {
+        render(<ControlledFocusMode initialText="Already here" />, { wrapper: QuietModeOn });
+        fireEvent.change(sprintPicker(), { target: { value: '5' } });
+        expect(screen.getByRole('timer')).toHaveTextContent('05:00');
+
+        type('Already here and three more');
+        advance(minutes(5));
+        expect(screen.getByRole('heading', { name: "Time's up — keep going or stop here" })).toBeInTheDocument();
+        expect(screen.queryByText(/words? written in this sprint/)).not.toBeInTheDocument();
+        expect(sprintStatus()).toHaveTextContent(/^Time's up — keep going or stop here$/);
     });
 
     it('keeps going without a sprint, and offers the same length next time', () => {

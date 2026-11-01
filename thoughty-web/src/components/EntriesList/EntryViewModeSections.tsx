@@ -13,6 +13,7 @@ import type {
 } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import { getEntryMetrics } from '../../utils/entryMetrics';
+import { useQuietMode } from '../QuietMode/quietMode';
 import { formatTimeOfDay } from '../../utils/entryTime';
 import { pluralPhrase } from '../../utils/pluralPhrase';
 import type { Language } from '../../utils/translations';
@@ -264,6 +265,7 @@ export function EntryBodySection({
     t: TranslationFn;
 }>) {
     const readingTextColor = resolveFontColor(fontColor, theme);
+    const quiet = useQuietMode();
     const { wordCount, readingTimeMinutes } = getEntryMetrics(entry.content);
     const readingTimeLabel = readingTimeMinutes > 0
         ? t('entryReadingTimeMinutes', { minutes: readingTimeMinutes })
@@ -305,13 +307,16 @@ export function EntryBodySection({
                     theme={theme}
                 />
             </div>
-            <div className={`mt-3 flex flex-wrap gap-2 text-xs ${mutedTextClass(isDark)}`}>
-                <span>
-                    {pluralPhrase(t, 'entryWordCount', wordCount, language)}
-                </span>
-                <span aria-hidden="true">/</span>
-                <span>{readingTimeLabel}</span>
-            </div>
+            {/* Quiet mode leaves out the word count and the reading time it gives */}
+            {!quiet && (
+                <div className={`mt-3 flex flex-wrap gap-2 text-xs ${mutedTextClass(isDark)}`}>
+                    <span>
+                        {pluralPhrase(t, 'entryWordCount', wordCount, language)}
+                    </span>
+                    <span aria-hidden="true">/</span>
+                    <span>{readingTimeLabel}</span>
+                </div>
+            )}
             <EntryBacklinksSection
                 entry={entry}
                 backlinks={backlinks}

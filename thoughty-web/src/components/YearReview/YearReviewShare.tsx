@@ -6,6 +6,7 @@ import type { TranslationFunction } from '../../types';
 import { formatEntryDate } from '../../utils/entryDate';
 import type { Language } from '../../utils/translations';
 import { buildShareText } from './yearReviewFormat';
+import { useQuietMode } from '../QuietMode/quietMode';
 
 interface YearReviewShareProps {
   readonly review: YearReview;
@@ -16,8 +17,12 @@ interface YearReviewShareProps {
 
 type ShareState = { step: 'closed' } | { step: 'editing'; failed: boolean } | { step: 'posting' } | { step: 'posted'; entryId?: number };
 
-/** Keeps the review private, or posts a short summary the writer has read and edited; also prints it as a booklet. */
+/**
+ * Keeps the review private, or posts a short summary the writer has read and edited; also prints it as a booklet.
+ * The summary is the year in numbers, so quiet mode offers only the booklet.
+ */
 function YearReviewShare({ review, language, onOpenEntry, t }: YearReviewShareProps) {
+  const quiet = useQuietMode();
   const entriesService = useAuthenticatedService(createEntriesService);
   const [state, setState] = useState<ShareState>({ step: 'closed' });
   const [includeThemes, setIncludeThemes] = useState(false);
@@ -86,9 +91,11 @@ function YearReviewShare({ review, language, onOpenEntry, t }: YearReviewSharePr
 
       {state.step === 'closed' && (
         <div className="review-actions">
-          <button type="button" className="review-primary" onClick={() => setState({ step: 'editing', failed: false })}>
-            {t('reviewShareAction')}
-          </button>
+          {!quiet && (
+            <button type="button" className="review-primary" onClick={() => setState({ step: 'editing', failed: false })}>
+              {t('reviewShareAction')}
+            </button>
+          )}
           <button type="button" className="review-secondary" onClick={() => globalThis.print()}>
             {t('reviewPrint')}
           </button>

@@ -1,7 +1,9 @@
-import { useSearchParams } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 
 import FeedPage from '../components/FeedPage/FeedPage';
 import LeaderboardPage from '../components/FeedPage/LeaderboardPage';
+import { useQuietMode } from '../components/QuietMode/quietMode';
+import { getPathForView } from '../types';
 
 interface FeedRouteProps {
   readonly theme?: 'light' | 'dark';
@@ -11,12 +13,18 @@ interface FeedRouteProps {
   readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-/** `/feed?view=leaderboard` shows the leaderboard; the feed itself is the default view. */
+/**
+ * `/feed?view=leaderboard` shows the leaderboard; the feed itself is the default view. Quiet mode has no
+ * leaderboard: no link to it, and its address shows the feed.
+ */
 function FeedRoute({ language, readDates, ttsVoiceUri, ...props }: Readonly<FeedRouteProps>) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const quiet = useQuietMode();
 
   if (searchParams.get('view') === 'leaderboard') {
-    return <LeaderboardPage {...props} onBack={() => setSearchParams({})} />;
+    return quiet
+      ? <Navigate to={getPathForView('feed')} replace />
+      : <LeaderboardPage {...props} onBack={() => setSearchParams({})} />;
   }
   return (
     <FeedPage
@@ -24,7 +32,7 @@ function FeedRoute({ language, readDates, ttsVoiceUri, ...props }: Readonly<Feed
       language={language}
       readDates={readDates}
       ttsVoiceUri={ttsVoiceUri}
-      onOpenLeaderboard={() => setSearchParams({ view: 'leaderboard' })}
+      onOpenLeaderboard={quiet ? undefined : () => setSearchParams({ view: 'leaderboard' })}
     />
   );
 }

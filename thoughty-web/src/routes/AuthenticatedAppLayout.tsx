@@ -9,6 +9,7 @@ import type { ViewType, Config, Entry } from '../types';
 import { normalizeFontSize, resolveFontFamily } from '../types/config';
 import { useRouteChangeFocus } from '../hooks/useRouteChangeFocus';
 import { usePrivacyBlur } from '../components/PrivacyBlur/usePrivacyBlur';
+import { QuietModeContext } from '../components/QuietMode/quietMode';
 import { resolveLanguage } from '../utils/language';
 import { pluralPhrase } from '../utils/pluralPhrase';
 import { tintedTextClass } from '../utils/tintedText';
@@ -87,75 +88,77 @@ function AuthenticatedAppLayout({
   };
 
   return (
-    <div
-      className={`min-h-screen p-4 md:p-6 lg:p-8 font-sans transition-colors duration-300 ${config.theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-900 text-gray-100'}`}
-      style={appTypographyStyle}
-    >
-      <a href="#main-content" className="skip-link" onClick={focusMainContent}>
-        {t('skipToContent')}
-      </a>
-      <div className="max-w-7xl mx-auto">
-        <NavMenu
-          currentView={currentView}
-          onViewChange={onViewChange}
-          theme={config.theme ?? 'dark'}
-          name={userName}
-          avatarUrl={avatarUrl}
-          isEmailVerified={isEmailVerified}
-          t={t}
-          onLogout={onLogout}
-          privacyBlur={privacyBlur}
-        />
+    <QuietModeContext.Provider value={config.quietMode === true}>
+      <div
+        className={`min-h-screen p-4 md:p-6 lg:p-8 font-sans transition-colors duration-300 ${config.theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-900 text-gray-100'}`}
+        style={appTypographyStyle}
+      >
+        <a href="#main-content" className="skip-link" onClick={focusMainContent}>
+          {t('skipToContent')}
+        </a>
+        <div className="max-w-7xl mx-auto">
+          <NavMenu
+            currentView={currentView}
+            onViewChange={onViewChange}
+            theme={config.theme ?? 'dark'}
+            name={userName}
+            avatarUrl={avatarUrl}
+            isEmailVerified={isEmailVerified}
+            t={t}
+            onLogout={onLogout}
+            privacyBlur={privacyBlur}
+          />
 
-        <ConfirmModal
-          isOpen={deleteModalOpen}
-          onClose={onCloseDeleteModal}
-          onConfirm={onConfirmDelete}
-          title={t('deleteEntryTitle')}
-          message={t('deleteEntryMessage')}
-          theme={config.theme}
-          t={t}
-        />
-
-        <ConfirmModal
-          isOpen={bulkModalOpen}
-          onClose={onCloseBulkModal}
-          onConfirm={onConfirmBulkDelete}
-          title={t('bulkDeleteTitle')}
-          message={pluralPhrase(t, 'bulkDeleteMessage', selectedCount, resolveLanguage(config.language))}
-          theme={config.theme}
-          t={t}
-        />
-
-        <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 px-4">
-          <AutoDismiss message={entryToast} durationMs={4000}>
-            <div role="alert" aria-live="assertive" className={toastClassName}>
-              <p className={`text-sm font-semibold ${tintedTextClass('amber', config.theme)}`}>{t('entryNotFound')}</p>
-              <p className={`mt-1 text-sm ${toastTextClassName}`}>{t('entryNotFoundMessage')}</p>
-            </div>
-          </AutoDismiss>
-          <NoticeToast notice={notice} text={noticeText} action={noticeAction} theme={config.theme} className={toastClassName} />
-        </div>
-
-        {chatEntry && (
-          <AiChatModal
-            entry={chatEntry}
-            isOpen={!!chatEntry}
-            onClose={onCloseChat}
-            onLoadHistory={onLoadChatHistory}
-            onSend={onSendChat}
+          <ConfirmModal
+            isOpen={deleteModalOpen}
+            onClose={onCloseDeleteModal}
+            onConfirm={onConfirmDelete}
+            title={t('deleteEntryTitle')}
+            message={t('deleteEntryMessage')}
             theme={config.theme}
             t={t}
           />
-        )}
 
-        <main id="main-content" ref={mainContentRef} tabIndex={-1}>
-          {children}
-        </main>
+          <ConfirmModal
+            isOpen={bulkModalOpen}
+            onClose={onCloseBulkModal}
+            onConfirm={onConfirmBulkDelete}
+            title={t('bulkDeleteTitle')}
+            message={pluralPhrase(t, 'bulkDeleteMessage', selectedCount, resolveLanguage(config.language))}
+            theme={config.theme}
+            t={t}
+          />
 
-        <Footer t={t} theme={config.theme ?? 'dark'} />
+          <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 px-4">
+            <AutoDismiss message={entryToast} durationMs={4000}>
+              <div role="alert" aria-live="assertive" className={toastClassName}>
+                <p className={`text-sm font-semibold ${tintedTextClass('amber', config.theme)}`}>{t('entryNotFound')}</p>
+                <p className={`mt-1 text-sm ${toastTextClassName}`}>{t('entryNotFoundMessage')}</p>
+              </div>
+            </AutoDismiss>
+            <NoticeToast notice={notice} text={noticeText} action={noticeAction} theme={config.theme} className={toastClassName} />
+          </div>
+
+          {chatEntry && (
+            <AiChatModal
+              entry={chatEntry}
+              isOpen={!!chatEntry}
+              onClose={onCloseChat}
+              onLoadHistory={onLoadChatHistory}
+              onSend={onSendChat}
+              theme={config.theme}
+              t={t}
+            />
+          )}
+
+          <main id="main-content" ref={mainContentRef} tabIndex={-1}>
+            {children}
+          </main>
+
+          <Footer t={t} theme={config.theme ?? 'dark'} />
+        </div>
       </div>
-    </div>
+    </QuietModeContext.Provider>
   );
 }
 

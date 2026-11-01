@@ -13,6 +13,7 @@ import { printTranslations, type PrintTranslationKey } from "./translations.prin
 import { rereadReminderTranslations, type RereadReminderTranslationKey } from "./translations.rereadReminder";
 import { focusModeTranslations, type FocusModeTranslationKey } from "./translations.focusMode";
 import { privacyBlurTranslations, type PrivacyBlurTranslationKey } from "./translations.privacyBlur";
+import { quietModeTranslations, type QuietModeTranslationKey } from "./translations.quietMode";
 import { entryTemplatesTranslations, type EntryTemplatesTranslationKey } from "./translations.entryTemplates";
 import { markdownToolbarTranslations, type MarkdownToolbarTranslationKey } from "./translations.markdownToolbar";
 import { landingTranslations, type LandingTranslationKey } from "./translations.landing";
@@ -68,6 +69,7 @@ export type TranslationKey =
   | RereadReminderTranslationKey
   | FocusModeTranslationKey
   | PrivacyBlurTranslationKey
+  | QuietModeTranslationKey
   | EntryTemplatesTranslationKey
   | MarkdownToolbarTranslationKey
   | LandingTranslationKey
@@ -128,6 +130,7 @@ export const translations: Translations = {
     ...rereadReminderTranslations.en,
     ...focusModeTranslations.en,
     ...privacyBlurTranslations.en,
+    ...quietModeTranslations.en,
     ...entryTemplatesTranslations.en,
     ...markdownToolbarTranslations.en,
     ...landingTranslations.en,
@@ -181,6 +184,7 @@ export const translations: Translations = {
     ...rereadReminderTranslations.fr,
     ...focusModeTranslations.fr,
     ...privacyBlurTranslations.fr,
+    ...quietModeTranslations.fr,
     ...entryTemplatesTranslations.fr,
     ...markdownToolbarTranslations.fr,
     ...landingTranslations.fr,

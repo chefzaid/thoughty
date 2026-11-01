@@ -35,6 +35,7 @@ describe('UpdateConfigDto', () => {
       defaultVisibility: 'public',
       readDates: false,
       streakCard: false,
+      quietMode: true,
       openRouterModel: 'anthropic/claude-sonnet-4:beta',
       openRouterTagModel: '',
       openRouterWritingModel: '',
@@ -56,6 +57,7 @@ describe('UpdateConfigDto', () => {
       maxPinnedEntries: '3',
       readDates: 'false',
       streakCard: 'false',
+      quietMode: 'true',
     });
   });
 
@@ -83,6 +85,8 @@ describe('UpdateConfigDto', () => {
     ['subscriptionPlan', 'enterprise'],
     ['highContrast', 'yes'],
     ['streakCard', 'off'],
+    ['quietMode', 'on'],
+    ['quietMode', 1],
     ['fontColor', 'red'],
     ['fontSize', '1e9'],
     ['birthday', 'tomorrow'],

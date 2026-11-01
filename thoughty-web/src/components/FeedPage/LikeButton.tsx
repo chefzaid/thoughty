@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import type { LikeState, ServiceResult } from '../../services/api';
+import { useQuietMode } from '../QuietMode/quietMode';
 
 type Translate = (key: string, params?: Record<string, string | number>) => string;
 
@@ -15,12 +16,15 @@ interface LikeButtonProps {
   readonly t: Translate;
 }
 
+/** Quiet mode keeps liking and leaves out every count, so an own entry or comment shows no likes at all. */
 function LikeButton({ liked: initialLiked, likeCount: initialCount, canLike, label, onChange, t }: LikeButtonProps) {
+  const quiet = useQuietMode();
   const [state, setState] = useState({ liked: initialLiked, likeCount: initialCount });
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
 
   if (!canLike) {
+    if (quiet) return null;
     return (
       <span className="feed-like own" title={t('likes')}>
         <span className="codicon codicon-heart" aria-hidden="true" />
@@ -45,12 +49,12 @@ function LikeButton({ liked: initialLiked, likeCount: initialCount, canLike, lab
         type="button"
         className={`feed-like ${state.liked ? 'liked' : ''}`}
         aria-pressed={state.liked}
-        aria-label={`${label}, ${t('likesCount', { count: state.likeCount })}`}
+        aria-label={quiet ? label : `${label}, ${t('likesCount', { count: state.likeCount })}`}
         disabled={pending}
         onClick={() => void toggle()}
       >
         <span className={`codicon ${state.liked ? 'codicon-heart-filled' : 'codicon-heart'}`} aria-hidden="true" />
-        {state.likeCount}
+        {!quiet && state.likeCount}
       </button>
       {failed && <span className="feed-like-error" role="alert">{t('likeUpdateError')}</span>}
     </>

@@ -20,6 +20,8 @@ export interface Config {
   readDates?: boolean;
   /** The journal's writing streak card; shown unless false. */
   streakCard?: boolean;
+  /** Quiet mode hides streaks, badges, karma, likes, counts and goal progress; off unless true. */
+  quietMode?: boolean;
   openRouterModel?: string;
   openRouterSummaryModel?: string;
   openRouterPromptModel?: string;

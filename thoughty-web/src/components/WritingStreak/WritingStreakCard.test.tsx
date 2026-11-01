@@ -5,6 +5,7 @@ import WritingStreakCard from './WritingStreakCard';
 import { useWritingStreak } from './useWritingStreak';
 import { getTranslation } from '../../utils/translations';
 import type { WritingStreak } from '../../services/api';
+import { QuietModeOn } from '../../test/quietMode';
 
 vi.mock('./useWritingStreak', () => ({ useWritingStreak: vi.fn() }));
 
@@ -15,7 +16,7 @@ const streak = (overrides: Partial<WritingStreak>): WritingStreak => ({
 const answer = (data: WritingStreak | undefined) =>
   vi.mocked(useWritingStreak).mockReturnValue({ data } as ReturnType<typeof useWritingStreak>);
 
-function renderCard(props: Partial<Parameters<typeof WritingStreakCard>[0]> = {}) {
+function renderCard(props: Partial<Parameters<typeof WritingStreakCard>[0]> = {}, quiet = false) {
   const onWriteNow = vi.fn();
   const onOpenEntry = vi.fn();
   const language = props.language ?? 'en';
@@ -30,6 +31,7 @@ function renderCard(props: Partial<Parameters<typeof WritingStreakCard>[0]> = {}
       t={(key, params) => getTranslation(language, key, params)}
       {...props}
     />,
+    quiet ? { wrapper: QuietModeOn } : undefined,
   );
   return { ...view, onWriteNow, onOpenEntry };
 }
@@ -124,6 +126,17 @@ describe('WritingStreakCard', () => {
     cleanupAndMoveTo(new Date(2026, 9, 28, 8, 0));
     renderCard();
     expect(screen.getByRole('region', { name: 'Writing streak' })).toBeInTheDocument();
+  });
+
+  it('leaves out the days in a row in quiet mode, and still offers to pick up after a gap', () => {
+    answer(streak({ currentStreak: 4, writtenToday: true }));
+    const { container, unmount } = renderCard({}, true);
+    expect(container).toBeEmptyDOMElement();
+    unmount();
+
+    answer(streak({ currentStreak: 0, daysSinceLastEntry: 6 }));
+    renderCard({}, true);
+    expect(screen.getByRole('region', { name: 'Pick up where you left off' })).toHaveTextContent('River walk');
   });
 
   it('asks for nothing while turned off in Profile', () => {
