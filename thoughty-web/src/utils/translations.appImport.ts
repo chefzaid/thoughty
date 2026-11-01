@@ -52,6 +52,13 @@ export type AppImportTranslationKey =
   | 'appImportSkippedTooLarge'
   | 'appImportSkippedUnsafe'
   | 'appImportDailyNotesDiary'
+  | 'appImportKindKeep'
+  | 'appImportKeepDescription'
+  | 'appImportNoKeepNotes'
+  | 'appImportKeepTooLarge'
+  | 'appImportSkippedTrashed'
+  | 'appImportSkippedNoDate'
+  | 'appImportSkippedUnreadable'
   | 'formatMarkdownFolder';
 
 export const appImportTranslations: Record<Language, Record<AppImportTranslationKey, string>> = {
@@ -109,6 +116,14 @@ export const appImportTranslations: Record<Language, Record<AppImportTranslation
     appImportSkippedTooLarge: 'Over 5 MB: {count}',
     appImportSkippedUnsafe: 'Links, or paths and names that cannot be trusted: {count}',
     appImportDailyNotesDiary: 'The entries go into {diaryName}, the diary chosen for this page.',
+    appImportKindKeep: 'Google Keep',
+    appImportKeepDescription:
+      'Choose the .zip Google Takeout made of your Keep notes (takeout.google.com, with Keep selected). Each note becomes a Markdown entry on the day you created it, with its title, its labels as tags, its checklists as task lists and its pictures. Archived notes stay archived, pinned notes are pinned while your pinned-entry limit allows, and notes in the bin are left out. It is read in your browser; only the entries and their files are sent.',
+    appImportNoKeepNotes: 'No Google Keep notes in this file. Choose the .zip Google Takeout made, with its Keep folder.',
+    appImportKeepTooLarge: 'This archive is too large to import at once (over 50,000 files, or over 200 MB of notes). Export Keep on its own from Google Takeout, or split the archive.',
+    appImportSkippedTrashed: 'In the bin: {count}',
+    appImportSkippedNoDate: 'Without a date: {count}',
+    appImportSkippedUnreadable: 'Could not be read: {count}',
     formatMarkdownFolder: 'Markdown folder with attachments (.zip)',
   },
   fr: {
@@ -165,6 +180,14 @@ export const appImportTranslations: Record<Language, Record<AppImportTranslation
     appImportSkippedTooLarge: 'Plus de 5 Mo : {count}',
     appImportSkippedUnsafe: 'Liens, ou chemins et noms non fiables : {count}',
     appImportDailyNotesDiary: 'Les entrées vont dans {diaryName}, le journal choisi pour cette page.',
+    appImportKindKeep: 'Google Keep',
+    appImportKeepDescription:
+      'Choisissez le .zip créé par Google Takeout pour vos notes Keep (takeout.google.com, avec Keep sélectionné). Chaque note devient une entrée Markdown au jour de sa création, avec son titre, ses libellés comme tags, ses listes de cases à cocher comme listes de tâches et ses images. Les notes archivées restent archivées, les notes épinglées sont épinglées tant que votre limite d’entrées épinglées le permet, et les notes de la corbeille sont ignorées. Il est lu dans votre navigateur ; seuls les entrées et leurs fichiers sont envoyés.',
+    appImportNoKeepNotes: 'Aucune note Google Keep dans ce fichier. Choisissez le .zip créé par Google Takeout, avec son dossier Keep.',
+    appImportKeepTooLarge: 'Cette archive est trop volumineuse pour être importée en une fois (plus de 50 000 fichiers, ou plus de 200 Mo de notes). Exportez Keep seul depuis Google Takeout, ou répartissez l’archive.',
+    appImportSkippedTrashed: 'Dans la corbeille : {count}',
+    appImportSkippedNoDate: 'Sans date : {count}',
+    appImportSkippedUnreadable: 'Illisibles : {count}',
     formatMarkdownFolder: 'Dossier Markdown avec pièces jointes (.zip)',
   },
 };

@@ -3,14 +3,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AppImportService } from '../../../services/api/appImportService';
 import type { AppExport, AppImportKind } from './appImportTypes';
 import { readAppExport, UnsupportedExportError } from './readAppExport';
-import { ExportTooLargeError, NoDailyNotesError } from './readDailyNotes';
+import { ExportTooLargeError } from './appImportArchive';
+import { NoDailyNotesError } from './readDailyNotes';
+import { NoKeepNotesError } from './readKeep';
 import { runAppImport, type AppImportOptions, type AppImportProgress, type AppImportSummary } from './runAppImport';
 
 /** Why a chosen file could not be imported: not the kind of export chosen, too large to read at once, or damaged. */
 export type UnreadableReason = 'unsupported' | 'tooLarge' | 'damaged';
 
 function unreadableReason(error: unknown): UnreadableReason {
-  if (error instanceof UnsupportedExportError || error instanceof NoDailyNotesError) {
+  if (error instanceof UnsupportedExportError || error instanceof NoDailyNotesError || error instanceof NoKeepNotesError) {
     return 'unsupported';
   }
   return error instanceof ExportTooLargeError ? 'tooLarge' : 'damaged';

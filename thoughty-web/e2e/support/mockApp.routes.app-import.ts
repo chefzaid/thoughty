@@ -9,12 +9,19 @@ interface AppImportPayload {
   entries: Array<{
     sourceId: string;
     date: string;
+    timeOfDay?: string;
+    title?: string;
     content: string;
     tags: string[];
     favorite?: boolean;
+    archived?: boolean;
+    pinned?: boolean;
     journal?: string;
   }>;
 }
+
+// The API's default pinned-entry limit; the mock writer never changes it
+const MAX_PINNED_ENTRIES = 3;
 
 // What `AppImportEntryDto` accepts as a source ID: a daily note's path, or the day and hash that stand for it
 const SOURCE_ID = /^[A-Za-z0-9._:/-]{1,100}$/;
@@ -55,6 +62,7 @@ export async function handleAppImportRoutes({ route, request, pathname, state }:
       return id;
     };
 
+    let pinned = state.entries.filter((entry) => entry.is_pinned).length;
     const entries = payload.entries.map((item) => {
       const ref = `${payload.source}:${item.sourceId}`;
       const existingId = state.appImport.refs[ref];
@@ -69,15 +77,22 @@ export async function handleAppImportRoutes({ route, request, pathname, state }:
       }
       const id = state.nextEntryId++;
       state.appImport.refs[ref] = id;
+      // Pinned while the limit allows, in import order, as the API does
+      const isPinned = item.pinned === true && pinned < MAX_PINNED_ENTRIES;
+      pinned += isPinned ? 1 : 0;
       state.entries.push({
         id,
         date: item.date,
         index: state.entries.filter((entry) => entry.date === item.date).length + 1,
+        title: item.title ?? null,
+        time_of_day: item.timeOfDay ?? null,
         content: item.content,
         tags: item.tags,
         visibility: "private",
         format: "markdown",
         is_favorite: item.favorite === true,
+        is_archived: item.archived === true,
+        is_pinned: isPinned,
         diaryId: diaryFor(item.journal),
         attachments: [],
       });

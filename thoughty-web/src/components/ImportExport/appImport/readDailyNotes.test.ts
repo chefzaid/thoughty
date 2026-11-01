@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest';
 
 import { buildZip, type ZipFixtureFile } from '../../../test/zipFixture';
 import { readAppExport, UnsupportedExportError } from './readAppExport';
-import { dailyNoteSourceId, ExportTooLargeError, MAX_DAILY_NOTE_BYTES, NoDailyNotesError } from './readDailyNotes';
+import { ExportTooLargeError, MAX_NOTE_BYTES } from './appImportArchive';
+import { dailyNoteSourceId, NoDailyNotesError } from './readDailyNotes';
 
 async function zipFile(files: ZipFixtureFile[]): Promise<File> {
   return new File([await buildZip(files) as BlobPart], 'notes.zip', { type: 'application/zip' });
@@ -23,7 +24,7 @@ describe('readAppExport with daily notes', () => {
       { name: 'Vault/Daily/2023-02-29.md', data: 'No such day' },
       { name: 'Vault/Daily/2024-03-15.md', data: '' },
       { name: 'Vault/journals/2024_03_16.md', data: '-\n' },
-      { name: 'Vault/Daily/2024-03-17.md', data: 'x', declaredSize: MAX_DAILY_NOTE_BYTES + 1 },
+      { name: 'Vault/Daily/2024-03-17.md', data: 'x', declaredSize: MAX_NOTE_BYTES + 1 },
       { name: 'Vault/Daily/2024-03-18.md', data: '/etc/passwd', symlink: true },
       { name: 'ignored', nameBytes: new Uint8Array([0x32, 0x30, 0x32, 0x34, 0x2d, 0x30, 0x33, 0x2d, 0x31, 0x39, 0xe9, 0x2e, 0x6d, 0x64]), data: 'é' },
       { name: '../2024-03-20.md', data: 'Outside the archive' },
@@ -115,7 +116,7 @@ describe('readAppExport with daily notes', () => {
     const notes = Array.from({ length: 41 }, (_, day) => ({
       name: `2024-01-${String(day % 28 + 1).padStart(2, '0')}-${day}/2024-01-${String(day % 28 + 1).padStart(2, '0')}.md`,
       data: 'x',
-      declaredSize: MAX_DAILY_NOTE_BYTES,
+      declaredSize: MAX_NOTE_BYTES,
     }));
 
     await expect(readAppExport(await zipFile(notes), 'daily-notes')).rejects.toBeInstanceOf(ExportTooLargeError);

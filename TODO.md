@@ -89,6 +89,7 @@ Bugs, failing checks, security findings and code smells found while working on a
   - Fixed on 2026-11-01: the alt text's CommonMark escapes are read first (`\[` is `[`; a backslash before a letter stays a backslash), then escaped once for the inline reference; a missing picture still keeps its description as written.
 - [x] `thoughty-web/src/components/ImportExport/appImport/dailyNotes.ts` (`parseDailyNote`, daily-notes import): a line's text right after inline code is read as the start of a line, so ``Use `x`tags:: a`` loses `tags:: a` from the text and gains the tag `a` (Logseq's `id::`/`collapsed::` properties go the same way). Properties should count only at the start of a line. Reproduce: `parseDailyNote('Use `x`tags:: a', ['2024-03-14.md'], noFiles)`. *(found by: Coding Agent)*
   - Fixed on 2026-11-01: `tags::`, `id::`, `collapsed::` and empty bullets are read only on whole lines outside code: the text after inline code on its line, and the text before it, are left as written, so a bullet right before inline code keeps its dash too.
+- [ ] `thoughty-server/test/api-contract/entries.e2e-spec.ts` is 512 lines, over the 500-line limit for a file (on `main` before the Google Keep import). Reproduce: `wc -l thoughty-server/test/api-contract/entries.e2e-spec.ts`. Split it the way `app-import.e2e-spec.ts` was split from `io.e2e-spec.ts`: a suite of its own in `contract-operations.ts` for a group of its routes. *(found by: Coding Agent)*
 
 ## Needs Input
 
@@ -560,4 +561,4 @@ Small, relatable additions that reuse what already exists (entries, tags, moods,
 ### Bringing notes in
 
 - [x] Daily-notes folder import: a ZIP of Markdown files named by date (`2024-03-14.md` or Logseq's `2024_03_14.md`, at any depth), read in the browser, one private Markdown entry per note on that date in the page's diary, with tags from front matter, `tags::` and `#tags`, `[[date]]` links kept, embedded pictures inline and other files attached, other Markdown files counted as left out, and re-imports skipped by `daily-notes:<path>`.
-- [ ] Google Keep import: Keep's Takeout JSON, notes as entries on their creation date, labels as tags, checklists as Markdown task lists, and pictures as attachments.
+- [x] Google Keep import: Keep's Takeout JSON, notes as entries on their creation date, labels as tags, checklists as Markdown task lists, and pictures as attachments. **From another app** › **Google Keep** reads the Takeout ZIP in the browser with the daily-notes import's ZIP reader and caps (`readKeep.ts`, `keep.ts`): titles, the creation day and time in the browser's zone, archived and pinned flags (pinned within the pinned-entry limit), pictures inline; notes in the bin are counted and left out; re-importing skips `keep:<name>` notes.

@@ -1,20 +1,10 @@
-import { readZipEntries, readZipText, safeZipPath, ZipLimitError, type ZipEntry } from '../../../utils/zipReader';
+import { readZipText, safeZipPath, type ZipEntry } from '../../../utils/zipReader';
+import { checkNotesSize, isHiddenPath, MAX_NOTE_BYTES, NOTE_READ_CONCURRENCY, pathHash, readNotesArchiveEntries } from './appImportArchive';
 import type { AppExport, ImportedEntry, SkippedNotes } from './appImportTypes';
 import { dailyNoteDate, parseDailyNote, type DailyNoteFiles } from './dailyNotes';
 
-// An archive past these is refused before anything is unpacked (see docs/security.md)
-export const MAX_DAILY_NOTES_ARCHIVE_FILES = 50_000;
-const MAX_DIRECTORY_BYTES = 32 * 1024 * 1024;
-/** A note over the size of a text import is left out. */
-export const MAX_DAILY_NOTE_BYTES = 5 * 1024 * 1024;
-/** What all the notes may unpack to, as the archive declares it (each file is held to its declared size). */
-export const MAX_DAILY_NOTES_BYTES = 200 * 1024 * 1024;
-const NOTE_READ_CONCURRENCY = 8;
 // The import reference is `daily-notes:<path>`, within the 100 characters the API takes, with room for `.part<n>`
 const READABLE_SOURCE_ID = /^[A-Za-z0-9._/-]{1,90}$/;
-
-/** The archive holds more than the import reads at once. */
-export class ExportTooLargeError extends Error {}
 
 /** No Markdown file of the archive is named by a day. */
 export class NoDailyNotesError extends Error {}
@@ -28,22 +18,8 @@ interface DatedNote extends ArchiveFile {
   readonly date: string;
 }
 
-/** Folders the writer never sees: `.obsidian`, `.trash`, `.git`, and the Finder's `__MACOSX` copies. */
-function isHidden(name: string): boolean {
-  return name.split('/').some((segment) => /^\.[^.]/.test(segment) || segment === '__MACOSX');
-}
-
 function isMarkdown(name: string): boolean {
   return name.toLowerCase().endsWith('.md');
-}
-
-/** FNV-1a, 64 bits: a short, stable name for a path the API would not take as it is. */
-function pathHash(path: string): string {
-  let hash = 0xcbf29ce484222325n;
-  for (const byte of new TextEncoder().encode(path)) {
-    hash = BigInt.asUintN(64, (hash ^ BigInt(byte)) * 0x100000001b3n);
-  }
-  return hash.toString(16).padStart(16, '0');
 }
 
 /**
@@ -98,12 +74,12 @@ function fileFinder(files: ArchiveFile[]): DailyNoteFiles {
 }
 
 /** Sorts the archive's Markdown files into dated notes and the ones left out, and its other files. */
-function sortFiles(entries: ZipEntry[]): { notes: DatedNote[]; others: ArchiveFile[]; skipped: SkippedNotes } {
+function sortFiles(entries: ZipEntry[]): { notes: DatedNote[]; others: ArchiveFile[]; skipped: Required<Pick<SkippedNotes, 'undated' | 'empty' | 'tooLarge' | 'unsafe'>> } {
   const skipped = { undated: 0, empty: 0, tooLarge: 0, unsafe: 0 };
   const notes: DatedNote[] = [];
   const others: ArchiveFile[] = [];
   for (const entry of entries) {
-    if (isHidden(entry.name)) {
+    if (isHiddenPath(entry.name)) {
       continue;
     }
     const path = safeZipPath(entry.name);
@@ -121,7 +97,7 @@ function sortFiles(entries: ZipEntry[]): { notes: DatedNote[]; others: ArchiveFi
       skipped.undated++;
     } else if (entry.size === 0) {
       skipped.empty++;
-    } else if (entry.size > MAX_DAILY_NOTE_BYTES) {
+    } else if (entry.size > MAX_NOTE_BYTES) {
       skipped.tooLarge++;
     } else {
       notes.push({ entry, path, date });
@@ -136,21 +112,11 @@ function sortFiles(entries: ZipEntry[]): { notes: DatedNote[]; others: ArchiveFi
  * pictures and recordings it embeds. Other Markdown files are counted, never dated by guess.
  */
 export async function readDailyNotesArchive(archive: Blob): Promise<AppExport> {
-  let entries: ZipEntry[];
-  try {
-    entries = await readZipEntries(archive, { maxEntries: MAX_DAILY_NOTES_ARCHIVE_FILES, maxDirectoryBytes: MAX_DIRECTORY_BYTES });
-  } catch (error) {
-    throw error instanceof ZipLimitError ? new ExportTooLargeError(error.message) : error;
-  }
-
-  const { notes, others, skipped } = sortFiles(entries);
+  const { notes, others, skipped } = sortFiles(await readNotesArchiveEntries(archive));
   if (notes.length === 0 && skipped.empty + skipped.tooLarge === 0) {
     throw new NoDailyNotesError('No Markdown file in this archive is named by a day');
   }
-  const declared = notes.reduce((sum, note) => sum + note.entry.size, 0);
-  if (declared > MAX_DAILY_NOTES_BYTES) {
-    throw new ExportTooLargeError(`The notes unpack to ${declared} bytes`);
-  }
+  checkNotesSize(notes);
 
   notes.sort((first, second) => first.date.localeCompare(second.date) || first.entry.name.localeCompare(second.entry.name));
   const files = fileFinder(others);

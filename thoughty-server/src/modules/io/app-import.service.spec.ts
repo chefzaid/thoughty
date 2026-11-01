@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Attachment, Diary, Entry } from '@/database/entities';
 import { AttachmentsService } from '@/modules/attachments';
+import { ConfigService } from '@/modules/config';
 import { DiariesService } from '@/modules/diaries';
 import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
 import { EntryInlineImagesService } from '@/modules/entries/entry-inline-images.service';
@@ -23,6 +24,7 @@ describe('AppImportService', () => {
   let diariesService: { create: jest.Mock };
   let attachmentsService: { assertUploadable: jest.Mock; upload: jest.Mock };
   let inlineImages: { resolveImportedFiles: jest.Mock };
+  let configService: { getConfig: jest.Mock };
   let dayCounts: Array<{ date: string; count: string }>;
   let nextId: number;
 
@@ -65,6 +67,7 @@ describe('AppImportService', () => {
     diariesService = { create: jest.fn() };
     attachmentsService = { assertUploadable: jest.fn(), upload: jest.fn() };
     inlineImages = { resolveImportedFiles: jest.fn().mockResolvedValue(undefined) };
+    configService = { getConfig: jest.fn().mockResolvedValue({}) };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -76,6 +79,7 @@ describe('AppImportService', () => {
         { provide: AttachmentsService, useValue: attachmentsService },
         { provide: EntryMentionsService, useValue: { save: (_userId: number, value: unknown) => entryRepository.save(value) } },
         { provide: EntryInlineImagesService, useValue: inlineImages },
+        { provide: ConfigService, useValue: configService },
       ],
     }).compile();
     service = moduleRef.get(AppImportService);
@@ -181,6 +185,42 @@ describe('AppImportService', () => {
         ['journals/2024_03_14.md', 41, true],
         ['Daily/2024-03-15.md', 100, false],
       ]);
+    });
+
+    it('keys Google Keep notes by their file name and keeps their archived and pinned flags', async () => {
+      entryRepository.count.mockResolvedValue(1);
+
+      await service.importEntries(7, batch([
+        entry({ sourceId: 'Groceries', archived: true }),
+        entry({ sourceId: '2024-03-14.0123456789abcdef', pinned: true }),
+        entry({ sourceId: 'Plain' }),
+      ], { source: 'keep' }));
+
+      expect(entryRepository.count).toHaveBeenCalledWith({ where: { userId: 7, isPinned: true } });
+      expect(entryRepository.save.mock.calls[0][0]).toEqual([
+        expect.objectContaining({ importRef: 'keep:Groceries', isArchived: true, isPinned: false }),
+        expect.objectContaining({ importRef: 'keep:2024-03-14.0123456789abcdef', isArchived: false, isPinned: true }),
+        expect.objectContaining({ importRef: 'keep:Plain', isArchived: false, isPinned: false }),
+      ]);
+    });
+
+    it('pins imported entries only while the writer\'s pinned-entry limit leaves room, in import order', async () => {
+      configService.getConfig.mockResolvedValue({ maxPinnedEntries: '4' });
+      entryRepository.count.mockResolvedValue(2);
+
+      await service.importEntries(7, batch(['P1', 'P2', 'P3', 'P4'].map((sourceId) => entry({ sourceId, pinned: true })), { source: 'keep' }));
+
+      expect(entryRepository.save.mock.calls[0][0].map((row: { isPinned: boolean }) => row.isPinned)).toEqual([true, true, false, false]);
+    });
+
+    it('pins nothing when the writer is already past the limit, and reads no limit when nothing is pinned', async () => {
+      entryRepository.count.mockResolvedValue(5);
+      await service.importEntries(7, batch([entry({ pinned: true })], { source: 'keep' }));
+      expect(entryRepository.save.mock.calls[0][0][0].isPinned).toBe(false);
+
+      configService.getConfig.mockClear();
+      await service.importEntries(7, batch([entry({ sourceId: 'B1' })]));
+      expect(configService.getConfig).not.toHaveBeenCalled();
     });
 
     it('writes nothing when the whole batch was imported before', async () => {

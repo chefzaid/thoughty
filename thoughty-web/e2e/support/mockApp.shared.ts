@@ -44,6 +44,8 @@ export interface MockEntry {
   visibility: "public" | "private";
   is_favorite?: boolean;
   is_archived?: boolean;
+  /** Only an app import pins an entry here (a Keep note pinned there); the mock journal has no pin button. */
+  is_pinned?: boolean;
   moderationStatus?: "visible" | "hidden" | "under_review" | "removed";
   /** Likes by other users, before the current user's own like. */
   likeCount?: number;

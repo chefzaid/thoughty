@@ -5,7 +5,8 @@ import {
   POSTGRES_SETUP_TIMEOUT_MS,
   type PostgresTestDatabase,
 } from '@/database/postgres-test-database.test-helpers';
-import { Attachment, Diary, Entry, User } from '@/database/entities';
+import { Attachment, Diary, Entry, Setting, User } from '@/database/entities';
+import { ConfigService } from '@/modules/config';
 import { EntryInlineImagesService } from '@/modules/entries/entry-inline-images.service';
 import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
 import { AppImportService } from './app-import.service';
@@ -44,6 +45,7 @@ describePostgres('PostgreSQL daily-notes import', () => {
       {} as never,
       new EntryMentionsService(entries),
       new EntryInlineImagesService(attachments, entries),
+      new ConfigService(dataSource.getRepository(Setting)),
     );
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });
@@ -105,5 +107,27 @@ describePostgres('PostgreSQL daily-notes import', () => {
 
     expect(again.importedCount).toBe(1);
     expect(again.entries[0]!.entryId).not.toBe(entryId);
+  });
+
+  it('keeps Google Keep notes archived and pinned, pinning only up to the writer\'s limit, and never twice', async () => {
+    await dataSource.getRepository(Setting).save({ userId: writerId, key: 'maxPinnedEntries', value: '2' });
+    await entries.save({ userId: writerId, diaryId: defaultDiaryId, date: '2024-01-01', index: 1, tags: [], content: 'Pinned here', isPinned: true });
+    const takeout = [
+      { ...note('Groceries', '2024-02-01', '- [ ] Milk\n- [x] Bread', ['Shopping list']), pinned: true },
+      { ...note('2024-02-02T08_15_00.000-11_00', '2024-02-02', 'Old idea'), archived: true, pinned: true },
+      { ...note('Plain', '2024-02-03', 'Nothing special') },
+    ];
+
+    await service.importEntries(writerId, { source: 'keep', entries: takeout });
+    const again = await service.importEntries(writerId, { source: 'keep', entries: takeout });
+
+    expect(again).toEqual(expect.objectContaining({ importedCount: 0, alreadyImportedCount: 3 }));
+    const saved = await entries.find({ where: { userId: writerId }, order: { date: 'ASC' } });
+    expect(saved.map((entry) => [entry.importRef, entry.isArchived, entry.isPinned, entry.tags])).toEqual([
+      [null, false, true, []],
+      ['keep:Groceries', false, true, ['Shopping list']],
+      ['keep:2024-02-02T08_15_00.000-11_00', true, false, []],
+      ['keep:Plain', false, false, []],
+    ]);
   });
 });

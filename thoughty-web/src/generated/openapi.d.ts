@@ -6546,12 +6546,14 @@ export interface components {
          *         "reflection"
          *       ],
          *       "favorite": true,
+         *       "archived": true,
+         *       "pinned": true,
          *       "journal": "example"
          *     }
          */
         AppImportEntryDto: {
             /**
-             * @description ID of the entry in the source app (for daily notes, the note's path in the archive); an entry already imported is not imported again
+             * @description ID of the entry in the source app (for daily notes, the note's path in the archive; for Google Keep, the note's file name in Takeout); an entry already imported is not imported again
              * @example journals/2024_03_14.md
              */
             sourceId: string;
@@ -6579,6 +6581,10 @@ export interface components {
             content: string;
             tags: string[];
             favorite?: boolean;
+            /** @description True when the note was archived in the source app; the entry is archived */
+            archived?: boolean;
+            /** @description True when the note was pinned in the source app; the entry is pinned while the writer's pinned-entry limit allows */
+            pinned?: boolean;
             /** @description Name of the journal the entry belongs to in the source app */
             journal?: string;
         };
@@ -6597,6 +6603,8 @@ export interface components {
          *             "reflection"
          *           ],
          *           "favorite": true,
+         *           "archived": true,
+         *           "pinned": true,
          *           "journal": "example"
          *         }
          *       ],
@@ -6606,10 +6614,10 @@ export interface components {
          */
         AppImportDto: {
             /**
-             * @description Day One, Journey, or a folder of daily notes named by date (Obsidian, Logseq)
+             * @description Day One, Journey, a folder of daily notes named by date (Obsidian, Logseq), or Google Keep (Takeout)
              * @enum {string}
              */
-            source: "dayone" | "journey" | "daily-notes";
+            source: "dayone" | "journey" | "daily-notes" | "keep";
             entries: components["schemas"]["AppImportEntryDto"][];
             /** @description Diary for the entries; defaults to the default diary */
             diaryId?: number;
@@ -14745,6 +14753,8 @@ export interface operations {
                  *             "reflection"
                  *           ],
                  *           "favorite": true,
+                 *           "archived": true,
+                 *           "pinned": true,
                  *           "journal": "example"
                  *         }
                  *       ],
