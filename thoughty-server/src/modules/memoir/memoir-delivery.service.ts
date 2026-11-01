@@ -6,8 +6,8 @@ import { MemoirProgram } from '@/database/entities';
 import { EmailService } from '@/modules/auth/services/email.service';
 import { ConfigService } from '@/modules/config';
 import { buildMemoirQuestionEmail } from './memoir-email';
-import { nextUnansweredQuestion, resolveMemoirLanguage, type MemoirQuestion } from './memoir-questions';
-import { isValidTimeZone, nextWeeklyDelivery } from './memoir-schedule';
+import { nextQueuedQuestion, resolveMemoirLanguage, type MemoirQuestion } from './memoir-questions';
+import { localDateIn, memoirTimeZone, nextWeeklyDelivery } from './memoir-schedule';
 
 const DELIVERY_BATCH_SIZE = 50;
 
@@ -42,7 +42,8 @@ export class MemoirDeliveryService {
   ) {}
 
   /**
-   * Moves every due, active program to its next unanswered question and schedules the following
+   * Moves every due, active program to its next question in the queue (a question set aside with
+   * "Not this week" whose day has come in the writer's zone goes first) and schedules the following
    * week. Rows are claimed with SKIP LOCKED, so overlapping runs never deliver the same week twice;
    * emails go out after the commit and a failed email does not undo the new question.
    */
@@ -73,8 +74,17 @@ export class MemoirDeliveryService {
           `,
           [row.user_id],
         ) as Array<{ question_id: string }>;
-        const next = nextUnansweredQuestion(row.current_question_id, new Set(answered.map((item) => item.question_id)));
-        const timeZone = isValidTimeZone(row.time_zone) ? row.time_zone : 'UTC';
+        const snoozes = await manager.query(
+          `SELECT question_id, to_char(snoozed_until, 'YYYY-MM-DD') AS snoozed_until FROM memoir_snoozes WHERE program_id = $1`,
+          [row.id],
+        ) as Array<{ question_id: string; snoozed_until: string }>;
+        const timeZone = memoirTimeZone(row.time_zone);
+        const next = nextQueuedQuestion(
+          row.current_question_id,
+          new Set(answered.map((item) => item.question_id)),
+          new Map(snoozes.map((item) => [item.question_id, item.snoozed_until])),
+          localDateIn(now, timeZone),
+        );
 
         await manager.query(
           `
@@ -84,6 +94,9 @@ export class MemoirDeliveryService {
           `,
           [row.id, next?.id ?? null, now, nextWeeklyDelivery(now, row.delivery_weekday, timeZone)],
         );
+        if (next && snoozes.some((item) => item.question_id === next.id)) {
+          await manager.query('DELETE FROM memoir_snoozes WHERE program_id = $1 AND question_id = $2', [row.id, next.id]);
+        }
 
         if (next && row.email_enabled && row.email_verified && row.email) {
           pending.push({ userId: row.user_id, email: row.email, question: next });

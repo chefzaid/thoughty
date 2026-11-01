@@ -138,3 +138,37 @@ export function nextUnansweredQuestion(
   const current = currentId ? findMemoirQuestion(currentId) : undefined;
   return current && !answeredIds.has(current.id) ? current : null;
 }
+
+/** Questions set aside with "Not this week": question ID → the writer's day (`YYYY-MM-DD`) it comes back. */
+export type MemoirSnoozes = ReadonlyMap<string, string>;
+
+/** Whether a set-aside question is still away on the writer's day `today` (it is back from its day on). */
+export function isSnoozed(questionId: string, snoozes: MemoirSnoozes, today: string): boolean {
+  const until = snoozes.get(questionId);
+  return until !== undefined && until > today;
+}
+
+/**
+ * The question to offer after `currentId`. A set-aside question whose day has come goes first (the
+ * earliest day first, then in life order), so "Not this week" brings it back a few weeks later rather
+ * than after a whole round of the queue; otherwise the next unanswered one in life order, leaving out
+ * every set-aside question. Null when every question is answered or set aside.
+ */
+export function nextQueuedQuestion(
+  currentId: string | null,
+  answeredIds: ReadonlySet<string>,
+  snoozes: MemoirSnoozes,
+  today: string,
+): MemoirQuestion | null {
+  const returned = MEMOIR_QUESTIONS.filter(
+    (question) =>
+      question.id !== currentId &&
+      !answeredIds.has(question.id) &&
+      snoozes.has(question.id) &&
+      !isSnoozed(question.id, snoozes, today),
+  ).sort((a, b) => (snoozes.get(a.id) ?? '').localeCompare(snoozes.get(b.id) ?? ''));
+  if (returned.length > 0) {
+    return returned[0];
+  }
+  return nextUnansweredQuestion(currentId, new Set([...answeredIds, ...snoozes.keys()]));
+}

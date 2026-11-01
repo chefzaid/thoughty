@@ -1,10 +1,12 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { MemoirService } from './memoir.service';
 import { MEMOIR_QUESTIONS } from './memoir-questions';
 
 describe('MemoirService', () => {
   let programRepository: Record<string, jest.Mock>;
   let answerRepository: Record<string, jest.Mock>;
+  let snoozeRepository: Record<string, jest.Mock>;
   let diaryRepository: Record<string, jest.Mock>;
   let userRepository: Record<string, jest.Mock>;
   let diariesService: Record<string, jest.Mock>;
@@ -44,6 +46,11 @@ describe('MemoirService', () => {
       delete: jest.fn().mockResolvedValue({ affected: 1 }),
     };
     answerRepository = { find: jest.fn().mockResolvedValue([]) };
+    snoozeRepository = {
+      find: jest.fn().mockResolvedValue([]),
+      upsert: jest.fn().mockResolvedValue(undefined),
+      delete: jest.fn().mockResolvedValue({ affected: 1 }),
+    };
     diaryRepository = { findOne: jest.fn().mockResolvedValue(null) };
     userRepository = { findOne: jest.fn().mockResolvedValue({ id: 3, email: 'writer@example.com', emailVerified: true }) };
     diariesService = { create: jest.fn().mockResolvedValue({ id: 11 }), findByName: jest.fn().mockResolvedValue(null) };
@@ -51,6 +58,7 @@ describe('MemoirService', () => {
     service = new MemoirService(
       programRepository as never,
       answerRepository as never,
+      snoozeRepository as never,
       diaryRepository as never,
       userRepository as never,
       diariesService as never,
@@ -255,5 +263,88 @@ describe('MemoirService', () => {
   it('leaves the program but keeps the answers', async () => {
     await expect(service.leave(3)).resolves.toEqual({ success: true });
     expect(programRepository.delete).toHaveBeenCalledWith({ userId: 3 });
+  });
+  describe('Not this week', () => {
+    const snoozed = (questionId: string, snoozedUntil: string) => ({ questionId, snoozedUntil });
+    const ids = MEMOIR_QUESTIONS.map((question) => question.id);
+    const monday = (timeZone: string) => program({ deliveryWeekday: 1, timeZone, currentQuestionId: ids[0] });
+
+    it('shows the day a set-aside question comes back, until that day or its answer', async () => {
+      programRepository.findOne.mockResolvedValue(program());
+      answerRepository.find.mockResolvedValue([answered(ids[3])]);
+      snoozeRepository.find.mockResolvedValue([
+        snoozed(ids[1], '2026-11-09'),
+        snoozed(ids[2], '2026-10-19'),
+        snoozed(ids[3], '2026-11-09'),
+      ]);
+
+      const questions = (await service.getOverview(3)).chapters[0].questions;
+
+      expect(questions.map((question) => question.snoozedUntil).slice(0, 4)).toEqual([null, '2026-11-09', null, null]);
+      expect(snoozeRepository.find).toHaveBeenCalledWith(expect.objectContaining({ where: { programId: 1 } }));
+    });
+
+    it('sets the question aside until the fourth delivery in Kiritimati (UTC+14), across the week boundary', async () => {
+      programRepository.findOne.mockResolvedValue(monday('Pacific/Kiritimati'));
+      // Sunday 18:30 UTC is Monday 08:30 there: this Monday's delivery is still ahead
+      jest.setSystemTime(new Date('2026-11-01T18:30:00Z'));
+      await service.snooze(3);
+      expect(snoozeRepository.upsert).toHaveBeenLastCalledWith(
+        { programId: 1, questionId: ids[0], snoozedUntil: '2026-11-23' },
+        ['programId', 'questionId'],
+      );
+      expect(programRepository.save).toHaveBeenLastCalledWith(expect.objectContaining({ currentQuestionId: ids[1] }));
+
+      programRepository.findOne.mockResolvedValue(monday('Pacific/Kiritimati'));
+      jest.setSystemTime(new Date('2026-11-01T19:30:00Z'));
+      await service.snooze(3);
+      expect(snoozeRepository.upsert.mock.calls.at(-1)?.[0]).toEqual(expect.objectContaining({ snoozedUntil: '2026-11-30' }));
+    });
+
+    it('sets the question aside by Pago Pago’s day (UTC-11), still Monday morning there', async () => {
+      programRepository.findOne.mockResolvedValue(monday('Pacific/Pago_Pago'));
+      jest.setSystemTime(new Date('2026-11-02T19:30:00Z'));
+
+      await service.snooze(3);
+
+      expect(snoozeRepository.upsert.mock.calls[0][0]).toEqual(expect.objectContaining({ snoozedUntil: '2026-11-23' }));
+    });
+
+    it('leaves the week without a question when every other unanswered one is set aside', async () => {
+      programRepository.findOne.mockResolvedValue(program({ currentQuestionId: ids[51] }));
+      answerRepository.find.mockResolvedValue(ids.slice(0, 50).map(answered));
+      snoozeRepository.find.mockResolvedValue([snoozed(ids[50], '2026-11-09')]);
+
+      await service.snooze(3);
+
+      expect(programRepository.save).toHaveBeenCalledWith(expect.objectContaining({ currentQuestionId: null }));
+    });
+
+    it('skips past set-aside questions, and offers one whose day has come first', async () => {
+      programRepository.findOne.mockResolvedValue(program({ currentQuestionId: ids[0] }));
+      snoozeRepository.find.mockResolvedValue([snoozed(ids[1], '2026-11-09')]);
+      await service.skip(3);
+      expect(programRepository.save).toHaveBeenLastCalledWith(expect.objectContaining({ currentQuestionId: ids[2] }));
+      expect(snoozeRepository.delete).not.toHaveBeenCalled();
+
+      programRepository.findOne.mockResolvedValue(program({ currentQuestionId: ids[20] }));
+      snoozeRepository.find.mockResolvedValue([snoozed(ids[1], '2026-10-19')]);
+      await service.skip(3);
+      expect(programRepository.save).toHaveBeenLastCalledWith(expect.objectContaining({ currentQuestionId: ids[1] }));
+      expect(snoozeRepository.delete).toHaveBeenCalledWith({ programId: 1, questionId: ids[1] });
+    });
+
+    it('refuses when there is no open question this week', async () => {
+      programRepository.findOne.mockResolvedValue(program({ currentQuestionId: null }));
+      await expectApiError(service.snooze(3), ConflictException, 'MEMOIR_NO_OPEN_QUESTION');
+
+      programRepository.findOne.mockResolvedValue(program({ currentQuestionId: ids[0] }));
+      answerRepository.find.mockResolvedValue([answered(ids[0])]);
+      await expectApiError(service.snooze(3), ConflictException, 'MEMOIR_NO_OPEN_QUESTION');
+      expect(snoozeRepository.upsert).not.toHaveBeenCalled();
+
+      programRepository.findOne.mockResolvedValue(null);
+      await expect(service.snooze(3)).rejects.toThrow(NotFoundException);
+    });
   });
 });

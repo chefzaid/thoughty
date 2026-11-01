@@ -22,6 +22,7 @@ describe('memoirService', () => {
     await service.start(start);
     await service.update({ status: 'paused' });
     await service.skip();
+    await service.snooze();
     await service.answer({ questionId: 'childhood-home', text: 'A fig tree.', attachmentIds: [4] });
     await service.leave();
 
@@ -29,6 +30,7 @@ describe('memoirService', () => {
       ['/api/memoir', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(start) }],
       ['/api/memoir', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: '{"status":"paused"}' }],
       ['/api/memoir/skip', { method: 'POST' }],
+      ['/api/memoir/snooze', { method: 'POST' }],
       [
         '/api/memoir/answers',
         {

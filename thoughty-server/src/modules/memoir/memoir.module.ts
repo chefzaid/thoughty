@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Diary, MemoirAnswer, MemoirProgram, User } from '@/database/entities';
+import { Diary, MemoirAnswer, MemoirProgram, MemoirSnooze, User } from '@/database/entities';
 import { AttachmentsModule } from '@/modules/attachments';
 import { AuthModule } from '@/modules/auth';
 import { UserConfigModule } from '@/modules/config';
@@ -15,7 +15,7 @@ import { MemoirService } from './memoir.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([MemoirProgram, MemoirAnswer, Diary, User]),
+    TypeOrmModule.forFeature([MemoirProgram, MemoirAnswer, MemoirSnooze, Diary, User]),
     AttachmentsModule,
     AuthModule,
     DiariesModule,

@@ -1,4 +1,4 @@
-import { isValidTimeZone, localDateIn, nextWeeklyDelivery } from './memoir-schedule';
+import { isValidTimeZone, localDateIn, memoirSnoozeReturnDay, nextWeeklyDelivery } from './memoir-schedule';
 
 describe('memoir schedule', () => {
   it('recognizes IANA time zones', () => {
@@ -50,5 +50,31 @@ describe('memoir schedule', () => {
     expect(localDateIn(new Date('2026-10-19T03:00:00Z'), 'America/Los_Angeles')).toBe('2026-10-18');
     expect(localDateIn(new Date('2026-10-19T23:30:00Z'), 'Asia/Tokyo')).toBe('2026-10-20');
     expect(localDateIn(new Date('2026-01-05T12:00:00Z'), 'UTC')).toBe('2026-01-05');
+  });
+  describe('memoirSnoozeReturnDay', () => {
+    it('brings a question back three weeks after the next delivery, on the writer’s day', () => {
+      // Tuesday 2026-11-03 in UTC; the next Monday delivery is 2026-11-09
+      expect(memoirSnoozeReturnDay(new Date('2026-11-03T12:00:00Z'), 1, 'UTC')).toBe('2026-11-30');
+    });
+
+    it('follows Kiritimati (UTC+14) across the week boundary while UTC is still on Sunday', () => {
+      // Sunday 18:30 UTC is Monday 08:30 in Kiritimati: this week's delivery is still ahead
+      expect(memoirSnoozeReturnDay(new Date('2026-11-01T18:30:00Z'), 1, 'Pacific/Kiritimati')).toBe('2026-11-23');
+      // An hour later Monday's 09:00 has passed there, so the question sits out one more week
+      expect(memoirSnoozeReturnDay(new Date('2026-11-01T19:30:00Z'), 1, 'Pacific/Kiritimati')).toBe('2026-11-30');
+      expect(memoirSnoozeReturnDay(new Date('2026-11-01T19:30:00Z'), 1, 'UTC')).toBe('2026-11-23');
+    });
+
+    it('follows Pago Pago (UTC-11) across the week boundary while UTC is already on Monday evening', () => {
+      // Monday 19:30 UTC is Monday 08:30 in Pago Pago: its delivery has not happened yet
+      expect(memoirSnoozeReturnDay(new Date('2026-11-02T19:30:00Z'), 1, 'Pacific/Pago_Pago')).toBe('2026-11-23');
+      expect(memoirSnoozeReturnDay(new Date('2026-11-02T20:30:00Z'), 1, 'Pacific/Pago_Pago')).toBe('2026-11-30');
+      expect(memoirSnoozeReturnDay(new Date('2026-11-02T19:30:00Z'), 1, 'UTC')).toBe('2026-11-30');
+    });
+
+    it('counts calendar days across a daylight-saving change and a month end', () => {
+      // Paris leaves summer time on 2026-10-25, the next Sunday delivery
+      expect(memoirSnoozeReturnDay(new Date('2026-10-20T10:00:00Z'), 0, 'Europe/Paris')).toBe('2026-11-15');
+    });
   });
 });

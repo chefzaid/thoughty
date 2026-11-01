@@ -12,8 +12,8 @@ const chapters: MemoirChapter[] = [{
   id: 'childhood',
   title: { en: 'Childhood', fr: 'Enfance' },
   questions: [
-    { id: 'home', text: { en: 'Home?', fr: 'Maison ?' }, answer: { entryId: 1, answeredAt: '2026-10-12T09:00:00.000Z' } },
-    { id: 'play', text: { en: 'Games?', fr: 'Jeux ?' }, answer: null },
+    { id: 'home', text: { en: 'Home?', fr: 'Maison ?' }, answer: { entryId: 1, answeredAt: '2026-10-12T09:00:00.000Z' }, snoozedUntil: null },
+    { id: 'play', text: { en: 'Games?', fr: 'Jeux ?' }, answer: null, snoozedUntil: null },
   ],
 }];
 

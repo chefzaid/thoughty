@@ -36,6 +36,8 @@ export interface MockMemoirProgram {
 export interface MockMemoirState {
   program: MockMemoirProgram | null;
   answers: Record<string, { entryId: number; answeredAt: string }>;
+  /** Questions set aside with "Not this week": question ID → the writer's day it comes back. */
+  snoozed: Record<string, string>;
   lastStartPayload: unknown;
   lastUpdatePayload: unknown;
   lastAnswerPayload: unknown;
@@ -56,8 +58,20 @@ export function createMockMemoirState(program: Partial<MockMemoirProgram> | null
       ...program,
     },
     answers: {},
+    snoozed: {},
     lastStartPayload: null,
     lastUpdatePayload: null,
     lastAnswerPayload: null,
   };
+}
+
+/**
+ * The day "Not this week" brings a question back, as `memoirSnoozeReturnDay` on the server works it out:
+ * the local day of the next delivery in the memoir's zone, plus three weeks.
+ */
+export function mockSnoozeReturnDay(program: MockMemoirProgram): string {
+  const day = new Intl.DateTimeFormat('en-CA', { timeZone: program.timeZone, year: 'numeric', month: '2-digit', day: '2-digit' })
+    .format(new Date(program.nextDeliveryAt));
+  const [year, month, date] = day.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, date + 21)).toISOString().slice(0, 10);
 }

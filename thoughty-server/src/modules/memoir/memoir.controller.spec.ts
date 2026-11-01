@@ -8,6 +8,7 @@ describe('MemoirController', () => {
     update: jest.fn().mockResolvedValue({ program: { status: 'paused' } }),
     leave: jest.fn().mockResolvedValue({ success: true }),
     skip: jest.fn().mockResolvedValue({ program: { currentQuestionId: 'childhood-play' } }),
+    snooze: jest.fn().mockResolvedValue({ program: { currentQuestionId: 'childhood-adult' } }),
   };
   const answersService = { answer: jest.fn().mockResolvedValue({ questionId: 'childhood-home', entryId: 9 }) };
   const controller = new MemoirController(memoirService as never, answersService as never);
@@ -20,6 +21,7 @@ describe('MemoirController', () => {
     await expect(controller.start(user, start)).resolves.toEqual({ program: { status: 'active' } });
     await expect(controller.update(user, { status: 'paused' })).resolves.toEqual({ program: { status: 'paused' } });
     await expect(controller.skip(user)).resolves.toEqual({ program: { currentQuestionId: 'childhood-play' } });
+    await expect(controller.snooze(user)).resolves.toEqual({ program: { currentQuestionId: 'childhood-adult' } });
     await expect(controller.answer(user, answer)).resolves.toEqual({ questionId: 'childhood-home', entryId: 9 });
     await expect(controller.leave(user)).resolves.toEqual({ success: true });
 
@@ -27,6 +29,7 @@ describe('MemoirController', () => {
     expect(memoirService.start).toHaveBeenCalledWith(4, start);
     expect(memoirService.update).toHaveBeenCalledWith(4, { status: 'paused' });
     expect(memoirService.skip).toHaveBeenCalledWith(4);
+    expect(memoirService.snooze).toHaveBeenCalledWith(4);
     expect(answersService.answer).toHaveBeenCalledWith(4, answer);
     expect(memoirService.leave).toHaveBeenCalledWith(4);
   });

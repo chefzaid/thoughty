@@ -21,6 +21,12 @@ export type MemoirTranslationKey =
   | 'memoirThisWeek'
   | 'memoirAnswerQuestion'
   | 'memoirSkip'
+  | 'memoirSkipHint'
+  | 'memoirSnooze'
+  | 'memoirSnoozeHint'
+  | 'memoirSnoozed'
+  | 'memoirBackOn'
+  | 'memoirAllSetAside'
   | 'memoirAnswered'
   | 'memoirOpenAnswer'
   | 'memoirAnsweredThisWeek'
@@ -91,7 +97,13 @@ export const memoirTranslations: Record<Language, Record<MemoirTranslationKey, s
     memoirLoadError: 'Your memoir could not be loaded.',
     memoirThisWeek: 'This week’s question',
     memoirAnswerQuestion: 'Answer',
-    memoirSkip: 'Another question',
+    memoirSkip: 'Skip this question',
+    memoirSkipHint: 'Skip: it comes round again only after all the others.',
+    memoirSnooze: 'Not this week',
+    memoirSnoozeHint: 'Not this week: it comes back in four weeks.',
+    memoirSnoozed: 'Set aside. This question comes back on {date}.',
+    memoirBackOn: 'Back on {date}',
+    memoirAllSetAside: 'Every question left is set aside for now. The first one comes back on {date}, and you can answer any of them below meanwhile.',
     memoirAnswered: 'Answered',
     memoirOpenAnswer: 'Read in journal',
     memoirAnsweredThisWeek: 'You have answered this week’s question. The next one arrives on {date}.',
@@ -162,7 +174,13 @@ export const memoirTranslations: Record<Language, Record<MemoirTranslationKey, s
     memoirLoadError: 'Vos mémoires n’ont pas pu être chargées.',
     memoirThisWeek: 'La question de la semaine',
     memoirAnswerQuestion: 'Répondre',
-    memoirSkip: 'Une autre question',
+    memoirSkip: 'Passer cette question',
+    memoirSkipHint: 'Passer : elle ne revient qu’après toutes les autres.',
+    memoirSnooze: 'Pas cette semaine',
+    memoirSnoozeHint: 'Pas cette semaine : elle revient dans quatre semaines.',
+    memoirSnoozed: 'Mise de côté. Cette question revient le {date}.',
+    memoirBackOn: 'De retour le {date}',
+    memoirAllSetAside: 'Toutes les questions restantes sont mises de côté pour l’instant. La première revient le {date}, et vous pouvez répondre à n’importe laquelle plus bas en attendant.',
     memoirAnswered: 'Répondu',
     memoirOpenAnswer: 'Lire dans le journal',
     memoirAnsweredThisWeek: 'Vous avez répondu à la question de la semaine. La prochaine arrive le {date}.',

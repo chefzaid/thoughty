@@ -100,6 +100,16 @@
   white-space: nowrap;
 }
 
+.memoir-badge.later {
+  background: rgba(100, 116, 139, 0.25);
+  color: #cbd5e1;
+}
+
+.memoir-page.light .memoir-badge.later {
+  background: #e2e8f0;
+  color: #334155;
+}
+
 .memoir-form,
 .memoir-answer-form {
   display: grid;
@@ -283,6 +293,12 @@
 
 .memoir-week .memoir-actions {
   margin-top: 0.85rem;
+}
+
+.memoir-week-choices {
+  display: grid;
+  gap: 0.15rem;
+  margin-top: 0.6rem;
 }
 
 .memoir-progress {

@@ -158,6 +158,14 @@ describeContract('account', (context) => {
     const skipped = await call('POST /api/memoir/skip', { as: alice, status: 200 });
     const next = { id: questionOf(skipped.body) };
     expect(next.id).not.toBe(questionOf(started.body));
+    // Not this week: the question is set aside until a writer's day, and the week gets another one
+    const snoozed = await call('POST /api/memoir/snooze', { as: alice, status: 200 });
+    const later = questionOf(snoozed.body);
+    const questions = (snoozed.body as { chapters: Array<{ questions: Array<{ id: string; snoozedUntil: string | null }> }> })
+      .chapters.flatMap((chapter) => chapter.questions);
+    expect(later).not.toBe(next.id);
+    expect(questions.filter((question) => question.snoozedUntil).map((question) => question.id)).toEqual([next.id]);
+    expect(questions.find((question) => question.id === next.id)?.snoozedUntil).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     await call('POST /api/memoir/answers', {
       as: alice,
       json: { questionId: next.id, text: 'I grew up by the sea.' },
@@ -169,6 +177,12 @@ describeContract('account', (context) => {
       status: 409,
       code: 'MEMOIR_ALREADY_ANSWERED',
     });
+    await call('POST /api/memoir/answers', {
+      as: alice,
+      json: { questionId: later, text: 'Down by the harbour.' },
+      status: 201,
+    });
+    await call('POST /api/memoir/snooze', { as: alice, status: 409, code: 'MEMOIR_NO_OPEN_QUESTION' });
     await call('PATCH /api/memoir', {
       as: alice,
       json: { status: 'paused', emailEnabled: false },
@@ -181,6 +195,7 @@ describeContract('account', (context) => {
       code: 'MEMOIR_NOT_STARTED',
     });
     await call('POST /api/memoir/skip', { as: bob, status: 404, code: 'MEMOIR_NOT_STARTED' });
+    await call('POST /api/memoir/snooze', { as: bob, status: 404, code: 'MEMOIR_NOT_STARTED' });
     await call('DELETE /api/memoir', { as: alice, status: 200 });
   });
 

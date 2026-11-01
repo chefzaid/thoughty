@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Diary, MemoirAnswer, MemoirProgram, User } from '@/database/entities';
+import { Diary, MemoirAnswer, MemoirProgram, MemoirSnooze, User } from '@/database/entities';
 import { EmailService } from '@/modules/auth/services/email.service';
 import { DiariesService } from '@/modules/diaries';
 import type {
@@ -14,8 +14,21 @@ import type {
   UpdateMemoirDto,
 } from './dto';
 import { countAnswerWords } from './memoir-content';
-import { MEMOIR_CHAPTERS, MEMOIR_QUESTIONS, nextUnansweredQuestion } from './memoir-questions';
-import { isValidTimeZone, nextWeeklyDelivery } from './memoir-schedule';
+import {
+  isSnoozed,
+  MEMOIR_CHAPTERS,
+  MEMOIR_QUESTIONS,
+  nextQueuedQuestion,
+  nextUnansweredQuestion,
+  type MemoirSnoozes,
+} from './memoir-questions';
+import {
+  isValidTimeZone,
+  localDateIn,
+  memoirSnoozeReturnDay,
+  memoirTimeZone,
+  nextWeeklyDelivery,
+} from './memoir-schedule';
 
 const MEMOIR_DIARY_ICON = '📖';
 const WORDS_PER_PAGE = 250;
@@ -34,6 +47,8 @@ export class MemoirService {
     private readonly programRepository: Repository<MemoirProgram>,
     @InjectRepository(MemoirAnswer)
     private readonly answerRepository: Repository<MemoirAnswer>,
+    @InjectRepository(MemoirSnooze)
+    private readonly snoozeRepository: Repository<MemoirSnooze>,
     @InjectRepository(Diary)
     private readonly diaryRepository: Repository<Diary>,
     @InjectRepository(User)
@@ -50,6 +65,8 @@ export class MemoirService {
     const answersById = new Map(answers.map((answer) => [answer.questionId, answer]));
     const words = answers.reduce((total, answer) => total + countAnswerWords(answer.content), 0);
     const answered = MEMOIR_QUESTIONS.filter((question) => answersById.has(question.id)).length;
+    const snoozes = program ? await this.loadSnoozes(program.id) : new Map<string, string>();
+    const today = localDateIn(new Date(), memoirTimeZone(program?.timeZone ?? 'UTC'));
 
     return {
       program: program ? await this.toProgramDto(userId, program) : null,
@@ -62,6 +79,7 @@ export class MemoirService {
             id: question.id,
             text: { ...question.text },
             answer: answer ? { entryId: answer.entryId, answeredAt: answer.createdAt.toISOString() } : null,
+            snoozedUntil: !answer && isSnoozed(question.id, snoozes, today) ? (snoozes.get(question.id) ?? null) : null,
           };
         }),
       })),
@@ -136,14 +154,42 @@ export class MemoirService {
     return { success: true };
   }
 
-  /** Replaces this week's question with the next unanswered one without waiting for the weekly delivery. */
+  /** Replaces this week's question with the next one in the queue without waiting for the weekly delivery. */
   async skip(userId: number): Promise<MemoirOverviewDto> {
     const program = await this.requireProgram(userId);
-    const next = nextUnansweredQuestion(program.currentQuestionId, await this.loadAnsweredIds(userId));
+    await this.moveToNextQuestion(program, await this.loadAnsweredIds(userId), await this.loadSnoozes(program.id));
+    return this.getOverview(userId);
+  }
+
+  /**
+   * "Not this week": sets this week's question aside until the writer's day of the fourth weekly
+   * delivery from now, in the program's time zone, and offers the next question in its place.
+   */
+  async snooze(userId: number): Promise<MemoirOverviewDto> {
+    const program = await this.requireProgram(userId);
+    const answered = await this.loadAnsweredIds(userId);
+    const questionId = program.currentQuestionId;
+    if (!questionId || answered.has(questionId)) {
+      throw apiError(ConflictException, 'MEMOIR_NO_OPEN_QUESTION');
+    }
+    const snoozedUntil = memoirSnoozeReturnDay(new Date(), program.deliveryWeekday, memoirTimeZone(program.timeZone));
+    await this.snoozeRepository.upsert({ programId: program.id, questionId, snoozedUntil }, ['programId', 'questionId']);
+
+    const snoozes = new Map(await this.loadSnoozes(program.id)).set(questionId, snoozedUntil);
+    await this.moveToNextQuestion(program, answered, snoozes);
+    return this.getOverview(userId);
+  }
+
+  /** Offers the next question in the queue now; a set-aside question that comes back leaves the set-aside list. */
+  private async moveToNextQuestion(program: MemoirProgram, answered: Set<string>, snoozes: MemoirSnoozes): Promise<void> {
+    const today = localDateIn(new Date(), memoirTimeZone(program.timeZone));
+    const next = nextQueuedQuestion(program.currentQuestionId, answered, snoozes, today);
     program.currentQuestionId = next?.id ?? null;
     program.currentQuestionAt = new Date();
     await this.programRepository.save(program);
-    return this.getOverview(userId);
+    if (next && snoozes.has(next.id)) {
+      await this.snoozeRepository.delete({ programId: program.id, questionId: next.id });
+    }
   }
 
   private async toProgramDto(userId: number, program: MemoirProgram): Promise<MemoirProgramDto> {
@@ -213,6 +259,14 @@ export class MemoirService {
       select: { questionId: true, entryId: true, entry: { id: true } },
     });
     return new Set(answers.filter((answer) => answer.entry).map((answer) => answer.questionId));
+  }
+
+  private async loadSnoozes(programId: number): Promise<Map<string, string>> {
+    const snoozes = await this.snoozeRepository.find({
+      where: { programId },
+      select: { questionId: true, snoozedUntil: true },
+    });
+    return new Map(snoozes.map((snooze) => [snooze.questionId, snooze.snoozedUntil]));
   }
 
   /** Answers whose entry is in the recycle bin load without it and count as unanswered. */

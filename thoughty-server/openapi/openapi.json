@@ -10222,7 +10222,8 @@
                           "answer": {
                             "entryId": 812,
                             "answeredAt": "2026-10-12T09:41:00.000Z"
-                          }
+                          },
+                          "snoozedUntil": "2026-11-30"
                         }
                       ]
                     }
@@ -10305,7 +10306,8 @@
                           "answer": {
                             "entryId": 812,
                             "answeredAt": "2026-10-12T09:41:00.000Z"
-                          }
+                          },
+                          "snoozedUntil": "2026-11-30"
                         }
                       ]
                     }
@@ -10420,7 +10422,8 @@
                           "answer": {
                             "entryId": 812,
                             "answeredAt": "2026-10-12T09:41:00.000Z"
-                          }
+                          },
+                          "snoozedUntil": "2026-11-30"
                         }
                       ]
                     }
@@ -10493,6 +10496,7 @@
     },
     "/api/memoir/skip": {
       "post": {
+        "description": "The skipped question only comes round again once every other unanswered question has had its week.",
         "operationId": "MemoirController_skip",
         "parameters": [],
         "responses": {
@@ -10532,7 +10536,8 @@
                           "answer": {
                             "entryId": 812,
                             "answeredAt": "2026-10-12T09:41:00.000Z"
-                          }
+                          },
+                          "snoozedUntil": "2026-11-30"
                         }
                       ]
                     }
@@ -10569,7 +10574,109 @@
             "bearer": []
           }
         ],
-        "summary": "Replace this week's question with the next unanswered one",
+        "summary": "Skip: replace this week's question with the next one in the queue",
+        "tags": [
+          "Memoir"
+        ]
+      }
+    },
+    "/api/memoir/snooze": {
+      "post": {
+        "description": "The question comes back, ahead of the rest of the queue, from the writer's day of the fourth weekly delivery after now in the memoir's time zone.",
+        "operationId": "MemoirController_snooze",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The memoir overview with the new question",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoirOverviewDto"
+                },
+                "example": {
+                  "program": {
+                    "diaryId": 4,
+                    "status": "active",
+                    "emailEnabled": true,
+                    "emailAvailable": false,
+                    "deliveryWeekday": 0,
+                    "timeZone": "Europe/Paris",
+                    "currentQuestionId": "childhood-play",
+                    "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
+                    "startedAt": "2026-10-04T15:20:00.000Z"
+                  },
+                  "chapters": [
+                    {
+                      "id": "childhood",
+                      "title": {
+                        "en": "What did the home you grew up in look, sound, and smell like?",
+                        "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                      },
+                      "questions": [
+                        {
+                          "id": "childhood-home",
+                          "text": {
+                            "en": "What did the home you grew up in look, sound, and smell like?",
+                            "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                          },
+                          "answer": {
+                            "entryId": 812,
+                            "answeredAt": "2026-10-12T09:41:00.000Z"
+                          },
+                          "snoozedUntil": "2026-11-30"
+                        }
+                      ]
+                    }
+                  ],
+                  "progress": {
+                    "answered": 12,
+                    "total": 52,
+                    "words": 8400,
+                    "estimatedPages": 34
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The memoir is not started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "The memoir is not started",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "This week's question is already answered, or there is none",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "This week's question is already answered, or there is none",
+                  "error": "Conflict",
+                  "code": "CONFLICT"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Not this week: set this week's question aside for four weeks and offer the next one",
         "tags": [
           "Memoir"
         ]
@@ -20795,7 +20902,7 @@
             "type": "string",
             "nullable": true,
             "example": "childhood-play",
-            "description": "This week's question; null once every question is answered"
+            "description": "This week's question; null once every question is answered, or while every unanswered one is set aside"
           },
           "nextDeliveryAt": {
             "type": "string",
@@ -20889,12 +20996,19 @@
                 "$ref": "#/components/schemas/MemoirAnswerRefDto"
               }
             ]
+          },
+          "snoozedUntil": {
+            "type": "string",
+            "nullable": true,
+            "example": "2026-11-30",
+            "description": "Set aside with \"Not this week\": the writer's day (YYYY-MM-DD, in the memoir's time zone) it comes back to the queue; null when it is not set aside or is answered"
           }
         },
         "required": [
           "id",
           "text",
-          "answer"
+          "answer",
+          "snoozedUntil"
         ],
         "example": {
           "id": "childhood-home",
@@ -20905,7 +21019,8 @@
           "answer": {
             "entryId": 812,
             "answeredAt": "2026-10-12T09:41:00.000Z"
-          }
+          },
+          "snoozedUntil": "2026-11-30"
         }
       },
       "MemoirChapterDto": {
@@ -20946,7 +21061,8 @@
               "answer": {
                 "entryId": 812,
                 "answeredAt": "2026-10-12T09:41:00.000Z"
-              }
+              },
+              "snoozedUntil": "2026-11-30"
             }
           ]
         }
@@ -21043,7 +21159,8 @@
                   "answer": {
                     "entryId": 812,
                     "answeredAt": "2026-10-12T09:41:00.000Z"
-                  }
+                  },
+                  "snoozedUntil": "2026-11-30"
                 }
               ]
             }
@@ -23111,6 +23228,7 @@
           "MEMOIR_DIARY_REQUIRED",
           "MEMOIR_ANSWER_EMPTY",
           "MEMOIR_ALREADY_ANSWERED",
+          "MEMOIR_NO_OPEN_QUESTION",
           "ON_THIS_DAY_UNSUBSCRIBE_INVALID",
           "EMAIL_UNSUBSCRIBE_INVALID",
           "STATS_INVALID_DATE_RANGE",

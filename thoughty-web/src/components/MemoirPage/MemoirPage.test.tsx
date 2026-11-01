@@ -12,6 +12,7 @@ const memoirService = {
   start: vi.fn(),
   update: vi.fn(),
   skip: vi.fn(),
+  snooze: vi.fn(),
   answer: vi.fn(),
   leave: vi.fn(),
 };
@@ -29,20 +30,28 @@ const chapters: MemoirOverview['chapters'] = [
     id: 'childhood',
     title: { en: 'Childhood', fr: 'Enfance' },
     questions: [
-      { id: 'childhood-home', text: { en: 'What was home like?', fr: 'Comment était la maison ?' }, answer: null },
+      { id: 'childhood-home', text: { en: 'What was home like?', fr: 'Comment était la maison ?' }, answer: null, snoozedUntil: null },
       {
         id: 'childhood-play',
         text: { en: 'What games did you play?', fr: 'À quoi jouiez-vous ?' },
         answer: { entryId: 81, answeredAt: '2026-10-12T09:00:00.000Z' },
+        snoozedUntil: null,
       },
     ],
   },
   {
     id: 'work',
     title: { en: 'Work', fr: 'Travail' },
-    questions: [{ id: 'work-path', text: { en: 'How did you find your work?', fr: 'Comment avez-vous trouvé votre métier ?' }, answer: null }],
+    questions: [{ id: 'work-path', text: { en: 'How did you find your work?', fr: 'Comment avez-vous trouvé votre métier ?' }, answer: null, snoozedUntil: null }],
   },
 ];
+
+/** The chapters with some questions set aside with "Not this week" until the given days. */
+const setAside = (days: Record<string, string>): MemoirOverview['chapters'] =>
+  chapters.map((chapter) => ({
+    ...chapter,
+    questions: chapter.questions.map((question) => ({ ...question, snoozedUntil: days[question.id] ?? null })),
+  }));
 
 const program: MemoirProgram = {
   diaryId: 6,
@@ -203,12 +212,58 @@ describe('MemoirPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('memoirSaveError');
   });
 
+  it('tells skipping and “Not this week” apart, each button described by what it does', async () => {
+    renderPage();
+
+    const snooze = await screen.findByRole('button', { name: 'memoirSnooze' });
+    expect(snooze).toHaveAccessibleDescription('memoirSnoozeHint');
+    expect(screen.getByRole('button', { name: 'memoirSkip' })).toHaveAccessibleDescription('memoirSkipHint');
+  });
+
+  it('sets this week’s question aside, says when it comes back, and marks it in the list', async () => {
+    memoirService.snooze
+      .mockResolvedValueOnce({
+        data: { ...overview({ currentQuestionId: 'work-path' }), chapters: setAside({ 'childhood-home': '2026-11-22' }) },
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: null, error: 'Failed' });
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'memoirSnooze' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent('memoirSnoozed Sunday, November 22');
+    const week = screen.getByRole('heading', { name: 'memoirThisWeek' }).closest('section')!;
+    expect(within(week).getByText('How did you find your work?')).toBeInTheDocument();
+    const list = screen.getByRole('heading', { name: 'memoirAllQuestions' }).closest('section')!;
+    expect(within(list).getByText('memoirBackOn Sunday, November 22')).toBeInTheDocument();
+    expect(memoirService.skip).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'memoirSnooze' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('memoirSaveError');
+  });
+
+  it('says when the first question comes back while every question left is set aside', async () => {
+    memoirService.fetchOverview.mockResolvedValue({
+      data: {
+        ...overview({ currentQuestionId: null }),
+        chapters: setAside({ 'childhood-home': '2026-11-29', 'work-path': '2026-11-22' }),
+      },
+      error: null,
+    });
+    renderPage({ language: 'fr' });
+
+    const week = (await screen.findByRole('heading', { name: 'memoirThisWeek' })).closest('section')!;
+    expect(within(week).getByText('memoirAllSetAside dimanche 22 novembre')).toBeInTheDocument();
+    expect(within(week).queryByRole('button')).not.toBeInTheDocument();
+  });
+
   it('opens answers in the journal and answers other questions in place', async () => {
     memoirService.fetchOverview.mockResolvedValue({ data: overview({ currentQuestionId: 'childhood-play' }), error: null });
     const { onOpenEntry } = renderPage();
 
     const week = (await screen.findByRole('heading', { name: 'memoirThisWeek' })).closest('section')!;
     expect(within(week).getByText(/memoirAnsweredThisWeek/)).toBeInTheDocument();
+    expect(within(week).queryByRole('button', { name: 'memoirSnooze' })).not.toBeInTheDocument();
     fireEvent.click(within(week).getByRole('button', { name: 'memoirOpenAnswer' }));
     expect(onOpenEntry).toHaveBeenCalledWith(81);
 

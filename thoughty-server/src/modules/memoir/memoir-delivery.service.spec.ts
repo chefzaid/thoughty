@@ -35,15 +35,27 @@ describe('MemoirDeliveryService', () => {
     ...overrides,
   });
 
-  const withDue = (rows: DueRow[], answered: Record<number, string[]> = {}) => {
+  const withDue = (
+    rows: DueRow[],
+    answered: Record<number, string[]> = {},
+    snoozed: Record<number, Record<string, string>> = {},
+  ) => {
     manager.query.mockImplementation(async (sql: string, params: unknown[]) => {
       if (sql.includes('FOR UPDATE OF p SKIP LOCKED')) return rows;
       if (sql.includes('FROM memoir_answers')) {
         return (answered[params[0] as number] ?? []).map((questionId) => ({ question_id: questionId }));
       }
+      if (sql.includes('FROM memoir_snoozes')) {
+        return Object.entries(snoozed[params[0] as number] ?? {}).map(([questionId, until]) => ({
+          question_id: questionId,
+          snoozed_until: until,
+        }));
+      }
       return [];
     });
   };
+
+  const snoozeDeletes = () => manager.query.mock.calls.filter(([sql]) => String(sql).includes('DELETE FROM memoir_snoozes'));
 
   const updateCalls = () => manager.query.mock.calls.filter(([sql]) => String(sql).includes('UPDATE memoir_programs'));
 
@@ -130,5 +142,50 @@ describe('MemoirDeliveryService', () => {
     await service.deliverDueQuestions(now);
     expect(emailService.sendMemoirQuestionEmail).not.toHaveBeenCalled();
     warn.mockRestore();
+  });
+  describe('questions set aside with “Not this week”', () => {
+    const monday = (overrides: Partial<DueRow>) => row({ delivery_weekday: 1, ...overrides });
+    const away = { 1: { [MEMOIR_QUESTIONS[5].id]: '2026-11-30' } };
+
+    it('passes over a question until its day and offers it first once that day comes in Kiritimati', async () => {
+      // Sunday 29 November 19:00 UTC is Monday 30 November 09:00 in Kiritimati (UTC+14)
+      const kiritimatiMonday = new Date('2026-11-29T19:00:30Z');
+      withDue([monday({ time_zone: 'Pacific/Kiritimati' })], {}, away);
+      await service.deliverDueQuestions(kiritimatiMonday);
+      expect(updateCalls()[0][1][1]).toBe(MEMOIR_QUESTIONS[5].id);
+      expect(snoozeDeletes()[0][1]).toEqual([1, MEMOIR_QUESTIONS[5].id]);
+
+      // In UTC it is still Sunday 29 November: the question is still away
+      manager.query.mockClear();
+      withDue([monday({ time_zone: 'UTC' })], {}, away);
+      await service.deliverDueQuestions(kiritimatiMonday);
+      expect(updateCalls()[0][1][1]).toBe(MEMOIR_QUESTIONS[1].id);
+      expect(snoozeDeletes()).toHaveLength(0);
+    });
+
+    it('keeps it away in Pago Pago while UTC has already reached its day', async () => {
+      // Monday 30 November 09:00 UTC is Sunday 29 November 22:00 in Pago Pago (UTC-11)
+      withDue([monday({ time_zone: 'Pacific/Pago_Pago' })], {}, away);
+      await service.deliverDueQuestions(new Date('2026-11-30T09:00:30Z'));
+      expect(updateCalls()[0][1][1]).toBe(MEMOIR_QUESTIONS[1].id);
+
+      // Pago Pago's own Monday 09:00 is 20:00 UTC
+      manager.query.mockClear();
+      withDue([monday({ time_zone: 'Pacific/Pago_Pago' })], {}, away);
+      await service.deliverDueQuestions(new Date('2026-11-30T20:00:30Z'));
+      expect(updateCalls()[0][1][1]).toBe(MEMOIR_QUESTIONS[5].id);
+    });
+
+    it('gives the week no question, and sends no email, while every remaining question is away', async () => {
+      const allButTwo = MEMOIR_QUESTIONS.slice(2).map((question) => question.id);
+      withDue([row({ current_question_id: null })], { 3: allButTwo }, {
+        1: { [MEMOIR_QUESTIONS[0].id]: '2026-11-08', [MEMOIR_QUESTIONS[1].id]: '2026-11-15' },
+      });
+
+      await expect(service.deliverDueQuestions(now)).resolves.toBe(0);
+
+      expect(updateCalls()[0][1][1]).toBeNull();
+      expect(emailService.sendMemoirQuestionEmail).not.toHaveBeenCalled();
+    });
   });
 });

@@ -54,11 +54,28 @@ export class MemoirController {
 
   @Post('skip')
   @HttpCode(200)
-  @ApiOperation({ summary: "Replace this week's question with the next unanswered one" })
+  @ApiOperation({
+    summary: "Skip: replace this week's question with the next one in the queue",
+    description: 'The skipped question only comes round again once every other unanswered question has had its week.',
+  })
   @ApiResponse({ status: 200, description: 'The memoir overview with the new question', type: MemoirOverviewDto })
   @ApiResponse({ status: 404, description: 'The memoir is not started' })
   skip(@CurrentUser() user: AuthenticatedUser): Promise<MemoirOverviewDto> {
     return this.memoirService.skip(user.userId);
+  }
+
+  @Post('snooze')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: "Not this week: set this week's question aside for four weeks and offer the next one",
+    description:
+      "The question comes back, ahead of the rest of the queue, from the writer's day of the fourth weekly delivery after now in the memoir's time zone.",
+  })
+  @ApiResponse({ status: 200, description: 'The memoir overview with the new question', type: MemoirOverviewDto })
+  @ApiResponse({ status: 404, description: 'The memoir is not started' })
+  @ApiResponse({ status: 409, description: "This week's question is already answered, or there is none" })
+  snooze(@CurrentUser() user: AuthenticatedUser): Promise<MemoirOverviewDto> {
+    return this.memoirService.snooze(user.userId);
   }
 
   @Post('answers')

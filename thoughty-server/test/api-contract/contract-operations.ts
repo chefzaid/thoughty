@@ -181,6 +181,7 @@ export const CONTRACT_SUITES = {
     'PATCH /api/memoir',
     'DELETE /api/memoir',
     'POST /api/memoir/skip',
+    'POST /api/memoir/snooze',
     'POST /api/memoir/answers',
     'GET /api/review',
     'GET /api/on-this-day-email',

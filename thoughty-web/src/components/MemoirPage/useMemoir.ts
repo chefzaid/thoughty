@@ -41,6 +41,7 @@ export function useMemoir() {
   const start = useCallback((request: StartMemoirRequest) => applyOverview(memoirService.start(request)), [applyOverview, memoirService]);
   const update = useCallback((request: UpdateMemoirRequest) => applyOverview(memoirService.update(request)), [applyOverview, memoirService]);
   const skip = useCallback(() => applyOverview(memoirService.skip()), [applyOverview, memoirService]);
+  const snooze = useCallback(() => applyOverview(memoirService.snooze()), [applyOverview, memoirService]);
 
   const answer = useCallback(async (request: AnswerMemoirRequest): Promise<ServiceResult<MemoirAnswerResult>> => {
     const result = await memoirService.answer(request);
@@ -62,6 +63,7 @@ export function useMemoir() {
     start,
     update,
     skip,
+    snooze,
     answer,
     leave,
   };

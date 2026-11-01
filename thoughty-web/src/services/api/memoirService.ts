@@ -42,6 +42,11 @@ export const createMemoirService = (authFetch: (url: string, options?: RequestIn
     return requestJson(authFetch('/api/memoir/skip', { method: 'POST' }), 'Failed to skip the question');
   },
 
+  /** "Not this week": sets this week's question aside for four weeks and returns the overview with the next one. */
+  snooze(): Promise<ServiceResult<MemoirOverview>> {
+    return requestJson(authFetch('/api/memoir/snooze', { method: 'POST' }), 'Failed to set the question aside');
+  },
+
   answer(request: AnswerMemoirRequest): Promise<ServiceResult<MemoirAnswerResult>> {
     return requestJson(
       authFetch('/api/memoir/answers', { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(request) }),

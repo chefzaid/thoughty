@@ -14,6 +14,7 @@ import {
   LifeEra,
   Person,
   MemoirProgram,
+  MemoirSnooze,
   OnThisDayEmail,
   MonthlyRecapEmail,
   TimeCapsule,
@@ -39,6 +40,7 @@ describe('UserDataExportService', () => {
   let commentLikeRepository: any;
   let memoirProgramRepository: any;
   let memoirAnswerRepository: any;
+  let memoirSnoozeRepository: any;
   let yearReviewMoodRepository: any;
   let savedSearchRepository: any;
   let lifeEraRepository: any;
@@ -59,6 +61,7 @@ describe('UserDataExportService', () => {
     commentLikeRepository = { find: jest.fn().mockResolvedValue([]) };
     memoirProgramRepository = { findOne: jest.fn().mockResolvedValue(null) };
     memoirAnswerRepository = { find: jest.fn().mockResolvedValue([]) };
+    memoirSnoozeRepository = { find: jest.fn().mockResolvedValue([]) };
     yearReviewMoodRepository = { find: jest.fn().mockResolvedValue([]) };
     savedSearchRepository = { find: jest.fn().mockResolvedValue([]) };
     lifeEraRepository = { find: jest.fn().mockResolvedValue([]) };
@@ -81,6 +84,7 @@ describe('UserDataExportService', () => {
         { provide: getRepositoryToken(CommentLike), useValue: commentLikeRepository },
         { provide: getRepositoryToken(MemoirProgram), useValue: memoirProgramRepository },
         { provide: getRepositoryToken(MemoirAnswer), useValue: memoirAnswerRepository },
+        { provide: getRepositoryToken(MemoirSnooze), useValue: memoirSnoozeRepository },
         { provide: getRepositoryToken(YearReviewMood), useValue: yearReviewMoodRepository },
         { provide: getRepositoryToken(SavedSearch), useValue: savedSearchRepository },
         { provide: getRepositoryToken(LifeEra), useValue: lifeEraRepository },
@@ -230,12 +234,8 @@ describe('UserDataExportService', () => {
       comments: [{ commentId: 12, likedAt: new Date('2024-03-03') }],
     });
     expect(result.memoir).toEqual({ program: null, answers: [] });
-    expect(commentRepository.find).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { userId: 1 } }),
-    );
-    expect(followRepository.find).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { followerId: 1 } }),
-    );
+    expect(commentRepository.find).toHaveBeenCalledWith(expect.objectContaining({ where: { userId: 1 } }));
+    expect(followRepository.find).toHaveBeenCalledWith(expect.objectContaining({ where: { followerId: 1 } }));
   });
 
   it('includes the guided memoir program and which entries answer which questions', async () => {
@@ -246,6 +246,7 @@ describe('UserDataExportService', () => {
     attachmentRepository.find.mockResolvedValue([]);
     settingRepository.find.mockResolvedValue([]);
     memoirProgramRepository.findOne.mockResolvedValue({
+      id: 4,
       userId: 1,
       diaryId: 6,
       status: 'active',
@@ -257,9 +258,8 @@ describe('UserDataExportService', () => {
       lastEmailedAt: null,
       createdAt: new Date('2026-10-04T15:20:00Z'),
     });
-    memoirAnswerRepository.find.mockResolvedValue([
-      { userId: 1, questionId: 'childhood-home', entryId: 81, createdAt: new Date('2026-10-05T09:00:00Z') },
-    ]);
+    memoirAnswerRepository.find.mockResolvedValue([{ userId: 1, questionId: 'childhood-home', entryId: 81, createdAt: new Date('2026-10-05T09:00:00Z') }]);
+    memoirSnoozeRepository.find.mockResolvedValue([{ programId: 4, questionId: 'work-path', snoozedUntil: '2026-11-22', createdAt: new Date() }]);
 
     const result = await service.downloadData(1);
 
@@ -274,27 +274,27 @@ describe('UserDataExportService', () => {
         nextDeliveryAt: new Date('2026-10-25T08:00:00Z'),
         lastEmailedAt: null,
         startedAt: new Date('2026-10-04T15:20:00Z'),
+        setAside: [{ questionId: 'work-path', snoozedUntil: '2026-11-22' }],
       },
       answers: [{ questionId: 'childhood-home', entryId: 81, answeredAt: new Date('2026-10-05T09:00:00Z') }],
     });
     expect(memoirAnswerRepository.find).toHaveBeenCalledWith({ where: { userId: 1 }, order: { createdAt: 'ASC' } });
+    expect(memoirSnoozeRepository.find).toHaveBeenCalledWith({ where: { programId: 4 }, order: { snoozedUntil: 'ASC' } });
   });
 
   it('includes the mood readings saved with year reviews', async () => {
     for (const repository of [diaryRepository, entryRepository, revisionRepository, attachmentRepository, settingRepository]) {
       repository.find.mockResolvedValue([]);
     }
-    yearReviewMoodRepository.find.mockResolvedValue([
-      {
-        userId: 1,
-        year: 2025,
-        diaryId: null,
-        months: [{ month: '2025-01', mood: 'hopeful', valence: 1 }],
-        summary: 'A hopeful start.',
-        analyzedEntries: 4,
-        createdAt: new Date('2026-01-02T10:00:00Z'),
-      },
-    ]);
+    yearReviewMoodRepository.find.mockResolvedValue([{
+      userId: 1,
+      year: 2025,
+      diaryId: null,
+      months: [{ month: '2025-01', mood: 'hopeful', valence: 1 }],
+      summary: 'A hopeful start.',
+      analyzedEntries: 4,
+      createdAt: new Date('2026-01-02T10:00:00Z'),
+    }]);
 
     const result = await service.downloadData(1);
 

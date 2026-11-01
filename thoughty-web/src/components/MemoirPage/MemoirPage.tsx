@@ -9,10 +9,10 @@ import MemoirAnswerForm from './MemoirAnswerForm';
 import MemoirChapters from './MemoirChapters';
 import MemoirIntro from './MemoirIntro';
 import MemoirProgress from './MemoirProgress';
-import MemoirQuestionCard from './MemoirQuestionCard';
+import MemoirQuestionCard, { type MemoirWeekAction } from './MemoirQuestionCard';
 import MemoirSettings from './MemoirSettings';
 import { resolveLanguage } from '../../utils/language';
-import { localize, todayIn } from './memoirFormat';
+import { formatMemoirDay, localize, todayIn } from './memoirFormat';
 import { useMemoir } from './useMemoir';
 import { useLifeEraList } from '../LifeEras/useLifeEras';
 import './MemoirPage.css';
@@ -37,6 +37,12 @@ function findQuestion(chapters: readonly MemoirChapter[], questionId: string | n
   return null;
 }
 
+/** The first day a question set aside with "Not this week" comes back, among those still unanswered. */
+function firstReturnDay(chapters: readonly MemoirChapter[]): string | null {
+  const days = chapters.flatMap((chapter) => chapter.questions.map((question) => question.snoozedUntil)).filter((day) => day !== null);
+  return days.length > 0 ? days.reduce((first, day) => (day < first ? day : first)) : null;
+}
+
 function MemoirPage({
   theme = 'dark',
   language: rawLanguage,
@@ -51,9 +57,10 @@ function MemoirPage({
   const memoir = useMemoir();
   const { eras } = useLifeEraList();
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(initialQuestionId);
-  const [skipping, setSkipping] = useState(false);
+  const [pending, setPending] = useState<MemoirWeekAction>(null);
   const [actionFailed, setActionFailed] = useState(false);
-  const answerSaved = useTransientMessage();
+  const toast = useTransientMessage();
+  const [toastText, setToastText] = useState('');
   const scrolledToInitial = useRef(false);
   const overview = memoir.overview;
   const program = overview?.program ?? null;
@@ -82,18 +89,27 @@ function MemoirPage({
     const result = await memoir.answer(request);
     if (result.data) {
       setActiveQuestionId(null);
-      answerSaved.show();
+      showToast(t('memoirAnswerSaved'));
     }
     return Boolean(result.data);
   };
 
-  const handleSkip = async () => {
-    setSkipping(true);
+  const showToast = (text: string) => {
+    setToastText(text);
+    toast.show();
+  };
+
+  const handleWeekAction = async (action: Exclude<MemoirWeekAction, null>) => {
+    const questionId = program?.currentQuestionId ?? null;
+    setPending(action);
     setActionFailed(false);
-    const result = await memoir.skip();
-    setSkipping(false);
+    const result = await (action === 'skip' ? memoir.skip() : memoir.snooze());
+    setPending(null);
     setActionFailed(!result.data);
-    if (result.data) setActiveQuestionId(null);
+    if (!result.data) return;
+    setActiveQuestionId(null);
+    const setAside = action === 'snooze' ? findQuestion(result.data.chapters, questionId)?.question.snoozedUntil : null;
+    if (setAside) showToast(t('memoirSnoozed', { date: formatMemoirDay(setAside, language) }));
   };
 
   const renderAnswerForm = (questionId: string, questionText: string) => (
@@ -147,12 +163,14 @@ function MemoirPage({
               program={program}
               question={current?.question ?? null}
               chapterTitle={current ? localize(current.chapter.title, language) : ''}
+              firstReturnDay={firstReturnDay(overview.chapters)}
               language={language}
               answering={Boolean(current && activeQuestionId === current.question.id && !current.question.answer)}
-              skipping={skipping}
+              pending={pending}
               answerForm={current ? renderAnswerForm(current.question.id, currentText) : null}
               onAnswer={() => current && setActiveQuestionId(current.question.id)}
-              onSkip={() => void handleSkip()}
+              onSkip={() => void handleWeekAction('skip')}
+              onSnooze={() => void handleWeekAction('snooze')}
               onOpenEntry={onOpenEntry}
               t={t}
             />
@@ -191,8 +209,8 @@ function MemoirPage({
         </>
       )}
 
-      <AutoDismiss message={answerSaved} durationMs={4000}>
-        <p className="memoir-toast" role="status">{t('memoirAnswerSaved')}</p>
+      <AutoDismiss message={toast} durationMs={4000}>
+        <p className="memoir-toast" role="status">{toastText}</p>
       </AutoDismiss>
     </section>
   );

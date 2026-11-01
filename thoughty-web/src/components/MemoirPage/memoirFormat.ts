@@ -12,6 +12,11 @@ export function formatDeliveryDate(iso: string, timeZone: string, language: Memo
   return new Intl.DateTimeFormat(language, { weekday: 'long', day: 'numeric', month: 'long', timeZone }).format(new Date(iso));
 }
 
+/** A writer's day (`YYYY-MM-DD`, already in the memoir's zone), such as the day a set-aside question comes back. */
+export function formatMemoirDay(day: string, language: MemoirLanguage): string {
+  return new Intl.DateTimeFormat(language, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${day}T12:00:00Z`));
+}
+
 export { browserTimeZone } from '../../utils/timeZone';
 
 /** Today's date (`YYYY-MM-DD`) in the memoir's time zone, the day an answer is dated; the browser's day when the zone is unknown. */

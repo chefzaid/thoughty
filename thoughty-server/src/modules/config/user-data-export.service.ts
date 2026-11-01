@@ -11,6 +11,7 @@ import {
   EntryRevision,
   MemoirAnswer,
   MemoirProgram,
+  MemoirSnooze,
   OnThisDayEmail,
   MonthlyRecapEmail,
   type OptInEmailSetting,
@@ -87,6 +88,8 @@ export class UserDataExportService {
     private readonly timeCapsules: TimeCapsuleService,
     @InjectRepository(ShareLink)
     private readonly shareLinkRepository: Repository<ShareLink>,
+    @InjectRepository(MemoirSnooze)
+    private readonly memoirSnoozeRepository: Repository<MemoirSnooze>,
   ) {}
 
   async downloadData(userId: number): Promise<Record<string, unknown>> {
@@ -283,6 +286,10 @@ export class UserDataExportService {
       this.memoirAnswerRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
     ]);
 
+    const snoozes = program
+      ? await this.memoirSnoozeRepository.find({ where: { programId: program.id }, order: { snoozedUntil: 'ASC' } })
+      : [];
+
     return {
       program: program
         ? {
@@ -295,6 +302,7 @@ export class UserDataExportService {
             nextDeliveryAt: program.nextDeliveryAt,
             lastEmailedAt: program.lastEmailedAt,
             startedAt: program.createdAt,
+            setAside: snoozes.map(({ questionId, snoozedUntil }) => ({ questionId, snoozedUntil })),
           }
         : null,
       answers: answers.map((answer) => ({

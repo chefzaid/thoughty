@@ -143,6 +143,15 @@ export class MemoirQuestionDto {
 
   @ApiProperty({ type: MemoirAnswerRefDto, nullable: true })
   answer!: MemoirAnswerRefDto | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: '2026-11-30',
+    description:
+      'Set aside with "Not this week": the writer\'s day (YYYY-MM-DD, in the memoir\'s time zone) it comes back to the queue; null when it is not set aside or is answered',
+  })
+  snoozedUntil!: string | null;
 }
 
 export class MemoirChapterDto {
@@ -175,7 +184,7 @@ export class MemoirProgramDto {
   @ApiProperty({ example: 'Europe/Paris' })
   timeZone!: string;
 
-  @ApiProperty({ type: String, nullable: true, example: 'childhood-play', description: "This week's question; null once every question is answered" })
+  @ApiProperty({ type: String, nullable: true, example: 'childhood-play', description: "This week's question; null once every question is answered, or while every unanswered one is set aside" })
   currentQuestionId!: string | null;
 
   @ApiProperty({ example: '2026-10-25T08:00:00.000Z' })

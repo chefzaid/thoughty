@@ -29,6 +29,10 @@ const GLOSSARY: Record<string, GlossaryTerm> = {
     name: { en: 'time capsule', fr: 'capsule temporelle' },
     keys: ['timeCapsuleSeal', 'timeCapsuleCardTitle', 'timeCapsuleOpenEarlyTitle', 'timeCapsuleOpened', 'timeCapsuleOpenFailed'],
   },
+  memoirNotThisWeek: {
+    name: { en: 'Not this week', fr: 'Pas cette semaine' },
+    keys: ['memoirSnooze', 'memoirSnoozeHint'],
+  },
 };
 
 const LANGUAGES = Object.keys(translations) as Language[];

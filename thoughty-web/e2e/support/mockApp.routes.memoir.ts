@@ -2,6 +2,7 @@ import {
   createMockMemoirState,
   MOCK_MEMOIR_CHAPTERS,
   MOCK_MEMOIR_QUESTIONS as QUESTIONS,
+  mockSnoozeReturnDay,
   type MockMemoirProgram,
   type MockMemoirState,
 } from './mockApp.memoir';
@@ -9,11 +10,12 @@ import { mockDiary } from './mockApp.diaries';
 import { fulfillJson, type RouteContext } from './mockApp.route-utils';
 import { sortEntries } from './mockApp.shared';
 
+/** The next unanswered question after this week's, passing over those set aside (the mock never reaches their day). */
 function nextUnanswered(state: MockMemoirState): string | null {
   const start = QUESTIONS.findIndex((question) => question.id === state.program?.currentQuestionId);
   for (let offset = 1; offset <= QUESTIONS.length; offset++) {
     const candidate = QUESTIONS[(start + offset) % QUESTIONS.length];
-    if (!state.answers[candidate.id]) return candidate.id;
+    if (!state.answers[candidate.id] && !state.snoozed[candidate.id]) return candidate.id;
   }
   return null;
 }
@@ -30,7 +32,10 @@ function overview({ state }: RouteContext) {
     program: memoir.program,
     chapters: MOCK_MEMOIR_CHAPTERS.map((chapter) => ({
       ...chapter,
-      questions: chapter.questions.map((question) => ({ ...question, answer: memoir.answers[question.id] ?? null })),
+      questions: chapter.questions.map((question) => {
+        const answer = memoir.answers[question.id] ?? null;
+        return { ...question, answer, snoozedUntil: answer ? null : (memoir.snoozed[question.id] ?? null) };
+      }),
     })),
     progress: { answered, total: QUESTIONS.length, words, estimatedPages: Math.ceil(words / 250) },
   };
@@ -76,11 +81,24 @@ export async function handleMemoirRoutes(context: RouteContext): Promise<boolean
 
   if (pathname === '/api/memoir' && method === 'DELETE') {
     memoir.program = null;
+    memoir.snoozed = {};
     await fulfillJson(route, { success: true });
     return true;
   }
 
   if (pathname === '/api/memoir/skip' && memoir.program) {
+    memoir.program.currentQuestionId = nextUnanswered(memoir);
+    await fulfillJson(route, overview(context));
+    return true;
+  }
+
+  if (pathname === '/api/memoir/snooze' && memoir.program) {
+    const questionId = memoir.program.currentQuestionId;
+    if (!questionId || memoir.answers[questionId]) {
+      await fulfillJson(route, { statusCode: 409, code: 'MEMOIR_NO_OPEN_QUESTION', message: 'This week has no unanswered question to set aside' }, { status: 409 });
+      return true;
+    }
+    memoir.snoozed[questionId] = mockSnoozeReturnDay(memoir.program);
     memoir.program.currentQuestionId = nextUnanswered(memoir);
     await fulfillJson(route, overview(context));
     return true;

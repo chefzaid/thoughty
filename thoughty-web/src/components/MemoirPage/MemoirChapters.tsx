@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 import type { MemoirChapter } from '../../services/api';
 import type { TranslationFunction } from '../../types';
-import { localize, type MemoirLanguage } from './memoirFormat';
+import { formatMemoirDay, localize, type MemoirLanguage } from './memoirFormat';
 import './MemoirChapters.css';
 
 interface MemoirChaptersProps {
@@ -49,6 +49,9 @@ function MemoirChapters({
                       <p className="memoir-question-text">
                         {text}
                         {question.id === currentQuestionId && <span className="memoir-badge">{t('memoirThisWeekBadge')}</span>}
+                        {question.snoozedUntil && (
+                          <span className="memoir-badge later">{t('memoirBackOn', { date: formatMemoirDay(question.snoozedUntil, language) })}</span>
+                        )}
                         {answer && <span className="sr-only">{` (${t('memoirAnswered')})`}</span>}
                       </p>
                       {answer ? (

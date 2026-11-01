@@ -89,7 +89,7 @@ test.describe('Guided memoir', () => {
     await page.goto('/memoir');
 
     const week = page.getByRole('region', { name: 'This week’s question' });
-    await week.getByRole('button', { name: 'Another question' }).click();
+    await week.getByRole('button', { name: 'Skip this question' }).click();
     await expect(week.getByText('What games did you play as a child, and who did you play them with?')).toBeVisible();
 
     const settings = page.getByRole('region', { name: 'Memoir settings' });
@@ -108,6 +108,66 @@ test.describe('Guided memoir', () => {
     await page.getByRole('button', { name: 'Stop the memoir' }).last().click();
     await expect(page.getByRole('heading', { name: 'Start your memoir' })).toBeVisible();
     expect(state.memoir.program).toBeNull();
+  });
+
+  test('sets a question aside for four weeks with “Not this week”, apart from skipping it, until every question is away', async ({ page }) => {
+    // Monday deliveries in Kiritimati (UTC+14): Sunday 8 November 19:00 UTC is Monday 9 November 09:00 there
+    const { state } = await setupMockApp(page, {
+      startAuthenticated: true,
+      memoirProgram: { diaryId: 1, deliveryWeekday: 1, timeZone: 'Pacific/Kiritimati', nextDeliveryAt: '2026-11-08T19:00:00.000Z' },
+    });
+    await page.goto('/memoir');
+
+    const week = page.getByRole('region', { name: 'This week’s question' });
+    const notThisWeek = week.getByRole('button', { name: 'Not this week' });
+    await expect(notThisWeek).toHaveAccessibleDescription('Not this week: it comes back in four weeks.');
+    await expect(week.getByRole('button', { name: 'Skip this question' })).toHaveAccessibleDescription(
+      'Skip: it comes round again only after all the others.',
+    );
+
+    await notThisWeek.click();
+    await expect(page.getByRole('status').filter({ hasText: 'Set aside.' })).toHaveText('Set aside. This question comes back on Monday, November 30.');
+    await expect(week.getByText('What games did you play as a child, and who did you play them with?')).toBeVisible();
+    const home = page.locator('#memoir-question-childhood-home');
+    await expect(home.getByText('Back on Monday, November 30')).toBeVisible();
+    expect(state.memoir.snoozed).toEqual({ 'childhood-home': '2026-11-30' });
+
+    await notThisWeek.click();
+    await expect(week.getByText('How did you come to do the work you did for most of your life?')).toBeVisible();
+    await notThisWeek.click();
+    await expect(week.getByText(
+      'Every question left is set aside for now. The first one comes back on Monday, November 30, and you can answer any of them below meanwhile.',
+    )).toBeVisible();
+    await expect(week.getByRole('button')).toHaveCount(0);
+
+    // A set-aside question can still be answered from the list
+    const list = page.getByRole('region', { name: 'All questions' });
+    await list.getByRole('button', { name: 'Answer: How did you come to do the work you did for most of your life?' }).click();
+    await list.getByLabel('Your answer').fill('Through a summer job at the harbour.');
+    await list.getByRole('button', { name: 'Save answer' }).click();
+    await expect(page.getByText('Answer saved to your memoir.')).toBeVisible();
+    await expect(page.locator('#memoir-question-work-path').getByText(/Back on/)).toHaveCount(0);
+  });
+
+  test('offers “Pas cette semaine” in French, by the memoir’s own day in Pago Pago', async ({ page }) => {
+    // Monday 2 November 20:00 UTC is Monday 09:00 in Pago Pago (UTC-11), while it is already evening in UTC
+    await setupMockApp(page, {
+      startAuthenticated: true,
+      config: { language: 'fr' },
+      memoirProgram: { diaryId: 1, deliveryWeekday: 1, timeZone: 'Pacific/Pago_Pago', nextDeliveryAt: '2026-11-02T20:00:00.000Z' },
+    });
+    await page.goto('/memoir');
+
+    const week = page.getByRole('region', { name: 'La question de la semaine' });
+    await expect(week.getByRole('button', { name: 'Passer cette question' })).toHaveAccessibleDescription(
+      'Passer : elle ne revient qu’après toutes les autres.',
+    );
+    const notThisWeek = week.getByRole('button', { name: 'Pas cette semaine' });
+    await expect(notThisWeek).toHaveAccessibleDescription('Pas cette semaine : elle revient dans quatre semaines.');
+    await notThisWeek.click();
+
+    await expect(page.getByText('Mise de côté. Cette question revient le lundi 23 novembre.')).toBeVisible();
+    await expect(page.locator('#memoir-question-childhood-home').getByText('De retour le lundi 23 novembre')).toBeVisible();
   });
 
   test('opens the question from the weekly email link and leads to the book converter', async ({ page }) => {

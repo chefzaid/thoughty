@@ -60,7 +60,7 @@ flowchart TD
 | `feature-requests` | community idea board and votes |
 | `social` | public feed, follows, comments, likes, leaderboard, achievements (karma and badges) |
 | `account-purge` | permanent deletion of deleted accounts after the grace period |
-| `memoir` | guided memoir: question catalogue, program settings, answers as entries, weekly delivery and email |
+| `memoir` | guided memoir: question catalogue, program settings, answers as entries, skipping or setting aside this week's question (`POST /api/memoir/skip`, `POST /api/memoir/snooze`), weekly delivery and email |
 | `opt-in-email` | what the opt-in emails share: the setting table's columns (`OptInEmailSetting`, one table per email), the settings service (`get`/`update`, validating the zone and the diary), the delivery base (`OptInEmailDeliveryService`: claim due rows, one email per writer and schedule period, verified addresses of live accounts, language, unsubscribe links, ID-only logs), the worker loop base, the email layout (HTML and plain text, entry cards of at most 200 characters), the signed unsubscribe token carrying the email's kind, and the public `POST /api/email-unsubscribe` that turns off whichever email a token names |
 | `on-this-day-email` | the opt-in "On this day" email: its setting (`GET`/`PUT /api/on-this-day-email`), its own one-click unsubscribe route (kept for the links already sent), and the daily delivery, which reads past entries through `EntriesQueryService.findOnThisDay` (the query Highlights uses) and schedules in the writer's zone with `common/utils/time-zone.util.ts` (shared with the memoir) |
 | `monthly-recap-email` | the opt-in monthly recap: its setting (`GET`/`PUT /api/monthly-recap-email`) and the delivery on the 1st of the writer's month, which counts the month just ended with `YearReviewService.loadEntries` and the year in review's tag and recorded-mood helpers, and picks one memory of that month in an earlier year with `EntriesQueryService.findMonthMemory` |
@@ -79,7 +79,7 @@ Modules that outgrow one service split it by responsibility, and source files st
 | Service | Interval | Work |
 |---|---|---|
 | `CloudSyncWorkerService` | jobs every 5 s, schedules every 60 s | turns due sync schedules (stored in `settings`) into `cloud_sync_jobs` rows, claims them with `FOR UPDATE SKIP LOCKED`, runs the sync, retries, and recovers stale jobs |
-| `MemoirDeliveryWorkerService` | every 60 s | moves due `memoir_programs` to their next question and sends the weekly email |
+| `MemoirDeliveryWorkerService` | every 60 s | moves due `memoir_programs` to their next question (a question set aside with **Not this week** whose day has come in the writer's zone first) and sends the weekly email |
 | `OnThisDayDeliveryWorkerService` | every 60 s | (both email loops extend `OptInEmailWorkerService` and `OptInEmailDeliveryService`) claims due `on_this_day_emails` rows (`next_send_at <= now`, partial index on enabled rows) in batches of 50 with `FOR UPDATE SKIP LOCKED`, moves each to the next local day (`nextDailySend`, DST-aware through `zonedTimeToUtc`: a skipped hour lands after the jump, a repeated one on its first occurrence, in every zone), and, when the writer has past-year entries for the local day (`EntriesQueryService.findOnThisDay`, the Highlights query) and a verified address on a live account, writes `last_sent_on` in the same transaction and sends the email after the commit, so overlapping runs or a moved hour never send a day twice |
 | `MonthlyRecapDeliveryWorkerService` | every 60 s | the same claim on `monthly_recap_emails`, moving each row to the 1st of the next local month (`nextMonthlySend`, DST-aware); when the month just ended has entries or a memory from an earlier year, and the writer has not had an email this local month, it writes `last_sent_on` and sends the recap after the commit |
 | `TimeCapsuleDeliveryWorkerService` | every 60 s | (extends `OptInEmailWorkerService`) claims due `time_capsules` (`open_at <= now`, still sealed, entry outside the recycle bin, live account; partial index `idx_time_capsules_due`) with `FOR UPDATE SKIP LOCKED`, opens each in the same transaction (`TimeCapsuleService.openCapsule`), and after the commit emails each once to a verified address with the shared email layout, without an unsubscribe link |
@@ -251,6 +251,7 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 |  | `MEMOIR_DIARY_REQUIRED` | Choose a diary for your memoir first |
 |  | `MEMOIR_ANSWER_EMPTY` | Write an answer or attach a recording |
 |  | `MEMOIR_ALREADY_ANSWERED` | This question already has an answer |
+|  | `MEMOIR_NO_OPEN_QUESTION` | This week has no unanswered question to set aside |
 | Opt-in emails | `ON_THIS_DAY_UNSUBSCRIBE_INVALID` | This unsubscribe link is not valid |
 |  | `EMAIL_UNSUBSCRIBE_INVALID` | This unsubscribe link is not valid |
 | Stats and the year in review | `STATS_INVALID_DATE_RANGE` | The start date must be before or equal to the end date |

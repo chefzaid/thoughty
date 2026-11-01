@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { weekdayName } from '../../utils/calendarNames';
-import { browserTimeZone, formatDeliveryDate, localize, todayIn, WEEKDAYS } from './memoirFormat';
+import { browserTimeZone, formatDeliveryDate, formatMemoirDay, localize, todayIn, WEEKDAYS } from './memoirFormat';
 
 describe('memoirFormat', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -42,5 +42,10 @@ describe('memoirFormat', () => {
     expect(todayIn('Europe/Paris', now)).toBe('2026-10-28');
     expect(todayIn('America/Los_Angeles', now)).toBe('2026-10-27');
     expect(todayIn('Not/AZone', now)).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+  it('names a writer’s day as it is, whatever the browser’s zone', () => {
+    // The day is already the memoir zone's: 30 November stays 30 November in Kiritimati and Pago Pago
+    expect(formatMemoirDay('2026-11-30', 'en')).toBe('Monday, November 30');
+    expect(formatMemoirDay('2026-11-30', 'fr')).toBe('lundi 30 novembre');
   });
 });

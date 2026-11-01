@@ -3,6 +3,8 @@ import {
   MEMOIR_QUESTIONS,
   findMemoirChapter,
   findMemoirQuestion,
+  isSnoozed,
+  nextQueuedQuestion,
   nextUnansweredQuestion,
   resolveMemoirLanguage,
 } from './memoir-questions';
@@ -72,6 +74,43 @@ describe('memoir questions', () => {
       expect(nextUnansweredQuestion(ids[51], allButLast)?.id).toBe(ids[51]);
       expect(nextUnansweredQuestion(ids[51], new Set(ids))).toBeNull();
       expect(nextUnansweredQuestion(null, new Set(ids))).toBeNull();
+    });
+  });
+  describe('nextQueuedQuestion', () => {
+    const ids = MEMOIR_QUESTIONS.map((question) => question.id);
+    const today = '2026-11-02';
+
+    it('treats a set-aside question as away until its day, and back from that day on', () => {
+      const snoozes = new Map([[ids[1], '2026-11-02']]);
+      expect(isSnoozed(ids[1], snoozes, '2026-11-01')).toBe(true);
+      expect(isSnoozed(ids[1], snoozes, '2026-11-02')).toBe(false);
+      expect(isSnoozed(ids[2], snoozes, '2026-11-01')).toBe(false);
+    });
+
+    it('passes over questions still set aside and keeps life order otherwise', () => {
+      const snoozes = new Map([[ids[1], '2026-11-30'], [ids[2], '2026-11-23']]);
+      expect(nextQueuedQuestion(ids[0], new Set(), snoozes, today)?.id).toBe(ids[3]);
+      expect(nextQueuedQuestion(ids[0], new Set(), new Map(), today)?.id).toBe(ids[1]);
+    });
+
+    it('offers a question whose day has come before the rest of the queue, the earliest day first', () => {
+      const snoozes = new Map([[ids[30], '2026-11-02'], [ids[10], '2026-10-26'], [ids[5], '2026-11-30']]);
+      expect(nextQueuedQuestion(ids[20], new Set(), snoozes, today)?.id).toBe(ids[10]);
+      expect(nextQueuedQuestion(ids[20], new Set([ids[10]]), snoozes, today)?.id).toBe(ids[30]);
+    });
+
+    it('never brings back the current question or an answered one', () => {
+      const snoozes = new Map([[ids[4], '2026-10-01']]);
+      expect(nextQueuedQuestion(ids[4], new Set(), snoozes, today)?.id).toBe(ids[5]);
+      expect(nextQueuedQuestion(ids[0], new Set([ids[4]]), snoozes, today)?.id).toBe(ids[1]);
+    });
+
+    it('has nothing to offer when every unanswered question is set aside', () => {
+      const answered = new Set(ids.slice(0, 50));
+      const snoozes = new Map([[ids[50], '2026-11-23'], [ids[51], '2026-11-30']]);
+      expect(nextQueuedQuestion(ids[51], answered, snoozes, today)).toBeNull();
+      expect(nextQueuedQuestion(null, answered, snoozes, today)).toBeNull();
+      expect(nextQueuedQuestion(null, answered, snoozes, '2026-11-23')?.id).toBe(ids[50]);
     });
   });
 });

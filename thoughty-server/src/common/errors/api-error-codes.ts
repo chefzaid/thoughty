@@ -156,6 +156,7 @@ export const API_ERROR_MESSAGES = {
   MEMOIR_DIARY_REQUIRED: 'Choose a diary for your memoir first',
   MEMOIR_ANSWER_EMPTY: 'Write an answer or attach a recording',
   MEMOIR_ALREADY_ANSWERED: 'This question already has an answer',
+  MEMOIR_NO_OPEN_QUESTION: 'This week has no unanswered question to set aside',
 
   // The opt-in emails ("On this day" and the monthly recap).
   ON_THIS_DAY_UNSUBSCRIBE_INVALID: 'This unsubscribe link is not valid',

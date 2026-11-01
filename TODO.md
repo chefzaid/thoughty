@@ -538,7 +538,7 @@ Small, relatable additions that reuse what already exists (entries, tags, moods,
 
 - [ ] Birthdays and anniversaries on people: an optional date on a person, shown in Highlights on the day with how many entries mention them and the most recent one.
 - [ ] A book about someone: **Make a book** on a person's view builds a book from every entry that mentions them (the saved-search source already supports a person filter), a gift idea for family.
-- [ ] Ask me later: on a weekly memoir question, **Not this week** puts it back in the queue a few weeks later instead of skipping it for good.
+- [x] Ask me later: on the weekly memoir question, **Not this week** (« Pas cette semaine », beside **Skip this question**, each described by what it does) sets it aside for a fixed four weeks, by the writer's day in the memoir's time zone, then brings it back ahead of the rest of the queue; the list marks it **Back on <day>**, a week with every remaining question set aside says when the first returns, and the weekly email (which has no skip link) stays as it is.
 
 ### Books
 
