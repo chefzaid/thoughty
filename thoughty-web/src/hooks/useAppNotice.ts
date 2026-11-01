@@ -8,6 +8,11 @@ import { useTransientMessage, type TransientMessage } from './useTransientMessag
 export interface NoticeAction {
   readonly label: string;
   readonly run: () => void;
+  /**
+   * Makes the action a link to this address in the app, which `run` follows on a plain click (a new tab
+   * opens it as any link). It offers a way on rather than replacing what was removed, so it never takes focus.
+   */
+  readonly href?: string;
 }
 
 /** What the entry hooks need to tell the reader how an action went, in the reader's language. */

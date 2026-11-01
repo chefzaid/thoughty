@@ -25,6 +25,7 @@ import { peopleByHandle } from '../../utils/mentions';
 import PersonFilterBanner from './PersonFilterBanner';
 import { usePersonFilterRoute } from './usePersonFilterRoute';
 import { useComposerSeed } from './useComposerSeed';
+import { useComposerFocusRoute } from './composerFocusRoute';
 import RandomEntryButton from './RandomEntryButton';
 import EntryReader from '../EntryReader/EntryReader';
 import ReadEntriesButton from '../EntryReader/ReadEntriesButton';
@@ -145,6 +146,7 @@ function JournalView({
     theme: config.theme,
     t,
   });
+  useComposerFocusRoute(composerSeed.focusComposer);
 
   const keywordSearch = filters.searchMode === 'keyword';
   const calendarFilters = {

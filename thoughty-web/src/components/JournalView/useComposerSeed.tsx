@@ -55,6 +55,8 @@ const REPLACE_MESSAGES = {
 export function useComposerSeed({ composer, defaultVisibility, formRef, language, theme, t }: ComposerSeedOptions): {
   startFromEntry: (entry: Entry) => void;
   replyToEntry: (entry: Entry) => void;
+  /** Scrolls to the form and focuses its writing field, the caret after the text. */
+  focusComposer: () => void;
   dialog: ReactNode;
 } {
   const [pendingSeed, setPendingSeed] = useState<ComposerSeed | null>(null);
@@ -62,6 +64,8 @@ export function useComposerSeed({ composer, defaultVisibility, formRef, language
   // The latest form state, so the actions stay the same functions and the entry cards need not re-render
   const latest = useRef({ composer, defaultVisibility, language });
   latest.current = { composer, defaultVisibility, language };
+
+  const focusComposer = useCallback(() => setFocusRequest((count) => count + 1), []);
 
   const applySeed = useCallback((seed: ComposerSeed) => {
     const { composer: form, defaultVisibility: visibility } = latest.current;
@@ -77,8 +81,8 @@ export function useComposerSeed({ composer, defaultVisibility, formRef, language
     form.setMood?.(null);
     form.setFeelings?.([]);
     form.setTimeCapsule?.(null);
-    setFocusRequest((count) => count + 1);
-  }, []);
+    focusComposer();
+  }, [focusComposer]);
 
   const seedComposer = useCallback((seed: ComposerSeed | null) => {
     if (!seed) {
@@ -147,5 +151,5 @@ export function useComposerSeed({ composer, defaultVisibility, formRef, language
     />
   );
 
-  return { startFromEntry, replyToEntry, dialog };
+  return { startFromEntry, replyToEntry, focusComposer, dialog };
 }

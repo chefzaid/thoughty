@@ -42,6 +42,32 @@ describe('NoticeToast', () => {
     expect(hide).toHaveBeenCalledTimes(1);
   });
 
+  it('offers a link action that leaves focus where it is, follows a plain click in the app and lets a new tab open it', () => {
+    const hide = vi.fn();
+    const action = { label: 'View entry', href: '/journal?entry=5', run: vi.fn() };
+    const { rerender } = renderToast();
+    fireEvent.keyDown(document.body, { key: 'Enter' });
+    rerender(
+      <>
+        <main id="main-content" tabIndex={-1}>Journal</main>
+        <NoticeToast notice={shown(hide)} text="Saved as a private entry for today." action={action} className="toast" />
+      </>,
+    );
+
+    const link = screen.getByRole('link', { name: 'View entry' });
+    expect(link).toHaveAttribute('href', '/journal?entry=5');
+    expect(link).toHaveAccessibleDescription('Saved as a private entry for today.');
+    expect(link).not.toHaveFocus();
+    expect(screen.getByRole('status')).toHaveTextContent('Saved as a private entry for today.');
+
+    expect(fireEvent.click(link, { ctrlKey: true })).toBe(true);
+    expect(action.run).not.toHaveBeenCalled();
+
+    expect(fireEvent.click(link)).toBe(false);
+    expect(action.run).toHaveBeenCalledTimes(1);
+    expect(hide).toHaveBeenCalledTimes(1);
+  });
+
   it('runs the action and closes when Undo is pressed', () => {
     const hide = vi.fn();
     const action = undo();

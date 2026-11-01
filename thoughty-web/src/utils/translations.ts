@@ -20,6 +20,7 @@ import { personDatesTranslations, type PersonDatesTranslationKey } from "./trans
 import { focusModeTranslations, type FocusModeTranslationKey } from "./translations.focusMode";
 import { readerTranslations, type ReaderTranslationKey } from "./translations.reader";
 import { privacyBlurTranslations, type PrivacyBlurTranslationKey } from "./translations.privacyBlur";
+import { quickCaptureTranslations, type QuickCaptureTranslationKey } from "./translations.quickCapture";
 import { quietModeTranslations, type QuietModeTranslationKey } from "./translations.quietMode";
 import { entryTemplatesTranslations, type EntryTemplatesTranslationKey } from "./translations.entryTemplates";
 import { markdownToolbarTranslations, type MarkdownToolbarTranslationKey } from "./translations.markdownToolbar";
@@ -84,6 +85,7 @@ export type TranslationKey =
   | FocusModeTranslationKey
   | ReaderTranslationKey
   | PrivacyBlurTranslationKey
+  | QuickCaptureTranslationKey
   | QuietModeTranslationKey
   | EntryTemplatesTranslationKey
   | MarkdownToolbarTranslationKey
@@ -153,6 +155,7 @@ export const translations: Translations = {
     ...focusModeTranslations.en,
     ...readerTranslations.en,
     ...privacyBlurTranslations.en,
+    ...quickCaptureTranslations.en,
     ...quietModeTranslations.en,
     ...entryTemplatesTranslations.en,
     ...markdownToolbarTranslations.en,
@@ -215,6 +218,7 @@ export const translations: Translations = {
     ...focusModeTranslations.fr,
     ...readerTranslations.fr,
     ...privacyBlurTranslations.fr,
+    ...quickCaptureTranslations.fr,
     ...quietModeTranslations.fr,
     ...entryTemplatesTranslations.fr,
     ...markdownToolbarTranslations.fr,

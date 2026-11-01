@@ -52,15 +52,21 @@ export function useAppShellRouting({
     fetchProfileStats();
   }, [fetchConfig, fetchDiaries, fetchEntryDates, fetchProfileStats]);
 
-  const handleViewChange = useCallback((view: ViewType) => {
+  /** Opens a view in the current diary; `state` goes with the navigation (the journal's composer focus, say). */
+  const handleViewChange = useCallback((view: ViewType, state?: unknown) => {
     const nextSearchParams = new URLSearchParams();
     if (viewSupportsDiarySearch(view)) {
       nextSearchParams.set('diary', formatDiarySearchParam(currentDiaryId));
     }
-    navigate({
+    const to = {
       pathname: getPathForView(view),
       search: toSearchString(nextSearchParams),
-    });
+    };
+    if (state === undefined) {
+      navigate(to);
+    } else {
+      navigate(to, { state });
+    }
   }, [currentDiaryId, navigate]);
 
   const handlePublicViewChange = useCallback((view: PublicViewType) => {

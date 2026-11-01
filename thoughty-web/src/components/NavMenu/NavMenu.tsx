@@ -2,6 +2,7 @@ import './NavMenu.css';
 import type { ViewType } from '../../types';
 import PrivacyBlurButton from '../PrivacyBlur/PrivacyBlurButton';
 import type { PrivacyBlurState } from '../PrivacyBlur/usePrivacyBlur';
+import QuickCaptureButton from '../QuickCapture/QuickCaptureButton';
 
 interface NavMenuProps {
     readonly currentView: ViewType;
@@ -14,9 +15,11 @@ interface NavMenuProps {
     readonly onLogout?: () => void;
     /** The privacy blur its button toggles, beside the profile. */
     readonly privacyBlur?: PrivacyBlurState;
+    /** Quick capture, which its button opens, beside the privacy blur. */
+    readonly quickCapture?: { readonly isOpen: boolean; readonly open: () => void };
 }
 
-function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVerified, t, onLogout, privacyBlur }: NavMenuProps) {
+function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVerified, t, onLogout, privacyBlur, quickCapture }: NavMenuProps) {
     const initial = (name || t('user')).charAt(0).toUpperCase();
     const isLight = theme === 'light';
 
@@ -101,6 +104,9 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
 
             {/* User Profile Section */}
             <div className="nav-user-section">
+                {quickCapture && (
+                    <QuickCaptureButton isOpen={quickCapture.isOpen} onOpen={quickCapture.open} className="nav-icon-btn nav-capture-btn" t={t} />
+                )}
                 {privacyBlur && <PrivacyBlurButton privacyBlur={privacyBlur} className="nav-icon-btn nav-privacy-btn" t={t} />}
                 <button type="button"
                     className={`nav-profile-btn ${currentView === 'profile' ? 'active' : ''}`}

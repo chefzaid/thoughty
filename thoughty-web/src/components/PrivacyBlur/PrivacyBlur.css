@@ -4,13 +4,14 @@
  * entry text. Titles never take the class. Screens only, so printing never blurs.
  */
 @media screen {
-    :root[data-privacy-blur] .privacy-text:not(textarea),
+    :root[data-privacy-blur] .privacy-text:not(textarea, input),
     :root[data-privacy-blur] .w-md-editor-text {
         filter: blur(0.4em);
     }
 
     /* A writing field keeps its frame and caret: only its letters blur. */
-    :root[data-privacy-blur] textarea.privacy-text {
+    :root[data-privacy-blur] textarea.privacy-text,
+    :root[data-privacy-blur] input.privacy-text {
         -webkit-text-fill-color: transparent;
         text-shadow: 0 0 0.5em currentColor;
     }
@@ -18,7 +19,7 @@
 
 /* Writing fields keep their own color transitions. */
 @media screen and (prefers-reduced-motion: no-preference) {
-    .privacy-text:not(textarea),
+    .privacy-text:not(textarea, input),
     .w-md-editor-text {
         transition: filter 0.15s ease;
     }
