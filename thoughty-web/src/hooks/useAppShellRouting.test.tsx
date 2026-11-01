@@ -106,6 +106,15 @@ describe('useAppShellRouting', () => {
     expect(navigate).toHaveBeenNthCalledWith(3, '/register');
   });
 
+  it('carries navigation state to a view when given', () => {
+    const navigate = vi.fn();
+    const { result } = renderHook(() => useAppShellRouting(createParams({ currentDiaryId: 12, navigate })));
+
+    act(() => result.current.handleViewChange('journal', { focusComposer: true }));
+
+    expect(navigate).toHaveBeenCalledWith({ pathname: '/journal', search: '?diary=12' }, { state: { focusComposer: true } });
+  });
+
   it('updates the diary without navigation when the current view does not support diary search', () => {
     const navigate = vi.fn();
     const setCurrentDiaryId = vi.fn();

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type KeyboardEvent } from 'react';
+import { useEffect, useId, useRef, type KeyboardEvent, type MouseEvent } from 'react';
 
 import AutoDismiss from '../AutoDismiss/AutoDismiss';
 import type { NoticeAction } from '../../hooks/useAppNotice';
@@ -35,9 +35,10 @@ function ActionNotice({ text, action, theme, className, onDismiss, usingKeyboard
   const textId = useId();
 
   // Someone on the keyboard lands on the action: what they were on (the entry, the bulk bar) is gone
+  const takesFocus = !action.href;
   useEffect(() => {
-    if (usingKeyboard()) buttonRef.current?.focus();
-  }, [usingKeyboard]);
+    if (takesFocus && usingKeyboard()) buttonRef.current?.focus();
+  }, [takesFocus, usingKeyboard]);
 
   const dismiss = () => {
     const hadFocus = boxRef.current?.contains(document.activeElement) ?? false;
@@ -52,30 +53,44 @@ function ActionNotice({ text, action, theme, className, onDismiss, usingKeyboard
   };
 
   const isLight = theme === 'light';
+  const actionClassName = `shrink-0 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${tintedTextClass('amber', theme)} ${isLight ? 'hover:bg-amber-50' : 'hover:bg-amber-400/10'}`;
+  const followLink = (event: MouseEvent<HTMLAnchorElement>) => {
+    // A new tab or window opens the address itself
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    dismiss();
+    action.run();
+  };
   return (
-    // Escape closes the toast while focus is on its button; the div itself takes no focus
+    // Escape closes the toast while focus is on its action; the div itself takes no focus
     <div ref={boxRef} className={`${className} flex items-center justify-between gap-4`} onKeyDown={handleKeyDown}>
       <p id={textId} className="text-sm font-medium">{text}</p>
-      <button
-        ref={buttonRef}
-        type="button"
-        aria-describedby={textId}
-        onClick={() => {
-          dismiss();
-          action.run();
-        }}
-        className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${tintedTextClass('amber', theme)} ${isLight ? 'hover:bg-amber-50' : 'hover:bg-amber-400/10'}`}
-      >
-        {action.label}
-      </button>
+      {action.href ? (
+        <a href={action.href} aria-describedby={textId} onClick={followLink} className={`${actionClassName} underline underline-offset-2`}>
+          {action.label}
+        </a>
+      ) : (
+        <button
+          ref={buttonRef}
+          type="button"
+          aria-describedby={textId}
+          onClick={() => {
+            dismiss();
+            action.run();
+          }}
+          className={actionClassName}
+        >
+          {action.label}
+        </button>
+      )}
     </div>
   );
 }
 
 /**
- * The app's notice toast. A plain notice is an alert; one with an action (Undo after a delete) is a status
- * message, announced politely through a live region that stays in the page, and it waits while the pointer
- * or focus is on it. Escape closes it, and a keyboard user is taken to its action.
+ * The app's notice toast. A plain notice is an alert; one with an action (Undo after a delete, a link to a
+ * saved entry) is a status message, announced politely through a live region that stays in the page, and it
+ * waits while the pointer or focus is on it. Escape closes it, and a keyboard user is taken to a button action.
  */
 function NoticeToast({ notice, text, action, theme, className }: NoticeToastProps) {
   const usingKeyboard = useKeyboardModality();

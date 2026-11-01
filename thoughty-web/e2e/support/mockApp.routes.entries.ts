@@ -169,7 +169,8 @@ async function handleEntriesCollectionRoute({ route, request, pathname, searchPa
     tags: resolveTags(state, payload.tags),
     visibility: payload.visibility || 'private',
     format: payload.format || 'plain',
-    diaryId: payload.diaryId ?? 1,
+    // Without a diary the API writes to the default one, as quick capture relies on
+    diaryId: payload.diaryId ?? state.diaries.find((diary) => diary.isDefault)?.id ?? 1,
     ...mockSeal(payload.seal),
   };
   placeInlineImages(state, newEntry);

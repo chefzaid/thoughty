@@ -5,6 +5,8 @@ import ConfirmModal from '../components/ConfirmModal/ConfirmModal';
 import Footer from '../components/Footer/Footer';
 import AiChatModal from '../components/AiChatModal/AiChatModal';
 import NoticeToast from '../components/NoticeToast/NoticeToast';
+import QuickCaptureDialog from '../components/QuickCapture/QuickCaptureDialog';
+import type { QuickCaptureState } from '../components/QuickCapture/useQuickCapture';
 import type { ViewType, Config, Entry } from '../types';
 import { normalizeFontSize, resolveFontFamily } from '../types/config';
 import { useRouteChangeFocus } from '../hooks/useRouteChangeFocus';
@@ -43,6 +45,8 @@ interface AuthenticatedAppLayoutProps {
   readonly onCloseChat: () => void;
   readonly onLoadChatHistory: (entryId: number) => Promise<Array<{ role: 'user' | 'assistant'; content: string }>>;
   readonly onSendChat: (entryId: number, entryContent: string, messages: { role: 'user' | 'assistant'; content: string }[]) => Promise<string | null>;
+  /** The quick capture box, which the navigation's button and its shortcut open on every page. */
+  readonly quickCapture?: QuickCaptureState;
 }
 
 function AuthenticatedAppLayout({
@@ -70,6 +74,7 @@ function AuthenticatedAppLayout({
   onCloseChat,
   onLoadChatHistory,
   onSendChat,
+  quickCapture,
 }: Readonly<AuthenticatedAppLayoutProps>) {
   const mainContentRef = useRef<HTMLElement>(null);
   const appTypographyStyle = {
@@ -107,7 +112,10 @@ function AuthenticatedAppLayout({
             t={t}
             onLogout={onLogout}
             privacyBlur={privacyBlur}
+            quickCapture={quickCapture}
           />
+
+          {quickCapture && <QuickCaptureDialog quickCapture={quickCapture} theme={config.theme} t={t} />}
 
           <ConfirmModal
             isOpen={deleteModalOpen}

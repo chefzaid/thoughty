@@ -53,7 +53,7 @@ function Harness({ initialText = '', defaultVisibility, swapFieldOnFill = false,
     const [format, setFormat] = useState<'plain' | 'markdown'>('plain');
     const [selectedDate, setSelectedDate] = useState(new Date(2024, 0, 2));
     const [swapped, setSwapped] = useState(false);
-    const { startFromEntry, replyToEntry, dialog } = useComposerSeed({
+    const { startFromEntry, replyToEntry, focusComposer, dialog } = useComposerSeed({
         composer: {
             newEntryText, setNewEntryText: (value) => {
                 setNewEntryText(value);
@@ -78,6 +78,7 @@ function Harness({ initialText = '', defaultVisibility, swapFieldOnFill = false,
             <output data-testid="state">{JSON.stringify({ title, timeOfDay, mood, tags, visibility, format, timeCapsule })}</output>
             <output data-testid="date">{formatEntryDate(selectedDate)}</output>
             <button type="button" onClick={() => startFromEntry(packingList)}>Start</button>
+            <button type="button" onClick={focusComposer}>Focus</button>
             <button type="button" onClick={() => startFromEntry({ ...packingList, sealed_until: '2030-01-01T00:00:00Z' })}>Sealed</button>
             <button type="button" onClick={() => replyToEntry(packingList)}>Reply</button>
             <button type="button" onClick={() => replyToEntry({ ...markdownNote, visibility: 'private' })}>Reply private</button>
@@ -106,6 +107,20 @@ describe('useComposerSeed', () => {
         expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
         unmount();
         Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
+    });
+
+    it('focuses the form with its draft as it is, the caret at the end', async () => {
+        const user = userEvent.setup();
+        render(<Harness initialText="My own draft" />);
+
+        await user.click(screen.getByRole('button', { name: 'Focus' }));
+
+        const field = screen.getByLabelText<HTMLTextAreaElement>('Writing');
+        expect(field).toHaveFocus();
+        expect(field).toHaveValue('My own draft');
+        expect(field.selectionStart).toBe('My own draft'.length);
+        expect(state().title).toBe('Old title');
+        expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
     });
 
     it('asks before replacing a draft, keeps it on Cancel and replaces it on confirm', async () => {

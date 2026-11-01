@@ -52,6 +52,29 @@ describe('AuthenticatedAppLayout', () => {
     expect(main).toHaveFocus();
   });
 
+  it('offers quick capture in the navigation and shows its box when open', () => {
+    const quickCapture = {
+      isOpen: false, text: '', setText: vi.fn(), saving: false, error: '',
+      open: vi.fn(), close: vi.fn(), save: vi.fn(), openInFull: vi.fn(),
+    };
+    const { rerender } = render(
+      <AuthenticatedAppLayout {...defaultProps} quickCapture={quickCapture}>
+        <div>Stats</div>
+      </AuthenticatedAppLayout>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'quickCapture' }));
+    expect(quickCapture.open).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    rerender(
+      <AuthenticatedAppLayout {...defaultProps} quickCapture={{ ...quickCapture, isOpen: true }}>
+        <div>Stats</div>
+      </AuthenticatedAppLayout>,
+    );
+    expect(screen.getByRole('dialog', { name: 'quickCapture' })).toBeInTheDocument();
+  });
+
   it('blurs entry text from any view with the privacy blur button or shortcut, until the app goes away', () => {
     const { unmount } = render(
       <AuthenticatedAppLayout {...defaultProps}>

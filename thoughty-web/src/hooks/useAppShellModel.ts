@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../contexts/AuthContext';
 import { useAppNotice } from './useAppNotice';
+import { useAppQuickCapture } from './useAppQuickCapture';
 import { useAppRouteState } from './useAppRouteState';
 import { useAppShellEffects } from './useAppShellEffects';
 import { useAppShellRouting } from './useAppShellRouting';
@@ -118,11 +119,14 @@ export function useAppShellModel(): AppShellModel {
     void fetchEntries();
   }, [fetchEntries, refreshBacklinks]), notifier);
 
-  // An undone delete brings the entries back to every view measured from them (calendar, writing streak, backlinks)
-  const offerDeleteUndo = useDeleteUndo(useCallback(() => {
+  // Every view measured from the entries (list, calendar, writing streak, backlinks) reads them again
+  const refreshEntryViews = useCallback(() => {
     refreshBacklinks();
     void refreshEntryQueries();
-  }, [refreshBacklinks, refreshEntryQueries]), notifier);
+  }, [refreshBacklinks, refreshEntryQueries]);
+
+  // An undone delete brings the entries back to every view measured from them
+  const offerDeleteUndo = useDeleteUndo(refreshEntryViews, notifier);
 
   // A deleted entry leaves every view measured from the entries (calendar, writing streak, backlinks) too
   const deleteModalState = useDeleteModal((entryId) => {
@@ -205,6 +209,17 @@ export function useAppShellModel(): AppShellModel {
     navigate,
     searchParams,
     setCurrentDiaryId,
+  });
+
+  const quickCapture = useAppQuickCapture({
+    entriesService: entriesState.entriesService,
+    notifier,
+    currentView,
+    searchParams,
+    navigate,
+    openView: routingState.handleViewChange,
+    setComposerText: entryFormState.setNewEntryText,
+    onSaved: refreshEntryViews,
   });
 
   const { aiService } = useApiServices();
@@ -363,6 +378,7 @@ export function useAppShellModel(): AppShellModel {
     handleAiChat,
     handleLoadAiChatHistory,
     isEmailVerified: user?.emailVerified ?? false,
+    quickCapture,
     routingState,
     setChatEntry,
     t,
