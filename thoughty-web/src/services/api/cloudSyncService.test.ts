@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { getTranslation } from '../../utils/translations';
 import { createCloudSyncService } from './cloudSyncService';
 
+vi.mock('../../utils/timeZone', () => ({ browserTimeZone: () => 'Pacific/Kiritimati' }));
+
 type Service = ReturnType<typeof createCloudSyncService>;
 
 const jsonResponse = (body: unknown, status = 200) => ({
@@ -107,7 +109,7 @@ const calls: ReadonlyArray<{
     call: (service) => service.setSchedule('google_drive', { frequency: 'weekly', format: 'md', diaryId: 1, includeVisibility: false }),
     request: ['/api/cloud-sync/schedule', {
       method: 'POST',
-      body: JSON.stringify({ provider: 'google_drive', frequency: 'weekly', format: 'md', diaryId: 1, includeVisibility: false }),
+      body: JSON.stringify({ provider: 'google_drive', frequency: 'weekly', format: 'md', diaryId: 1, includeVisibility: false, timeZone: 'Pacific/Kiritimati' }),
     }],
     answer: { success: true },
     data: { success: true },

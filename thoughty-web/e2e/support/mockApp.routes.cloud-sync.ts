@@ -1,7 +1,7 @@
 import type { Request, Route } from '@playwright/test';
 
 import type { MockAppState, MockCloudFile, MockCloudProvider, MockCloudSchedule } from './mockApp.shared';
-import { fulfillJson } from './mockApp.route-utils';
+import { fulfillApiError, fulfillJson, isTimeZone } from './mockApp.route-utils';
 
 type CloudSyncRouteContext = {
   route: Route;
@@ -127,8 +127,13 @@ async function handleCloudSyncWriteRoutes({ route, request, pathname, searchPara
       format?: 'txt' | 'json' | 'md';
       diaryId?: number;
       includeVisibility?: boolean;
+      timeZone: string;
     };
     state.lastCloudSchedulePayload = payload;
+    if (!isTimeZone(payload.timeZone)) {
+      await fulfillApiError(route, 400, 'VALIDATION_FAILED', 'Unknown time zone');
+      return true;
+    }
     state.cloudSchedules = {
       ...state.cloudSchedules,
       [payload.provider]: {
@@ -137,6 +142,7 @@ async function handleCloudSyncWriteRoutes({ route, request, pathname, searchPara
         format: payload.format,
         diaryId: payload.diaryId,
         includeVisibility: payload.includeVisibility,
+        timeZone: payload.timeZone,
         lastSyncAt: state.cloudSchedules[payload.provider]?.lastSyncAt,
         nextSyncAt: nextSyncAtFor(payload.frequency),
       },

@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, HttpException, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { apiError, apiErrorCodeOf } from '@/common/errors';
 import { writersDayOr } from '@/common/utils/writers-day.util';
+import { isValidTimeZone, localDateIn } from '@/common/utils/time-zone.util';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Setting } from '@/database/entities';
@@ -20,6 +21,12 @@ import type {
 import { checkCloudCancellation, verifyCloudOwnership } from './providers/cloud-operation';
 
 const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
+
+/** The settings, per provider, that make up a sync schedule and its progress. */
+const SCHEDULE_FIELDS = [
+  'sync_enabled', 'sync_frequency', 'sync_format', 'sync_diary_id', 'sync_include_visibility', 'sync_time_zone',
+  'last_sync_at', 'last_sync_hash',
+] as const;
 
 @Injectable()
 export class CloudSyncService {
@@ -238,12 +245,11 @@ export class CloudSyncService {
     const result = {} as CloudSyncSchedulesResponseDto;
 
     for (const provider of providers) {
-      const fields = ['sync_enabled', 'sync_frequency', 'sync_format', 'sync_diary_id', 'sync_include_visibility', 'last_sync_at', 'last_sync_hash'];
       const settings = await Promise.all(
-        fields.map(field => this.settingRepository.findOne({ where: { userId, key: this.settingKey(provider, field) } })),
+        SCHEDULE_FIELDS.map(field => this.settingRepository.findOne({ where: { userId, key: this.settingKey(provider, field) } })),
       );
 
-      const [enabled, frequency, format, diaryId, includeVisibility, lastSyncAt, lastSyncHash] = settings;
+      const [enabled, frequency, format, diaryId, includeVisibility, timeZone, lastSyncAt, lastSyncHash] = settings;
       const isEnabled = enabled?.value === 'true';
 
       let nextSyncAt: string | undefined;
@@ -261,6 +267,7 @@ export class CloudSyncService {
         format: format?.value,
         diaryId: diaryId?.value ? Number.parseInt(diaryId.value, 10) : undefined,
         includeVisibility: includeVisibility?.value === 'true',
+        timeZone: timeZone?.value,
         lastSyncAt: lastSyncAt?.value,
         lastSyncHash: lastSyncHash?.value,
         nextSyncAt,
@@ -274,10 +281,14 @@ export class CloudSyncService {
     userId: number,
     provider: CloudProviderType,
     frequency: SyncFrequency,
+    timeZone: string,
     format: TextExportFormat = 'txt',
     diaryId?: number,
     includeVisibility?: boolean,
   ): Promise<{ success: boolean }> {
+    if (!isValidTimeZone(timeZone)) {
+      throw apiError(BadRequestException, 'VALIDATION_FAILED', 'Unknown time zone');
+    }
     // Verify the provider is connected
     const tokenSetting = await this.settingRepository.findOne({
       where: { userId, key: this.settingKey(provider, 'access_token') },
@@ -307,30 +318,35 @@ export class CloudSyncService {
         { userId, key: this.settingKey(provider, 'sync_include_visibility'), value: includeVisibility ? 'true' : 'false' },
         ['userId', 'key'],
       ),
+      this.settingRepository.upsert(
+        { userId, key: this.settingKey(provider, 'sync_time_zone'), value: timeZone },
+        ['userId', 'key'],
+      ),
     ]);
 
     return { success: true };
   }
 
   async deleteSyncSchedule(userId: number, provider: CloudProviderType): Promise<{ success: boolean }> {
-    const fields = ['sync_enabled', 'sync_frequency', 'sync_format', 'sync_diary_id', 'sync_include_visibility', 'last_sync_at', 'last_sync_hash'];
-    for (const field of fields) {
+    for (const field of SCHEDULE_FIELDS) {
       await this.settingRepository.delete({ userId, key: this.settingKey(provider, field) });
     }
     return { success: true };
   }
 
   /**
-   * Uploads the scheduled export when it changed since the last sync. `today` is the writer's day,
-   * which names the file, when they press Sync now; the worker's scheduled runs use the UTC day.
+   * Uploads the scheduled export when it changed since the last sync. The writer's day names the file:
+   * `today` when they press Sync now, and for the worker's scheduled runs the day it is in the time zone
+   * saved with the schedule (the UTC day for a schedule saved without one).
    */
   async executeDiffSync(userId: number, provider: CloudProviderType, today?: string): Promise<DiffSyncResponseDto> {
     await verifyCloudOwnership();
     // Load schedule config
-    const [formatSetting, diaryIdSetting, includeVisibilitySetting, lastHashSetting] = await Promise.all([
+    const [formatSetting, diaryIdSetting, includeVisibilitySetting, timeZoneSetting, lastHashSetting] = await Promise.all([
       this.settingRepository.findOne({ where: { userId, key: this.settingKey(provider, 'sync_format') } }),
       this.settingRepository.findOne({ where: { userId, key: this.settingKey(provider, 'sync_diary_id') } }),
       this.settingRepository.findOne({ where: { userId, key: this.settingKey(provider, 'sync_include_visibility') } }),
+      this.settingRepository.findOne({ where: { userId, key: this.settingKey(provider, 'sync_time_zone') } }),
       this.settingRepository.findOne({ where: { userId, key: this.settingKey(provider, 'last_sync_hash') } }),
     ]);
 
@@ -340,7 +356,7 @@ export class CloudSyncService {
     const lastHash = lastHashSetting?.value || '';
 
     // Generate export content (text formats only, per the schedule DTO)
-    const exported = await this.ioService.export(userId, diaryId, includeVisibility, format, writersDayOr(today));
+    const exported = await this.ioService.export(userId, diaryId, includeVisibility, format, today ?? this.scheduledDay(timeZoneSetting?.value));
     await verifyCloudOwnership();
     const { filename, contentType } = exported;
     const content = String(exported.content);
@@ -376,6 +392,12 @@ export class CloudSyncService {
     ]);
 
     return { synced: true, message: 'Sync completed successfully', file };
+  }
+
+  /** The writer's day for a scheduled sync: the day in the schedule's time zone, else the UTC day. */
+  private scheduledDay(timeZone: string | undefined): string {
+    const now = new Date();
+    return timeZone && isValidTimeZone(timeZone) ? localDateIn(now, timeZone) : writersDayOr(undefined, now);
   }
 
   async checkSyncDue(userId: number, provider: CloudProviderType): Promise<boolean> {

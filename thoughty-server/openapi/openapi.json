@@ -8224,6 +8224,7 @@
                     "format": "2026-06-24T10:00:00.000Z",
                     "diaryId": 1,
                     "includeVisibility": true,
+                    "timeZone": "Europe/Paris",
                     "lastSyncAt": "2026-06-24T10:00:00.000Z",
                     "lastSyncHash": "example",
                     "nextSyncAt": "2026-06-24T10:00:00.000Z"
@@ -8234,6 +8235,7 @@
                     "format": "2026-06-24T10:00:00.000Z",
                     "diaryId": 1,
                     "includeVisibility": true,
+                    "timeZone": "Europe/Paris",
                     "lastSyncAt": "2026-06-24T10:00:00.000Z",
                     "lastSyncHash": "example",
                     "nextSyncAt": "2026-06-24T10:00:00.000Z"
@@ -8244,6 +8246,7 @@
                     "format": "2026-06-24T10:00:00.000Z",
                     "diaryId": 1,
                     "includeVisibility": true,
+                    "timeZone": "Europe/Paris",
                     "lastSyncAt": "2026-06-24T10:00:00.000Z",
                     "lastSyncHash": "example",
                     "nextSyncAt": "2026-06-24T10:00:00.000Z"
@@ -8278,6 +8281,7 @@
               "example": {
                 "provider": "google_drive",
                 "frequency": "every_6h",
+                "timeZone": "Europe/Paris",
                 "format": "txt",
                 "diaryId": 1,
                 "includeVisibility": false
@@ -8295,6 +8299,22 @@
                 },
                 "example": {
                   "success": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not connected to the provider (`CLOUD_NOT_CONNECTED`), or an unknown time zone (`VALIDATION_FAILED`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Not connected to the provider (`CLOUD_NOT_CONNECTED`), or an unknown time zone (`VALIDATION_FAILED`)",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
                 }
               }
             }
@@ -18512,6 +18532,11 @@
           "includeVisibility": {
             "type": "boolean"
           },
+          "timeZone": {
+            "type": "string",
+            "example": "Europe/Paris",
+            "description": "The IANA time zone whose day names the scheduled sync’s file; absent for a schedule saved without one, which uses the UTC day"
+          },
           "lastSyncAt": {
             "type": "string",
             "description": "Last sync time (ISO 8601)"
@@ -18535,6 +18560,7 @@
           "format": "2026-06-24T10:00:00.000Z",
           "diaryId": 1,
           "includeVisibility": true,
+          "timeZone": "Europe/Paris",
           "lastSyncAt": "2026-06-24T10:00:00.000Z",
           "lastSyncHash": "example",
           "nextSyncAt": "2026-06-24T10:00:00.000Z"
@@ -18565,6 +18591,7 @@
             "format": "2026-06-24T10:00:00.000Z",
             "diaryId": 1,
             "includeVisibility": true,
+            "timeZone": "Europe/Paris",
             "lastSyncAt": "2026-06-24T10:00:00.000Z",
             "lastSyncHash": "example",
             "nextSyncAt": "2026-06-24T10:00:00.000Z"
@@ -18575,6 +18602,7 @@
             "format": "2026-06-24T10:00:00.000Z",
             "diaryId": 1,
             "includeVisibility": true,
+            "timeZone": "Europe/Paris",
             "lastSyncAt": "2026-06-24T10:00:00.000Z",
             "lastSyncHash": "example",
             "nextSyncAt": "2026-06-24T10:00:00.000Z"
@@ -18585,6 +18613,7 @@
             "format": "2026-06-24T10:00:00.000Z",
             "diaryId": 1,
             "includeVisibility": true,
+            "timeZone": "Europe/Paris",
             "lastSyncAt": "2026-06-24T10:00:00.000Z",
             "lastSyncHash": "example",
             "nextSyncAt": "2026-06-24T10:00:00.000Z"
@@ -18613,6 +18642,12 @@
               "weekly"
             ]
           },
+          "timeZone": {
+            "type": "string",
+            "example": "Europe/Paris",
+            "maxLength": 64,
+            "description": "The writer’s IANA time zone: a scheduled sync names its file after the day it is there"
+          },
           "format": {
             "type": "string",
             "description": "Export format",
@@ -18635,11 +18670,13 @@
         },
         "required": [
           "provider",
-          "frequency"
+          "frequency",
+          "timeZone"
         ],
         "example": {
           "provider": "google_drive",
           "frequency": "every_6h",
+          "timeZone": "Europe/Paris",
           "format": "txt",
           "diaryId": 1,
           "includeVisibility": false

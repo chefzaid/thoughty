@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsIn, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { StrictBoolean, StrictInt, WritersDay } from '@/common/validation';
 
@@ -106,6 +106,15 @@ export class SetSyncScheduleDto {
   @ApiProperty({ description: 'Sync frequency', enum: SYNC_FREQUENCIES })
   @IsIn(SYNC_FREQUENCIES)
   frequency: SyncFrequency;
+
+  @ApiProperty({
+    example: 'Europe/Paris',
+    maxLength: 64,
+    description: 'The writer’s IANA time zone: a scheduled sync names its file after the day it is there',
+  })
+  @IsString()
+  @MaxLength(64)
+  timeZone: string;
 
   @ApiPropertyOptional({ description: 'Export format', enum: ['txt', 'json', 'md'], default: 'txt' })
   @IsOptional()

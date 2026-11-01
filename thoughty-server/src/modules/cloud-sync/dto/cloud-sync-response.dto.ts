@@ -55,6 +55,12 @@ export class SyncScheduleDto {
   @ApiProperty()
   includeVisibility: boolean;
 
+  @ApiPropertyOptional({
+    example: 'Europe/Paris',
+    description: 'The IANA time zone whose day names the scheduled sync’s file; absent for a schedule saved without one, which uses the UTC day',
+  })
+  timeZone?: string;
+
   @ApiPropertyOptional({ description: 'Last sync time (ISO 8601)' })
   lastSyncAt?: string;
 

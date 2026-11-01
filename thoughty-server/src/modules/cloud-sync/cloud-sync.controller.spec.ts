@@ -158,13 +158,14 @@ describe('CloudSyncController', () => {
       const result = await controller.setSchedule(mockUser as any, {
         provider: 'google_drive',
         frequency: 'daily',
+        timeZone: 'Pacific/Kiritimati',
         format: 'json',
         diaryId: 5,
         includeVisibility: true,
       });
 
       expect(result).toEqual({ success: true });
-      expect(cloudSyncService.setSyncSchedule).toHaveBeenCalledWith(1, 'google_drive', 'daily', 'json', 5, true);
+      expect(cloudSyncService.setSyncSchedule).toHaveBeenCalledWith(1, 'google_drive', 'daily', 'Pacific/Kiritimati', 'json', 5, true);
     });
   });
 

@@ -114,6 +114,7 @@ export class CloudSyncController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Set or update a sync schedule' })
   @ApiResponse({ status: 200, description: 'Schedule configured', type: SuccessResponseDto })
+  @ApiResponse({ status: 400, description: 'Not connected to the provider (`CLOUD_NOT_CONNECTED`), or an unknown time zone (`VALIDATION_FAILED`)' })
   async setSchedule(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: SetSyncScheduleDto,
@@ -122,6 +123,7 @@ export class CloudSyncController {
       user.userId,
       dto.provider,
       dto.frequency,
+      dto.timeZone,
       dto.format,
       dto.diaryId,
       dto.includeVisibility,

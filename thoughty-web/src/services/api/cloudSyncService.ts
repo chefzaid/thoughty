@@ -1,6 +1,7 @@
 import type { components } from '../../generated/openapi';
 import { requestJson, type ServiceResult } from './base';
 import { writersToday } from '../../utils/entryDate';
+import { browserTimeZone } from '../../utils/timeZone';
 
 export type CloudProviderType = 'google_drive' | 'onedrive' | 'dropbox';
 
@@ -72,11 +73,15 @@ export const createCloudSyncService = (authFetch: CloudAuthFetch) => {
   const getSchedules = (): Promise<ServiceResult<SyncSchedules>> =>
     requestJson(authFetch('/api/cloud-sync/schedules'), 'Failed to load sync schedules');
 
+  /** Saves a provider's schedule with the browser's time zone, whose day names the files it syncs. */
   const setSchedule = (
     provider: CloudProviderType,
     config: { frequency: SyncFrequency; format?: string; diaryId?: number; includeVisibility?: boolean },
   ): Promise<ServiceResult<CloudActionResult>> =>
-    requestJson(authFetch('/api/cloud-sync/schedule', { method: 'POST', body: JSON.stringify({ provider, ...config }) }), 'cloudScheduleSaveError');
+    requestJson(
+      authFetch('/api/cloud-sync/schedule', { method: 'POST', body: JSON.stringify({ provider, ...config, timeZone: browserTimeZone() }) }),
+      'cloudScheduleSaveError',
+    );
 
   const deleteSchedule = (provider: CloudProviderType): Promise<ServiceResult<CloudActionResult>> =>
     requestJson(authFetch(`/api/cloud-sync/schedule?provider=${provider}`, { method: 'DELETE' }), 'cloudScheduleRemoveError');

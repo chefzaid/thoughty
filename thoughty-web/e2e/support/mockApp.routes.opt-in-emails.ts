@@ -1,5 +1,5 @@
 import type { components } from '../../src/generated/openapi';
-import { fulfillApiError, fulfillJson, type RouteContext } from './mockApp.route-utils';
+import { fulfillApiError, fulfillJson, isTimeZone, type RouteContext } from './mockApp.route-utils';
 import type { MockAppState } from './mockApp.shared';
 
 export type MockOptInEmail = components['schemas']['OptInEmailSettingsDto'];
@@ -38,15 +38,6 @@ function nextSendAt(hour: number, timeZone: string, monthly: boolean): string {
 
 export function createMockOptInEmail(overrides: Partial<MockOptInEmail> = {}): MockOptInEmail {
   return { enabled: false, deliveryHour: 8, timeZone: null, diaryId: null, nextSendAt: null, emailAvailable: true, ...overrides };
-}
-
-function isTimeZone(timeZone: string): boolean {
-  try {
-    new Intl.DateTimeFormat('en-US', { timeZone });
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 function turnOff(state: MockAppState, kind: OptInEmailKind) {

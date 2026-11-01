@@ -465,6 +465,7 @@ describe('UserDataExportService', () => {
         'cloud_google_drive_connected_at',
         'cloud_google_drive_sync_enabled',
         'cloud_google_drive_sync_frequency',
+        'cloud_google_drive_sync_time_zone',
         'cloud_google_drive_last_sync_at',
         'io_dateFormat',
         'legacyUnknownSetting',
@@ -478,6 +479,7 @@ describe('UserDataExportService', () => {
       'cloud_google_drive_connected_at',
       'cloud_google_drive_sync_enabled',
       'cloud_google_drive_sync_frequency',
+      'cloud_google_drive_sync_time_zone',
       'cloud_google_drive_last_sync_at',
       'io_dateFormat',
     ]);

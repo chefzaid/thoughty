@@ -6180,6 +6180,7 @@ export interface components {
          *       "format": "2026-06-24T10:00:00.000Z",
          *       "diaryId": 1,
          *       "includeVisibility": true,
+         *       "timeZone": "Europe/Paris",
          *       "lastSyncAt": "2026-06-24T10:00:00.000Z",
          *       "lastSyncHash": "example",
          *       "nextSyncAt": "2026-06-24T10:00:00.000Z"
@@ -6194,6 +6195,11 @@ export interface components {
             /** @description The diary exported, or all diaries when absent */
             diaryId?: number;
             includeVisibility: boolean;
+            /**
+             * @description The IANA time zone whose day names the scheduled sync’s file; absent for a schedule saved without one, which uses the UTC day
+             * @example Europe/Paris
+             */
+            timeZone?: string;
             /** @description Last sync time (ISO 8601) */
             lastSyncAt?: string;
             /** @description SHA-256 of the last uploaded export, to skip unchanged ones */
@@ -6209,6 +6215,7 @@ export interface components {
          *         "format": "2026-06-24T10:00:00.000Z",
          *         "diaryId": 1,
          *         "includeVisibility": true,
+         *         "timeZone": "Europe/Paris",
          *         "lastSyncAt": "2026-06-24T10:00:00.000Z",
          *         "lastSyncHash": "example",
          *         "nextSyncAt": "2026-06-24T10:00:00.000Z"
@@ -6219,6 +6226,7 @@ export interface components {
          *         "format": "2026-06-24T10:00:00.000Z",
          *         "diaryId": 1,
          *         "includeVisibility": true,
+         *         "timeZone": "Europe/Paris",
          *         "lastSyncAt": "2026-06-24T10:00:00.000Z",
          *         "lastSyncHash": "example",
          *         "nextSyncAt": "2026-06-24T10:00:00.000Z"
@@ -6229,6 +6237,7 @@ export interface components {
          *         "format": "2026-06-24T10:00:00.000Z",
          *         "diaryId": 1,
          *         "includeVisibility": true,
+         *         "timeZone": "Europe/Paris",
          *         "lastSyncAt": "2026-06-24T10:00:00.000Z",
          *         "lastSyncHash": "example",
          *         "nextSyncAt": "2026-06-24T10:00:00.000Z"
@@ -6244,6 +6253,7 @@ export interface components {
          * @example {
          *       "provider": "google_drive",
          *       "frequency": "every_6h",
+         *       "timeZone": "Europe/Paris",
          *       "format": "txt",
          *       "diaryId": 1,
          *       "includeVisibility": false
@@ -6260,6 +6270,11 @@ export interface components {
              * @enum {string}
              */
             frequency: "every_6h" | "every_12h" | "daily" | "weekly";
+            /**
+             * @description The writer’s IANA time zone: a scheduled sync names its file after the day it is there
+             * @example Europe/Paris
+             */
+            timeZone: string;
             /**
              * @description Export format
              * @default txt
@@ -14464,6 +14479,7 @@ export interface operations {
                      *         "format": "2026-06-24T10:00:00.000Z",
                      *         "diaryId": 1,
                      *         "includeVisibility": true,
+                     *         "timeZone": "Europe/Paris",
                      *         "lastSyncAt": "2026-06-24T10:00:00.000Z",
                      *         "lastSyncHash": "example",
                      *         "nextSyncAt": "2026-06-24T10:00:00.000Z"
@@ -14474,6 +14490,7 @@ export interface operations {
                      *         "format": "2026-06-24T10:00:00.000Z",
                      *         "diaryId": 1,
                      *         "includeVisibility": true,
+                     *         "timeZone": "Europe/Paris",
                      *         "lastSyncAt": "2026-06-24T10:00:00.000Z",
                      *         "lastSyncHash": "example",
                      *         "nextSyncAt": "2026-06-24T10:00:00.000Z"
@@ -14484,6 +14501,7 @@ export interface operations {
                      *         "format": "2026-06-24T10:00:00.000Z",
                      *         "diaryId": 1,
                      *         "includeVisibility": true,
+                     *         "timeZone": "Europe/Paris",
                      *         "lastSyncAt": "2026-06-24T10:00:00.000Z",
                      *         "lastSyncHash": "example",
                      *         "nextSyncAt": "2026-06-24T10:00:00.000Z"
@@ -14508,6 +14526,7 @@ export interface operations {
                  * @example {
                  *       "provider": "google_drive",
                  *       "frequency": "every_6h",
+                 *       "timeZone": "Europe/Paris",
                  *       "format": "txt",
                  *       "diaryId": 1,
                  *       "includeVisibility": false
@@ -14529,6 +14548,23 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["SuccessResponseDto"];
+                };
+            };
+            /** @description Not connected to the provider (`CLOUD_NOT_CONNECTED`), or an unknown time zone (`VALIDATION_FAILED`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "Not connected to the provider (`CLOUD_NOT_CONNECTED`), or an unknown time zone (`VALIDATION_FAILED`)",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };

@@ -16,7 +16,7 @@ export const SENSITIVE_CONFIG_KEYS = new Set([OPENROUTER_API_KEY_SETTING]);
  * and how syncing is set up. Its tokens, token expiry, and last content hash never leave the server.
  */
 const EXPORTABLE_CLOUD_SETTING =
-  /^cloud_(google_drive|onedrive|dropbox)_(connected_at|sync_enabled|sync_frequency|sync_format|sync_diary_id|sync_include_visibility|last_sync_at)$/;
+  /^cloud_(google_drive|onedrive|dropbox)_(connected_at|sync_enabled|sync_frequency|sync_format|sync_diary_id|sync_include_visibility|sync_time_zone|last_sync_at)$/;
 
 /** Settings a personal data export includes: preferences, export format, and cloud sync setup. */
 export function isExportableSettingKey(key: string): boolean {

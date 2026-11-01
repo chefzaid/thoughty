@@ -187,6 +187,7 @@ describeContract('external', (context) => {
       json: {
         provider: 'dropbox',
         frequency: 'daily',
+        timeZone: 'Europe/Paris',
         format: 'md',
         diaryId: null,
         includeVisibility: true,
@@ -210,5 +211,32 @@ describeContract('external', (context) => {
       json: { provider: 'dropbox' },
       status: 200,
     });
+  });
+
+  it('keeps the writer’s time zone with a sync schedule, for the day that names its files', async () => {
+    const { alice, bob } = context;
+    // A connection as the OAuth flow leaves it, which no outside drive can make here: the stored tokens
+    await context.api.dataSource.query(
+      `INSERT INTO settings (user_id, key, value) VALUES ($1, 'cloud_onedrive_access_token', 'iv:tag:token'),
+        ($1, 'cloud_onedrive_refresh_token', 'iv:tag:token')`,
+      [alice.id],
+    );
+    const schedule = { provider: 'onedrive', frequency: 'daily', format: 'txt', includeVisibility: false };
+    for (const timeZone of ['Pacific/Kiritimati', 'Pacific/Pago_Pago']) {
+      await call('POST /api/cloud-sync/schedule', { as: alice, json: { ...schedule, timeZone }, status: 200 });
+      const saved = await call('GET /api/cloud-sync/schedules', { as: alice, status: 200 });
+      expect(saved.body).toMatchObject({ onedrive: { enabled: true, frequency: 'daily', timeZone } });
+    }
+    for (const json of [schedule, { ...schedule, timeZone: 'Mars/Olympus_Mons' }, { ...schedule, timeZone: 'x'.repeat(65) }]) {
+      await call('POST /api/cloud-sync/schedule', { as: alice, json, status: 400, code: 'VALIDATION_FAILED' });
+    }
+    const kept = await call('GET /api/cloud-sync/schedules', { as: alice, status: 200 });
+    expect(kept.body).toMatchObject({ onedrive: { timeZone: 'Pacific/Pago_Pago' } });
+    const others = await call('GET /api/cloud-sync/schedules', { as: bob, status: 200 });
+    expect((others.body as { onedrive: { timeZone?: string } }).onedrive.timeZone).toBeUndefined();
+    await call('DELETE /api/cloud-sync/schedule', { as: alice, query: { provider: 'onedrive' }, status: 200 });
+    const removed = await call('GET /api/cloud-sync/schedules', { as: alice, status: 200 });
+    expect(removed.body).toMatchObject({ onedrive: { enabled: false } });
+    expect((removed.body as { onedrive: { timeZone?: string } }).onedrive.timeZone).toBeUndefined();
   });
 });

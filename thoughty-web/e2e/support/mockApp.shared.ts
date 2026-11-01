@@ -35,6 +35,8 @@ export interface MockCloudSchedule {
   format?: "txt" | "json" | "md";
   diaryId?: number;
   includeVisibility?: boolean;
+  /** The writer's time zone saved with the schedule, whose day names the files it syncs. */
+  timeZone?: string;
   lastSyncAt?: string;
   lastSyncHash?: string;
   nextSyncAt?: string;

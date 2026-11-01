@@ -24,6 +24,7 @@ describe('CloudSyncService', () => {
         if (where.key === 'cloud_google_drive_sync_format') return { value: 'json' };
         if (where.key === 'cloud_google_drive_sync_diary_id') return { value: '5' };
         if (where.key === 'cloud_google_drive_sync_include_visibility') return { value: 'true' };
+        if (where.key === 'cloud_google_drive_sync_time_zone') return { value: 'Pacific/Kiritimati' };
         if (where.key === 'cloud_google_drive_last_sync_at') return { value: '2024-06-01T00:00:00Z' };
         if (where.key === 'cloud_google_drive_last_sync_hash') return { value: 'abc123' };
         return null;
@@ -36,10 +37,12 @@ describe('CloudSyncService', () => {
       expect(result.google_drive.format).toBe('json');
       expect(result.google_drive.diaryId).toBe(5);
       expect(result.google_drive.includeVisibility).toBe(true);
+      expect(result.google_drive.timeZone).toBe('Pacific/Kiritimati');
       expect(result.google_drive.lastSyncAt).toBe('2024-06-01T00:00:00Z');
       expect(result.google_drive.lastSyncHash).toBe('abc123');
       expect(result.google_drive.nextSyncAt).toBeDefined();
       expect(result.onedrive.enabled).toBe(false);
+      expect(result.onedrive.timeZone).toBeUndefined();
       expect(result.dropbox.enabled).toBe(false);
     });
 
@@ -73,10 +76,14 @@ describe('CloudSyncService', () => {
       settingRepository.findOne.mockResolvedValue({ value: 'encrypted-token' });
       settingRepository.upsert.mockResolvedValue({});
 
-      const result = await service.setSyncSchedule(1, 'google_drive', 'daily', 'json', 5, true);
+      const result = await service.setSyncSchedule(1, 'google_drive', 'daily', 'Pacific/Pago_Pago', 'json', 5, true);
 
       expect(result).toEqual({ success: true });
-      expect(settingRepository.upsert).toHaveBeenCalledTimes(5);
+      expect(settingRepository.upsert).toHaveBeenCalledTimes(6);
+      expect(settingRepository.upsert).toHaveBeenCalledWith(
+        { userId: 1, key: 'cloud_google_drive_sync_time_zone', value: 'Pacific/Pago_Pago' },
+        ['userId', 'key'],
+      );
       expect(settingRepository.upsert).toHaveBeenCalledWith(
         { userId: 1, key: 'cloud_google_drive_sync_enabled', value: 'true' },
         ['userId', 'key'],
@@ -91,8 +98,18 @@ describe('CloudSyncService', () => {
       settingRepository.findOne.mockResolvedValue(null);
 
       await expect(
-        service.setSyncSchedule(1, 'google_drive', 'daily'),
+        service.setSyncSchedule(1, 'google_drive', 'daily', 'Europe/Paris'),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('refuses a time zone that is not an IANA zone, before reading anything', async () => {
+      settingRepository.findOne.mockResolvedValue({ value: 'encrypted-token' });
+
+      await expect(service.setSyncSchedule(1, 'google_drive', 'daily', 'Mars/Olympus_Mons')).rejects.toMatchObject({
+        response: { code: 'VALIDATION_FAILED', message: 'Unknown time zone' },
+      });
+      expect(settingRepository.findOne).not.toHaveBeenCalled();
+      expect(settingRepository.upsert).not.toHaveBeenCalled();
     });
   });
 
@@ -103,7 +120,8 @@ describe('CloudSyncService', () => {
       const result = await service.deleteSyncSchedule(1, 'google_drive');
 
       expect(result).toEqual({ success: true });
-      expect(settingRepository.delete).toHaveBeenCalledTimes(7);
+      expect(settingRepository.delete).toHaveBeenCalledTimes(8);
+      expect(settingRepository.delete).toHaveBeenCalledWith({ userId: 1, key: 'cloud_google_drive_sync_time_zone' });
       expect(settingRepository.delete).toHaveBeenCalledWith({ userId: 1, key: 'cloud_google_drive_sync_enabled' });
       expect(settingRepository.delete).toHaveBeenCalledWith({ userId: 1, key: 'cloud_google_drive_last_sync_hash' });
     });
@@ -139,7 +157,7 @@ describe('CloudSyncService', () => {
       expect(result.message).toBe('Sync completed successfully');
       expect(result.file).toEqual(mockFile);
       expect(googleDriveProvider.uploadFile).toHaveBeenCalled();
-      // The worker's scheduled runs know no writer's day: the file is named by the UTC day
+      // A schedule saved without a time zone names the worker's files by the UTC day
       expect(ioService.export).toHaveBeenCalledWith(1, undefined, false, expect.any(String), new Date().toISOString().slice(0, 10));
     });
 
@@ -199,6 +217,56 @@ describe('CloudSyncService', () => {
       expect(result.file).toEqual(mockFile);
       // Sync now names the file after the writer's day
       expect(ioService.export).toHaveBeenCalledWith(1, undefined, false, 'txt', '2026-11-01');
+    });
+  });
+
+  describe('executeDiffSync on a schedule saved with a time zone', () => {
+    // 10:30 UTC on 31 October: already 00:30 on 1 November in Kiritimati (UTC+14), still 23:30 on
+    // 30 October in Pago Pago (UTC-11).
+    const NOW = new Date('2026-10-31T10:30:00.000Z');
+
+    function scheduleIn(timeZone: string | null) {
+      settingRepository.findOne.mockImplementation(({ where }: any) => {
+        if (where.key === 'cloud_google_drive_sync_time_zone') return timeZone === null ? null : { value: timeZone };
+        if (where.key === 'cloud_google_drive_last_sync_hash') return null;
+        if (where.key === 'cloud_google_drive_access_token') return { value: service['encrypt']('access-token') };
+        if (where.key === 'cloud_google_drive_refresh_token') return { value: service['encrypt']('refresh-token') };
+        if (where.key === 'cloud_google_drive_expires_at') return { value: String(NOW.getTime() + 3600000) };
+        return null;
+      });
+      ioService.export.mockResolvedValue({ content: 'entries', filename: 'thoughty_all_diaries.txt', contentType: 'text/plain' });
+      googleDriveProvider.uploadFile.mockResolvedValue({ id: '1', name: 'thoughty_all_diaries.txt', size: 7, modifiedAt: NOW.toISOString() });
+      settingRepository.upsert.mockResolvedValue({});
+    }
+
+    beforeEach(() => {
+      jest.useFakeTimers({ now: NOW, doNotFake: ['nextTick', 'setImmediate'] });
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it.each([
+      ['Pacific/Kiritimati', '2026-11-01'],
+      ['Pacific/Pago_Pago', '2026-10-30'],
+      [null, '2026-10-31'],
+      ['Mars/Olympus_Mons', '2026-10-31'],
+    ])('names the worker’s file after the day in %s (%s)', async (timeZone, day) => {
+      scheduleIn(timeZone);
+
+      const result = await service.executeDiffSync(1, 'google_drive');
+
+      expect(result.synced).toBe(true);
+      expect(ioService.export).toHaveBeenCalledWith(1, undefined, false, 'txt', day);
+    });
+
+    it('lets the day sent with Sync now name the file over the schedule’s time zone', async () => {
+      scheduleIn('Pacific/Kiritimati');
+
+      await service.executeDiffSync(1, 'google_drive', '2026-10-31');
+
+      expect(ioService.export).toHaveBeenCalledWith(1, undefined, false, 'txt', '2026-10-31');
     });
   });
 

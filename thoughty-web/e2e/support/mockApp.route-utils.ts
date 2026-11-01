@@ -41,6 +41,17 @@ export function fulfillApiError(route: Route, statusCode: number, code: string, 
  * A boolean query flag as the API's `@StrictBoolean()` reads it: true or 1, false or 0, and `fallback`
  * (the API's default) when it is not sent. `refuseInvalidQueryParameters` has already refused anything else.
  */
+/** Whether `timeZone` is an IANA time zone, as the API checks one before keeping it. */
+export function isTimeZone(timeZone: unknown): boolean {
+  if (typeof timeZone !== 'string' || timeZone.length > 64) return false;
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function readQueryFlag(searchParams: URLSearchParams, name: string, fallback: boolean): boolean {
   const value = searchParams.get(name);
   if (value === null) return fallback;
