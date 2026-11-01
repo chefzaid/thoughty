@@ -32,13 +32,13 @@ Spec files keep to the 500-line rule too (`thoughty-web/src/fileLength.test.js` 
 | `npm test` | Jest specs; add a path or name to narrow |
 | `npm run test:watch` / `npm run test:cov` | watch mode / coverage |
 | `npm run test:e2e` | the real-API contract specs in `test/`; skipped without `THOUGHTY_PG_TEST_URL` ([Real-API Contract Specs](#real-api-contract-specs)) |
-| `npm run lint` | ESLint, applying fixes |
+| `npm run lint` | type check of the whole project, specs and `test/` included (`tsconfig.json`; the build's `tsconfig.build.json` leaves specs out), then ESLint, applying fixes |
 
 | Command (`thoughty-web`) | Runs |
 |---|---|
 | `npm test` | Vitest |
 | `npm run test:watch` / `npm run test:coverage` | watch mode / coverage (fails below the thresholds in `vitest.config.ts`) |
-| `npm run typecheck` / `npm run lint` | type check (the app, then `e2e/` with `e2e/tsconfig.json`) / ESLint |
+| `npm run typecheck` / `npm run lint` | type check (the app and its unit tests, then `e2e/` with `e2e/tsconfig.json`, then the root `*.config.ts` files with `tsconfig.node.json`) / ESLint |
 | `npm run api:usage` | fails if the frontend stops calling a documented endpoint |
 | `npm run test:e2e:install` | install the bundled Chromium (once) |
 | `npm run test:e2e` | all Playwright specs |

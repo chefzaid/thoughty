@@ -52,7 +52,7 @@ Always set `CONFIG_ENCRYPTION_SECRET`: the API and worker do not start without i
 
 | Stage | Jobs | Behavior |
 |---|---|---|
-| `build` | `01-build` → `02-test` → `03-package` | Build and package must pass. Tests and the 80% coverage rule only report. |
+| `build` | `01-build` → `02-test` → `03-package` | Build and package must pass; `01-build` also type-checks both apps with their specs (`tsc --noEmit -p tsconfig.json` in the server, `npm run typecheck` in the web). Tests and the 80% coverage rule only report. |
 | `verify` | `01-e2e`, `02-quality`, `03-security` | Reports only. E2E is manual. SonarQube runs automatically on `main`. Trivy is manual. |
 | `release` | `01-release` → `02-deploy` | Needs only build and package. |
 | `version` | `set-major-version` | Manual; sets `<NEW_MAJOR_VERSION>.0.0`. |

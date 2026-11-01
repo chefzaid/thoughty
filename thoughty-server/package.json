@@ -15,7 +15,7 @@
     "start:prod": "node dist/src/main.js",
     "start:cloud-sync-worker": "node dist/src/cloud-sync-worker.js",
     "cloud-sync-worker": "npx ts-node -r tsconfig-paths/register src/cloud-sync-worker.ts",
-    "lint": "eslint \"{src,scripts,test}/**/*.ts\" --fix",
+    "lint": "tsc --noEmit -p tsconfig.json && eslint \"{src,scripts,test}/**/*.ts\" --fix",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage --passWithNoTests",

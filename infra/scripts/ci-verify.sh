@@ -19,6 +19,7 @@ build_application() {
 
   pushd thoughty-server >/dev/null
   npm ci
+  npx tsc --noEmit -p tsconfig.json
   npm run build
   tar -czf "thoughty-server-${APP_VERSION}.tar.gz" dist package.json package-lock.json
   popd >/dev/null
