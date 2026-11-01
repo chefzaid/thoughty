@@ -112,7 +112,10 @@ test.describe('Reread reminders', () => {
     await expect(dialog.getByRole('button', { name: 'Dans une semaine' })).toBeVisible();
     await page.keyboard.press('Escape');
 
+    // The button, the dialog it opens and the reminder's hint all call it "Moments forts"
     await page.getByRole('button', { name: 'Moments forts' }).click();
+    const highlights = page.getByRole('dialog', { name: 'Moments forts' });
+    await expect(highlights.getByRole('heading', { name: 'Moments forts', level: 2 })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Vous avez demandé à relire ceci' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Relecture terminée pour l’entrée du 1 avril 2025' })).toBeVisible();
   });
