@@ -126,6 +126,7 @@ export const CONTRACT_SUITES = {
     'GET /api/attachments/file/{filename}',
   ],
   media: ['POST /api/attachments/{id}/poster'],
+  rereading: ['PUT /api/entries/{id}/reread-reminder', 'DELETE /api/entries/{id}/reread-reminder'],
   sharing: [
     'GET /api/share-links',
     'POST /api/share-links',

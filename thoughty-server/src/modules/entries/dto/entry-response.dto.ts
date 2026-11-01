@@ -77,6 +77,17 @@ export class EntryResponseDto {
   })
   sealed_until: Date | null;
 
+  @ApiProperty({
+    type: String,
+    format: 'date',
+    nullable: true,
+    description:
+      'The writer\'s own day (YYYY-MM-DD) on which they asked to reread the entry; null without a reminder. ' +
+      'From that day Highlights shows it until they mark it done.',
+    example: null,
+  })
+  reread_on: string | null;
+
   @ApiPropertyOptional({
     type: [String],
     description:
@@ -118,6 +129,14 @@ export class EntryHighlightsResponseDto {
     description: 'Time capsules opened in the last seven days, newest first',
   })
   openedCapsules: OpenedTimeCapsuleDto[];
+
+  @ApiProperty({
+    type: () => [EntryResponseDto],
+    description:
+      'Entries the writer asked to reread on or before their day (`today`), longest waiting first, up to 10; ' +
+      'each stays until marked done',
+  })
+  rereadReminders: EntryResponseDto[];
 }
 
 export class OpenedTimeCapsuleDto {

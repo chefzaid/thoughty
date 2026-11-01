@@ -6,6 +6,7 @@ import {
   MaxLength,
   Min,
   Matches,
+  IsDateString,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
@@ -164,4 +165,14 @@ export class GetHighlightsQueryDto {
   @IsOptional()
   @StrictInt()
   diaryId?: number;
+
+  @ApiPropertyOptional({
+    example: '2026-10-31',
+    format: 'date',
+    description: 'The writer’s own day, which reread reminders are due by; the server’s UTC day when left out',
+  })
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @IsDateString({ strict: true })
+  today?: string;
 }

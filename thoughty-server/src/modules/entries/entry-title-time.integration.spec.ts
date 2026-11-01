@@ -10,6 +10,7 @@ import { EntriesQueryService } from './entries-query.service';
 import { EntrySearchService } from './entry-search.service';
 import { EntryLookupService } from './entry-lookup.service';
 import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
+import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
 
 describePostgres('PostgreSQL entry titles and times of day', () => {
   let database: PostgresTestDatabase;
@@ -23,7 +24,7 @@ describePostgres('PostgreSQL entry titles and times of day', () => {
     database = await createPostgresTestDatabase();
     dataSource = database.dataSource;
     entries = dataSource.getRepository(Entry);
-    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries), timeCapsuleServiceOn(dataSource));
+    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries), timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource));
     lookup = new EntryLookupService(entries);
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });

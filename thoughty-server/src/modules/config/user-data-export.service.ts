@@ -167,6 +167,7 @@ export class UserDataExportService {
         createdAt: entry.createdAt,
         deletedAt: entry.deletedAt,
         sealedUntil: entry.sealedUntil,
+        rereadOn: entry.rereadOn,
       })),
       revisions: revisions.map((revision) => ({
         id: revision.id,

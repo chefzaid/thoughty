@@ -43,6 +43,8 @@ export interface Entry {
    * tags, mood and attachments are left out.
    */
   sealed_until?: string | null;
+  /** The writer's day (YYYY-MM-DD) on which they asked to reread the entry; from then Highlights shows it until done. */
+  reread_on?: string | null;
 }
 
 /** Keyword search results come best match first, or by date as without a search. */

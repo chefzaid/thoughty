@@ -10,6 +10,7 @@ import { taskListTranslations, type TaskListTranslationKey } from "./translation
 import { inlineImagesTranslations, type InlineImagesTranslationKey } from "./translations.inlineImages";
 import { videoAttachmentsTranslations, type VideoAttachmentsTranslationKey } from "./translations.videoAttachments";
 import { printTranslations, type PrintTranslationKey } from "./translations.print";
+import { rereadReminderTranslations, type RereadReminderTranslationKey } from "./translations.rereadReminder";
 import { focusModeTranslations, type FocusModeTranslationKey } from "./translations.focusMode";
 import { entryTemplatesTranslations, type EntryTemplatesTranslationKey } from "./translations.entryTemplates";
 import { markdownToolbarTranslations, type MarkdownToolbarTranslationKey } from "./translations.markdownToolbar";
@@ -63,6 +64,7 @@ export type TranslationKey =
   | InlineImagesTranslationKey
   | VideoAttachmentsTranslationKey
   | PrintTranslationKey
+  | RereadReminderTranslationKey
   | FocusModeTranslationKey
   | EntryTemplatesTranslationKey
   | MarkdownToolbarTranslationKey
@@ -121,6 +123,7 @@ export const translations: Translations = {
     ...inlineImagesTranslations.en,
     ...videoAttachmentsTranslations.en,
     ...printTranslations.en,
+    ...rereadReminderTranslations.en,
     ...focusModeTranslations.en,
     ...entryTemplatesTranslations.en,
     ...markdownToolbarTranslations.en,
@@ -172,6 +175,7 @@ export const translations: Translations = {
     ...inlineImagesTranslations.fr,
     ...videoAttachmentsTranslations.fr,
     ...printTranslations.fr,
+    ...rereadReminderTranslations.fr,
     ...focusModeTranslations.fr,
     ...entryTemplatesTranslations.fr,
     ...markdownToolbarTranslations.fr,

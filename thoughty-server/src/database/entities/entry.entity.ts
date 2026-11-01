@@ -36,6 +36,7 @@ export const TIME_OF_DAY_TRANSFORMER: ValueTransformer = {
 })
 @Index('idx_entries_user_deleted_at', ['userId', 'deletedAt'], { where: 'deleted_at IS NOT NULL' })
 @Index('idx_entries_user_mood_date', ['userId', 'mood', 'date'], { where: 'mood IS NOT NULL' })
+@Index('idx_entries_user_reread_on', ['userId', 'rereadOn'], { where: 'reread_on IS NOT NULL' })
 export class Entry {
   @PrimaryGeneratedColumn()
   id: number;
@@ -109,6 +110,13 @@ export class Entry {
    */
   @Column({ name: 'sealed_until', type: 'timestamptz', nullable: true })
   sealedUntil: Date | null;
+
+  /**
+   * The writer's own day (YYYY-MM-DD) on which they asked to reread the entry; null without a reminder.
+   * From that day Highlights shows it until they mark it done. A sealed time capsule never has one.
+   */
+  @Column({ name: 'reread_on', type: 'date', nullable: true })
+  rereadOn: string | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

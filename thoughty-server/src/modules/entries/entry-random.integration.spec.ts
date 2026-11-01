@@ -28,7 +28,7 @@ describePostgres('PostgreSQL random entry', () => {
     entries = dataSource.getRepository(Entry);
     const search = new EntrySearchService(entries);
     random = new EntryRandomService(entries, search);
-    list = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), search, {} as never);
+    list = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), search, {} as never, {} as never);
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });
 

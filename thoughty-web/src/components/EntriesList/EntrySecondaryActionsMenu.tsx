@@ -6,6 +6,7 @@ import {
 } from './EntryActionPrimitives';
 import useDismissibleMenu from './useDismissibleMenu';
 import PrintIcon from '../PrintSheet/PrintIcon';
+import RereadIcon from '../RereadReminder/RereadIcon';
 
 interface EntrySecondaryActionsMenuProps {
     isDark: boolean;
@@ -19,6 +20,8 @@ interface EntrySecondaryActionsMenuProps {
     onSharePrivately?: () => void;
     /** Opens the dialog that prints this entry. */
     onPrint?: () => void;
+    /** Opens the dialog that asks on which day to reread this entry. */
+    onRemindToReread?: () => void;
     onToggleHistory?: () => Promise<void>;
     onSummarize?: () => void;
     /** Copies the entry's text, tags and format into the new entry form. */
@@ -38,6 +41,7 @@ export default function EntrySecondaryActionsMenu({
     onShareImage,
     onSharePrivately,
     onPrint,
+    onRemindToReread,
     onToggleHistory,
     onSummarize,
     onUseAsStartingPoint,
@@ -137,6 +141,11 @@ export default function EntrySecondaryActionsMenu({
         onPrint?.();
     }, [closeMenuForDialog, onPrint]);
 
+    const handleRemindToReread = useCallback(() => {
+        closeMenuForDialog();
+        onRemindToReread?.();
+    }, [closeMenuForDialog, onRemindToReread]);
+
     // The form takes focus, or a dialog asks first and gives focus back to the menu button
     const handleUseAsStartingPoint = useCallback(() => {
         closeMenuForDialog();
@@ -230,6 +239,16 @@ export default function EntrySecondaryActionsMenu({
                         >
                             <PrintIcon className="h-4 w-4 flex-shrink-0" />
                             <span>{t('printEntry')}</span>
+                        </MenuActionButton>
+                    )}
+                    {onRemindToReread && (
+                        <MenuActionButton
+                            onClick={handleRemindToReread}
+                            className={secondaryActionClass}
+                            title={t('rereadRemindAction')}
+                        >
+                            <RereadIcon />
+                            <span>{t('rereadRemindAction')}</span>
                         </MenuActionButton>
                     )}
                     {onToggleHistory && (

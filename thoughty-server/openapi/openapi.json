@@ -1437,6 +1437,7 @@
                       ],
                       "created_at": "2026-06-24T10:00:00.000Z",
                       "sealed_until": null,
+                      "reread_on": null,
                       "search_matches": [
                         "morning run",
                         "swimming"
@@ -2102,6 +2103,7 @@
                     ],
                     "created_at": "2026-06-24T10:00:00.000Z",
                     "sealed_until": null,
+                    "reread_on": null,
                     "search_matches": [
                       "morning run",
                       "swimming"
@@ -2137,6 +2139,17 @@
             "description": "Diary ID",
             "schema": {
               "type": "number"
+            }
+          },
+          {
+            "name": "today",
+            "required": false,
+            "in": "query",
+            "description": "The writer’s own day, which reread reminders are due by; the server’s UTC day when left out",
+            "schema": {
+              "format": "date",
+              "example": "2026-10-31",
+              "type": "string"
             }
           }
         ],
@@ -2188,6 +2201,7 @@
                     ],
                     "created_at": "2026-06-24T10:00:00.000Z",
                     "sealed_until": null,
+                    "reread_on": null,
                     "search_matches": [
                       "morning run",
                       "swimming"
@@ -2242,6 +2256,7 @@
                         ],
                         "created_at": "2026-06-24T10:00:00.000Z",
                         "sealed_until": null,
+                        "reread_on": null,
                         "search_matches": [
                           "morning run",
                           "swimming"
@@ -2250,6 +2265,53 @@
                       "sealed_at": "2026-06-24T10:00:00.000Z",
                       "opened_at": "2026-06-24T10:00:00.000Z",
                       "opened_early": false
+                    }
+                  ],
+                  "rereadReminders": [
+                    {
+                      "id": 1,
+                      "user_id": 1,
+                      "diary_id": 1,
+                      "date": "2026-06-24",
+                      "index": 1,
+                      "title": "Morning walk by the river",
+                      "time_of_day": "08:30",
+                      "mood": 4,
+                      "feelings": [
+                        "calm",
+                        "grateful"
+                      ],
+                      "tags": [
+                        "reflection"
+                      ],
+                      "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                      "format": "plain",
+                      "visibility": "private",
+                      "is_favorite": true,
+                      "is_archived": true,
+                      "is_pinned": true,
+                      "diary_name": "Daily Journal",
+                      "diary_icon": "journal",
+                      "diary_color": "#2A9D8F",
+                      "attachments": [
+                        {
+                          "id": 1,
+                          "original_filename": "Daily Journal",
+                          "stored_filename": "Daily Journal",
+                          "mimetype": "example",
+                          "size": 1,
+                          "poster_filename": "Daily Journal",
+                          "transcript": "example",
+                          "transcribed_at": "2026-06-24T10:00:00.000Z"
+                        }
+                      ],
+                      "created_at": "2026-06-24T10:00:00.000Z",
+                      "sealed_until": null,
+                      "reread_on": null,
+                      "search_matches": [
+                        "morning run",
+                        "swimming"
+                      ]
                     }
                   ]
                 }
@@ -2633,6 +2695,7 @@
                     ],
                     "created_at": "2026-06-24T10:00:00.000Z",
                     "sealed_until": null,
+                    "reread_on": null,
                     "search_matches": [
                       "morning run",
                       "swimming"
@@ -2784,6 +2847,7 @@
                     ],
                     "created_at": "2026-06-24T10:00:00.000Z",
                     "sealed_until": null,
+                    "reread_on": null,
                     "search_matches": [
                       "morning run",
                       "swimming"
@@ -2916,6 +2980,7 @@
                     ],
                     "created_at": "2026-06-24T10:00:00.000Z",
                     "sealed_until": null,
+                    "reread_on": null,
                     "search_matches": [
                       "morning run",
                       "swimming"
@@ -3044,6 +3109,7 @@
                     ],
                     "created_at": "2026-06-24T10:00:00.000Z",
                     "sealed_until": null,
+                    "reread_on": null,
                     "search_matches": [
                       "morning run",
                       "swimming"
@@ -3156,6 +3222,7 @@
                     ],
                     "created_at": "2026-06-24T10:00:00.000Z",
                     "sealed_until": null,
+                    "reread_on": null,
                     "search_matches": [
                       "morning run",
                       "swimming"
@@ -3252,6 +3319,7 @@
                     ],
                     "created_at": "2026-06-24T10:00:00.000Z",
                     "sealed_until": null,
+                    "reread_on": null,
                     "search_matches": [
                       "morning run",
                       "swimming"
@@ -3348,6 +3416,7 @@
                     ],
                     "created_at": "2026-06-24T10:00:00.000Z",
                     "sealed_until": null,
+                    "reread_on": null,
                     "search_matches": [
                       "morning run",
                       "swimming"
@@ -4407,6 +4476,268 @@
         "summary": "Get persisted AI chat history for an entry",
         "tags": [
           "AI"
+        ]
+      }
+    },
+    "/api/entries/{id}/reread-reminder": {
+      "put": {
+        "description": "Sets the entry’s reread reminder, or replaces the one it has: from that day (on the writer’s clock) Highlights shows the entry with \"You asked to reread this\" until it is marked done.",
+        "operationId": "RereadRemindersController_set",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetRereadReminderDto"
+              },
+              "example": {
+                "rereadOn": "2026-11-07",
+                "today": "2026-10-31"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reminder set",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryMutationResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "entry": {
+                    "id": 1,
+                    "user_id": 1,
+                    "diary_id": 1,
+                    "date": "2026-06-24",
+                    "index": 1,
+                    "title": "Morning walk by the river",
+                    "time_of_day": "08:30",
+                    "mood": 4,
+                    "feelings": [
+                      "calm",
+                      "grateful"
+                    ],
+                    "tags": [
+                      "reflection"
+                    ],
+                    "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                    "format": "plain",
+                    "visibility": "private",
+                    "is_favorite": true,
+                    "is_archived": true,
+                    "is_pinned": true,
+                    "diary_name": "Daily Journal",
+                    "diary_icon": "journal",
+                    "diary_color": "#2A9D8F",
+                    "attachments": [
+                      {
+                        "id": 1,
+                        "original_filename": "Daily Journal",
+                        "stored_filename": "Daily Journal",
+                        "mimetype": "example",
+                        "size": 1,
+                        "poster_filename": "Daily Journal",
+                        "transcript": "example",
+                        "transcribed_at": "2026-06-24T10:00:00.000Z"
+                      }
+                    ],
+                    "created_at": "2026-06-24T10:00:00.000Z",
+                    "sealed_until": null,
+                    "reread_on": null,
+                    "search_matches": [
+                      "morning run",
+                      "swimming"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The day is not from tomorrow up to 50 years ahead, or `today` is not the writer’s day",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "The day is not from tomorrow up to 50 years ahead, or `today` is not the writer’s day",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entry not found, or in the recycle bin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Entry not found, or in the recycle bin",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The entry is a sealed time capsule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "The entry is a sealed time capsule",
+                  "error": "Conflict",
+                  "code": "CONFLICT"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Ask to reread an entry on a day",
+        "tags": [
+          "Entries"
+        ]
+      },
+      "delete": {
+        "description": "Highlights stops showing the entry. An entry without a reminder is left as it is.",
+        "operationId": "RereadRemindersController_clear",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Reminder removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryMutationResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "entry": {
+                    "id": 1,
+                    "user_id": 1,
+                    "diary_id": 1,
+                    "date": "2026-06-24",
+                    "index": 1,
+                    "title": "Morning walk by the river",
+                    "time_of_day": "08:30",
+                    "mood": 4,
+                    "feelings": [
+                      "calm",
+                      "grateful"
+                    ],
+                    "tags": [
+                      "reflection"
+                    ],
+                    "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                    "format": "plain",
+                    "visibility": "private",
+                    "is_favorite": true,
+                    "is_archived": true,
+                    "is_pinned": true,
+                    "diary_name": "Daily Journal",
+                    "diary_icon": "journal",
+                    "diary_color": "#2A9D8F",
+                    "attachments": [
+                      {
+                        "id": 1,
+                        "original_filename": "Daily Journal",
+                        "stored_filename": "Daily Journal",
+                        "mimetype": "example",
+                        "size": 1,
+                        "poster_filename": "Daily Journal",
+                        "transcript": "example",
+                        "transcribed_at": "2026-06-24T10:00:00.000Z"
+                      }
+                    ],
+                    "created_at": "2026-06-24T10:00:00.000Z",
+                    "sealed_until": null,
+                    "reread_on": null,
+                    "search_matches": [
+                      "morning run",
+                      "swimming"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entry not found, or in the recycle bin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Entry not found, or in the recycle bin",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The entry is a sealed time capsule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "The entry is a sealed time capsule",
+                  "error": "Conflict",
+                  "code": "CONFLICT"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove an entry’s reread reminder, or mark it done",
+        "tags": [
+          "Entries"
         ]
       }
     },
@@ -12479,6 +12810,13 @@
             "description": "While the entry is a sealed time capsule, when it opens; null otherwise. A sealed entry comes with an empty text and no title, tags, mood, feelings or attachments.",
             "example": null
           },
+          "reread_on": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "description": "The writer's own day (YYYY-MM-DD) on which they asked to reread the entry; null without a reminder. From that day Highlights shows it until they mark it done.",
+            "example": null
+          },
           "search_matches": {
             "description": "With a search: the words and phrases of this entry's title and text that match it, as written, longest first, for highlighting. Empty when only a tag matched.",
             "example": [
@@ -12508,7 +12846,8 @@
           "is_archived",
           "is_pinned",
           "created_at",
-          "sealed_until"
+          "sealed_until",
+          "reread_on"
         ],
         "example": {
           "id": 1,
@@ -12549,6 +12888,7 @@
           ],
           "created_at": "2026-06-24T10:00:00.000Z",
           "sealed_until": null,
+          "reread_on": null,
           "search_matches": [
             "morning run",
             "swimming"
@@ -12628,6 +12968,7 @@
               ],
               "created_at": "2026-06-24T10:00:00.000Z",
               "sealed_until": null,
+              "reread_on": null,
               "search_matches": [
                 "morning run",
                 "swimming"
@@ -12912,6 +13253,7 @@
             ],
             "created_at": "2026-06-24T10:00:00.000Z",
             "sealed_until": null,
+            "reread_on": null,
             "search_matches": [
               "morning run",
               "swimming"
@@ -13017,6 +13359,7 @@
             ],
             "created_at": "2026-06-24T10:00:00.000Z",
             "sealed_until": null,
+            "reread_on": null,
             "search_matches": [
               "morning run",
               "swimming"
@@ -13062,13 +13405,21 @@
             "items": {
               "$ref": "#/components/schemas/OpenedTimeCapsuleDto"
             }
+          },
+          "rereadReminders": {
+            "description": "Entries the writer asked to reread on or before their day (`today`), longest waiting first, up to 10; each stays until marked done",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EntryResponseDto"
+            }
           }
         },
         "required": [
           "randomEntry",
           "onThisDay",
           "currentDate",
-          "openedCapsules"
+          "openedCapsules",
+          "rereadReminders"
         ],
         "example": {
           "randomEntry": {
@@ -13110,6 +13461,7 @@
             ],
             "created_at": "2026-06-24T10:00:00.000Z",
             "sealed_until": null,
+            "reread_on": null,
             "search_matches": [
               "morning run",
               "swimming"
@@ -13164,6 +13516,7 @@
                 ],
                 "created_at": "2026-06-24T10:00:00.000Z",
                 "sealed_until": null,
+                "reread_on": null,
                 "search_matches": [
                   "morning run",
                   "swimming"
@@ -13172,6 +13525,53 @@
               "sealed_at": "2026-06-24T10:00:00.000Z",
               "opened_at": "2026-06-24T10:00:00.000Z",
               "opened_early": false
+            }
+          ],
+          "rereadReminders": [
+            {
+              "id": 1,
+              "user_id": 1,
+              "diary_id": 1,
+              "date": "2026-06-24",
+              "index": 1,
+              "title": "Morning walk by the river",
+              "time_of_day": "08:30",
+              "mood": 4,
+              "feelings": [
+                "calm",
+                "grateful"
+              ],
+              "tags": [
+                "reflection"
+              ],
+              "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+              "format": "plain",
+              "visibility": "private",
+              "is_favorite": true,
+              "is_archived": true,
+              "is_pinned": true,
+              "diary_name": "Daily Journal",
+              "diary_icon": "journal",
+              "diary_color": "#2A9D8F",
+              "attachments": [
+                {
+                  "id": 1,
+                  "original_filename": "Daily Journal",
+                  "stored_filename": "Daily Journal",
+                  "mimetype": "example",
+                  "size": 1,
+                  "poster_filename": "Daily Journal",
+                  "transcript": "example",
+                  "transcribed_at": "2026-06-24T10:00:00.000Z"
+                }
+              ],
+              "created_at": "2026-06-24T10:00:00.000Z",
+              "sealed_until": null,
+              "reread_on": null,
+              "search_matches": [
+                "morning run",
+                "swimming"
+              ]
             }
           ]
         }
@@ -13780,6 +14180,7 @@
             ],
             "created_at": "2026-06-24T10:00:00.000Z",
             "sealed_until": null,
+            "reread_on": null,
             "search_matches": [
               "morning run",
               "swimming"
@@ -15398,6 +15799,31 @@
               "content": "Today I wrote a thoughtful journal entry about focus and calm."
             }
           ]
+        }
+      },
+      "SetRereadReminderDto": {
+        "type": "object",
+        "properties": {
+          "rereadOn": {
+            "type": "string",
+            "example": "2026-11-07",
+            "format": "date",
+            "description": "The writer’s day to reread the entry on (YYYY-MM-DD), from tomorrow up to 50 years after `today`"
+          },
+          "today": {
+            "type": "string",
+            "example": "2026-10-31",
+            "format": "date",
+            "description": "The writer’s own day (YYYY-MM-DD), which must be the UTC day or the one before or after it"
+          }
+        },
+        "required": [
+          "rereadOn",
+          "today"
+        ],
+        "example": {
+          "rereadOn": "2026-11-07",
+          "today": "2026-10-31"
         }
       },
       "DiaryResponseDto": {
@@ -21929,6 +22355,7 @@
           "ENTRY_NOT_SEALED",
           "ENTRY_RANDOM_NO_MATCH",
           "TIME_CAPSULE_DATE_INVALID",
+          "REREAD_DATE_INVALID",
           "TAG_RENAME_SAME_NAME",
           "TAG_NOT_FOUND",
           "RECYCLE_BIN_ENTRIES_NOT_FOUND",

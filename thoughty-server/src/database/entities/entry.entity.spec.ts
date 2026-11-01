@@ -17,6 +17,7 @@ describe('Entry entity indexes', () => {
         'idx_entries_public_feed',
         'idx_entries_user_import_ref',
         'idx_entries_user_deleted_at',
+        'idx_entries_user_reread_on',
       ]),
     );
   });

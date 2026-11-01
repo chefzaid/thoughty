@@ -21,6 +21,7 @@ function sealedEntryResponse(response: EntryResponseDto, sealedUntil: Date): Ent
     tags: [],
     content: '',
     sealed_until: sealedUntil,
+    reread_on: null,
     ...(response.attachments ? { attachments: [] } : {}),
   };
 }
@@ -48,6 +49,7 @@ function openEntryResponse(entry: Entry): EntryResponseDto {
     diary_color: entry.diary?.color ?? undefined,
     created_at: entry.createdAt,
     sealed_until: null,
+    reread_on: entry.rereadOn ?? null,
     ...(entry.attachments
       ? {
           attachments: entry.attachments.map((attachment) => ({

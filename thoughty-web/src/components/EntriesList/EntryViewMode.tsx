@@ -24,6 +24,8 @@ import useEntryViewModeState from './useEntryViewModeState';
 import SealedEntryCard from './SealedEntryCard';
 import AuthenticatedShareLinkDialog from '../ShareLinks/AuthenticatedShareLinkDialog';
 import PrintEntriesDialog from '../PrintSheet/PrintEntriesDialog';
+import RereadReminderDialog from '../RereadReminder/RereadReminderDialog';
+import RereadReminderBadge from '../RereadReminder/RereadReminderBadge';
 
 
 interface EntryViewModeProps {
@@ -117,6 +119,7 @@ function OpenEntryViewMode({
     const [shareImage, setShareImage] = useLocalState<{ excerpt?: string } | null>(null);
     const [sharePrivatelyOpen, setSharePrivatelyOpen] = useLocalState(false);
     const [printOpen, setPrintOpen] = useLocalState(false);
+    const [rereadOpen, setRereadOpen] = useLocalState(false);
     const isDark = config.theme !== 'light';
     const archiveActionLabel = entry.is_archived ? t('unarchive') : t('archive');
     const entryPermalink = getEntryPermalink?.(entry.id);
@@ -241,6 +244,7 @@ function OpenEntryViewMode({
                         onShareImage={() => setShareImage({ excerpt: selectedExcerpt(globalThis.getSelection?.()?.toString(), toCardText(entry.content, entry.format)) })}
                         onSharePrivately={() => setSharePrivatelyOpen(true)}
                         onPrint={() => setPrintOpen(true)}
+                        onRemindToReread={() => setRereadOpen(true)}
                         onToggleHistory={onFetchHistory ? handleToggleHistory : undefined}
                         onSummarize={onSummarize ? () => setSummaryOpen(true) : undefined}
                         onUseAsStartingPoint={onUseAsStartingPoint ? () => onUseAsStartingPoint(entry) : undefined}
@@ -250,6 +254,15 @@ function OpenEntryViewMode({
                     />
                 </div>
             </div>
+            {entry.reread_on && (
+                <RereadReminderBadge
+                    entryId={entry.id}
+                    rereadOn={entry.reread_on}
+                    isDark={isDark}
+                    language={resolveLanguage(config.language)}
+                    t={t}
+                />
+            )}
             <EntryBodySection
                 entry={entry}
                 isDark={isDark}
@@ -284,6 +297,15 @@ function OpenEntryViewMode({
                     isDark={isDark}
                     language={resolveLanguage(config.language)}
                     onClose={() => setSharePrivatelyOpen(false)}
+                    t={t}
+                />
+            )}
+            {rereadOpen && (
+                <RereadReminderDialog
+                    entry={entry}
+                    isDark={isDark}
+                    language={resolveLanguage(config.language)}
+                    onClose={() => setRereadOpen(false)}
                     t={t}
                 />
             )}

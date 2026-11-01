@@ -20,6 +20,7 @@ const entity = (fields: Partial<Entry> = {}) =>
     isArchived: false,
     isPinned: true,
     createdAt: new Date('2026-10-21T08:30:00Z'),
+    rereadOn: '2026-11-21',
     ...fields,
   }) as Entry;
 
@@ -49,15 +50,16 @@ describe('toEntryResponse', () => {
       diary_color: '#2A9D8F',
       created_at: new Date('2026-10-21T08:30:00Z'),
       sealed_until: null,
+      reread_on: '2026-11-21',
     });
   });
 
   it('fills unset optional fields and leaves out relations that were not loaded', () => {
     const response = toEntryResponse(
-      entity({ title: undefined, timeOfDay: undefined, mood: undefined, feelings: undefined, diary: null }) as Entry,
+      entity({ title: undefined, timeOfDay: undefined, mood: undefined, feelings: undefined, rereadOn: undefined, diary: null }) as Entry,
     );
 
-    expect(response).toEqual(expect.objectContaining({ title: null, time_of_day: null, mood: null, feelings: [] }));
+    expect(response).toEqual(expect.objectContaining({ title: null, time_of_day: null, mood: null, feelings: [], reread_on: null }));
     expect(response.diary_name).toBeUndefined();
     expect(response).not.toHaveProperty('attachments');
   });
@@ -80,6 +82,7 @@ describe('toEntryResponse', () => {
       feelings: [],
       attachments: [],
       sealed_until: sealedUntil,
+      reread_on: null,
     }));
     expect(toEntryResponse(entity({ sealedUntil }))).not.toHaveProperty('attachments');
   });

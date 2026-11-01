@@ -17,6 +17,7 @@ import { RecycleBinService } from '@/modules/recycle-bin/recycle-bin.service';
 import { SavedSearchesService } from '@/modules/saved-searches';
 import { PeopleService } from './people.service';
 import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
+import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
 
 const anyFilters = {
   search: '',
@@ -60,7 +61,7 @@ describePostgres('PostgreSQL people', () => {
       new EntryInlineImagesService(dataSource.getRepository(Attachment), entries),
     );
     const search = new EntrySearchService(entries);
-    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), search, timeCapsuleServiceOn(dataSource));
+    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), search, timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource));
     calendar = new EntryCalendarService(entries, search);
     bin = new RecycleBinService(
       dataSource,

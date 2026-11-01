@@ -76,6 +76,8 @@ export interface MockEntry {
   diaryId?: number | null;
   /** A time capsule: sealed until `openAt` while `openedAt` is null (`mockApp.routes.time-capsules.ts`). */
   capsule?: { openAt: string; sealedAt: string; openedAt: string | null };
+  /** The day the writer asked to reread it on, `YYYY-MM-DD` (`mockApp.routes.reread-reminders.ts`). */
+  rereadOn?: string | null;
   attachments?: Array<{
     id: number;
     original_filename: string;

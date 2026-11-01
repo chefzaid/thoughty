@@ -16,6 +16,7 @@ import { applyEntryListFilters, entrySearchRank, parseEntryIdsFilter } from './e
 import { EntrySearchService } from './entry-search.service';
 import { ENTRY_WORDS_SQL } from '@/modules/stats/stats-sql';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
+import { RereadReminderService } from '@/modules/reread-reminders/reread-reminders.service';
 
 /** Entries "On this day" shows at most. */
 export const ON_THIS_DAY_LIMIT = 10;
@@ -55,6 +56,7 @@ export class EntriesQueryService {
     private readonly revisionRepository: Repository<EntryRevision>,
     private readonly entrySearch: EntrySearchService,
     private readonly timeCapsules: TimeCapsuleService,
+    private readonly rereadReminders: RereadReminderService,
   ) {}
 
   async getTagUsage(userId: number): Promise<{ tags: Array<{ tag: string; count: number }> }> {
@@ -160,6 +162,7 @@ export class EntriesQueryService {
   async getHighlights(userId: number, query: GetHighlightsQueryDto): Promise<EntryHighlightsResponseDto> {
     const { diaryId } = query;
     const today = new Date();
+    const writersDay = query.today ?? today.toISOString().slice(0, 10);
     const currentMonth = String(today.getMonth() + 1).padStart(2, '0');
     const currentDay = String(today.getDate()).padStart(2, '0');
     const currentYear = today.getFullYear();
@@ -176,10 +179,11 @@ export class EntriesQueryService {
       randomQb = randomQb.andWhere('e.diary_id = :diaryId', { diaryId });
     }
 
-    const [randomEntry, onThisDayEntries, openedCapsules] = await Promise.all([
+    const [randomEntry, onThisDayEntries, openedCapsules, dueReminders] = await Promise.all([
       randomQb.getOne(),
       this.findOnThisDay(userId, { year: currentYear, month: today.getMonth() + 1, day: today.getDate(), diaryId }),
       this.timeCapsules.findRecentlyOpened(userId, diaryId, today),
+      this.rereadReminders.findDue(userId, diaryId, writersDay),
     ]);
 
     const onThisDay: Record<number, EntryResponseDto[]> = {};
@@ -198,6 +202,7 @@ export class EntriesQueryService {
         opened_at: capsule.openedAt!,
         opened_early: capsule.openedAt! < capsule.openAt,
       })),
+      rereadReminders: dueReminders.map(toEntryResponse),
     };
   }
 

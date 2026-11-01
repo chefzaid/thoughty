@@ -8,6 +8,7 @@ describe('EntriesQueryService', () => {
   let revisionRepository: Record<string, jest.Mock>;
   let entrySearch: Record<string, jest.Mock>;
   let timeCapsules: Record<string, jest.Mock>;
+  let rereadReminders: Record<string, jest.Mock>;
 
   beforeEach(() => {
     entryRepository = {
@@ -32,11 +33,13 @@ describe('EntriesQueryService', () => {
     };
 
     timeCapsules = { findRecentlyOpened: jest.fn().mockResolvedValue([]) };
+    rereadReminders = { findDue: jest.fn().mockResolvedValue([]) };
     service = new EntriesQueryService(
       entryRepository as never,
       revisionRepository as never,
       entrySearch as never,
       timeCapsules as never,
+      rereadReminders as never,
     );
   });
 
@@ -147,6 +150,7 @@ describe('EntriesQueryService', () => {
           diary_color: '#123456',
           created_at: entry.createdAt,
           sealed_until: null,
+          reread_on: null,
           attachments: [
             {
               id: 12,
@@ -326,6 +330,25 @@ describe('EntriesQueryService', () => {
     expect(onThisDayQb.andWhere).toHaveBeenCalledWith('e.sealed_until IS NULL');
     expect(timeCapsules.findRecentlyOpened).toHaveBeenCalledWith(7, 3, expect.any(Date));
     expect(result.openedCapsules).toEqual([]);
+    // Without the writer's day, reminders are due by the server's UTC day
+    expect(rereadReminders.findDue).toHaveBeenCalledWith(7, 3, '2024-01-15');
+    expect(result.rereadReminders).toEqual([]);
+  });
+
+  it('shows the entries the writer asked to reread by their own day', async () => {
+    entryRepository.createQueryBuilder
+      .mockReturnValueOnce(createQueryBuilder({ getOne: jest.fn().mockResolvedValue(null) }))
+      .mockReturnValueOnce(createQueryBuilder({ getRawAndEntities: jest.fn().mockResolvedValue({ raw: [], entities: [] }) }));
+    rereadReminders.findDue.mockResolvedValue([
+      { id: 21, date: '2025-05-01', content: 'The day we moved', tags: [], rereadOn: '2026-10-30', sealedUntil: null },
+    ]);
+
+    const result = await service.getHighlights(7, { today: '2026-10-31' });
+
+    expect(rereadReminders.findDue).toHaveBeenCalledWith(7, undefined, '2026-10-31');
+    expect(result.rereadReminders).toEqual([
+      expect.objectContaining({ id: 21, content: 'The day we moved', reread_on: '2026-10-30' }),
+    ]);
   });
 
   it('shows the capsules opened lately, saying when they were sealed and whether they opened early', async () => {

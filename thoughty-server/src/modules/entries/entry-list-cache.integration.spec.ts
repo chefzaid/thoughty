@@ -7,6 +7,7 @@ import {
 } from '@/database/postgres-test-database.test-helpers';
 import { Entry, EntryRevision, User } from '@/database/entities';
 import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
+import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
 import type { EntriesListResponseDto, GetEntriesQueryDto } from './dto';
 import { EntriesQueryService } from './entries-query.service';
 import { EntryListCacheService } from './entry-list-cache.service';
@@ -65,7 +66,7 @@ describePostgres('PostgreSQL entry list cache', () => {
     recorder = new QueryRecorder();
     elsewhere = await new DataSource({ ...dataSource.options, migrations: [], logger: recorder } as never).initialize();
     const entries = dataSource.getRepository(Entry);
-    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries), timeCapsuleServiceOn(dataSource));
+    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries), timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource));
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => {
     await elsewhere?.destroy();
@@ -106,6 +107,7 @@ describePostgres('PostgreSQL entry list cache', () => {
       elsewhere.getRepository(EntryRevision),
       new EntrySearchService(elsewhere.getRepository(Entry)),
       timeCapsuleServiceOn(elsewhere),
+      rereadReminderServiceOn(elsewhere),
     );
     recorder.queries.length = 0;
     await elsewhereQueries.getEntries(writerId, EVERY_FILTER);

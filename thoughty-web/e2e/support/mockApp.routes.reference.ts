@@ -5,6 +5,7 @@ import {
 } from './mockApp.shared';
 import { fulfillJson, sortStrings, toEntryResponse, type RouteContext } from './mockApp.route-utils';
 import { isMockSealed, mockOpenedCapsules } from './mockApp.routes.time-capsules';
+import { mockDueRereads } from './mockApp.routes.reread-reminders';
 import { buildMockGoals } from './mockApp.goals';
 import { buildMockStreak } from './mockApp.streak';
 
@@ -271,6 +272,7 @@ async function handleEntryReferenceRoutes({ route, pathname, searchParams, state
       onThisDay: onThisDayEntry ? { '1': [toEntryResponse(onThisDayEntry, state)] } : {},
       currentDate: { month: String(now.getMonth() + 1).padStart(2, '0'), day: String(now.getDate()).padStart(2, '0'), year: now.getFullYear() },
       openedCapsules: mockOpenedCapsules(scopedEntries, state),
+      rereadReminders: mockDueRereads(scopedEntries, searchParams.get('today') ?? now.toISOString().slice(0, 10), state),
     });
     return true;
   }

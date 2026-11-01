@@ -69,6 +69,7 @@ export const API_ERROR_MESSAGES = {
   ENTRY_NOT_SEALED: 'This entry is not sealed',
   ENTRY_RANDOM_NO_MATCH: 'No entry matches these filters',
   TIME_CAPSULE_DATE_INVALID: 'Choose an opening date from tomorrow up to 50 years ahead',
+  REREAD_DATE_INVALID: 'Choose a day to reread it from tomorrow up to 50 years ahead',
   TAG_RENAME_SAME_NAME: 'New tag name must be different',
   TAG_NOT_FOUND: 'No entries found with that tag',
   RECYCLE_BIN_ENTRIES_NOT_FOUND: 'No matching entries in the recycle bin',

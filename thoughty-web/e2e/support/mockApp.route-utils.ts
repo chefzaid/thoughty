@@ -78,6 +78,7 @@ export function toEntryResponse(entry: MockEntry, state: MockAppState): componen
         content: '',
         ...(response.attachments ? { attachments: [] } : {}),
         sealed_until: entry.capsule.openAt,
+        reread_on: null,
       }
     : response;
 }
@@ -109,6 +110,7 @@ function openEntryResponse(entry: MockEntry, state: MockAppState): components['s
     ...(entry.attachments ? { attachments: entry.attachments } : {}),
     created_at: entry.createdAt ?? `${entry.date}T12:00:00.000Z`,
     sealed_until: null,
+    reread_on: entry.rereadOn ?? null,
   };
 }
 

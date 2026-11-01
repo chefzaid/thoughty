@@ -13,6 +13,7 @@ import { OnThisDayDeliveryService } from './on-this-day-delivery.service';
 import { OnThisDayEmailService } from './on-this-day-email.service';
 import { createUnsubscribeToken } from './on-this-day-unsubscribe-token';
 import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
+import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
 
 const SECRET = 'i'.repeat(48);
 // 07:00 UTC on 2026-10-27 is 08:00 in Paris, the default hour.
@@ -32,7 +33,7 @@ describePostgres('PostgreSQL On this day email', () => {
     database = await createPostgresTestDatabase();
     dataSource = database.dataSource;
     const entries = dataSource.getRepository(Entry);
-    const queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries), timeCapsuleServiceOn(dataSource));
+    const queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries), timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource));
     const emailService = {
       isConfigured: () => true,
       sendRenderedEmail: async (to: string, email: RenderedEmail) => {

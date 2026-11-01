@@ -1,0 +1,86 @@
+/* Entries the writer asked to reread: after the opened capsules in Highlights, in a 2px teal frame.
+   The date and meta lines are teal too, since the muted slate of other cards is too faint on the
+   light teal background. */
+.thought-of-day-modal.light .reread-reminders .section-title,
+.thought-of-day-modal.light .reread-reminders .entry-meta,
+.thought-of-day-modal.light .reread-reminders .reread-meta {
+    color: #0f766e;
+}
+
+.thought-of-day-modal.dark .reread-reminders .section-title,
+.thought-of-day-modal.dark .reread-reminders .entry-meta,
+.thought-of-day-modal.dark .reread-reminders .reread-meta {
+    color: #5eead4;
+}
+
+/* One class more specific than the theme borders in ThoughtOfTheDay.css, whichever loads first. */
+.thought-of-day-modal.light .reread-reminders .highlight-card {
+    border: 2px solid #14b8a6;
+    background: #f0fdfa;
+}
+
+.thought-of-day-modal.dark .reread-reminders .highlight-card {
+    border: 2px solid #14b8a6;
+    background: #042f2e;
+}
+
+.thought-of-day-modal .reread-reminders .reread-section-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.thought-of-day-modal .reread-reminders .reread-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.thought-of-day-modal .reread-reminders .reread-meta {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+/* Above the card-wide button, so a click marks it done instead of opening the entry. */
+.thought-of-day-modal .reread-reminders .reread-done {
+    position: relative;
+    z-index: 1;
+    padding: 0.375rem 0.875rem;
+    border: 0;
+    border-radius: 9999px;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.thought-of-day-modal.light .reread-reminders .reread-done {
+    background: #0f766e;
+    color: #ffffff;
+}
+
+.thought-of-day-modal.dark .reread-reminders .reread-done {
+    background: #5eead4;
+    color: #042f2e;
+}
+
+.thought-of-day-modal .reread-reminders .reread-done:focus-visible {
+    outline: 3px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+.thought-of-day-modal .reread-reminders .reread-done[aria-disabled='true'] {
+    cursor: wait;
+    opacity: 0.7;
+}
+
+.thought-of-day-modal.light .reread-reminders .reread-error {
+    color: #b91c1c;
+}
+
+.thought-of-day-modal.dark .reread-reminders .reread-error {
+    color: #fca5a5;
+}
