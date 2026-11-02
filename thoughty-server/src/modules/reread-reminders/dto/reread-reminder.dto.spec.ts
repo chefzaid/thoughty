@@ -2,6 +2,10 @@ import { invalidPropertiesLikeApi } from '@/common/validation/dto-validation.tes
 import { SetRereadReminderDto } from './reread-reminder.dto';
 
 describe('SetRereadReminderDto', () => {
+  // The writer's day must be within a day of UTC's, so the clock stays on 31 October
+  beforeEach(() => jest.useFakeTimers({ now: new Date('2026-10-31T10:30:00Z'), doNotFake: ['nextTick', 'setImmediate'] }));
+  afterEach(() => jest.useRealTimers());
+
   it('takes a reread day and the writer’s day as YYYY-MM-DD', async () => {
     await expect(invalidPropertiesLikeApi(SetRereadReminderDto, { rereadOn: '2026-11-07', today: '2026-10-31' })).resolves.toEqual([]);
   });
