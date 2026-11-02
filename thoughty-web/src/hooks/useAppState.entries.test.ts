@@ -161,7 +161,7 @@ describe("useAppState Hooks", () => {
 
       expect(numeric.result.current.getLimit()).toBe(25);
       expect(stringValue.result.current.getLimit()).toBe(7);
-      expect(fallback.result.current.getLimit()).toBe(10);
+      expect(fallback.result.current.getLimit()).toBe(20);
     });
 
     it("runs diary-scoped meaning search and filters entries by ranked IDs", async () => {

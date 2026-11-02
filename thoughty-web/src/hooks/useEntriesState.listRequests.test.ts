@@ -113,7 +113,7 @@ describe("journal list requests", () => {
 
     await waitFor(() => expect(list.result.current.loading).toBe(false));
     expect(services.fetchEntries).toHaveBeenCalledTimes(1);
-    expect(services.fetchEntries).toHaveBeenCalledWith(expect.objectContaining({ limit: 10 }));
+    expect(services.fetchEntries).toHaveBeenCalledWith(expect.objectContaining({ limit: 20 }));
   });
 
   it("waits for the diary filters to settle", async () => {

@@ -50,6 +50,20 @@ export type FontFamilyPreference = 'system' | 'serif' | 'modern' | 'mono' | 'leg
 export type LineSpacingPreference = 'normal' | 'relaxed' | 'loose';
 export type LetterSpacingPreference = 'normal' | 'wide' | 'wider';
 
+/** Page sizes of the journal, offered in the profile and under the entry list. */
+export const ENTRIES_PER_PAGE_OPTIONS = [5, 10, 15, 20, 25, 50] as const;
+export const DEFAULT_ENTRIES_PER_PAGE = 20;
+
+export const normalizeEntriesPerPage = (entriesPerPage?: string | number): number => {
+  const parsed = typeof entriesPerPage === 'number' ? entriesPerPage : Number.parseInt(entriesPerPage ?? '', 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : DEFAULT_ENTRIES_PER_PAGE;
+};
+
+/** The offered page sizes, with a size saved outside them (through the API) kept in its place. */
+export const entriesPerPageChoices = (current: number): number[] => (
+  [...new Set<number>([...ENTRIES_PER_PAGE_OPTIONS, current])].sort((first, second) => first - second)
+);
+
 export const DEFAULT_FONT_FAMILY: FontFamilyPreference = 'system';
 export const DEFAULT_FONT_SIZE = 16;
 export const MIN_FONT_SIZE = 14;

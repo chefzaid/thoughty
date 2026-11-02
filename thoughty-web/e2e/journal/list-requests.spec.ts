@@ -61,6 +61,6 @@ test.describe('Journal list requests', () => {
     await expect(page.getByText('Oldest permalink entry')).toBeVisible();
     await page.waitForLoadState('networkidle');
     expect(requests).toHaveLength(1);
-    expect(requests[0]?.get('limit')).toBe('10');
+    expect(requests[0]?.get('limit')).toBe('20');
   });
 });

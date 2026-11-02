@@ -5,6 +5,8 @@ import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_LETTER_SPACING,
   DEFAULT_LINE_SPACING,
+  entriesPerPageChoices,
+  normalizeEntriesPerPage,
   normalizeFontSize,
   resolveFontColor,
 } from '../../types/config';
@@ -186,16 +188,13 @@ function ThemeAndPaginationSettings({
           id="profile-entries-per-page"
           name="entriesPerPage"
           aria-describedby="profile-entries-per-page-description"
-          value={entriesPerPage || '10'}
+          value={String(normalizeEntriesPerPage(entriesPerPage))}
           onChange={handleChange}
           className={`setting-select ${isDark ? 'dark' : 'light'}`}
         >
-          <option value="5">5</option>
-          <option value="10">10</option>
-          <option value="15">15</option>
-          <option value="20">20</option>
-          <option value="25">25</option>
-          <option value="50">50</option>
+          {entriesPerPageChoices(normalizeEntriesPerPage(entriesPerPage)).map((size) => (
+            <option key={size} value={size}>{size}</option>
+          ))}
         </select>
       </div>
 

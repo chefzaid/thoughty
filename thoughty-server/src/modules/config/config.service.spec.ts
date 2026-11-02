@@ -45,7 +45,7 @@ describe('ConfigService', () => {
         letterSpacing: 'normal',
         highContrast: 'false',
         quietMode: 'false',
-        entriesPerPage: '10',
+        entriesPerPage: '20',
         maxPinnedEntries: '3',
         defaultVisibility: 'private',
         language: 'en',
@@ -70,7 +70,7 @@ describe('ConfigService', () => {
       expect(result.lineSpacing).toBe('normal');
       expect(result.letterSpacing).toBe('normal');
       expect(result.highContrast).toBe('false');
-      expect(result.entriesPerPage).toBe('10'); // default
+      expect(result.entriesPerPage).toBe('20'); // default
       expect(result.language).toBe('en'); // default
       expect(result.autoTagMaxTags).toBe('0');
       expect(result.quietMode).toBe('false'); // off by default
@@ -86,7 +86,7 @@ describe('ConfigService', () => {
         { key: 'letterSpacing', value: 'wide' },
         { key: 'highContrast', value: 'true' },
         { key: 'quietMode', value: 'true' },
-        { key: 'entriesPerPage', value: '20' },
+        { key: 'entriesPerPage', value: '25' },
         { key: 'defaultVisibility', value: 'public' },
         { key: 'language', value: 'fr' },
         { key: 'autoTagMaxTags', value: '4' },
@@ -103,7 +103,7 @@ describe('ConfigService', () => {
         letterSpacing: 'wide',
         highContrast: 'true',
         quietMode: 'true',
-        entriesPerPage: '20',
+        entriesPerPage: '25',
         maxPinnedEntries: '3',
         defaultVisibility: 'public',
         language: 'fr',

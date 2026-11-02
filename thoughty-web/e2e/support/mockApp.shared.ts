@@ -402,7 +402,7 @@ export function createMockAppState(
     config: {
       theme: "dark",
       language: "en",
-      entriesPerPage: 10,
+      entriesPerPage: 20,
       autoTagMaxTags: "0",
       highContrast: false,
       readDates: true,

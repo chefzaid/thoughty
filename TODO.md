@@ -119,7 +119,8 @@ Parts of tasks that cannot advance without the owner's decision or information. 
 ## Core Journaling
 
 - [x] Create, edit, and delete entries, with a date picker that also accepts manual input and defaults to today
-- [x] Pagination with a configurable number of entries per page (10 by default) and a go-to-page box
+- [x] Pagination with a configurable number of entries per page (20 by default, chosen under the list or in the profile) and a go-to-page box
+- [ ] Infinite scroll in the journal instead of a fixed number of entries per page, loading the next entries as the list nears its end (the public feed already does this). Permalinks, the year/month jump and cross-references currently open the page that holds their entry (`GET /api/entries/by-date` answers with a page number), and bulk **Select all** and the arrow-key shortcuts work on one page, so they need to load around their target instead.
 - [x] Year/month jump control to go to the first entry of a year or month without paging manually
 - [x] Date filter that only offers dates that actually contain entries (empty dates greyed out)
 - [x] Public/private visibility per entry, with a visibility filter
