@@ -34,7 +34,7 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   letterSpacing: 'normal',
   highContrast: 'false',
   quietMode: 'false',
-  entriesPerPage: '10',
+  entriesPerPage: '20',
   maxPinnedEntries: '3',
   defaultVisibility: 'private',
   language: 'en',

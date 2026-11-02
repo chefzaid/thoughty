@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ArchiveStatusFilter, Config, Entry, EntryBacklink, EntrySearchSort, GroupedEntries, SourceEntryInfo } from '../types';
+import { normalizeEntriesPerPage, type ArchiveStatusFilter, type Config, type Entry, type EntryBacklink, type EntrySearchSort, type GroupedEntries, type SourceEntryInfo } from '../types';
 import { useApiServices } from './useApiServices';
 import type { SemanticSearchResponse } from '../services/api/aiService';
 import { compareSameDayEntries, reassignSameDayIndexes } from '../utils/entryTime';
@@ -79,11 +79,7 @@ export const useEntries = (
   const personPending = routePersonId !== undefined && routePersonId !== filterPersonId;
   const listReady = configLoaded && filtersReady && !permalinkPending && !personPending;
 
-  const getLimit = useCallback(() => {
-    return typeof config.entriesPerPage === 'number'
-      ? config.entriesPerPage
-      : Number.parseInt(config.entriesPerPage || '10', 10) || 10;
-  }, [config.entriesPerPage]);
+  const getLimit = useCallback(() => normalizeEntriesPerPage(config.entriesPerPage), [config.entriesPerPage]);
 
   const semanticEntryIds = useMemo(() => (
     searchModeState === 'semantic'

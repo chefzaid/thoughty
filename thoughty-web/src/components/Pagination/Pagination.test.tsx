@@ -158,4 +158,34 @@ describe('Pagination', () => {
     rerender(<Pagination {...defaultProps} theme="dark" />);
     expect(screen.getByText('page')).toHaveClass('text-gray-400');
   });
+
+  it('changes the number of entries per page beside the page buttons', () => {
+    const onPageSizeChange = vi.fn();
+    render(<Pagination {...defaultProps} pageSize={20} onPageSizeChange={onPageSizeChange} pageEntryCount={20} />);
+
+    const select = screen.getByRole('combobox', { name: 'entriesPerPage' });
+    expect(select).toHaveValue('20');
+    expect(Array.from((select as HTMLSelectElement).options, (option) => option.value)).toEqual(['5', '10', '15', '20', '25', '50']);
+    fireEvent.change(select, { target: { value: '50' } });
+    expect(onPageSizeChange).toHaveBeenCalledWith(50);
+  });
+
+  it('keeps the page size on a single page while a smaller size would split it', () => {
+    const { rerender } = render(
+      <Pagination {...defaultProps} totalPages={1} pageSize={50} onPageSizeChange={vi.fn()} pageEntryCount={12} />,
+    );
+    expect(screen.getByRole('combobox', { name: 'entriesPerPage' })).toBeInTheDocument();
+    expect(screen.queryByTitle('next')).not.toBeInTheDocument();
+
+    rerender(<Pagination {...defaultProps} totalPages={1} pageSize={50} onPageSizeChange={vi.fn()} pageEntryCount={4} />);
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+  });
+
+  it('offers a page size saved outside the usual choices', () => {
+    render(<Pagination {...defaultProps} pageSize={30} onPageSizeChange={vi.fn()} />);
+
+    const select = screen.getByRole('combobox', { name: 'entriesPerPage' }) as HTMLSelectElement;
+    expect(select).toHaveValue('30');
+    expect(Array.from(select.options, (option) => option.value)).toEqual(['5', '10', '15', '20', '25', '30', '50']);
+  });
 });

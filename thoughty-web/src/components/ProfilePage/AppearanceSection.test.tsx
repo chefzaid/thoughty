@@ -243,14 +243,14 @@ describe('AppearanceSection', () => {
     expect(themeBtn.className).toContain('dark');
   });
 
-  it('defaults entriesPerPage to 10 when not set', () => {
+  it('defaults entriesPerPage to 20 when not set', () => {
     render(
       <AppearanceSection
         {...defaultProps}
         localConfig={{ ...defaultProps.localConfig, entriesPerPage: undefined }}
       />
     );
-    const select = screen.getByDisplayValue('10');
+    const select = screen.getByDisplayValue('20');
     expect(select).toBeInTheDocument();
   });
 

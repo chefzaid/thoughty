@@ -29,7 +29,7 @@ describeContract('account', (context) => {
       json: {
         theme: 'light',
         language: 'fr',
-        entriesPerPage: 20,
+        entriesPerPage: 25,
         highContrast: false,
         streakCard: true,
         quietMode: true,
@@ -47,7 +47,7 @@ describeContract('account', (context) => {
     expect(saved.body).toMatchObject({
       theme: 'light',
       language: 'fr',
-      entriesPerPage: '20',
+      entriesPerPage: '25',
       highContrast: 'false',
       streakCard: 'true',
       quietMode: 'true',

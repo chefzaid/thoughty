@@ -189,4 +189,38 @@ describe('appShellProps', () => {
       includeVisibility: true,
     });
   });
+
+  it('saves a new page size and moves to the page that holds the first entry shown', async () => {
+    const saveConfig = vi.fn().mockResolvedValue(true);
+    const params = createRoutesParams({
+      saveConfig,
+      config: { theme: 'dark', name: 'Zaid', entriesPerPage: '10' },
+      entriesState: { ...createRoutesParams().entriesState, page: 4 },
+    });
+    const { pagination } = buildAuthenticatedRoutesProps(params).journalRouteProps;
+
+    expect(pagination.pageSize).toBe(10);
+    // Page 4 of 10 starts with the 31st entry, which is on page 2 of 20
+    pagination.onPageSizeChange?.(20);
+
+    expect(params.entriesState.setPage).toHaveBeenCalledWith(2);
+    expect(saveConfig).toHaveBeenCalledWith(expect.objectContaining({ entriesPerPage: '20' }));
+    await vi.waitFor(() => expect(params.entriesState.setPage).toHaveBeenCalledTimes(1));
+  });
+
+  it('goes back to the page it was on when the new page size is not saved', async () => {
+    const saveConfig = vi.fn().mockResolvedValue(false);
+    const params = createRoutesParams({
+      saveConfig,
+      config: { theme: 'dark', name: 'Zaid' },
+      entriesState: { ...createRoutesParams().entriesState, page: 3 },
+    });
+    const { pagination } = buildAuthenticatedRoutesProps(params).journalRouteProps;
+
+    expect(pagination.pageSize).toBe(20);
+    pagination.onPageSizeChange?.(5);
+
+    expect(params.entriesState.setPage).toHaveBeenNthCalledWith(1, 9);
+    await vi.waitFor(() => expect(params.entriesState.setPage).toHaveBeenNthCalledWith(2, 3));
+  });
 });

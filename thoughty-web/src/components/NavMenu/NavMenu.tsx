@@ -50,13 +50,6 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
                     {t('memoir')}
                 </button>
                 <button type="button"
-                    className={`nav-item ${currentView === 'feed' ? 'active' : ''}`}
-                    onClick={() => onViewChange('feed')}
-                >
-                    <span className="codicon codicon-rss" aria-hidden="true" />
-                    {t('feed')}
-                </button>
-                <button type="button"
                     className={`nav-item ${currentView === 'tags' ? 'active' : ''}`}
                     onClick={() => onViewChange('tags')}
                 >
@@ -67,6 +60,13 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.3} d="M3 15h14" />
                     </svg>
                     {t('tags')}
+                </button>
+                <button type="button"
+                    className={`nav-item ${currentView === 'feed' ? 'active' : ''}`}
+                    onClick={() => onViewChange('feed')}
+                >
+                    <span className="codicon codicon-rss" aria-hidden="true" />
+                    {t('feed')}
                 </button>
                 <button type="button"
                     className={`nav-item ${currentView === 'people' ? 'active' : ''}`}

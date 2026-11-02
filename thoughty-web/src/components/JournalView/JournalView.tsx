@@ -47,7 +47,7 @@ type EntryFormProps = Omit<
 >;
 type FilterControlsProps = Omit<ComponentProps<typeof FilterControls>, 'theme' | 't' | 'onOpenHighlights' | 'actions' | 'eras' | 'onManageEras' | 'people' | 'onManagePeople'>;
 type EntriesListProps = Omit<ComponentProps<typeof EntriesList>, 'config' | 't' | 'searchTerm'>;
-type PaginationProps = Pick<ComponentProps<typeof Pagination>, 'page' | 'totalPages' | 'setPage' | 'inputPage' | 'setInputPage'>;
+type PaginationProps = Pick<ComponentProps<typeof Pagination>, 'page' | 'totalPages' | 'setPage' | 'inputPage' | 'setInputPage' | 'pageSize' | 'onPageSizeChange'>;
 type YearMonthNavigatorProps = Pick<ComponentProps<typeof YearMonthNavigator>, 'availableYears' | 'availableMonths' | 'onNavigate'>;
 type DuplicateReviewProps = Omit<ComponentProps<typeof DuplicateReview>, 'theme' | 'language' | 't'>;
 type RandomEntryProps = Pick<ComponentProps<typeof RandomEntryButton>, 'query' | 'listEmpty' | 'onOpen'>;
@@ -338,6 +338,7 @@ function JournalView({
 
           <Pagination
             {...pagination}
+            pageEntryCount={entriesList.entries.length}
             theme={config.theme}
             t={t}
           />

@@ -3,7 +3,7 @@ import type { ComponentProps } from 'react';
 import type { AppNotice } from '../hooks/useAppNotice';
 import type { TransientMessage } from '../hooks/useTransientMessage';
 
-import type { Config, Entry, ImportExportFormat, ImportExportSection, TranslationFunction, ViewType } from '../types';
+import { normalizeEntriesPerPage, type Config, type Entry, type ImportExportFormat, type ImportExportSection, type TranslationFunction, type ViewType } from '../types';
 import type AuthenticatedAppLayout from '../routes/AuthenticatedAppLayout';
 import type AuthenticatedRoutes from '../routes/AuthenticatedRoutes';
 import type { DuplicateEntryScan, RephraseMode, SummaryGuidance } from '../services/api/aiService';
@@ -468,6 +468,16 @@ export function buildAuthenticatedRoutesProps({
         inputPage: entriesState.inputPage,
         setPage: entriesState.setPage,
         setInputPage: entriesState.setInputPage,
+        pageSize: normalizeEntriesPerPage(config.entriesPerPage),
+        // The new page holds the first entry shown before, so the writer keeps their place
+        onPageSizeChange: (pageSize: number) => {
+          const previousPage = entriesState.page;
+          const firstShown = (previousPage - 1) * normalizeEntriesPerPage(config.entriesPerPage);
+          entriesState.setPage(Math.floor(firstShown / pageSize) + 1);
+          void saveConfig({ ...config, entriesPerPage: String(pageSize) }).then((saved) => {
+            if (!saved) entriesState.setPage(previousPage);
+          });
+        },
       },
       savedEntry: entryFormState.savedEntry,
       randomEntry: {

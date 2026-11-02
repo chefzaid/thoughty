@@ -23,7 +23,7 @@ describe('AppShell navigation flows', () => {
     renderAppShell();
 
     await waitFor(() => {
-      expect(mockFetch.mock.calls.some((call) => call[0] === '/api/entries/by-date?id=2&limit=10')).toBe(true);
+      expect(mockFetch.mock.calls.some((call) => call[0] === '/api/entries/by-date?id=2&limit=20')).toBe(true);
     });
   });
 
@@ -32,7 +32,7 @@ describe('AppShell navigation flows', () => {
 
     globalThis.history.replaceState({}, '', '/journal?entry=999');
     setDefaultMockFetch((url) => {
-      if (url.includes('/api/entries/by-date?id=999&limit=10')) {
+      if (url.includes('/api/entries/by-date?id=999&limit=20')) {
         return createJsonResponse({ found: false });
       }
 
@@ -55,11 +55,11 @@ describe('AppShell navigation flows', () => {
 
     globalThis.history.replaceState({}, '', '/journal?entry=2');
     setDefaultMockFetch((url) => {
-      if (url.includes('/api/entries/by-date?id=2&limit=10')) {
+      if (url.includes('/api/entries/by-date?id=2&limit=20')) {
         return createJsonResponse({ found: true, page: 1, entryId: 2 });
       }
 
-      if (url.includes('/api/entries/by-date?date=2024-01-16&index=1&limit=10')) {
+      if (url.includes('/api/entries/by-date?date=2024-01-16&index=1&limit=20')) {
         return createJsonResponse({ found: true, page: 1, entryId: 3 });
       }
 
@@ -88,7 +88,7 @@ describe('AppShell navigation flows', () => {
     await user.click(screen.getByRole('button', { name: '[[2024-01-16]]' }));
 
     await waitFor(() => {
-      expect(mockFetch.mock.calls.some((call) => call[0] === '/api/entries/by-date?date=2024-01-16&index=1&limit=10')).toBe(true);
+      expect(mockFetch.mock.calls.some((call) => call[0] === '/api/entries/by-date?date=2024-01-16&index=1&limit=20')).toBe(true);
       expect(globalThis.location.search).not.toContain('entry=2');
       expect(document.getElementById('entry-3')).toHaveClass('highlight-entry');
     });
