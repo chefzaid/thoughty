@@ -422,7 +422,7 @@ The market splits three ways, and no product spans all of them. Everyday journal
 
 ### Activation and Retention
 
-- [ ] First-run onboarding that asks what the writer is here for (daily journal, life story, a gift, coming from another app) and lands them in the right place: a first template, the memoir start page, the gift flow, or the Day One or Journey importer.
+- [ ] First-run onboarding that asks what the writer is here for (daily journal, life story, a gift, coming from another app, and once it exists tracking their life) and lands them in the right place: a first template, the memoir start page, the gift flow, the importers (Day One, Journey, daily notes, Google Keep), or the Life ERP onboarding.
 - [ ] Define and track a north-star metric (weekly writing days per active writer) plus the funnel from sign-up to first entry, to fifth entry, to week four, using the existing telemetry, with privacy-safe counts only and no entry text.
 - [ ] Recurring journaling reminders and writing prompts at a user-configured time: installable PWA with web push and an optional email nudge on the web today, then app notifications once the native apps ship.
 - [x] Gentle streaks and a "pick up where you left off" prompt after a gap, without guilt-driven copy: a dismissible card above the composer shows the days in a row (from two, in the diary shown, up to the writer's day, `GET /api/stats/streak`), and after three days without an entry offers to write now or reread the last entry; never counts a lost streak, and can be turned off in Profile (`streakCard`).
@@ -583,7 +583,7 @@ What already exists becomes an input instead of being rebuilt: entries and templ
 
 ### Metric Types & Scales
 
-- [ ] **Rating** metrics on a configurable scale (1–5 by default, also 1–10, 0–100 or any min/max/step). The entry mood check-in (five points, Very low to Very good) becomes a built-in daily rating metric, so its existing charts and filters keep working and it can be rolled up per month like the others.
+- [ ] **Rating** metrics on a configurable scale (1–5 by default, also 1–10, 0–100 or any min/max/step). The entry mood check-in (five points, Very low to Very good, set per entry) becomes a built-in rating metric, averaged per day from that day's entries, so its existing charts and filters keep working and it can be rolled up per month like the others.
 - [ ] **Label scales** editable per metric, e.g. 5 = Excellent, 4 = Good, 3 = Average, 2 = Bad, 1 = Abysmal, or a metric's own words (Stress 5 = Stressful, Work 5 = Overtime), with reusable scale presets shared between metrics and edited in one place.
 - [ ] **Number** metrics with a unit (kg, %, km, hours, count, currency) and optional min/max, and **duration** metrics ("12 months", "3 weeks", hours slept).
 - [ ] **Yes/No**, **choice** (a fixed list, e.g. Bad / Average / Good, Solo / Partner / Friends / Family) and **frequency** (Never, Rarely, Sometimes, Often, Many) metrics.
@@ -718,21 +718,21 @@ What already exists becomes an input instead of being rebuilt: entries and templ
 ### Integrations
 
 - [ ] Health data from Apple Health, Google Fit / Health Connect and wearables (sleep, steps, heart rate, workouts, weight) as metric values.
-- [ ] Calendar events (from the planned calendar import, see Integrations) and entry locations (see Capture) suggested as social events and trips.
-- [ ] Life ERP endpoints in the planned public API with personal access tokens (see Integrations), plus webhooks, so scripts and automation tools can push values.
+- [ ] Calendar events (from the planned calendar import, see Feature Roadmap › Integrations) and entry locations (see Capture) suggested as social events and trips.
+- [ ] Life ERP endpoints in the planned public API with personal access tokens (see Feature Roadmap › Integrations), plus webhooks, so scripts and automation tools can push values.
 
 ### AI
 
 - [ ] Suggest the period's metric values and log items from what the writer journaled, dictated or recorded (live dictation and audio transcription), for the writer to confirm in the check-in; never filled in silently.
-- [ ] Ask questions about life data and entries together ("When was I happiest, and what was different then?"), building on chat across entries, with citations to the entries and values used.
+- [ ] Ask questions about life data and entries together ("When was I happiest, and what was different then?"), building on the planned chat across entries (see Feature Roadmap › AI), with citations to the entries and values used.
 - [ ] Auto Tag applied to log items.
 - [ ] Suggest areas and metrics during onboarding from a short description of the writer's life and goals.
-- [ ] AI summaries and the weekly reflection can include area scores and log highlights, under the same consent rules.
+- [ ] AI summaries and the planned weekly reflection (see Feature Roadmap › AI) can include area scores and log highlights, under the same consent rules.
 
 ### Privacy & Sharing
 
-- [ ] Fine-grained visibility: Life ERP data is always private and never reaches the public feed or share text, even when selected entries are public; each area can be marked sensitive (hidden from the dashboard and screenshots behind the privacy blur).
-- [ ] Sensitive areas get the same protections as diaries: the AI privacy mode (off, local model only, or cloud with per-request consent), a PIN lock, and end-to-end encryption once the encryption ADR lands (see Privacy and Trust).
+- [ ] Fine-grained visibility: Life ERP data is always private and never reaches the public feed or share text, even when selected entries are public; each area can be marked sensitive (left off the dashboard and the year in review, and its values blurred by the privacy blur like entry text).
+- [ ] Sensitive areas get the same protections planned for diaries: the AI privacy mode (off, local model only, or cloud with per-request consent; see Privacy and Trust), the per-diary PIN lock (see Feature Roadmap › Organization and Sharing), and end-to-end encryption once the encryption ADR lands (see Privacy and Trust).
 - [ ] Share chosen areas or charts read-only through private share links, and with a practitioner in the practitioner tier, revocable at any time.
 - [ ] Shared areas between two writers (a couple's finances or household), like shared diaries with co-writers (see Capture).
 
