@@ -190,4 +190,4 @@ All AI features are optional and run through OpenRouter. A deployment can provid
 
 ## Future Direction: Life ERP
 
-Thoughty may grow into a personal ERP while keeping its privacy and entry-centered design: life metrics and habits, finances, health, relationships, productivity, and dashboards that relate them to the journal. The backlog is in [TODO.md](../TODO.md#life-erp).
+Thoughty may grow into a personal ERP while keeping its privacy and entry-centered design: life metrics and habits, finances, health, relationships, productivity, and dashboards that relate them to the journal. The backlog is in [TODO.md](../TODO.md#aeons---life-erp).

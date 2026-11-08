@@ -354,18 +354,6 @@ Parts of tasks that cannot advance without the owner's decision or information. 
 - [ ] Mobile app version for iOS and Android with offline mode for journaling without internet connection and sync once connected
 - [ ] Desktop app with offline mode for journaling without internet connection and sync once connected
 
-## Life ERP
-
-- [ ] Life metrics tracker for happiness, mood, health, sleep, energy, social time, productivity, habits, and custom numeric/text metrics. Mood exists as an optional five-point check-in with feeling words on each entry, charted in Stats; the other metrics, custom metrics and daily values not tied to an entry remain.
-- [ ] Finance tracker for expenses, income, budgets, savings goals, recurring bills, and subscription inventory with renewal reminders
-- [ ] Health and wellness journal extensions for symptoms, medication, appointments, exercise, nutrition, and weight or body metrics
-- [ ] Social relationship tracker for people, last contact dates, notes, important dates, follow-up reminders, and relationship health trends. People exist (`@name` mentions, the People page with each person's last mention, and one birthday or anniversary shown in Highlights on the day); notes on a person, several important dates, an explicit last contact date, follow-up reminders and relationship trends remain.
-- [ ] Productivity and task tracker for goals, projects, recurring routines, focus sessions, and weekly reviews linked back to journal entries. Open tasks across the journal exist (**Tasks**, `/tasks`, every unticked Markdown task linked to its entry); goals, projects, recurring routines, focus sessions and weekly reviews remain.
-- [ ] Dashboard that correlates journal activity, mood, tags, life metrics, finances, health, socials, and productivity over time. Stats already relates journal activity, moods and tags (activity heatmap, mood over time and by weekday, tags on good and low days); the dashboard over the Life ERP data remains, once those trackers exist.
-- [ ] AI insights that surface patterns, correlations, risks, and suggestions across journals and life metrics while respecting privacy controls
-- [ ] Import paths for existing spreadsheets and folder exports, including CSV templates for finances, subscriptions, health logs, and mood tracking
-- [ ] Fine-grained permissions and visibility so Life ERP data can stay private even if selected thoughts become public
-
 ## Product Direction (added 2026-10-04)
 
 Thoughty already covers a broad private journal: writing, diaries, tags, AI help, insights, a book converter, sync and a small public feed. On features alone it competes with every mass-market journaling app. The niche to own is **the private journal that becomes your life story**: writing stays private by construction, AI only ever sees what the writer approves, and the journal turns into printed books, guided memoirs and a legacy for family. Coaches and therapists get a separate tier to guide their clients' journaling without seeing more than each client shares.
@@ -564,3 +552,206 @@ Small, relatable additions that reuse what already exists (entries, tags, moods,
 
 - [x] Daily-notes folder import: a ZIP of Markdown files named by date (`2024-03-14.md` or Logseq's `2024_03_14.md`, at any depth), read in the browser, one private Markdown entry per note on that date in the page's diary, with tags from front matter, `tags::` and `#tags`, `[[date]]` links kept, embedded pictures inline and other files attached, other Markdown files counted as left out, and re-imports skipped by `daily-notes:<path>`.
 - [x] Google Keep import: Keep's Takeout JSON, notes as entries on their creation date, labels as tags, checklists as Markdown task lists, and pictures as attachments. **From another app** › **Google Keep** reads the Takeout ZIP in the browser with the daily-notes import's ZIP reader and caps (`readKeep.ts`, `keep.ts`): titles, the creation day and time in the browser's zone, archived and pinned flags (pinned within the pinned-entry limit), pictures inline; notes in the bin are counted and left out; re-importing skips `keep:<name>` notes.
+
+## Aeons - Life ERP
+
+A big epic that grows Thoughty from a journal into a record of the whole life, while keeping its privacy and entry-centered design. It brings in the Aeons life-analytics system: every writer sets up their own **areas** of life (Work, Health, Socials, Hobbies, Money, or anything else), the **metrics** to score or measure in each one, and the **logs** of events and items to keep. Everything feeds into averages, distributions, trends, correlations and charts, next to the journal. Nothing is hardcoded to one person's life: the areas under [Example Setup](#example-setup) are one possible configuration that ships as a template.
+
+It works in three layers, all defined by the writer:
+
+1. **Periodic ratings and values**: a metric scored or measured each day, week, month or year (e.g. Happiness 1–5 every month).
+2. **Event and item logs**: records with custom fields (trips, books, purchases, workouts, festivals…).
+3. **Calculations**: formulas, rollups and simulators over the two layers above (savings rate, net worth, loan amortization…).
+
+What already exists becomes an input instead of being rebuilt: entries and templates, tags, the mood check-in, people, life eras, tasks, attachments, Stats, Highlights, the year in review, quick capture, dictation, imports and exports, and the data download. Like the rest of the app, every feature works in English and French, follows the privacy blur and quiet mode, is in the data download and is erased with the account.
+
+### Foundation
+
+- [ ] **ADR — Life ERP data model:** areas, sub-areas, metrics, scales, periods, values, logs, log fields and items, formulas and setup templates, all defined by the writer, with how they link to entries, tags, people, life eras and diaries, and how they are versioned when a metric changes.
+- [ ] Life ERP navigation entry and routes (`/life`, one page per area), shown only once the writer turns Life ERP on in Profile, so the journal stays as simple as today for those who never use it.
+- [ ] Development seed: the [Example Setup](#example-setup) with several years of values and log items, alongside the existing journal seed.
+
+### Areas & Configuration
+
+- [ ] Create, rename, reorder (drag or keyboard), archive and delete **areas** (e.g. Life, Health, Work, Passions, Socials, Finances), each with a name, emoji icon, accent colour and description, like diaries; an area can be linked to a diary and to tags so its entries show next to its metrics.
+- [ ] Sub-areas to group metrics inside an area (e.g. Socials → Dating, Friends, Family).
+- [ ] Add, edit, reorder, archive and delete **metrics** in an area, keeping their history when a metric is archived or renamed.
+- [ ] Per-metric settings: type, frequency, scale, unit, labels, direction (higher is better or worse), target, whether it is asked in check-ins, and help text explaining what each score means.
+- [ ] Start and end dates on metrics and areas, picked by hand or from a life era (e.g. a past job's metrics only during the "Company X" era), so values outside that range don't count as missing.
+- [ ] Settings for the first month of the year and the currency, reusing the profile's time zone, language and week start.
+- [ ] Life ERP onboarding: pick areas from a list or a template, then pick or add metrics in each, so a writer tracks something within a few minutes; "Track my life" is also one of the choices of the first-run onboarding (see Activation and Retention).
+
+### Metric Types & Scales
+
+- [ ] **Rating** metrics on a configurable scale (1–5 by default, also 1–10, 0–100 or any min/max/step). The entry mood check-in (five points, Very low to Very good) becomes a built-in daily rating metric, so its existing charts and filters keep working and it can be rolled up per month like the others.
+- [ ] **Label scales** editable per metric, e.g. 5 = Excellent, 4 = Good, 3 = Average, 2 = Bad, 1 = Abysmal, or a metric's own words (Stress 5 = Stressful, Work 5 = Overtime), with reusable scale presets shared between metrics and edited in one place.
+- [ ] **Number** metrics with a unit (kg, %, km, hours, count, currency) and optional min/max, and **duration** metrics ("12 months", "3 weeks", hours slept).
+- [ ] **Yes/No**, **choice** (a fixed list, e.g. Bad / Average / Good, Solo / Partner / Friends / Family) and **frequency** (Never, Rarely, Sometimes, Often, Many) metrics.
+- [ ] **Trend markers** (`--`, `-`, `=`, `+`, `++`) for "worse than / same as / better than before".
+- [ ] **Text** metrics for free-text notes and conditions.
+- [ ] **Tag and people counters**: a metric that counts the period's entries carrying a tag or mentioning a person or a group of people (e.g. friend events = entries tagged `friends`), instead of codes typed in a cell; manual counts stay possible for periods without entries.
+- [ ] **State spans** built on life eras: an era gets an optional area and state (in a relationship, living with roommates, employed at a company, injured), shown as bands on charts, so the app can compute the share of a year spent in each state.
+- [ ] **Markers** inside a period for one-off events (e.g. `|` for a breakup in a dating month).
+- [ ] "No data" (`-` or `?`) kept separate from zero and from "not applicable", and left out of averages; partial periods (a period that started mid-month) record the share of the period covered.
+
+### Frequencies & Grids
+
+- [ ] Metrics tracked **daily, weekly, monthly, quarterly or yearly**, each shown in a matching grid (year × Jan–Dec for monthly, year × week for weekly, the journal's calendar view for daily).
+- [ ] Roll daily or weekly values up into monthly and yearly values (average, sum, min, max, last, count), chosen per metric.
+- [ ] Spreadsheet-style grid editing with keyboard navigation, copy and paste, fill down and fill right, and a table that screen readers can follow.
+- [ ] Notes on any value or period are journal entries linked to it (written from the cell, listed under it, and back-linked from the entry), so the context of a score lives in the journal.
+- [ ] Colour-scale heatmaps in grids, in the activity heatmap's style, using the metric's direction so "good" is always the same colour, with colour-blind-safe and high-contrast palettes.
+
+### Check-ins & Data Entry
+
+- [ ] Periodic **check-in screen**: every metric due this period (monthly ratings at month end, daily ones each day) on one screen, saved as a draft while it is filled, ending with an optional reflection entry from the **Life check-in** template stored with the period.
+- [ ] Check-in reminders at a time the writer chooses, through the same channels as the journaling reminders (web push, email, then app notifications; see Activation and Retention).
+- [ ] Quick capture (`Ctrl+Shift+Space`) can also log a metric value or a log item, not only a one-line entry.
+- [ ] Back-filling past periods, with the check-in showing what is still missing, and copying last period's values as a starting point.
+- [ ] Check-ins and quick entries work offline in the PWA and the native apps once they exist (see Capture and Future Apps), plus home-screen widgets for a quick check-in.
+
+### Logs & Collections
+
+- [ ] User-defined **logs** (Trips, Books, Purchases, Festivals, Workouts, Dates, Medical visits…) with custom fields of any metric type plus date, date range, location, money, link and people (`@name`), and photos and files through the existing attachments.
+- [ ] Log templates with ready-made fields for common logs (trip, book, film, purchase, workout session, event, appointment).
+- [ ] Table, card, calendar, timeline and map views of a log (the map shared with entry locations, see Capture), with sorting, filters and saved views like saved searches.
+- [ ] **Status** for items that move through stages (Wishlist → Planned → In progress → Done → Abandoned), and **wishlists and bucket lists** grouped by any field (e.g. by region: Europe, Americas, Asia), ticked off when the item is logged.
+- [ ] Year × month count matrix for any log (e.g. trips per month per year) with totals, and totals and averages of its number and money fields per month and year (e.g. travel spending per year).
+- [ ] Log items use the journal's tags (one tag concept across entries and logs), with counts per tag.
+- [ ] Link log items to entries and periods: write an entry about a trip or a book from its item, see the entries written during a trip, and link a purchase to its receipt.
+- [ ] Recurring log items (subscriptions, weekly sessions) created automatically.
+
+### Calculations & Formulas
+
+- [ ] **Calculated metrics** from a formula over other metrics and log fields (e.g. lean mass = weight × (1 − fat %), weighted date score, savings rate = savings ÷ income).
+- [ ] Formula editor with autocomplete for metric names, a live preview and clear error messages.
+- [ ] Built-in functions: sum, average, min, max, count, ratio, change since last period, running total, share of a period in a state.
+- [ ] **Cross-area rollups**: a metric fed by a log in another area (e.g. the yearly Travels expense from the Trips log, the Goods expense from the Purchases log).
+- [ ] Recalculate dependants automatically when a value changes, with a dependency graph that refuses cycles.
+- [ ] **Simulators**: saved calculators with a settings panel and month-by-month projections (e.g. a contractor salary simulator: workable days, leave, days worked, daily rate, revenue, fees, employer charges, benefits and net pay).
+
+### Scores & Statistics
+
+- [ ] Automatic **averages** per year, quarter and all time for every metric.
+- [ ] **Distribution ratios**: the share of periods at each score (e.g. 40% of months rated 4) per year.
+- [ ] Min, max, median, standard deviation and streaks (best and worst runs), and personal records per metric next to the journal's personal records card ("your 3rd best month ever").
+- [ ] **Area scores**: a weighted score per area from its metrics, with weights chosen by the writer, and a **life score** across areas per month and year.
+- [ ] Wheel-of-life (radar) view of area scores for any period, comparisons between two periods, and year-over-year comparison of any metric or area.
+
+### Charts & Dashboard
+
+- [ ] **Trend line chart** for each metric across years, with the yearly average and an optional moving average, and charts per area combining several metrics (e.g. all six Work ratings).
+- [ ] Bar, stacked, heatmap, calendar, radar, scatter and pie charts, chosen per widget, each with a table view like Stats.
+- [ ] Customizable **Life ERP dashboard** with widgets (metric trends, area scores, latest log items, goals, streaks, net worth, and the journal's activity, moods and tags) arranged by drag and drop or keyboard, and several dashboards (e.g. Overview, Health, Money).
+- [ ] Life eras and life events shown as bands and markers on every chart.
+- [ ] Share any chart as an image, like the entry image card.
+
+### Life Timeline & Events
+
+- [ ] **Life events**: an entry marked as a life event (area, positive or negative impact) appears on a big events timeline with its photos, so events need no separate storage.
+- [ ] Yearly **Achievements** and **Misfortunes** per year and per area, written as entries from built-in templates and listed on the area's page.
+- [ ] Yearly **outlook and intentions**: hope scores per area (General, Socials, Career, Money…) and written intentions at the start of a year, compared with how the year actually went at its end.
+- [ ] Zoomable life timeline from decades down to days, showing eras as bands, life events, log items and area scores.
+- [ ] The year in review and the monthly recap email gain the year's or month's area scores, best and worst months, top log items and money summary, with the same privacy and quiet-mode rules.
+- [ ] On This Day (Highlights and email) also shows past ratings and log items from the same date ("a year ago today you were in Lisbon").
+
+### Goals & Habits
+
+- [ ] Goals on any metric or log (e.g. average Happiness ≥ 4 this year, 20 books, 150 workout days) with progress bars and an alert when a metric is off track, next to the diaries' writing goals.
+- [ ] Habits and recurring routines with daily or weekly check-offs and streaks, in the gentle style of the writing streak.
+- [ ] Projects with their open tasks (the existing Markdown tasks), focus sessions (focus mode sprints counted as a metric) and weekly reviews from the **Weekly review** template, all linked back to entries.
+- [ ] **Typical week program** planner (e.g. Mon lifting, Tue cardio, Sun hike) compared with what actually happened.
+
+### Correlations & Insights
+
+- [ ] **Correlations across areas and the journal** (e.g. Happiness vs Stress, Socials, Workout, Sleep, writing days, moods, tags and people mentions), with a correlation matrix and scatter plots, without AI.
+- [ ] Lagged correlations (does a bad sleep month predict a bad mood next month) and a seasonality view (average per calendar month across all years).
+- [ ] Insights in plain language ("Your happiness is higher in months with 3+ social events"), in the spirit of "Tags on your good days", and alerts on unusual values and on declining trends.
+
+### Health
+
+- [ ] Body composition log (weight, fat %, waist…) with calculated lean mass, fat loss and gains, and an optional nutrition log.
+- [ ] Workout log: program pattern, training days by type, days off, ratings such as Motivation, Strength and Stamina, and progressive overload per exercise or muscle group (average load, volume, personal records).
+- [ ] Symptoms, conditions and medication log with start and end dates, and substance use per period (any substances the writer chooses) with goals to reduce.
+- [ ] Appointments and check-ups with reminders.
+
+### Socials
+
+- [ ] The People page grows into a directory: groups (Friends, Family, Colleagues…), notes on a person, several important dates (one birthday or anniversary exists today), and an explicit last contact date besides the last mention.
+- [ ] Mentions and social events per person and per group over time (entries mentioning them and log items with them), with relationship health trends.
+- [ ] Reminders to reach out to someone not contacted for a chosen time.
+- [ ] Relationship and living-with history (homes, roommates, partners) as state spans on life eras, with a quality rating per relationship.
+
+### Finances
+
+- [ ] **Budget periods** with start and end dates; the months in each period are calculated.
+- [ ] Income per month and per period, from any number of sources.
+- [ ] **Monthly expenses** by categories the writer defines (e.g. Home, Food, Transport, Utilities, Subscriptions, Leisure, Pension, Others), each with detail lines (rent, groceries, gym…).
+- [ ] **Yearly expenses** by category, filled automatically from logs (Trips, Purchases, Gifts…).
+- [ ] Savings amount and **savings rate** (% of income), with totals, averages, savings goals and a chart.
+- [ ] Recurring bills and a subscription inventory with renewal dates, yearly cost and renewal or cancel reminders.
+- [ ] Multi-currency amounts converted to the main currency at the date of the entry.
+- [ ] Bank CSV/OFX import with category rules, through the preview-first import.
+
+### Assets & Net Worth
+
+- [ ] **Accounts and investments** of any kind (savings, stocks, pension, insurance, employee savings, cash) with balances over time.
+- [ ] **Real estate**: price, loan rate, taxes, loan length, amount paid and remaining, % paid off, improvements, appreciation %, market value and a future projection, with loan amortization schedules for any loan.
+- [ ] Physical assets (vehicles, electronics…) with purchase cost, running costs by type (purchase, maintenance, accident…), depreciation from the purchase date and cost per month.
+- [ ] Money lent and borrowed, and pending cash, with reminders.
+- [ ] **Money lost** tracker (bad investments, unemployment, mistakes).
+- [ ] Major money events on the life timeline and a **net worth** chart, with a financial independence projection from savings rate, expenses and expected returns.
+
+### Templates
+
+- [ ] Ship the [Example Setup](#example-setup) as a template writers can start from, then edit freely.
+- [ ] More starter templates: Minimal (Happiness, Health, Work, Socials), Student, Athlete, Freelancer, Parent, Mental Health, Personal Finance.
+- [ ] Export and import an area, a log or a whole setup as a template file (without data) to share with others, and a gallery where writers publish and download setups.
+- [ ] Applying a template merges into the current setup without overwriting existing areas or data.
+
+### Import & Export
+
+- [ ] Spreadsheet import (CSV and Excel) of existing history through the preview-first import, with column-to-metric mapping, a year × month grid read as-is (rows = years, columns = months), and CSV templates for finances, subscriptions, health logs and mood tracking.
+- [ ] Life ERP data in the exports (CSV, JSON and Excel, per area or everything), in cloud sync and in the data download, and erased with the account.
+- [ ] Import from other trackers (mood apps, habit apps, Goodreads, fitness apps).
+
+### Integrations
+
+- [ ] Health data from Apple Health, Google Fit / Health Connect and wearables (sleep, steps, heart rate, workouts, weight) as metric values.
+- [ ] Calendar events (from the planned calendar import, see Integrations) and entry locations (see Capture) suggested as social events and trips.
+- [ ] Life ERP endpoints in the planned public API with personal access tokens (see Integrations), plus webhooks, so scripts and automation tools can push values.
+
+### AI
+
+- [ ] Suggest the period's metric values and log items from what the writer journaled, dictated or recorded (live dictation and audio transcription), for the writer to confirm in the check-in; never filled in silently.
+- [ ] Ask questions about life data and entries together ("When was I happiest, and what was different then?"), building on chat across entries, with citations to the entries and values used.
+- [ ] Auto Tag applied to log items.
+- [ ] Suggest areas and metrics during onboarding from a short description of the writer's life and goals.
+- [ ] AI summaries and the weekly reflection can include area scores and log highlights, under the same consent rules.
+
+### Privacy & Sharing
+
+- [ ] Fine-grained visibility: Life ERP data is always private and never reaches the public feed or share text, even when selected entries are public; each area can be marked sensitive (hidden from the dashboard and screenshots behind the privacy blur).
+- [ ] Sensitive areas get the same protections as diaries: the AI privacy mode (off, local model only, or cloud with per-request consent), a PIN lock, and end-to-end encryption once the encryption ADR lands (see Privacy and Trust).
+- [ ] Share chosen areas or charts read-only through private share links, and with a practitioner in the practitioner tier, revocable at any time.
+- [ ] Shared areas between two writers (a couple's finances or household), like shared diaries with co-writers (see Capture).
+
+### Example Setup
+
+One person's configuration, shipped as a starter template. Every area, metric, scale and log below is ordinary configuration built from the features above, and can be renamed, removed or extended.
+
+- [ ] **Life**: monthly Happiness rating with its distribution per year and a chart; yearly Outlook scores for General, Socials, Career and Money; yearly Achievements and Misfortunes; a Life's Big Events timeline
+- [ ] **Health**: yearly log of Overall, Depression, Acute Stress, Loneliness, Dysregulation, Hallucinations, Cognition, Sleep, Energy, Sex, Eyesight, Skin, Hair and Others, mixing quality levels (Bad/Average/Good), durations, frequencies, `+`/`-` and `++`/`--` markers and free text; substance use per year (Alcohol, Cigarettes…)
+- [ ] **Work**: six monthly 1–5 ratings (Productivity, Stress, Satisfaction, Confidence, Learning, Coding), each with its own labels (Stress 5 = Stressful), and one trend chart per metric
+- [ ] **Passions**: yearly 1–5 engagement scores for SWE, Games, Music, DJing, Listening, Watching, Reading, Writing, Workout, Hikes and Travels; a Typical Week Program
+- [ ] **Socials / Dating**: monthly dates, relationships and breakups (`|`), a weighted date score, share of the year in a relationship, matches per year and a past-relationships quality log
+- [ ] **Socials / Friends & Acquaintances**: monthly score plus friend and social event counts and frequencies, with a chart
+- [ ] **Socials / Family**: monthly 1–5 rating with a chart; Living With history (housing and roommates)
+- [ ] **Workout**: monthly program pattern, lifting days, cardio days, days off, Motivation, Strength and Stamina; weight and fat % with calculated lean mass, fat loss and gains; totals, goals and progressive overload by muscle group (e.g. Pecs); heatmaps and line charts
+- [ ] **Travels**: trip log (month, country, cities, mode Solo/Partner/Friends/Family, expenses, rating, mood, company score, comments), a year × month trip-count matrix with totals, spending per year, and a bucket list by region
+- [ ] **Activities / Festivals**: festival, artists, mode, rating, comments and discoveries, plus a wishlist
+- [ ] **Activities / Books**: title, author, format, status, theme tags and rating, logged by year
+- [ ] **Goods**: purchase log (date, description, cost) for electronics, apparel, home and garden; a car with costs by type (Accident, Maintenance, Purchase), depreciation and cost per month
+- [ ] **Finances**: budget periods, income, monthly expenses (Home, Food, Car, Utilities, Subscriptions, Outdoors, Pension, Others) with detail lines, yearly expenses (Travels, Clothes, Goods, Cars, Gifts) pulled from logs, savings and savings rate
+- [ ] **Assets**: real estate with projection, savings and stock accounts, life insurance, employee savings, bank balances, pending cash, money lent and borrowed, money lost, major money events and a net worth chart
+- [ ] **Income**: contractor salary simulator with a month-by-month projection, a settings panel and pay history
