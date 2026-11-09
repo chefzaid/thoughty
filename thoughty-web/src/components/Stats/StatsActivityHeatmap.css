@@ -36,38 +36,69 @@
     opacity: 0.72;
 }
 
-/* On a narrow screen the year scrolls inside the card (starting on the latest weeks), never the page */
-.heatmap-shell {
+/*
+ * The weekday labels and the year side by side. On a narrow screen only the year scrolls inside the card
+ * (starting on the latest weeks), never the page, and the labels stay in place beside it.
+ */
+.heatmap-body {
     container-type: inline-size;
+    display: flex;
+    gap: var(--heatmap-label-gap);
     max-width: 100%;
-    overflow-x: auto;
+    --heatmap-label-width: 2rem;
+    --heatmap-label-gap: 0.5rem;
     /* Room for the grid's focus ring and a popped-out tile inside the scroll area */
-    padding: 0.375rem;
-}
-
-.heatmap-grid {
+    --heatmap-shell-padding: 0.375rem;
+    --heatmap-month-height: 0.75rem;
+    --heatmap-row-gap: 0.35rem;
     /*
-     * The tiles share the card's width (less the weekday labels, 2.75rem with the gap), from 0.7rem,
-     * below which the year scrolls, up to 1.25rem.
+     * The tiles share the card's width, less the labels, the scroll area's padding and a little slack,
+     * from 0.7rem, below which the year scrolls, up to 1.25rem. The units resolve where the size is used,
+     * inside this container.
      */
     --heatmap-cell-size: clamp(
         0.7rem,
-        calc((100cqi - 2.75rem - (var(--heatmap-weeks, 53) - 1) * var(--heatmap-gap)) / var(--heatmap-weeks, 53)),
+        calc((100cqi - 3.5rem - (var(--heatmap-weeks, 53) - 1) * var(--heatmap-gap)) / var(--heatmap-weeks, 53)),
         1.25rem
     );
-    display: grid;
-    grid-template-columns: max-content max-content;
-    gap: 0.35rem 0.5rem;
-    width: max-content;
 }
 
-.heatmap-corner {
-    width: 2rem;
+.heatmap-weekday-column {
+    flex: none;
+    display: grid;
+    grid-template-rows: repeat(7, var(--heatmap-cell-size));
+    gap: var(--heatmap-gap);
+    align-items: center;
+    align-content: start;
+    width: var(--heatmap-label-width);
+    /* Level with the first row of days: past the scroll area's padding, the month names and their gap */
+    padding-top: calc(var(--heatmap-shell-padding) + var(--heatmap-month-height) + var(--heatmap-row-gap));
+}
+
+.heatmap-weekday-label {
+    font-size: 0.75rem;
+    line-height: 1;
+    opacity: 0.72;
+}
+
+.heatmap-shell {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    padding: var(--heatmap-shell-padding);
+}
+
+.heatmap-grid {
+    display: grid;
+    grid-template-columns: max-content;
+    gap: var(--heatmap-row-gap);
+    width: max-content;
 }
 
 .heatmap-month-row {
     display: flex;
     gap: var(--heatmap-gap);
+    height: var(--heatmap-month-height);
 }
 
 .heatmap-month-label {
@@ -77,20 +108,6 @@
     line-height: 1;
     opacity: 0.72;
     text-align: left;
-}
-
-.heatmap-weekday-column {
-    display: grid;
-    grid-template-rows: repeat(7, var(--heatmap-cell-size));
-    gap: var(--heatmap-gap);
-    align-items: center;
-    width: 2rem;
-}
-
-.heatmap-weekday-label {
-    font-size: 0.75rem;
-    line-height: 1;
-    opacity: 0.72;
 }
 
 .heatmap-weeks {

@@ -192,6 +192,31 @@ test.describe('Journal activity by day on a phone', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)).toBe(false);
   });
 
+  test('keeps the weekday names in place beside the year as it scrolls, with no day showing under them', async ({ page }) => {
+    await openStats(page);
+    const shell = page.locator('.heatmap-shell');
+    const monday = page.locator('.heatmap-weekday-label').first();
+    await expect(monday).toHaveText('Mon');
+    const before = await box(monday);
+
+    for (const scrollLeft of [0, 137]) {
+      await shell.evaluate((element, left) => { element.scrollLeft = left; }, scrollLeft);
+      expect(await box(monday)).toEqual(before);
+      // Days are clipped at the scroll area's edge, to the right of the names
+      const visibleTiles = await shell.evaluate((element) => {
+        const edge = element.getBoundingClientRect().left;
+        return [...element.querySelectorAll('[role="gridcell"]')]
+          .map((tile) => tile.getBoundingClientRect())
+          .filter((tile) => tile.right > edge)
+          .map((tile) => Math.max(tile.left, edge));
+      });
+      expect(Math.min(...visibleTiles)).toBeGreaterThanOrEqual(before.right);
+    }
+    // Monday's name is level with Monday's row
+    const mondayTile = await box(page.locator('[role="gridcell"][data-date="2026-03-09"]'));
+    expect(Math.abs((before.top + before.bottom) / 2 - (mondayTile.top + mondayTile.bottom) / 2)).toBeLessThan(2);
+  });
+
   test('a first tap shows the details and a second opens the day', async ({ page }) => {
     const grid = await openStats(page);
     const tuesday = day(grid, 'Tuesday, March 3, 2026. 2 entries. Daily goal met');
