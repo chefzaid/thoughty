@@ -31,8 +31,12 @@ export type WritingGoalsTranslationKey =
   | "statsGoalPerDiary"
   | "statsGoalPickDiary"
   | "statsGoalManage"
-  | "statsHeatmapGoalMetDay"
-  | "statsHeatmapGoalMetWeek"
+  | "statsHeatmapGoalDayMet"
+  | "statsHeatmapGoalDayMissed"
+  | "statsHeatmapGoalDayPending"
+  | "statsHeatmapGoalWeekMet"
+  | "statsHeatmapGoalWeekMissed"
+  | "statsHeatmapGoalWeekPending"
   | "statsHeatmapGoalLegendDay"
   | "statsHeatmapGoalLegendWeek";
 
@@ -67,8 +71,12 @@ export const writingGoalsTranslations: Record<Language, Record<WritingGoalsTrans
     statsGoalPerDiary: "Writing goals are set per diary, and none has one yet.",
     statsGoalPickDiary: "Writing goals are set per diary. Pick one to see its goal on the activity map.",
     statsGoalManage: "Set a writing goal",
-    statsHeatmapGoalMetDay: "{label}, goal met",
-    statsHeatmapGoalMetWeek: "{label}, weekly goal met",
+    statsHeatmapGoalDayMet: "Daily goal met",
+    statsHeatmapGoalDayMissed: "Daily goal not met",
+    statsHeatmapGoalDayPending: "Daily goal not met yet",
+    statsHeatmapGoalWeekMet: "Weekly goal met",
+    statsHeatmapGoalWeekMissed: "Weekly goal not met",
+    statsHeatmapGoalWeekPending: "Weekly goal not met yet",
     statsHeatmapGoalLegendDay: "Day that met the goal",
     statsHeatmapGoalLegendWeek: "Week that met the goal",
   },
@@ -102,8 +110,12 @@ export const writingGoalsTranslations: Record<Language, Record<WritingGoalsTrans
     statsGoalPerDiary: "Les objectifs d’écriture se fixent par journal, et aucun n’en a encore.",
     statsGoalPickDiary: "Les objectifs d’écriture se fixent par journal. Choisissez-en un pour voir son objectif sur la carte d’activité.",
     statsGoalManage: "Fixer un objectif d’écriture",
-    statsHeatmapGoalMetDay: "{label}, objectif atteint",
-    statsHeatmapGoalMetWeek: "{label}, objectif de la semaine atteint",
+    statsHeatmapGoalDayMet: "Objectif du jour atteint",
+    statsHeatmapGoalDayMissed: "Objectif du jour non atteint",
+    statsHeatmapGoalDayPending: "Objectif du jour pas encore atteint",
+    statsHeatmapGoalWeekMet: "Objectif de la semaine atteint",
+    statsHeatmapGoalWeekMissed: "Objectif de la semaine non atteint",
+    statsHeatmapGoalWeekPending: "Objectif de la semaine pas encore atteint",
     statsHeatmapGoalLegendDay: "Jour où l’objectif est atteint",
     statsHeatmapGoalLegendWeek: "Semaine où l’objectif est atteint",
   },

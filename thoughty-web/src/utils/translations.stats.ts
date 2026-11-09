@@ -54,8 +54,10 @@ export type StatsTranslationKey =
   | "moreActivity"
   | "noJournalActivity"
   | "statsLoadError"
-  | "statsHeatmapDay_one"
-  | "statsHeatmapDay_other"
+  | "statsHeatmapEntries_one"
+  | "statsHeatmapEntries_other"
+  | "statsHeatmapNoEntries"
+  | "statsHeatmapTapToOpen"
   | "statsHeatmapKeyboardHint"
   | "statsHeatmapKeyboardHintReadOnly"
   | "statsChartTableToggle"
@@ -126,8 +128,10 @@ export const statsTranslations: Record<Language, Record<StatsTranslationKey, str
     moreActivity: "More",
     noJournalActivity: "No journaling activity yet.",
     statsLoadError: "Failed to load statistics",
-    statsHeatmapDay_one: "{count} entry on {date}",
-    statsHeatmapDay_other: "{count} entries on {date}",
+    statsHeatmapEntries_one: "{count} entry",
+    statsHeatmapEntries_other: "{count} entries",
+    statsHeatmapNoEntries: "No entries",
+    statsHeatmapTapToOpen: "Tap again to open the day",
     statsHeatmapKeyboardHint:
       "Arrow keys move by a day or a week, Page Up and Page Down by a month. Enter opens the day in the journal.",
     statsHeatmapKeyboardHintReadOnly:
@@ -202,8 +206,10 @@ export const statsTranslations: Record<Language, Record<StatsTranslationKey, str
     moreActivity: "Plus",
     noJournalActivity: "Aucune activité de journal pour le moment.",
     statsLoadError: "Échec du chargement des statistiques",
-    statsHeatmapDay_one: "{count} entrée le {date}",
-    statsHeatmapDay_other: "{count} entrées le {date}",
+    statsHeatmapEntries_one: "{count} entrée",
+    statsHeatmapEntries_other: "{count} entrées",
+    statsHeatmapNoEntries: "Aucune entrée",
+    statsHeatmapTapToOpen: "Touchez à nouveau pour ouvrir le jour",
     statsHeatmapKeyboardHint:
       "Les flèches avancent d’un jour ou d’une semaine, Page précédente et Page suivante d’un mois. Entrée ouvre le jour dans le journal.",
     statsHeatmapKeyboardHintReadOnly:

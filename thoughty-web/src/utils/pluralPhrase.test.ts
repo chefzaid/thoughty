@@ -5,23 +5,23 @@ import { getTranslation, translations } from './translations';
 
 describe('pluralPhrase', () => {
   it.each([
-    ['en', 0, '0 entries on Jan 5, 2024'],
-    ['en', 1, '1 entry on Jan 5, 2024'],
-    ['en', 2, '2 entries on Jan 5, 2024'],
-    ['en', 1200, '1,200 entries on Jan 5, 2024'],
-    ['fr', 0, '0 entrée le Jan 5, 2024'],
-    ['fr', 1, '1 entrée le Jan 5, 2024'],
-    ['fr', 2, '2 entrées le Jan 5, 2024'],
+    ['en', 0, '0 entries mention Marie'],
+    ['en', 1, '1 entry mentions Marie'],
+    ['en', 2, '2 entries mention Marie'],
+    ['en', 1200, '1,200 entries mention Marie'],
+    ['fr', 0, '0 entrée mentionne Marie'],
+    ['fr', 1, '1 entrée mentionne Marie'],
+    ['fr', 2, '2 entrées mentionnent Marie'],
   ] as const)('picks the %s form for %i and fills the other parameters', (language, count, expected) => {
     const t = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);
 
-    expect(pluralPhrase(t, 'statsHeatmapDay', count, language, { date: 'Jan 5, 2024' })).toBe(expected);
+    expect(pluralPhrase(t, 'personDateMentions', count, language, { name: 'Marie' })).toBe(expected);
   });
 
   it('writes the count in the reader\'s number format', () => {
     const t = (key: string, params?: Record<string, string | number>) => `${key}:${params?.count}`;
 
-    expect(pluralPhrase(t, 'statsHeatmapDay', 1200, 'fr')).toBe(`statsHeatmapDay_other:${(1200).toLocaleString('fr')}`);
+    expect(pluralPhrase(t, 'personDateMentions', 1200, 'fr')).toBe(`personDateMentions_other:${(1200).toLocaleString('fr')}`);
   });
 
   it.each(['en', 'fr'] as const)('finds both forms for every count in %s and no other plural scheme', (language) => {

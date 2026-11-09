@@ -1,15 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { createEvent, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import StatsActivityHeatmap from './StatsActivityHeatmap';
+import type { HeatmapGoal } from './heatmapDayDetails';
 import { getTranslation, type Language } from '../../utils/translations';
 
 const thoughtsPerDay = { '2024-01-15': 2, '2024-01-16': 1, '2024-01-18': 4 };
 
-const renderHeatmap = (language: Language, onOpenJournalDay?: (date: string) => void) => render(
+const renderHeatmap = (language: Language, onOpenJournalDay?: (date: string) => void, goal?: HeatmapGoal) => render(
     <StatsActivityHeatmap
         thoughtsPerDay={thoughtsPerDay}
+        goal={goal}
         themeClass="light"
         language={language}
         t={(key, params) => getTranslation(language, key, params)}
@@ -17,15 +19,25 @@ const renderHeatmap = (language: Language, onOpenJournalDay?: (date: string) => 
     />,
 );
 
+const tooltip = () => screen.queryByTestId('heatmap-tooltip');
+/** A press by finger: jsdom has no PointerEvent, so the pointer type rides on the event. */
+const tap = (cell: HTMLElement) => {
+    const press = createEvent.pointerDown(cell);
+    Object.defineProperty(press, 'pointerType', { value: 'touch' });
+    fireEvent(cell, press);
+    fireEvent.click(cell);
+};
+
 describe('StatsActivityHeatmap', () => {
     it.each([
-        ['en', '0 entries on Jan 17, 2024', '1 entry on Jan 16, 2024', '2 entries on Jan 15, 2024'],
-        ['fr', '0 entrée le 17 janv. 2024', '1 entrée le 16 janv. 2024', '2 entrées le 15 janv. 2024'],
-    ] as const)('labels each day in the singular or plural in %s', (language, none, one, many) => {
+        ['en', 'Wednesday, January 17, 2024. No entries', 'Tuesday, January 16, 2024. 1 entry', 'Monday, January 15, 2024. 2 entries'],
+        ['fr', 'mercredi 17 janvier 2024. Aucune entrée', 'mardi 16 janvier 2024. 1 entrée', 'lundi 15 janvier 2024. 2 entrées'],
+    ] as const)('names each day by its long date and its entries, in the singular or plural, in %s', (language, none, one, many) => {
         renderHeatmap(language, vi.fn());
 
         for (const label of [none, one, many]) {
-            expect(screen.getByRole('gridcell', { name: label })).toHaveAttribute('title', label);
+            // The details are the day's name, never a native title tooltip
+            expect(screen.getByRole('gridcell', { name: label })).not.toHaveAttribute('title');
         }
     });
 
@@ -48,20 +60,37 @@ describe('StatsActivityHeatmap', () => {
         const onOpenJournalDay = vi.fn();
         const { unmount } = renderHeatmap('fr', onOpenJournalDay);
 
-        await user.click(screen.getByRole('gridcell', { name: '4 entrées le 18 janv. 2024' }));
+        await user.click(screen.getByRole('gridcell', { name: 'jeudi 18 janvier 2024. 4 entrées' }));
         expect(onOpenJournalDay).toHaveBeenCalledWith('2024-01-18');
         expect(screen.getByRole('grid')).toHaveAccessibleDescription(/Entrée ouvre le jour dans le journal/);
         unmount();
 
         renderHeatmap('en');
-        await user.click(screen.getByRole('gridcell', { name: '4 entries on Jan 18, 2024' }));
+        await user.click(screen.getByRole('gridcell', { name: 'Thursday, January 18, 2024. 4 entries' }));
         expect(screen.getByRole('grid')).toHaveAccessibleDescription(
             'Arrow keys move by a day or a week, Page Up and Page Down by a month.',
         );
         expect(screen.getByRole('grid')).not.toHaveClass('opens-days');
     });
 
-    it('is one tab stop whose arrows move the active day and whose Enter or Space opens it', async () => {
+    it('shows a day’s details while the pointer is over it, and pops it out', async () => {
+        const user = userEvent.setup();
+        const onOpenJournalDay = vi.fn();
+        renderHeatmap('en', onOpenJournalDay);
+        const day = screen.getByRole('gridcell', { name: 'Monday, January 15, 2024. 2 entries' });
+
+        await user.hover(day);
+        expect(tooltip()).toHaveTextContent('Monday, January 15, 2024' + '2 entries');
+        expect(tooltip()).toHaveAttribute('aria-hidden', 'true');
+        expect(day).toHaveClass('tipped');
+
+        await user.unhover(day);
+        expect(tooltip()).not.toBeInTheDocument();
+        expect(day).not.toHaveClass('tipped');
+        expect(onOpenJournalDay).not.toHaveBeenCalled();
+    });
+
+    it('is one tab stop whose arrows move the active day, with its details beside it, and whose Enter or Space opens it', async () => {
         const user = userEvent.setup();
         const onOpenJournalDay = vi.fn();
         const { container } = renderHeatmap('en', onOpenJournalDay);
@@ -71,67 +100,104 @@ describe('StatsActivityHeatmap', () => {
         await user.tab();
         expect(grid).toHaveFocus();
         expect(container.querySelectorAll('[tabindex]')).toHaveLength(1);
-        // The latest day with entries starts active
-        expect(activeName()).toBe('4 entries on Jan 18, 2024');
+        // The latest day with entries starts active, its details beside it
+        expect(activeName()).toBe('Thursday, January 18, 2024. 4 entries');
+        expect(tooltip()).toHaveTextContent('Thursday, January 18, 2024' + '4 entries');
 
         await user.keyboard('{ArrowUp}');
-        expect(activeName()).toBe('0 entries on Jan 17, 2024');
+        expect(activeName()).toBe('Wednesday, January 17, 2024. No entries');
+        expect(tooltip()).toHaveTextContent('Wednesday, January 17, 2024' + 'No entries');
         await user.keyboard('{ArrowLeft}');
-        expect(activeName()).toBe('0 entries on Jan 10, 2024');
+        expect(activeName()).toBe('Wednesday, January 10, 2024. No entries');
         await user.keyboard('{ArrowRight}{ArrowRight}');
         // Past the last day, the active day stays on it
-        expect(activeName()).toBe('4 entries on Jan 18, 2024');
+        expect(activeName()).toBe('Thursday, January 18, 2024. 4 entries');
         await user.keyboard('{Home}');
-        expect(activeName()).toBe('2 entries on Jan 15, 2024');
-        expect(screen.getByText('2 entries on Jan 15, 2024', { selector: '.heatmap-active-day' })).toBeInTheDocument();
+        expect(activeName()).toBe('Monday, January 15, 2024. 2 entries');
+        expect(tooltip()).toHaveTextContent('Monday, January 15, 2024');
+        await user.keyboard('{Escape}');
+        expect(tooltip()).not.toBeInTheDocument();
         await user.keyboard('{Enter}');
         expect(onOpenJournalDay).toHaveBeenLastCalledWith('2024-01-15');
         await user.keyboard('{Control>}{Home}{/Control}');
-        expect(activeName()).toMatch(/^0 entries on Jan 16, 2023$/);
+        expect(activeName()).toBe('Monday, January 16, 2023. No entries');
         await user.keyboard(' ');
         expect(onOpenJournalDay).toHaveBeenLastCalledWith('2023-01-16');
         await user.keyboard('{Control>}{End}{/Control}{a}');
-        expect(activeName()).toBe('4 entries on Jan 18, 2024');
+        expect(activeName()).toBe('Thursday, January 18, 2024. 4 entries');
         expect(onOpenJournalDay).toHaveBeenCalledTimes(2);
+
+        // Leaving the map hides the details
+        await user.tab();
+        expect(tooltip()).not.toBeInTheDocument();
+    });
+
+    it('shows the details on a first tap and opens the day on a second', () => {
+        const onOpenJournalDay = vi.fn();
+        renderHeatmap('fr', onOpenJournalDay);
+        const day = screen.getByRole('gridcell', { name: 'mardi 16 janvier 2024. 1 entrée' });
+
+        tap(day);
+        expect(onOpenJournalDay).not.toHaveBeenCalled();
+        expect(tooltip()).toHaveTextContent('mardi 16 janvier 2024' + '1 entrée' + 'Touchez à nouveau pour ouvrir le jour');
+        // Another day moves the details there
+        tap(screen.getByRole('gridcell', { name: 'lundi 15 janvier 2024. 2 entrées' }));
+        expect(tooltip()).toHaveTextContent('lundi 15 janvier 2024');
+        expect(onOpenJournalDay).not.toHaveBeenCalled();
+
+        tap(screen.getByRole('gridcell', { name: 'lundi 15 janvier 2024. 2 entrées' }));
+        expect(onOpenJournalDay).toHaveBeenCalledWith('2024-01-15');
+    });
+
+    it('only shows the details on a tap when days do not open', () => {
+        renderHeatmap('en');
+        const day = screen.getByRole('gridcell', { name: 'Tuesday, January 16, 2024. 1 entry' });
+        tap(day);
+        tap(day);
+        expect(tooltip()).toHaveTextContent('Tuesday, January 16, 2024' + '1 entry');
+        expect(tooltip()).not.toHaveTextContent('Tap again');
     });
 
     it.each([
-        ['en', '4 entries on Jan 18, 2024, goal met', 'Day that met the goal'],
-        ['fr', '4 entrées le 18 janv. 2024, objectif atteint', 'Jour où l’objectif est atteint'],
-    ] as const)('marks the days that met a daily goal with a shape and in their names in %s', (language, label, legend) => {
-        render(
-            <StatsActivityHeatmap
-                thoughtsPerDay={thoughtsPerDay}
-                goal={{ period: 'day', metPeriods: ['2024-01-18'] }}
-                themeClass="dark"
-                language={language}
-                t={(key, params) => getTranslation(language, key, params)}
-            />,
-        );
+        ['en', 'Thursday, January 18, 2024. 4 entries. Daily goal met', 'Monday, January 15, 2024. 2 entries. Daily goal not met', 'Day that met the goal'],
+        ['fr', 'jeudi 18 janvier 2024. 4 entrées. Objectif du jour atteint', 'lundi 15 janvier 2024. 2 entrées. Objectif du jour non atteint', 'Jour où l’objectif est atteint'],
+    ] as const)('marks the days that met a daily goal with a shape, in their names and in their details in %s', async (language, met, missed, legend) => {
+        const user = userEvent.setup();
+        renderHeatmap(language, undefined, { period: 'day', metPeriods: ['2024-01-18'] });
 
-        expect(screen.getByRole('gridcell', { name: label })).toHaveClass('goal-met');
+        const metDay = screen.getByRole('gridcell', { name: met });
+        expect(metDay).toHaveClass('goal-met');
+        expect(screen.getByRole('gridcell', { name: missed })).not.toHaveClass('goal-met');
         expect(document.querySelectorAll('[role="gridcell"].goal-met')).toHaveLength(1);
         expect(screen.getByText(legend)).toBeInTheDocument();
         expect(document.querySelector('.heatmap-goal-row')).toBeNull();
+
+        await user.hover(metDay);
+        expect(tooltip()?.querySelector('.heatmap-tooltip-goal.met')).toHaveTextContent(met.split('. ').at(-1) ?? '');
     });
 
     it('marks the Monday-to-Sunday weeks that met a weekly goal under their column and in their days’ names', () => {
-        const { container } = render(
-            <StatsActivityHeatmap
-                thoughtsPerDay={thoughtsPerDay}
-                goal={{ period: 'week', metPeriods: ['2024-01-15'] }}
-                themeClass="light"
-                language="en"
-                t={(key, params) => getTranslation('en', key, params)}
-            />,
-        );
+        const { container } = renderHeatmap('en', undefined, { period: 'week', metPeriods: ['2024-01-15'], periodStart: '2024-01-15' });
 
-        expect(screen.getByRole('gridcell', { name: '2 entries on Jan 15, 2024, weekly goal met' })).toBeInTheDocument();
-        expect(screen.getByRole('gridcell', { name: '0 entries on Jan 17, 2024, weekly goal met' })).toBeInTheDocument();
-        expect(screen.getByRole('gridcell', { name: '0 entries on Jan 14, 2024' })).toBeInTheDocument();
+        expect(screen.getByRole('gridcell', { name: 'Monday, January 15, 2024. 2 entries. Weekly goal met' })).toBeInTheDocument();
+        expect(screen.getByRole('gridcell', { name: 'Wednesday, January 17, 2024. No entries. Weekly goal met' })).toBeInTheDocument();
+        expect(screen.getByRole('gridcell', { name: 'Sunday, January 14, 2024. No entries. Weekly goal not met' })).toBeInTheDocument();
         const marks = [...container.querySelectorAll('.heatmap-goal-row .heatmap-goal-week')].map((mark) => mark.textContent);
         expect(marks.filter(Boolean)).toEqual(['✓']);
         expect(marks.at(-1)).toBe('✓');
         expect(screen.getByText('Week that met the goal')).toBeInTheDocument();
+    });
+
+    it('says the running week is not met yet rather than missed', () => {
+        renderHeatmap('en', undefined, { period: 'week', metPeriods: [], periodStart: '2024-01-15' });
+
+        expect(screen.getByRole('gridcell', { name: 'Thursday, January 18, 2024. 4 entries. Weekly goal not met yet' })).toBeInTheDocument();
+        expect(screen.getByRole('gridcell', { name: 'Sunday, January 14, 2024. No entries. Weekly goal not met' })).toBeInTheDocument();
+    });
+
+    it('says when there is nothing to map yet', () => {
+        render(<StatsActivityHeatmap thoughtsPerDay={{}} themeClass="dark" language="en" t={(key, params) => getTranslation('en', key, params)} />);
+        expect(screen.getByText('No journaling activity yet.')).toBeInTheDocument();
+        expect(screen.queryByRole('grid')).not.toBeInTheDocument();
     });
 });

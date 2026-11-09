@@ -44,7 +44,7 @@ describe('pluralPhrase parameters', () => {
   it.each(REPLACEMENT_PATTERNS)('puts %s into the plural message as written', (date) => {
     const t = (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params);
 
-    expect(pluralPhrase(t, 'statsHeatmapDay', 2, 'en', { date })).toBe(`2 entries on ${date}`);
+    expect(pluralPhrase(t, 'personDateMentions', 2, 'en', { name: date })).toBe(`2 entries mention ${date}`);
   });
 });
 

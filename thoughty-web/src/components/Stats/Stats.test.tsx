@@ -336,8 +336,8 @@ describe('Stats Component', () => {
 
         render(<Stats {...defaultProps} t={(key, params) => getTranslation('fr', key, params)} language="fr" />);
 
-        expect(await screen.findByLabelText('4 entrées le 18 janv. 2024')).toBeInTheDocument();
-        expect(screen.getByLabelText('1 entrée le 16 janv. 2024')).toBeInTheDocument();
+        expect(await screen.findByLabelText('jeudi 18 janvier 2024. 4 entrées')).toBeInTheDocument();
+        expect(screen.getByLabelText('mardi 16 janvier 2024. 1 entrée')).toBeInTheDocument();
     });
 
     it('renders the journaling heatmap when daily activity is available', async () => {
@@ -353,8 +353,8 @@ describe('Stats Component', () => {
         });
 
         expect(container.querySelectorAll('.heatmap-week').length).toBeGreaterThan(0);
-        expect(screen.getByLabelText('4 entries on Jan 18, 2024')).toBeInTheDocument();
-        expect(screen.getByLabelText('1 entry on Jan 16, 2024')).toBeInTheDocument();
+        expect(screen.getByLabelText('Thursday, January 18, 2024. 4 entries')).toBeInTheDocument();
+        expect(screen.getByLabelText('Tuesday, January 16, 2024. 1 entry')).toBeInTheDocument();
     });
 
     it('opens the journal for the selected day when a heatmap cell is clicked', async () => {
@@ -371,7 +371,7 @@ describe('Stats Component', () => {
             expect(screen.getByRole('heading', { name: 'Journal Activity by Day' })).toBeInTheDocument();
         });
 
-        await user.click(screen.getByRole('gridcell', { name: '4 entries on Jan 18, 2024' }));
+        await user.click(screen.getByRole('gridcell', { name: 'Thursday, January 18, 2024. 4 entries' }));
 
         expect(onOpenJournalDay).toHaveBeenCalledWith('2024-01-18');
     });

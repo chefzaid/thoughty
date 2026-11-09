@@ -46,7 +46,7 @@ test.describe('stats accessibility with entries', () => {
         }
         await page.getByRole('grid', { name: 'Journal Activity by Day' }).focus();
         await page.keyboard.press('ArrowLeft');
-        await expect(page.locator('.heatmap-active-day')).toHaveText('0 entries on Dec 30, 2025');
+        await expect(page.getByTestId('heatmap-tooltip')).toHaveText('Tuesday, December 30, 2025' + 'No entries');
         await expectNoAccessibilityViolations(page);
       });
     }
@@ -78,24 +78,24 @@ test.describe('stats charts and activity map for assistive technology', () => {
     await expect(grid).toHaveAccessibleDescription(/Arrow keys move by a day or a week/);
     await grid.focus();
     const activeDay = async () => page.locator(`[id="${await grid.getAttribute('aria-activedescendant')}"]`);
-    await expect(await activeDay()).toHaveAccessibleName('2 entries on Jan 6, 2026');
+    await expect(await activeDay()).toHaveAccessibleName('Tuesday, January 6, 2026. 2 entries');
     await page.keyboard.press('ArrowUp');
-    await expect(await activeDay()).toHaveAccessibleName('1 entry on Jan 5, 2026');
+    await expect(await activeDay()).toHaveAccessibleName('Monday, January 5, 2026. 1 entry');
     await page.keyboard.press('ArrowLeft');
-    await expect(await activeDay()).toHaveAccessibleName('0 entries on Dec 29, 2025');
+    await expect(await activeDay()).toHaveAccessibleName('Monday, December 29, 2025. No entries');
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowRight');
-    await expect(await activeDay()).toHaveAccessibleName('2 entries on Jan 6, 2026');
+    await expect(await activeDay()).toHaveAccessibleName('Tuesday, January 6, 2026. 2 entries');
     await page.keyboard.press('Control+Home');
-    await expect(await activeDay()).toHaveAccessibleName('0 entries on Jan 6, 2025');
+    await expect(await activeDay()).toHaveAccessibleName('Monday, January 6, 2025. No entries');
     await page.keyboard.press('PageDown');
     await page.keyboard.press('PageDown');
-    await expect(await activeDay()).toHaveAccessibleName('0 entries on Mar 6, 2025');
+    await expect(await activeDay()).toHaveAccessibleName('Thursday, March 6, 2025. No entries');
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.press('Home');
-    await expect(await activeDay()).toHaveAccessibleName('0 entries on Feb 24, 2025');
+    await expect(await activeDay()).toHaveAccessibleName('Monday, February 24, 2025. No entries');
     await page.keyboard.press('End');
-    await expect(await activeDay()).toHaveAccessibleName('1 entry on Mar 2, 2025');
+    await expect(await activeDay()).toHaveAccessibleName('Sunday, March 2, 2025. 1 entry');
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/journal/);
     await expect(page.getByText('A walk along the canal.')).toBeVisible();
