@@ -1,5 +1,3 @@
-import { SubmitEvent, useState } from 'react';
-
 import Footer from '../Footer/Footer';
 import '../IntroPage/IntroPage.css';
 import './ContactPage.css';
@@ -8,6 +6,7 @@ interface ContactPageProps {
   readonly theme?: 'light' | 'dark';
   readonly t: (key: string, params?: Record<string, string | number>) => string;
   readonly onBackHome: () => void;
+  readonly onOpenFeedback: () => void;
 }
 
 const GUIDE_ITEMS = [
@@ -22,15 +21,13 @@ const FAQ_ITEMS = [
   ['contactFaqExportTitle', 'contactFaqExportBody'],
 ] as const;
 
-function ContactPage({ theme, t, onBackHome }: Readonly<ContactPageProps>) {
-  const [submitted, setSubmitted] = useState(false);
+/**
+ * The support page: guides, answers, and where to write. No address receives messages yet (see TODO.md ›
+ * Needs Input), so instead of a form whose messages would go nowhere it says so and points to the
+ * feedback board, which does keep what is posted, and to the guides and answers below.
+ */
+function ContactPage({ theme, t, onBackHome, onOpenFeedback }: Readonly<ContactPageProps>) {
   const isLight = theme === 'light';
-
-  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSubmitted(true);
-    event.currentTarget.reset();
-  }
 
   return (
     <div className={`intro-page ${isLight ? 'light' : 'dark'}`}>
@@ -45,40 +42,13 @@ function ContactPage({ theme, t, onBackHome }: Readonly<ContactPageProps>) {
             </button>
           </div>
 
-          <form className="contact-form" onSubmit={handleSubmit}>
-            <h2>{t('contactFormTitle')}</h2>
-            <label>
-              <span>{t('contactNameLabel')}</span>
-              <input name="name" autoComplete="name" required />
-            </label>
-            <label>
-              <span>{t('contactEmailLabel')}</span>
-              <input name="email" type="email" autoComplete="email" required />
-            </label>
-            <label>
-              <span>{t('contactTopicLabel')}</span>
-              <select name="topic" defaultValue="support" required>
-                <option value="support">{t('contactTopicSupport')}</option>
-                <option value="account">{t('contactTopicAccount')}</option>
-                <option value="billing">{t('contactTopicBilling')}</option>
-                <option value="privacy">{t('contactTopicPrivacy')}</option>
-                <option value="feedback">{t('contactTopicFeedback')}</option>
-              </select>
-            </label>
-            <label>
-              <span>{t('contactMessageLabel')}</span>
-              <textarea name="message" rows={5} required />
-            </label>
-            <button type="submit" className="intro-btn primary">
-              {t('contactSubmit')}
+          <section className="contact-panel" aria-labelledby="contact-closed-title">
+            <h2 id="contact-closed-title">{t('contactClosedTitle')}</h2>
+            <p>{t('contactClosedBody')}</p>
+            <button type="button" className="intro-btn primary" onClick={onOpenFeedback}>
+              {t('contactOpenFeedback')}
             </button>
-            {submitted ? (
-              <output className="contact-success">
-                <strong>{t('contactSuccessTitle')}</strong>
-                <span>{t('contactSuccessBody')}</span>
-              </output>
-            ) : null}
-          </form>
+          </section>
         </section>
 
         <section className="landing-section contact-guides">

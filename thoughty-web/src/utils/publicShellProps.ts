@@ -66,6 +66,7 @@ export function buildPublicShellProps({
     theme,
     t,
     onBackHome: () => routingState.handlePublicViewChange('intro'),
+    onOpenFeedback: () => routingState.handlePublicViewChange('feedback'),
   };
 
   const feedbackPageProps: FeedbackPageProps = {

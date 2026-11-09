@@ -47,19 +47,9 @@ export type PublicPagesTranslationKey =
   | "contactEyebrow"
   | "contactTitle"
   | "contactSubtitle"
-  | "contactFormTitle"
-  | "contactNameLabel"
-  | "contactEmailLabel"
-  | "contactTopicLabel"
-  | "contactTopicSupport"
-  | "contactTopicAccount"
-  | "contactTopicBilling"
-  | "contactTopicPrivacy"
-  | "contactTopicFeedback"
-  | "contactMessageLabel"
-  | "contactSubmit"
-  | "contactSuccessTitle"
-  | "contactSuccessBody"
+  | "contactClosedTitle"
+  | "contactClosedBody"
+  | "contactOpenFeedback"
   | "contactGuidesKicker"
   | "contactGuidesTitle"
   | "contactGuideStartTitle"
@@ -187,21 +177,11 @@ export const publicPagesTranslations: Record<Language, Record<PublicPagesTransla
     contactEyebrow: "Support",
     contactTitle: "Contact and support",
     contactSubtitle:
-      "Send a question, report an account issue, or start with the most common guides for keeping your journal organized and portable.",
-    contactFormTitle: "Send a message",
-    contactNameLabel: "Name",
-    contactEmailLabel: "Email",
-    contactTopicLabel: "Topic",
-    contactTopicSupport: "Product support",
-    contactTopicAccount: "Account access",
-    contactTopicBilling: "Billing",
-    contactTopicPrivacy: "Privacy and data",
-    contactTopicFeedback: "Feedback or feature idea",
-    contactMessageLabel: "Message",
-    contactSubmit: "Send message",
-    contactSuccessTitle: "Message ready",
-    contactSuccessBody:
-      "Thanks for reaching out. Your message has been captured in this session and the support team can wire it to an inbox next.",
+      "Start with the most common guides and questions for keeping your journal organized and portable, or share an idea on the community board.",
+    contactClosedTitle: "Messages cannot be sent from here yet",
+    contactClosedBody:
+      "No inbox receives messages from this page yet, so there is no form to fill in that would lose what you write. Ideas and feature requests have a home on the community board, and the guides and answers below cover the usual questions.",
+    contactOpenFeedback: "Open the community board",
     contactGuidesKicker: "How to",
     contactGuidesTitle: "How to guides",
     contactGuideStartTitle: "Start a focused journal",
@@ -342,21 +322,11 @@ export const publicPagesTranslations: Record<Language, Record<PublicPagesTransla
     contactEyebrow: "Support",
     contactTitle: "Contact et support",
     contactSubtitle:
-      "Envoyez une question, signalez un problème de compte ou commencez avec les guides les plus courants pour garder votre journal organisé et portable.",
-    contactFormTitle: "Envoyer un message",
-    contactNameLabel: "Nom",
-    contactEmailLabel: "Email",
-    contactTopicLabel: "Sujet",
-    contactTopicSupport: "Support produit",
-    contactTopicAccount: "Accès au compte",
-    contactTopicBilling: "Facturation",
-    contactTopicPrivacy: "Confidentialité et données",
-    contactTopicFeedback: "Avis ou idée de fonctionnalité",
-    contactMessageLabel: "Message",
-    contactSubmit: "Envoyer le message",
-    contactSuccessTitle: "Message prêt",
-    contactSuccessBody:
-      "Merci pour votre message. Il a été capturé dans cette session et l’équipe support pourra ensuite le relier à une boîte de réception.",
+      "Commencez par les guides et les questions les plus courants pour garder votre journal organisé et portable, ou partagez une idée sur le tableau de la communauté.",
+    contactClosedTitle: "Les messages ne peuvent pas encore être envoyés d’ici",
+    contactClosedBody:
+      "Aucune boîte de réception ne reçoit encore les messages de cette page : il n’y a donc pas de formulaire qui perdrait ce que vous écrivez. Les idées et demandes de fonctionnalités ont leur place sur le tableau de la communauté, et les guides et réponses ci-dessous couvrent les questions habituelles.",
+    contactOpenFeedback: "Ouvrir le tableau de la communauté",
     contactGuidesKicker: "Guides",
     contactGuidesTitle: "Guides pratiques",
     contactGuideStartTitle: "Commencer un journal ciblé",

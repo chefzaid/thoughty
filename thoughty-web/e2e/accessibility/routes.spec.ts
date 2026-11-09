@@ -19,7 +19,7 @@ const PUBLIC_ROUTES: Record<string, RouteContent> = {
   '/about': (page) => [page.getByRole('heading', { name: 'Small, product-led, and close to the writing.' })],
   '/privacy': (page) => [page.getByRole('heading', { name: 'Security and providers' })],
   '/terms': (page) => [page.getByRole('heading', { name: 'Service changes' })],
-  '/contact': (page) => [page.getByRole('combobox', { name: 'Topic' }), page.getByRole('heading', { name: 'Which formats are available?' })],
+  '/contact': (page) => [page.getByRole('button', { name: 'Open the community board' }), page.getByRole('heading', { name: 'Which formats are available?' })],
   '/feedback': (page) => [page.getByRole('button', { name: 'Sign in to vote for Mood calendar' })],
   '/blog': (page) => [page.getByRole('heading', { name: 'Prompts for writing when the day feels noisy' })],
 };

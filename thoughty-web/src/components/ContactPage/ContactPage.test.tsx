@@ -9,19 +9,9 @@ const messages: Record<string, string> = {
   contactEyebrow: 'Support',
   contactTitle: 'Contact and support',
   contactSubtitle: 'Send a question and browse guides.',
-  contactFormTitle: 'Send a message',
-  contactNameLabel: 'Name',
-  contactEmailLabel: 'Email',
-  contactTopicLabel: 'Topic',
-  contactTopicSupport: 'Support',
-  contactTopicAccount: 'Account',
-  contactTopicBilling: 'Billing',
-  contactTopicPrivacy: 'Privacy',
-  contactTopicFeedback: 'Feedback',
-  contactMessageLabel: 'Message',
-  contactSubmit: 'Send message',
-  contactSuccessTitle: 'Message ready',
-  contactSuccessBody: 'Thanks for reaching out.',
+  contactClosedTitle: 'Messages cannot be sent from here yet',
+  contactClosedBody: 'No inbox receives messages from this page yet.',
+  contactOpenFeedback: 'Open the community board',
   contactGuidesKicker: 'Guides',
   contactGuidesTitle: 'How to guides',
   contactGuideStartTitle: 'Start writing',
@@ -51,32 +41,42 @@ function t(key: string) {
   return messages[key] ?? key;
 }
 
+const renderPage = (overrides: Partial<{ onBackHome: () => void; onOpenFeedback: () => void }> = {}) => render(
+  <ContactPage t={t} theme="dark" onBackHome={vi.fn()} onOpenFeedback={vi.fn()} {...overrides} />,
+);
+
 describe('ContactPage', () => {
-  it('renders the support form, guides, and FAQ content', () => {
-    render(<ContactPage t={t} theme="dark" onBackHome={vi.fn()} />);
+  it('renders the guides and FAQ content', () => {
+    renderPage();
 
     expect(screen.getByRole('heading', { name: 'Contact and support' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Email')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'How to guides' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Frequently asked questions' })).toBeInTheDocument();
   });
 
-  it('shows a confirmation after the form is submitted', async () => {
+  it('offers no message form while no inbox receives messages, and says so', () => {
+    const { container } = renderPage();
+
+    expect(container.querySelector('form, input, textarea, select')).toBeNull();
+    expect(screen.queryByText(/sent|ready/i, { selector: 'output, [role="status"]' })).not.toBeInTheDocument();
+    const panel = screen.getByRole('region', { name: 'Messages cannot be sent from here yet' });
+    expect(panel).toHaveTextContent('No inbox receives messages from this page yet.');
+  });
+
+  it('opens the community board from the panel', async () => {
     const user = userEvent.setup();
-    render(<ContactPage t={t} theme="light" onBackHome={vi.fn()} />);
+    const onOpenFeedback = vi.fn();
+    renderPage({ onOpenFeedback });
 
-    await user.type(screen.getByLabelText('Name'), 'Ada');
-    await user.type(screen.getByLabelText('Email'), 'ada@example.com');
-    await user.type(screen.getByLabelText('Message'), 'I need help with exports.');
-    await user.click(screen.getByRole('button', { name: 'Send message' }));
+    await user.click(screen.getByRole('button', { name: 'Open the community board' }));
 
-    expect(screen.getByRole('status')).toHaveTextContent('Message ready');
+    expect(onOpenFeedback).toHaveBeenCalledOnce();
   });
 
   it('navigates back home from the hero action', async () => {
     const user = userEvent.setup();
     const onBackHome = vi.fn();
-    render(<ContactPage t={t} theme="dark" onBackHome={onBackHome} />);
+    renderPage({ onBackHome });
 
     await user.click(screen.getByRole('button', { name: 'Back' }));
 
