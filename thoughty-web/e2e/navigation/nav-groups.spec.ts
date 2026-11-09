@@ -9,12 +9,12 @@ const PATH_OF_PAGE: Record<NavPage, string> = {
   Journal: '/journal',
   Memoir: '/memoir',
   Tasks: '/tasks',
-  Tags: '/tags',
   Feed: '/feed',
   People: '/people',
   Stats: '/stats',
   'Year in review': '/review',
   'Manage Diaries': '/diaries',
+  Tags: '/tags',
   'Import/Export': '/import-export',
   'Recycle bin': '/recycle-bin',
 };
@@ -112,6 +112,29 @@ test.describe('Navigation groups', () => {
     }
   });
 
+  test('the logo and name take you to the journal, by mouse or keyboard, with a visible focus ring', async ({ page }) => {
+    await signIn(page);
+    await page.goto('/stats');
+    const brand = page.getByRole('navigation').getByRole('button', { name: 'Thoughty, go to journal', exact: true });
+    await expect(brand).toContainText('Thoughty');
+    await brand.click();
+    await expect(page).toHaveURL(/\/journal(\?|$)/);
+    await expect(navGroupButton(page, 'Journaling')).toHaveClass(/\bactive\b/);
+
+    await page.goto('/tags');
+    await brand.focus();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/journal(\?|$)/);
+
+    // Shift+Tab back from the first group: a keyboard focus, so the ring shows
+    await page.goto('/stats');
+    await navGroupButton(page, 'Journaling').focus();
+    await page.keyboard.press('Shift+Tab');
+    await expect(brand).toBeFocused();
+    const outline = await brand.evaluate((element) => getComputedStyle(element).outlineStyle);
+    expect(outline).not.toBe('none');
+  });
+
   test('opens the year in review on the diary being read, as the Stats page does', async ({ page }) => {
     await signIn(page);
     await page.goto('/stats?diary=2');
@@ -155,8 +178,10 @@ test.describe('Navigation groups', () => {
     await page.goto('/journal');
     await expect(navGroupButton(page, 'Journaling')).toBeVisible();
 
-    // Skip link, then the first group: the closed groups' pages are out of the tab order
+    // Skip link, the brand, then the first group: the closed groups' pages are out of the tab order
     await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Thoughty, go to journal' })).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(navGroupButton(page, 'Journaling')).toBeFocused();
     await page.keyboard.press('Tab');
@@ -178,6 +203,8 @@ test.describe('Navigation groups', () => {
     await expect(navGroupButton(page, 'Data')).toHaveAttribute('aria-expanded', 'true');
     await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
+    await expect(page.getByRole('navigation').getByRole('button', { name: 'Tags', exact: true })).toBeFocused();
+    await page.keyboard.press('Tab');
     await expect(page.getByRole('navigation').getByRole('button', { name: 'Import/Export', exact: true })).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/import-export(\?|$)/);
@@ -190,6 +217,11 @@ test.describe('Navigation groups', () => {
     for (const group of ['Écriture', 'Social', 'Analyses', 'Données']) {
       await expect(navGroupButton(page, group)).toBeVisible();
     }
+    await goToView(page, 'Tags', 'fr');
+    await expect(page).toHaveURL(/\/tags(\?|$)/);
+    await expect(navGroupButton(page, 'Données')).toHaveClass(/\bactive\b/);
+    await page.getByRole('navigation').getByRole('button', { name: 'Thoughty, aller au journal', exact: true }).click();
+    await expect(page).toHaveURL(/\/journal(\?|$)/);
 
     await goToView(page, 'Statistiques', 'fr');
     await expect(page).toHaveURL(/\/stats(\?|$)/);

@@ -27,12 +27,39 @@
     border: 1px solid rgba(229, 231, 235, 1);
 }
 
-/* Brand section (logo + app name) */
+/* Brand section (logo + app name), a button back to the journal */
 .nav-brand {
     display: flex;
     flex: 0 0 auto;
     align-items: center;
     gap: 0.25rem;
+    margin: -0.25rem;
+    padding: 0.25rem;
+    border: none;
+    border-radius: 0.5rem;
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.nav-menu.dark .nav-brand:hover {
+    background: rgba(55, 65, 81, 0.35);
+}
+
+.nav-menu.light .nav-brand:hover {
+    background: rgba(243, 244, 246, 1);
+}
+
+.nav-brand:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-brand {
+        transition: none;
+    }
 }
 
 .brand-logo {

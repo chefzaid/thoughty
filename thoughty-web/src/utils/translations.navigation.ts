@@ -6,7 +6,8 @@ export type NavigationTranslationKey =
   | 'navGroupSocial'
   | 'navGroupInsights'
   | 'navGroupData'
-  | 'navYearInReview';
+  | 'navYearInReview'
+  | 'navBrandHome';
 
 export const navigationTranslations: Record<Language, Record<NavigationTranslationKey, string>> = {
   en: {
@@ -15,6 +16,7 @@ export const navigationTranslations: Record<Language, Record<NavigationTranslati
     navGroupInsights: 'Insights',
     navGroupData: 'Data',
     navYearInReview: 'Year in review',
+    navBrandHome: 'Thoughty, go to journal',
   },
   fr: {
     navGroupJournaling: 'Écriture',
@@ -22,5 +24,6 @@ export const navigationTranslations: Record<Language, Record<NavigationTranslati
     navGroupInsights: 'Analyses',
     navGroupData: 'Données',
     navYearInReview: 'Bilan de l’année',
+    navBrandHome: 'Thoughty, aller au journal',
   },
 };

@@ -50,8 +50,8 @@ const importExportIcon = (
 );
 
 /**
- * The main navigation's groups, in order: writing, other people, looking back, and what moves or
- * holds the data itself (the diaries, import and export, the recycle bin).
+ * The main navigation's groups, in order: writing, other people, looking back, and what organizes,
+ * moves or holds the data itself (the diaries, the tags, import and export, the recycle bin).
  */
 export function buildNavGroups(t: Translate): readonly NavGroupDefinition[] {
     return [
@@ -63,7 +63,6 @@ export function buildNavGroups(t: Translate): readonly NavGroupDefinition[] {
                 { view: 'journal', label: t('journal'), icon: journalIcon },
                 { view: 'memoir', label: t('memoir'), icon: codicon('history') },
                 { view: 'tasks', label: t('openTasksNav'), icon: codicon('checklist') },
-                { view: 'tags', label: t('tags'), icon: tagsIcon },
             ],
         },
         {
@@ -90,6 +89,7 @@ export function buildNavGroups(t: Translate): readonly NavGroupDefinition[] {
             icon: codicon('database'),
             items: [
                 { view: 'diaries', label: t('manageDiaries'), icon: codicon('library') },
+                { view: 'tags', label: t('tags'), icon: tagsIcon },
                 { view: 'importExport', label: t('importExport'), icon: importExportIcon },
                 { view: 'recycleBin', label: t('recycleBin'), icon: codicon('trash') },
             ],

@@ -36,11 +36,11 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
 
     return (
         <nav className={`nav-menu ${isLight ? 'light' : 'dark'}`}>
-            {/* Logo and App Name */}
-            <div className="nav-brand">
-                <img src="/thoughty-logo.svg" alt="Thoughty" className="brand-logo" />
+            {/* Logo and app name: back to the journal */}
+            <button type="button" className="nav-brand" onClick={() => selectView('journal')} aria-label={t('navBrandHome')}>
+                <img src="/thoughty-logo.svg" alt="" className="brand-logo" />
                 <span className="brand-name">Thoughty</span>
-            </div>
+            </button>
 
             {/* The pages, grouped */}
             <div className="nav-items">

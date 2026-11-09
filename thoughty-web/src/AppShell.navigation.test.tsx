@@ -186,7 +186,7 @@ describe('AppShell navigation flows', () => {
 
     renderAppShell();
 
-    await openFromNav(user, 'Journaling', 'Tags');
+    await openFromNav(user, 'Data', 'Tags');
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Tags' })).toBeInTheDocument();

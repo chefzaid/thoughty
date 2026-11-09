@@ -22,19 +22,30 @@ describe('NavMenu', () => {
     vi.clearAllMocks();
   });
 
-  it('renders brand logo and name', () => {
-    render(<NavMenu {...defaultProps} />);
-    expect(screen.getByAltText('Thoughty')).toBeInTheDocument();
-    expect(screen.getByText('Thoughty')).toBeInTheDocument();
+  it('renders the brand logo and name as a button back to the journal', () => {
+    render(<NavMenu {...defaultProps} currentView="stats" />);
+    const brand = screen.getByRole('button', { name: 'navBrandHome' });
+    expect(brand).toHaveTextContent('Thoughty');
+    expect(brand.querySelector('img.brand-logo')).toHaveAttribute('alt', '');
+
+    fireEvent.click(brand);
+    expect(mockOnViewChange).toHaveBeenCalledWith('journal');
+  });
+
+  it('closes an open group when the brand takes you to the journal', () => {
+    render(<NavMenu {...defaultProps} currentView="stats" />);
+    fireEvent.click(screen.getByRole('button', { name: 'navGroupInsights' }));
+    fireEvent.click(screen.getByRole('button', { name: 'navBrandHome' }));
+    expect(screen.getByRole('button', { name: 'navGroupInsights' })).toHaveAttribute('aria-expanded', 'false');
   });
 
   const openGroup = (label: string) => fireEvent.click(screen.getByRole('button', { name: label }));
 
   it.each([
-    ['navGroupJournaling', ['journal', 'memoir', 'openTasksNav', 'tags']],
+    ['navGroupJournaling', ['journal', 'memoir', 'openTasksNav']],
     ['navGroupSocial', ['feed', 'people']],
     ['navGroupInsights', ['stats', 'navYearInReview']],
-    ['navGroupData', ['manageDiaries', 'importExport', 'recycleBin']],
+    ['navGroupData', ['manageDiaries', 'tags', 'importExport', 'recycleBin']],
   ])('discloses the %s pages from a closed group button', (group, items) => {
     render(<NavMenu {...defaultProps} />);
     const button = screen.getByRole('button', { name: group });
@@ -50,18 +61,20 @@ describe('NavMenu', () => {
     for (const item of items) {
       expect(screen.getByRole('button', { name: item })).toBeVisible();
     }
+    // In this order
+    expect([...(panel?.querySelectorAll('button') ?? [])].map((option) => option.textContent)).toEqual(items);
   });
 
   it.each([
     ['navGroupJournaling', 'journal', 'journal'],
     ['navGroupJournaling', 'memoir', 'memoir'],
     ['navGroupJournaling', 'openTasksNav', 'tasks'],
-    ['navGroupJournaling', 'tags', 'tags'],
     ['navGroupSocial', 'feed', 'feed'],
     ['navGroupSocial', 'people', 'people'],
     ['navGroupInsights', 'stats', 'stats'],
     ['navGroupInsights', 'navYearInReview', 'review'],
     ['navGroupData', 'manageDiaries', 'diaries'],
+    ['navGroupData', 'tags', 'tags'],
     ['navGroupData', 'importExport', 'importExport'],
     ['navGroupData', 'recycleBin', 'recycleBin'],
   ])('opens %s › %s and closes the group', (group, item, view) => {
