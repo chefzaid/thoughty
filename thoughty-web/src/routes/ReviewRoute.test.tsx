@@ -24,9 +24,8 @@ vi.mock('../components/YearReview/YearReviewPage', () => ({
   ),
 }));
 vi.mock('../components/Stats/Stats', () => ({
-  default: ({ teaser, onOpenEntry }: { teaser?: React.ReactNode; onOpenEntry: (entryId: number) => void }) => (
+  default: ({ onOpenEntry }: { onOpenEntry: (entryId: number) => void }) => (
     <>
-      {teaser}
       <p>stats</p>
       <button type="button" onClick={() => onOpenEntry(31)}>open record</button>
     </>
@@ -77,26 +76,6 @@ describe('ReviewRoute', () => {
 });
 
 describe('StatsRoute', () => {
-  it('invites the writer to the year in review of the diary in view', () => {
-    renderAt('/stats', (
-      <StatsRoute diaries={[]} currentDiaryId={4} onDiaryChange={vi.fn()} onManageDiaries={vi.fn()} t={(key) => key} />
-    ));
-
-    fireEvent.click(screen.getByRole('button', { name: 'reviewTeaserAction' }));
-
-    expect(screen.getByRole('status')).toHaveTextContent('/review?diary=4');
-  });
-
-  it('opens the review of all diaries when none is selected', () => {
-    renderAt('/stats', (
-      <StatsRoute diaries={[]} currentDiaryId={null} onDiaryChange={vi.fn()} onManageDiaries={vi.fn()} theme="light" t={(key) => key} />
-    ));
-
-    fireEvent.click(screen.getByRole('button', { name: 'reviewTeaserAction' }));
-
-    expect(screen.getByRole('status')).toHaveTextContent(/^\/review$/);
-  });
-
   it('opens a record’s entry through its permalink', () => {
     renderAt('/stats', (
       <StatsRoute diaries={[]} currentDiaryId={4} onDiaryChange={vi.fn()} onManageDiaries={vi.fn()} t={(key) => key} />

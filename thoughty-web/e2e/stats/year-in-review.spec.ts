@@ -2,6 +2,7 @@ import { expect, test } from '../support/test';
 
 import type { MockEntry } from '../support/mockApp.shared';
 import { setupMockApp } from '../support/mockApp';
+import { goToView } from '../support/navigation';
 
 const entry = (id: number, date: string, content: string, overrides: Partial<MockEntry> = {}): MockEntry => ({
   id,
@@ -23,11 +24,14 @@ const entries: MockEntry[] = [
 ];
 
 test.describe('Year in review', () => {
-  test('opens from the stats page and shows the year in numbers, themes, and moments to reread', async ({ page }) => {
+  test('opens from the menu and shows the year in numbers, themes, and moments to reread', async ({ page }) => {
     await setupMockApp(page, { startAuthenticated: true, initialEntries: entries });
     await page.goto('/stats?diary=all');
+    // The Stats page no longer carries its own invitation: the review has its menu entry under Insights
+    await expect(page.getByRole('heading', { name: 'Entries per Year' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Open the year in review' })).toHaveCount(0);
 
-    await page.getByRole('button', { name: 'Open the year in review' }).click();
+    await goToView(page, 'Year in review');
     await expect(page).toHaveURL(/\/review/);
     await page.getByRole('combobox', { name: 'Year', exact: true }).selectOption('2025');
 

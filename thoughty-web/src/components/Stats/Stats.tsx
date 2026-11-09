@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -13,7 +13,6 @@ import {
 import './Stats.css';
 import { useAuth } from '../../contexts/AuthContext';
 import PageHeader from '../PageHeader/PageHeader';
-import TagBadge from '../TagBadge/TagBadge';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import StatsActivityHeatmap from './StatsActivityHeatmap';
 import StatsInsights from './StatsInsights';
@@ -28,6 +27,7 @@ import StatsSummaryCards from './StatsSummaryCards';
 import StatsWritingTimes from './StatsWritingTimes';
 import StatsRecords from './StatsRecords';
 import StatsTopWords from './StatsTopWords';
+import StatsTagsByYear, { type YearTagData } from './StatsTagsByYear';
 import { EMPTY_STATS, type StatsData } from './emptyStats';
 import QuietModeNote from '../QuietMode/QuietModeNote';
 import { useQuietMode } from '../QuietMode/quietMode';
@@ -61,13 +61,6 @@ interface StatsProps {
     readonly onManageDiaries?: () => void;
     readonly tagMetadata?: TagMetadataMap;
     readonly language?: string;
-    /** Shown after the summary numbers, or under the title while they load. */
-    readonly teaser?: ReactNode;
-}
-
-interface YearTagData {
-    year: string;
-    topTags: [string, number][];
 }
 
 const TAGS_YEARS_PER_PAGE = 5;
@@ -86,7 +79,7 @@ const TAG_COLORS = [
     'rgba(234, 179, 8, 0.7)',
 ];
 
-function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onSearchJournal, onOpenEntry, onManageDiaries, tagMetadata, language, teaser }: StatsProps) {
+function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onSearchJournal, onOpenEntry, onManageDiaries, tagMetadata, language }: StatsProps) {
     const { authFetch } = useAuth();
     // Quiet mode keeps the readings of the journal (insights, moods, personality, links) and leaves out its counts and goals
     const quiet = useQuietMode();
@@ -219,7 +212,6 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onSearch
         return (
             <div className="stats-container">
                 {header}
-                {teaser}
                 <div className="stats-loading">
                     <div className="spinner"></div>
                     <p>{t('loadingStats')}</p>
@@ -232,7 +224,6 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onSearch
         return (
             <div className="stats-container">
                 {header}
-                {teaser}
                 <div className="stats-error">
                     <p>{t(error ?? 'statsLoadError')}</p>
                     <button type="button" onClick={fetchStats}>{t('retry')}</button>
@@ -240,6 +231,9 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onSearch
             </div>
         );
     }
+
+    const hasEntries = stats.totalThoughts > 0;
+    const moods = stats.moods ?? EMPTY_STATS.moods;
 
     return (
         <div className={`stats-container ${themeClass}`}>
@@ -249,48 +243,13 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onSearch
                 <StatsSummaryCards stats={stats} yearsActive={allYearLabels.length} themeClass={themeClass} t={t} />
             )}
 
-            {teaser}
-
-            {/* Charts Grid */}
+            {/*
+              * The owner's order: the goal, the days, the counts by year and month, the tags, the
+              * records, the connections, the words; then what AI reads, last. When you write follows
+              * the counts it breaks down, and the recorded moods and the tags beside them follow the
+              * top tags, before the records.
+              */}
             <div className="charts-grid">
-                {stats.totalThoughts > 0 && (
-                    <>
-                        <StatsInsights
-                            themeClass={themeClass}
-                            toneMoodAnalysis={stats.toneMoodAnalysis}
-                            subjectAnalysis={stats.subjectAnalysis}
-                            t={t}
-                        />
-                        <StatsMoodPanel
-                            moods={stats.moods ?? EMPTY_STATS.moods}
-                            themeClass={themeClass}
-                            language={uiLanguage}
-                            t={t}
-                        />
-                        <StatsMoodTags
-                            moods={stats.moods ?? EMPTY_STATS.moods}
-                            theme={theme}
-                            themeClass={themeClass}
-                            language={uiLanguage}
-                            tagMetadata={tagMetadata}
-                            t={t}
-                            onOpenJournalTag={onOpenJournalTag}
-                        />
-                        <StatsPersonalityPanel
-                            themeClass={themeClass}
-                            diaryId={diaryId}
-                            t={t}
-                        />
-                        <StatsCorrelationGraph
-                            correlations={stats.correlations ?? EMPTY_STATS.correlations}
-                            themeClass={themeClass}
-                            language={uiLanguage}
-                            t={t}
-                            onOpenJournalDay={onOpenJournalDay}
-                        />
-                    </>
-                )}
-
                 {!quiet && (
                     <StatsGoalPanel
                         goals={goals}
@@ -313,6 +272,53 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onSearch
                     />
                 )}
 
+                {!quiet && hasEntries && (
+                    <div className="charts-row">
+                        <StatsBarChart
+                            title={t('thoughtsPerYear')}
+                            labelHeader={t('year')}
+                            points={thoughtsPerYearPoints}
+                            backgroundColor="rgba(59, 130, 246, 0.7)"
+                            borderColor="rgba(59, 130, 246, 1)"
+                            options={chartOptions}
+                            themeClass={themeClass}
+                            language={uiLanguage}
+                            t={t}
+                            controls={(
+                                <StatsPagination
+                                    page={yearPage}
+                                    totalPages={totalYearChartPages}
+                                    onPageChange={setYearPage}
+                                    themeClass={themeClass}
+                                    previousLabel={t('previous')}
+                                    nextLabel={t('next')}
+                                />
+                            )}
+                        />
+                        <StatsBarChart
+                            title={t('thoughtsPerMonth')}
+                            labelHeader={t('month')}
+                            points={thoughtsPerMonthPoints}
+                            backgroundColor="rgba(139, 92, 246, 0.7)"
+                            borderColor="rgba(139, 92, 246, 1)"
+                            options={chartOptions}
+                            themeClass={themeClass}
+                            language={uiLanguage}
+                            t={t}
+                            controls={(
+                                <StatsPagination
+                                    page={monthPage}
+                                    totalPages={totalMonthPages}
+                                    onPageChange={setMonthPage}
+                                    themeClass={themeClass}
+                                    previousLabel={t('previous')}
+                                    nextLabel={t('next')}
+                                />
+                            )}
+                        />
+                    </div>
+                )}
+
                 {/* Quiet mode keeps the rhythm of writing, which measures when rather than how much, without its counts */}
                 <StatsWritingTimes
                     writingTimes={stats.writingTimes ?? EMPTY_STATS.writingTimes}
@@ -321,6 +327,46 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onSearch
                     language={uiLanguage}
                     t={t}
                 />
+
+                {!quiet && hasEntries && (
+                    <div className="charts-row">
+                        <StatsBarChart
+                            title={t('topTags')}
+                            labelHeader={t('statsChartTag')}
+                            points={thoughtsPerTagPoints}
+                            backgroundColor={TAG_COLORS}
+                            options={tagChartOptions}
+                            themeClass={themeClass}
+                            language={uiLanguage}
+                            t={t}
+                        />
+                        <StatsTagsByYear
+                            rows={tagsPerYearData}
+                            page={tagsYearPage}
+                            totalPages={totalTagsYearPages}
+                            onPageChange={setTagsYearPage}
+                            theme={theme}
+                            themeClass={themeClass}
+                            tagMetadata={tagMetadata}
+                            t={t}
+                        />
+                    </div>
+                )}
+
+                {hasEntries && (
+                    <>
+                        <StatsMoodPanel moods={moods} themeClass={themeClass} language={uiLanguage} t={t} />
+                        <StatsMoodTags
+                            moods={moods}
+                            theme={theme}
+                            themeClass={themeClass}
+                            language={uiLanguage}
+                            tagMetadata={tagMetadata}
+                            t={t}
+                            onOpenJournalTag={onOpenJournalTag}
+                        />
+                    </>
+                )}
 
                 {/* Quiet mode keeps the records that say when, not how much */}
                 <StatsRecords
@@ -332,116 +378,31 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onSearch
                     onOpenJournalDay={onOpenJournalDay}
                 />
 
+                {hasEntries && (
+                    <StatsCorrelationGraph
+                        correlations={stats.correlations ?? EMPTY_STATS.correlations}
+                        themeClass={themeClass}
+                        language={uiLanguage}
+                        t={t}
+                        onOpenJournalDay={onOpenJournalDay}
+                    />
+                )}
+
                 {/* A server from before the words used most sends none */}
                 {stats.topWords && (
                     <StatsTopWords topWords={stats.topWords} themeClass={themeClass} language={uiLanguage} t={t} onSearchJournal={onSearchJournal} />
                 )}
 
-                {!quiet && stats.totalThoughts > 0 && (
+                {/* AI readings last: tone, mood and subjects, then the writing tendencies */}
+                {hasEntries && (
                     <>
-                        <div className="charts-row">
-                            <StatsBarChart
-                                title={t('thoughtsPerYear')}
-                                labelHeader={t('year')}
-                                points={thoughtsPerYearPoints}
-                                backgroundColor="rgba(59, 130, 246, 0.7)"
-                                borderColor="rgba(59, 130, 246, 1)"
-                                options={chartOptions}
-                                themeClass={themeClass}
-                                language={uiLanguage}
-                                t={t}
-                                controls={(
-                                    <StatsPagination
-                                        page={yearPage}
-                                        totalPages={totalYearChartPages}
-                                        onPageChange={setYearPage}
-                                        themeClass={themeClass}
-                                        previousLabel={t('previous')}
-                                        nextLabel={t('next')}
-                                    />
-                                )}
-                            />
-                            <StatsBarChart
-                                title={t('thoughtsPerMonth')}
-                                labelHeader={t('month')}
-                                points={thoughtsPerMonthPoints}
-                                backgroundColor="rgba(139, 92, 246, 0.7)"
-                                borderColor="rgba(139, 92, 246, 1)"
-                                options={chartOptions}
-                                themeClass={themeClass}
-                                language={uiLanguage}
-                                t={t}
-                                controls={(
-                                    <StatsPagination
-                                        page={monthPage}
-                                        totalPages={totalMonthPages}
-                                        onPageChange={setMonthPage}
-                                        themeClass={themeClass}
-                                        previousLabel={t('previous')}
-                                        nextLabel={t('next')}
-                                    />
-                                )}
-                            />
-                        </div>
-
-                        <div className="charts-row">
-                            <StatsBarChart
-                                title={t('topTags')}
-                                labelHeader={t('statsChartTag')}
-                                points={thoughtsPerTagPoints}
-                                backgroundColor={TAG_COLORS}
-                                options={tagChartOptions}
-                                themeClass={themeClass}
-                                language={uiLanguage}
-                                t={t}
-                            />
-
-                            {/* Tags per Year Breakdown */}
-                            <div className={`chart-card ${themeClass}`}>
-                                <div className="chart-header">
-                                    <h2>{t('topTagsByYear')}</h2>
-                                    <StatsPagination
-                                        page={tagsYearPage}
-                                        totalPages={totalTagsYearPages}
-                                        onPageChange={setTagsYearPage}
-                                        themeClass={themeClass}
-                                        previousLabel={t('newerYears')}
-                                        nextLabel={t('olderYears')}
-                                    />
-                                </div>
-                                <div className="tag-breakdown">
-                                    <table className="tag-table">
-                                        <thead>
-                                            <tr>
-                                                <th>{t('year')}</th>
-                                                <th>{t('topTags')}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {tagsPerYearData.map(({ year, topTags }) => (
-                                                <tr key={year}>
-                                                    <td>{year}</td>
-                                                    <td>
-                                                        {topTags.map(([tag, count]) => (
-                                                            <TagBadge
-                                                                key={tag}
-                                                                tag={tag}
-                                                                metadata={tagMetadata}
-                                                                theme={theme}
-                                                                showHash={false}
-                                                                size="xs"
-                                                                suffix={` (${count})`}
-                                                                className="mr-2"
-                                                            />
-                                                        ))}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
+                        <StatsInsights
+                            themeClass={themeClass}
+                            toneMoodAnalysis={stats.toneMoodAnalysis}
+                            subjectAnalysis={stats.subjectAnalysis}
+                            t={t}
+                        />
+                        <StatsPersonalityPanel themeClass={themeClass} diaryId={diaryId} t={t} />
                     </>
                 )}
             </div>

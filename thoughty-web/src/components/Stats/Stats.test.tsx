@@ -32,6 +32,26 @@ vi.mock('chart.js', () => ({
     ArcElement: {}
 }));
 
+/** The Stats panels' headings, top to bottom, under the summary numbers. */
+const PANEL_ORDER = [
+    'Writing goal',
+    'Journal Activity by Day',
+    'Entries per Year',
+    'Entries per Month',
+    'When you write',
+    'Top Tags',
+    'Top Tags by Year',
+    'Recorded moods',
+    'Tags and moods',
+    'Personal records',
+    'Connections',
+    'Words you use most',
+    // What AI reads, last
+    'Tone and Mood',
+    'Subjects Discussed',
+    'Writing Tendencies',
+];
+
 describe('Stats Component', () => {
     const defaultProps = {
         theme: 'dark' as const,
@@ -214,16 +234,35 @@ describe('Stats Component', () => {
         expect(charts.length).toBeGreaterThan(0);
     });
 
-    it('shows the year in review invitation after the summary numbers', async () => {
-        (globalThis.fetch as Mock).mockResolvedValue({ ok: true, json: async () => mockStatsData });
+    it('lays the panels out in the owner’s order, with the AI readings last', async () => {
+        const englishT = (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params);
+        (globalThis.fetch as Mock).mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                ...mockStatsData,
+                goals: [{
+                    diaryId: 1, diaryName: 'Personal', diaryIcon: '📓', goalType: 'entries_per_week', goalTarget: 3, period: 'week',
+                    periodStart: '2024-01-15', progress: 1, met: false, currentStreak: 0, longestStreak: 2, metPeriods: [],
+                }],
+                topWords: { month: '2024-01', words: [{ word: 'garden', count: 4 }] },
+                moods: {
+                    recordedEntries: 3, averageMood: 4, levels: [0, 0, 1, 1, 1],
+                    months: [{ month: '2024-01', average: 4, entries: 3 }],
+                    weekdays: Array.from({ length: 7 }, () => ({ average: null, entries: 0 })),
+                    topFeelings: [], goodMoodTags: [{ tag: 'garden', entries: 2 }], lowMoodTags: [],
+                },
+            }),
+        });
 
-        render(<Stats {...defaultProps} teaser={<p>Your year in review</p>} />);
+        const { container } = render(<Stats {...defaultProps} t={englishT} diaryId={1} language="en" />);
 
-        const summary = (await screen.findByText('Years Active')).closest('.stats-summary') as HTMLElement;
-        const teaser = screen.getByText('Your year in review');
-        expect(summary.compareDocumentPosition(teaser)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-        expect(screen.getByRole('heading', { level: 1, name: 'Stats' }).compareDocumentPosition(summary))
-            .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+        await screen.findByText('Years Active');
+        const summary = container.querySelector('.stats-summary') as HTMLElement;
+        const grid = container.querySelector('.charts-grid') as HTMLElement;
+        expect(summary.compareDocumentPosition(grid)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+        const headings = [...grid.querySelectorAll('h2')].map((heading) => heading.textContent?.trim());
+        expect(headings).toEqual(PANEL_ORDER);
+        expect(screen.queryByText('Your year in review')).not.toBeInTheDocument();
     });
 
     it('renders tag breakdown table', async () => {

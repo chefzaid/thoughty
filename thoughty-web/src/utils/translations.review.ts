@@ -2,9 +2,6 @@ import type { Language } from './translations';
 
 export type ReviewTranslationKey =
   | 'reviewTitle'
-  | 'reviewTeaserTitle'
-  | 'reviewTeaserBody'
-  | 'reviewTeaserAction'
   | 'reviewYearLabel'
   | 'reviewScopeLabel'
   | 'reviewLoading'
@@ -70,9 +67,6 @@ export type ReviewTranslationKey =
 export const reviewTranslations: Record<Language, Record<ReviewTranslationKey, string>> = {
   en: {
     reviewTitle: 'Your {year} in review',
-    reviewTeaserTitle: 'Your year in review',
-    reviewTeaserBody: 'Totals, themes, the moments worth rereading, and the mood of your year. It stays private unless you share it.',
-    reviewTeaserAction: 'Open the year in review',
     reviewYearLabel: 'Year',
     reviewScopeLabel: 'Diaries',
     reviewLoading: 'Gathering your year…',
@@ -137,9 +131,6 @@ export const reviewTranslations: Record<Language, Record<ReviewTranslationKey, s
   },
   fr: {
     reviewTitle: 'Votre année {year}',
-    reviewTeaserTitle: 'Votre bilan de l’année',
-    reviewTeaserBody: 'Les chiffres, les thèmes, les moments à relire et l’humeur de votre année. Il reste privé, sauf si vous le partagez.',
-    reviewTeaserAction: 'Ouvrir le bilan de l’année',
     reviewYearLabel: 'Année',
     reviewScopeLabel: 'Journaux',
     reviewLoading: 'Préparation de votre bilan…',

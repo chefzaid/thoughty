@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 
 import DiaryTabs from '../components/DiaryTabs/DiaryTabs';
 import Stats from '../components/Stats/Stats';
-import YearReviewTeaser from '../components/YearReview/YearReviewTeaser';
 import { getPathForView } from '../types';
 import { ENTRY_PERMALINK_PARAM } from '../utils/appRouting';
 import type { Diary } from '../types';
@@ -48,13 +47,6 @@ function StatsRoute({
         t={t}
       />
       <Stats
-        teaser={(
-          <YearReviewTeaser
-            theme={theme}
-            onOpen={() => navigate(`${getPathForView('review')}${currentDiaryId ? `?diary=${currentDiaryId}` : ''}`)}
-            t={t}
-          />
-        )}
         theme={theme}
         t={t}
         diaryId={currentDiaryId}

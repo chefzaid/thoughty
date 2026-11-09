@@ -3,6 +3,7 @@ import { expect, test, type Page } from '../support/test';
 
 import type { MockEntry } from '../support/mockApp.shared';
 import { setupMockApp } from '../support/mockApp';
+import { goToView } from '../support/navigation';
 
 const entry = (id: number, date: string, content: string, overrides: Partial<MockEntry> = {}): MockEntry => ({
   id,
@@ -76,10 +77,10 @@ test.describe('Quiet mode', () => {
     await expect(page.getByRole('heading', { name: 'Journal Activity by Day' })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Writing goal' })).toHaveCount(0);
     await expect(page.getByRole('region', { name: 'Recorded moods' })).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Your year in review' })).toContainText('Themes, the moments worth rereading');
+    await expect(page.getByRole('region', { name: 'Your year in review' })).toHaveCount(0);
     await expectNoAccessibilityViolations(page);
 
-    await page.getByRole('button', { name: 'Open the year in review' }).click();
+    await goToView(page, 'Year in review');
     await page.getByRole('combobox', { name: 'Year', exact: true }).selectOption('2025');
     await expect(page.getByRole('heading', { level: 1, name: 'Your 2025 in review' })).toBeVisible();
     const themes = page.getByRole('region', { name: 'What filled your pages' });

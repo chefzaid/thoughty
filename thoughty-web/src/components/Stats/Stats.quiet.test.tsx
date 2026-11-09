@@ -83,7 +83,7 @@ describe('Stats in quiet mode', () => {
 
     it('keeps the readings of the journal and leaves out its counts, charts and goals', async () => {
         const { container } = render(
-            <Stats theme="dark" t={t} diaryId={2} language="en" teaser={<p>Your year in review</p>} />,
+            <Stats theme="dark" t={t} diaryId={2} language="en" />,
             { wrapper: QuietModeOn },
         );
 
@@ -95,7 +95,6 @@ describe('Stats in quiet mode', () => {
         expect(container.querySelector('#journal-activity-heading')).toBeNull();
         expect(screen.queryAllByTestId('mock-bar-chart')).toHaveLength(0);
         expect(screen.queryByText('Top Tags by Year')).not.toBeInTheDocument();
-        expect(screen.getByText('Your year in review')).toBeInTheDocument();
 
         // The moods stay, as an average without how many entries have one or how often a feeling came up
         const mood = screen.getByRole('region', { name: 'Recorded moods' });
