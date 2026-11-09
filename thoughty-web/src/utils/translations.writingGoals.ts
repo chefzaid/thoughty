@@ -77,8 +77,8 @@ export const writingGoalsTranslations: Record<Language, Record<WritingGoalsTrans
     statsHeatmapGoalWeekMet: "Weekly goal met",
     statsHeatmapGoalWeekMissed: "Weekly goal not met",
     statsHeatmapGoalWeekPending: "Weekly goal not met yet",
-    statsHeatmapGoalLegendDay: "Day that met the goal",
-    statsHeatmapGoalLegendWeek: "Week that met the goal",
+    statsHeatmapGoalLegendDay: "Daily goal met",
+    statsHeatmapGoalLegendWeek: "Weekly goal met",
   },
   fr: {
     diaryGoal: "Objectif d’écriture",
@@ -116,7 +116,7 @@ export const writingGoalsTranslations: Record<Language, Record<WritingGoalsTrans
     statsHeatmapGoalWeekMet: "Objectif de la semaine atteint",
     statsHeatmapGoalWeekMissed: "Objectif de la semaine non atteint",
     statsHeatmapGoalWeekPending: "Objectif de la semaine pas encore atteint",
-    statsHeatmapGoalLegendDay: "Jour où l’objectif est atteint",
-    statsHeatmapGoalLegendWeek: "Semaine où l’objectif est atteint",
+    statsHeatmapGoalLegendDay: "Objectif atteint",
+    statsHeatmapGoalLegendWeek: "Objectif atteint",
   },
 };

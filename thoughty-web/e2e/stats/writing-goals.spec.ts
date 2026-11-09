@@ -47,7 +47,7 @@ test.describe('Writing goals', () => {
     await expect(map.getByRole('gridcell', { name: 'Monday, April 15, 2024. 1 entry. Weekly goal met', exact: true })).toBeVisible();
     await expect(map.getByRole('gridcell', { name: 'Monday, April 22, 2024. 1 entry. Weekly goal not met yet', exact: true })).toBeVisible();
     await expect(page.locator('.heatmap-goal-row .heatmap-goal-week', { hasText: '✓' })).toHaveCount(1);
-    await expect(page.getByText('Week that met the goal')).toBeVisible();
+    await expect(page.locator('.heatmap-legend').getByText('Weekly goal met')).toBeVisible();
     await expectNoAccessibilityViolations(page);
   });
 

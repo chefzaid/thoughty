@@ -159,8 +159,8 @@ describe('StatsActivityHeatmap', () => {
     });
 
     it.each([
-        ['en', 'Thursday, January 18, 2024. 4 entries. Daily goal met', 'Monday, January 15, 2024. 2 entries. Daily goal not met', 'Day that met the goal'],
-        ['fr', 'jeudi 18 janvier 2024. 4 entrées. Objectif du jour atteint', 'lundi 15 janvier 2024. 2 entrées. Objectif du jour non atteint', 'Jour où l’objectif est atteint'],
+        ['en', 'Thursday, January 18, 2024. 4 entries. Daily goal met', 'Monday, January 15, 2024. 2 entries. Daily goal not met', 'Daily goal met'],
+        ['fr', 'jeudi 18 janvier 2024. 4 entrées. Objectif du jour atteint', 'lundi 15 janvier 2024. 2 entrées. Objectif du jour non atteint', 'Objectif atteint'],
     ] as const)('marks the days that met a daily goal with a shape, in their names and in their details in %s', async (language, met, missed, legend) => {
         const user = userEvent.setup();
         renderHeatmap(language, undefined, { period: 'day', metPeriods: ['2024-01-18'] });
@@ -185,7 +185,7 @@ describe('StatsActivityHeatmap', () => {
         const marks = [...container.querySelectorAll('.heatmap-goal-row .heatmap-goal-week')].map((mark) => mark.textContent);
         expect(marks.filter(Boolean)).toEqual(['✓']);
         expect(marks.at(-1)).toBe('✓');
-        expect(screen.getByText('Week that met the goal')).toBeInTheDocument();
+        expect(screen.getByText('Weekly goal met', { selector: '.heatmap-legend-goal' })).toBeInTheDocument();
     });
 
     it('says the running week is not met yet rather than missed', () => {
@@ -207,7 +207,7 @@ describe('StatsActivityHeatmap', () => {
         const { container } = renderHeatmap('fr', undefined, { period: 'week', metPeriods: [] });
 
         const legend = container.querySelector('.heatmap-legend');
-        expect(legend?.textContent).toBe('✓' + 'Semaine où l’objectif est atteint' + 'Moins' + 'Plus');
+        expect(legend?.textContent).toBe('✓' + 'Objectif atteint' + 'Moins' + 'Plus');
         // After the map in the page, so a day's details (drawn above the day) never cover it
         expect(screen.getByRole('grid').compareDocumentPosition(legend!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         expect(legend?.querySelectorAll('.heatmap-legend-scale .heatmap-cell')).toHaveLength(5);

@@ -80,7 +80,7 @@ describe('Stats writing goals', () => {
 
         expect(screen.getByRole('gridcell', { name: 'Tuesday, January 9, 2024. 3 entries. Weekly goal met' })).toBeInTheDocument();
         expect(screen.getByRole('gridcell', { name: 'Monday, January 15, 2024. 2 entries. Weekly goal not met yet' })).toBeInTheDocument();
-        expect(screen.getByText('Week that met the goal')).toBeInTheDocument();
+        expect(screen.getByText('Weekly goal met')).toBeInTheDocument();
     });
 
     it('explains that goals are per diary for all diaries and leaves the activity map unmarked', async () => {
@@ -90,7 +90,7 @@ describe('Stats writing goals', () => {
         expect(within(panel).getByText(/Pick one to see its goal/)).toBeInTheDocument();
         expect(within(panel).getByText('Work')).toBeInTheDocument();
         expect(screen.getByRole('gridcell', { name: 'Tuesday, January 9, 2024. 3 entries' })).toBeInTheDocument();
-        expect(screen.queryByText('Week that met the goal')).not.toBeInTheDocument();
+        expect(screen.queryByText('Weekly goal met')).not.toBeInTheDocument();
     });
 
     it('offers to set a goal for a diary without one', async () => {

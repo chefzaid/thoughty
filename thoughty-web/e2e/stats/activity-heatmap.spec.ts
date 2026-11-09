@@ -217,6 +217,28 @@ test.describe('Journal activity by day on a phone', () => {
     expect(Math.abs((before.top + before.bottom) / 2 - (mondayTile.top + mondayTile.bottom) / 2)).toBeLessThan(2);
   });
 
+  for (const language of ['en', 'fr'] as const) {
+    for (const goalType of ['words_per_day', 'entries_per_week'] as const) {
+      test(`fits the key on one line in ${language} with a ${goalType} goal`, async ({ page }) => {
+        const diaries = [mockDiary({ id: 1, name: 'Personal', isDefault: true, goalType, goalTarget: 4 })];
+        await setupMockApp(page, { startAuthenticated: true, initialEntries: ENTRIES, diaries, config: { language } });
+        await page.clock.setFixedTime(new Date('2026-03-10T21:00:00'));
+        await page.goto('/stats?diary=1');
+        const legend = page.locator('.heatmap-legend');
+        await expect(legend.locator('.heatmap-legend-goal')).toHaveText(language === 'en'
+          ? (goalType === 'words_per_day' ? 'Daily goal met' : '✓Weekly goal met')
+          : (goalType === 'words_per_day' ? 'Objectif atteint' : '✓Objectif atteint'));
+        const goal = await box(legend.locator('.heatmap-legend-goal'));
+        const shades = await box(legend.locator('.heatmap-legend-shades'));
+        // One line: the goal and the shades side by side, each on a single line of text
+        expect(Math.abs(goal.top + goal.height / 2 - (shades.top + shades.height / 2))).toBeLessThan(2);
+        expect(goal.right).toBeLessThan(shades.left);
+        expect(goal.height).toBeLessThan(20);
+        expect((await box(legend)).height).toBeLessThan(24);
+      });
+    }
+  }
+
   test('a first tap shows the details and a second opens the day', async ({ page }) => {
     const grid = await openStats(page);
     const tuesday = day(grid, 'Tuesday, March 3, 2026. 2 entries. Daily goal met');
