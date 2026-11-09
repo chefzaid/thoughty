@@ -31,6 +31,7 @@ const stats = {
     thoughtsPerYear: { '2023': 40, '2024': 60 },
     thoughtsPerMonth: { '2024-01': 20 },
     thoughtsPerDay: { '2024-01-15': 2 },
+    wordsPerDay: { '2024-01-15': 1240 },
     thoughtsPerTag: { work: 30 },
     tagsPerYear: { '2024': { work: 20 } },
     tagsPerMonth: {},
@@ -93,6 +94,9 @@ describe('Stats in quiet mode', () => {
         expect(screen.queryByText('Total Entries')).not.toBeInTheDocument();
         expect(container.querySelector('#writing-goal-heading')).toBeNull();
         expect(container.querySelector('#journal-activity-heading')).toBeNull();
+        // The heatmap and its days' words stay hidden
+        expect(screen.queryByRole('grid')).not.toBeInTheDocument();
+        expect(screen.queryByText(/1,240/)).not.toBeInTheDocument();
         expect(screen.queryAllByTestId('mock-bar-chart')).toHaveLength(0);
         expect(screen.queryByText('Top Tags by Year')).not.toBeInTheDocument();
 

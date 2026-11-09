@@ -78,14 +78,14 @@ test.describe('stats charts and activity map for assistive technology', () => {
     await expect(grid).toHaveAccessibleDescription(/Arrow keys move by a day or a week/);
     await grid.focus();
     const activeDay = async () => page.locator(`[id="${await grid.getAttribute('aria-activedescendant')}"]`);
-    await expect(await activeDay()).toHaveAccessibleName('Tuesday, January 6, 2026. 2 entries');
+    await expect(await activeDay()).toHaveAccessibleName('Tuesday, January 6, 2026. 2 entries. 7 words');
     await page.keyboard.press('ArrowUp');
-    await expect(await activeDay()).toHaveAccessibleName('Monday, January 5, 2026. 1 entry');
+    await expect(await activeDay()).toHaveAccessibleName('Monday, January 5, 2026. 1 entry. 4 words');
     await page.keyboard.press('ArrowLeft');
     await expect(await activeDay()).toHaveAccessibleName('Monday, December 29, 2025. No entries');
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowRight');
-    await expect(await activeDay()).toHaveAccessibleName('Tuesday, January 6, 2026. 2 entries');
+    await expect(await activeDay()).toHaveAccessibleName('Tuesday, January 6, 2026. 2 entries. 7 words');
     await page.keyboard.press('Control+Home');
     await expect(await activeDay()).toHaveAccessibleName('Monday, January 6, 2025. No entries');
     await page.keyboard.press('PageDown');
@@ -95,7 +95,7 @@ test.describe('stats charts and activity map for assistive technology', () => {
     await page.keyboard.press('Home');
     await expect(await activeDay()).toHaveAccessibleName('Monday, February 24, 2025. No entries');
     await page.keyboard.press('End');
-    await expect(await activeDay()).toHaveAccessibleName('Sunday, March 2, 2025. 1 entry');
+    await expect(await activeDay()).toHaveAccessibleName('Sunday, March 2, 2025. 1 entry. 5 words');
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/journal/);
     await expect(page.getByText('A walk along the canal.')).toBeVisible();

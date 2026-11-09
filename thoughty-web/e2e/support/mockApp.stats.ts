@@ -164,10 +164,18 @@ function buildMockCorrelations(entries: StatsEntry[]) {
   };
 }
 
+/** Words in one entry as the server counts them: its text split on whitespace, none for an empty text. */
+export function countMockWords(content: string): number {
+  const text = content.trim();
+  return text ? text.split(/\s+/).length : 0;
+}
+
 export function buildStats(entries: StatsEntry[], timeZone: string | undefined, today: string) {
   const thoughtsPerYear: Record<string, number> = {};
   const thoughtsPerMonth: Record<string, number> = {};
   const thoughtsPerDay: Record<string, number> = {};
+  // A sealed time capsule keeps no text in the journal, so its words stay out
+  const wordsPerDay: Record<string, number> = {};
   const thoughtsPerTag: Record<string, number> = {};
   const tagsPerYear: Record<string, Record<string, number>> = {};
 
@@ -178,6 +186,8 @@ export function buildStats(entries: StatsEntry[], timeZone: string | undefined, 
     thoughtsPerYear[year] = (thoughtsPerYear[year] || 0) + 1;
     thoughtsPerMonth[month] = (thoughtsPerMonth[month] || 0) + 1;
     thoughtsPerDay[entry.date] = (thoughtsPerDay[entry.date] || 0) + 1;
+    const sealed = entry.capsule && !entry.capsule.openedAt;
+    wordsPerDay[entry.date] = (wordsPerDay[entry.date] || 0) + (sealed ? 0 : countMockWords(entry.content));
     tagsPerYear[year] ||= {};
 
     for (const tag of entry.tags) {
@@ -202,6 +212,7 @@ export function buildStats(entries: StatsEntry[], timeZone: string | undefined, 
     thoughtsPerYear,
     thoughtsPerMonth,
     thoughtsPerDay,
+    wordsPerDay,
     thoughtsPerTag,
     tagsPerYear,
     tagsPerMonth: {},

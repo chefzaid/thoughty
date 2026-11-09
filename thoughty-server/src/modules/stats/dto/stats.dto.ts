@@ -267,6 +267,15 @@ export class StatsResponseDto {
   thoughtsPerDay!: Record<string, number>;
 
   @ApiProperty({
+    description:
+      'Words written on each day of `thoughtsPerDay` (its text split on whitespace, as the other word stats count them), sealed time capsules left out.',
+    type: 'object',
+    additionalProperties: { type: 'number' },
+    example: { '2025-02-10': 240, '2025-02-11': 1240 },
+  })
+  wordsPerDay!: Record<string, number>;
+
+  @ApiProperty({
     type: 'object',
     additionalProperties: { type: 'number' },
     example: { work: 22, health: 9 },

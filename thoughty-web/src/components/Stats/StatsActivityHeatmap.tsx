@@ -20,6 +20,7 @@ interface HeatmapCell {
     /** The Monday of its week. */
     weekStart: string;
     count: number;
+    words: number;
     level: number;
     inRange: boolean;
 }
@@ -32,6 +33,8 @@ interface HeatmapTip {
 
 interface StatsActivityHeatmapProps {
     readonly thoughtsPerDay: Record<string, number>;
+    /** Words written per day, beside the entries in each day's details. */
+    readonly wordsPerDay?: Record<string, number>;
     readonly goal?: HeatmapGoal;
     readonly themeClass: 'light' | 'dark';
     readonly language: Language;
@@ -40,6 +43,7 @@ interface StatsActivityHeatmapProps {
 }
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
+const NO_WORDS: Record<string, number> = {};
 /** Rows labelled down the side of the grid, from Monday (0): Monday, Wednesday and Friday. */
 const LABELLED_ROWS = new Set([0, 2, 4]);
 
@@ -68,7 +72,7 @@ function getActivityLevel(count: number, maxCount: number): number {
     return 1;
 }
 
-function buildHeatmapWeeks(thoughtsPerDay: Record<string, number>): HeatmapCell[][] {
+function buildHeatmapWeeks(thoughtsPerDay: Record<string, number>, wordsPerDay: Record<string, number>): HeatmapCell[][] {
     const allDays = Object.keys(thoughtsPerDay).sort((a, b) => a.localeCompare(b));
     const latestActivityDate = allDays.length > 0
         ? new Date(`${allDays.at(-1)}T00:00:00.000Z`)
@@ -95,6 +99,7 @@ function buildHeatmapWeeks(thoughtsPerDay: Record<string, number>): HeatmapCell[
                 dateKey,
                 weekStart: cursor.toISOString().slice(0, 10),
                 count,
+                words: wordsPerDay[dateKey] ?? 0,
                 level: inRange ? getActivityLevel(count, maxCount) : 0,
                 inRange,
             };
@@ -110,13 +115,14 @@ function buildHeatmapWeeks(thoughtsPerDay: Record<string, number>): HeatmapCell[
  * A year of days, a column a week from Monday, shaded by the number of entries, like a contribution
  * graph: small rounded tiles with a gap between them. The days form one grid with a single tab stop:
  * the arrows move the active day (announced through `aria-activedescendant`), and Enter, Space or a
- * click opens it in the journal. A day's details (its date, entries and goal) show beside it on hover,
+ * click opens it in the journal. A day's details (its date, entries, words and goal) show beside it on hover,
  * on keyboard focus and on a first tap, which a second tap turns into opening the day; screen readers
  * hear the same details as the day's name. On a narrow screen the year scrolls inside its card,
  * starting on the latest weeks.
  */
 export default function StatsActivityHeatmap({
     thoughtsPerDay,
+    wordsPerDay = NO_WORDS,
     goal,
     themeClass,
     language,
@@ -128,7 +134,7 @@ export default function StatsActivityHeatmap({
     // Whether the latest press was a touch, and whether a press (rather than the keyboard) is focusing the grid
     const touchPress = useRef(false);
     const pressing = useRef(false);
-    const heatmapWeeks = useMemo(() => buildHeatmapWeeks(thoughtsPerDay), [thoughtsPerDay]);
+    const heatmapWeeks = useMemo(() => buildHeatmapWeeks(thoughtsPerDay, wordsPerDay), [thoughtsPerDay, wordsPerDay]);
     const metPeriods = useMemo(() => new Set(goal?.metPeriods ?? []), [goal]);
     const [chosenDate, setChosenDate] = useState<string | null>(null);
     const [tip, setTip] = useState<HeatmapTip | null>(null);

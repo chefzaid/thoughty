@@ -44,8 +44,8 @@ test.describe('Writing goals', () => {
     await expect(goal.getByText('Best: 1 week')).toBeVisible();
 
     const map = page.getByRole('grid', { name: 'Journal Activity by Day' });
-    await expect(map.getByRole('gridcell', { name: 'Monday, April 15, 2024. 1 entry. Weekly goal met', exact: true })).toBeVisible();
-    await expect(map.getByRole('gridcell', { name: 'Monday, April 22, 2024. 1 entry. Weekly goal not met yet', exact: true })).toBeVisible();
+    await expect(map.getByRole('gridcell', { name: 'Monday, April 15, 2024. 1 entry. 3 words. Weekly goal met', exact: true })).toBeVisible();
+    await expect(map.getByRole('gridcell', { name: 'Monday, April 22, 2024. 1 entry. 2 words. Weekly goal not met yet', exact: true })).toBeVisible();
     await expect(page.locator('.heatmap-goal-row .heatmap-goal-week', { hasText: '✓' })).toHaveCount(1);
     await expect(page.locator('.heatmap-legend').getByText('Weekly goal met')).toBeVisible();
     await expectNoAccessibilityViolations(page);
@@ -68,8 +68,8 @@ test.describe('Writing goals', () => {
       const goal = page.getByRole('region', { name: 'Writing goal' });
       await expect(goal.getByRole('progressbar', { name: '4 of 10 words today' })).toBeVisible();
       await expect(goal.getByText('Streak: 1 day')).toBeVisible();
-      await expect(page.getByRole('gridcell', { name: 'Tuesday, April 23, 2024. 1 entry. Daily goal met', exact: true })).toHaveClass(/goal-met/);
-      await expect(page.getByRole('gridcell', { name: 'Wednesday, April 24, 2024. 1 entry. Daily goal not met yet', exact: true })).not.toHaveClass(/goal-met/);
+      await expect(page.getByRole('gridcell', { name: 'Tuesday, April 23, 2024. 1 entry. 10 words. Daily goal met', exact: true })).toHaveClass(/goal-met/);
+      await expect(page.getByRole('gridcell', { name: 'Wednesday, April 24, 2024. 1 entry. 4 words. Daily goal not met yet', exact: true })).not.toHaveClass(/goal-met/);
       await expectNoAccessibilityViolations(page);
 
       await page.goto('/stats?diary=all');

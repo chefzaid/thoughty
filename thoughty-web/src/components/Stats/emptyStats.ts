@@ -14,6 +14,7 @@ export const EMPTY_STATS: Omit<StatsData, 'topWords'> = {
     thoughtsPerYear: {},
     thoughtsPerMonth: {},
     thoughtsPerDay: {},
+    wordsPerDay: {},
     thoughtsPerTag: {},
     tagsPerYear: {},
     tagsPerMonth: {},

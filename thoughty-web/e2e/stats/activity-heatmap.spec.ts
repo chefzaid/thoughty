@@ -55,7 +55,7 @@ test.describe('Journal activity by day', () => {
     const legend = page.locator('.heatmap-legend');
     await expect(legend).toHaveText(/Less\s*More/);
     await grid.scrollIntoViewIfNeeded();
-    const latest = day(grid, 'Tuesday, March 10, 2026. 1 entry. Daily goal not met yet');
+    const latest = day(grid, 'Tuesday, March 10, 2026. 1 entry. 3 words. Daily goal not met yet');
     await latest.hover();
     await expect(tooltip(page)).toBeVisible();
 
@@ -66,10 +66,10 @@ test.describe('Journal activity by day', () => {
     expect(overlaps(await box(tooltip(page)), key)).toBe(false);
   });
 
-  test('shows a day’s details on hover and pops the tile out without moving its neighbours', async ({ page }) => {
+  test('shows a day’s details, its words under its entries, on hover and pops the tile out without moving its neighbours', async ({ page }) => {
     const grid = await openStats(page);
-    const tuesday = day(grid, 'Tuesday, March 3, 2026. 2 entries. Daily goal met');
-    const monday = day(grid, 'Monday, March 2, 2026. 1 entry. Daily goal not met');
+    const tuesday = day(grid, 'Tuesday, March 3, 2026. 2 entries. 8 words. Daily goal met');
+    const monday = day(grid, 'Monday, March 2, 2026. 1 entry. 2 words. Daily goal not met');
     // Where the neighbour sits in the map (hovering may scroll the page)
     const offset = () => monday.evaluate((element) => {
       const tile = element.getBoundingClientRect();
@@ -80,7 +80,7 @@ test.describe('Journal activity by day', () => {
     const before = await offset();
 
     await tuesday.hover();
-    await expect(tooltip(page)).toHaveText('Tuesday, March 3, 2026' + '2 entries' + '✓ Daily goal met');
+    await expect(tooltip(page)).toHaveText('Tuesday, March 3, 2026' + '2 entries' + '8 words' + '✓ Daily goal met');
     await expect(tuesday).toHaveClass(/\btipped\b/);
     await expect.poll(() => tuesday.evaluate((element) => getComputedStyle(element).transform)).not.toBe('none');
     expect(await offset()).toEqual(before);
@@ -97,14 +97,14 @@ test.describe('Journal activity by day', () => {
   test('shows the active day’s details on keyboard focus and follows the arrows', async ({ page }) => {
     const grid = await openStats(page);
     await grid.focus();
-    await expect(tooltip(page)).toHaveText('Tuesday, March 10, 2026' + '1 entry' + 'Daily goal not met yet');
+    await expect(tooltip(page)).toHaveText('Tuesday, March 10, 2026' + '1 entry' + '3 words' + 'Daily goal not met yet');
     await page.keyboard.press('ArrowLeft');
-    await expect(tooltip(page)).toHaveText('Tuesday, March 3, 2026' + '2 entries' + '✓ Daily goal met');
-    await expect(day(grid, 'Tuesday, March 3, 2026. 2 entries. Daily goal met')).toHaveClass(/\btipped\b/);
+    await expect(tooltip(page)).toHaveText('Tuesday, March 3, 2026' + '2 entries' + '8 words' + '✓ Daily goal met');
+    await expect(day(grid, 'Tuesday, March 3, 2026. 2 entries. 8 words. Daily goal met')).toHaveClass(/\btipped\b/);
     await page.keyboard.press('Escape');
     await expect(tooltip(page)).toHaveCount(0);
     await page.keyboard.press('ArrowUp');
-    await expect(tooltip(page)).toHaveText('Monday, March 2, 2026' + '1 entry' + 'Daily goal not met');
+    await expect(tooltip(page)).toHaveText('Monday, March 2, 2026' + '1 entry' + '2 words' + 'Daily goal not met');
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/journal/);
     await expect(page.getByText('Canal walk.')).toBeVisible();
@@ -112,15 +112,15 @@ test.describe('Journal activity by day', () => {
 
   test('a click opens the day in the journal', async ({ page }) => {
     const grid = await openStats(page);
-    await day(grid, 'Tuesday, March 10, 2026. 1 entry. Daily goal not met yet').click();
+    await day(grid, 'Tuesday, March 10, 2026. 1 entry. 3 words. Daily goal not met yet').click();
     await expect(page).toHaveURL(/\/journal/);
     await expect(page.getByText('Letters from grandmother.')).toBeVisible();
   });
 
-  test('speaks French in the details', async ({ page }) => {
+  test('speaks French in the details, words included', async ({ page }) => {
     const grid = await openStats(page, { language: 'fr' });
-    await day(grid, 'mardi 3 mars 2026. 2 entrées. Objectif du jour atteint').hover();
-    await expect(tooltip(page)).toHaveText('mardi 3 mars 2026' + '2 entrées' + '✓ Objectif du jour atteint');
+    await day(grid, 'mardi 3 mars 2026. 2 entrées. 8 mots. Objectif du jour atteint').hover();
+    await expect(tooltip(page)).toHaveText('mardi 3 mars 2026' + '2 entrées' + '8 mots' + '✓ Objectif du jour atteint');
     await day(grid, 'mercredi 4 mars 2026. Aucune entrée. Objectif du jour non atteint').hover();
     await expect(tooltip(page)).toHaveText('mercredi 4 mars 2026' + 'Aucune entrée' + 'Objectif du jour non atteint');
   });
@@ -148,7 +148,7 @@ test.describe('Journal activity by day', () => {
   test('skips the pop-out animation when the system asks for less motion', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     const grid = await openStats(page);
-    const tile = day(grid, 'Tuesday, March 3, 2026. 2 entries. Daily goal met');
+    const tile = day(grid, 'Tuesday, March 3, 2026. 2 entries. 8 words. Daily goal met');
     expect(await tile.evaluate((element) => getComputedStyle(element).transitionDuration)).toBe('0s');
   });
 
@@ -162,7 +162,7 @@ test.describe('Journal activity by day', () => {
         await grid.focus();
         await expect(tooltip(page)).toBeVisible();
         await expectNoAccessibilityViolations(page);
-        await day(grid, 'Tuesday, March 3, 2026. 2 entries. Daily goal met').hover();
+        await day(grid, 'Tuesday, March 3, 2026. 2 entries. 8 words. Daily goal met').hover();
         await expect(tooltip(page)).toContainText('Daily goal met');
         await expectNoAccessibilityViolations(page);
       });
@@ -183,7 +183,7 @@ test.describe('Journal activity by day on a phone', () => {
     expect(scroll).toEqual({ scrolls: true, atEnd: true, pageScrolls: false });
 
     // The latest day, at the right edge: its details stay inside the window
-    const latest = day(grid, 'Tuesday, March 10, 2026. 1 entry. Daily goal not met yet');
+    const latest = day(grid, 'Tuesday, March 10, 2026. 1 entry. 3 words. Daily goal not met yet');
     await latest.tap();
     await expect(tooltip(page)).toBeVisible();
     const tip = await box(tooltip(page));
@@ -241,9 +241,9 @@ test.describe('Journal activity by day on a phone', () => {
 
   test('a first tap shows the details and a second opens the day', async ({ page }) => {
     const grid = await openStats(page);
-    const tuesday = day(grid, 'Tuesday, March 3, 2026. 2 entries. Daily goal met');
+    const tuesday = day(grid, 'Tuesday, March 3, 2026. 2 entries. 8 words. Daily goal met');
     await tuesday.tap();
-    await expect(tooltip(page)).toHaveText('Tuesday, March 3, 2026' + '2 entries' + '✓ Daily goal met' + 'Tap again to open the day');
+    await expect(tooltip(page)).toHaveText('Tuesday, March 3, 2026' + '2 entries' + '8 words' + '✓ Daily goal met' + 'Tap again to open the day');
     await expect(page).toHaveURL(/\/stats/);
 
     await tuesday.tap();

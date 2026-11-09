@@ -209,8 +209,9 @@ describe('StatsService', () => {
         .mockResolvedValueOnce([]) // perYear
         .mockResolvedValueOnce([]) // perMonth
         .mockResolvedValueOnce([
-          { day: '2024-02-20', count: '4' },
-          { day: '2024-02-19', count: '2' },
+          { day: '2024-02-20', count: '4', words: '1240' },
+          { day: '2024-02-19', count: '2', words: 0 },
+          { day: '2024-02-18', count: '1' },
         ])
         .mockResolvedValue([]);
 
@@ -218,6 +219,9 @@ describe('StatsService', () => {
 
       expect(result.thoughtsPerDay['2024-02-20']).toBe(4);
       expect(result.thoughtsPerDay['2024-02-19']).toBe(2);
+      // Words per day come from the same grouped query, for the same days
+      expect(result.wordsPerDay).toEqual({ '2024-02-20': 1240, '2024-02-19': 0, '2024-02-18': 0 });
+      expect(mockQb.addSelect).toHaveBeenCalledWith(expect.stringContaining('FILTER (WHERE e.sealed_until IS NULL)'), 'words');
     });
 
     it('should process thoughtsPerTag correctly', async () => {

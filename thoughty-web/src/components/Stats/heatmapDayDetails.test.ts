@@ -42,6 +42,36 @@ describe('describeHeatmapDay', () => {
         expect(describe_(language, 2).date).toBe(date);
     });
 
+    it.each([
+        ['en', 1, '1 word'],
+        ['en', 1240, '1,240 words'],
+        ['fr', 1, '1 mot'],
+        ['fr', 1240, '1\u202f240 mots'],
+    ] as const)('in %s, says %i words of the day as “%s”, in its details and its name', (language, words, text) => {
+        const details = describeHeatmapDay(
+            { ...day('2024-01-18', 2), words },
+            undefined,
+            new Set(),
+            heatmapDateFormatter(language),
+            language,
+            (key, params) => getTranslation(language, key, params),
+        );
+        expect(details.words).toBe(text);
+        expect(heatmapDayLabel(details)).toContain(`. ${text}`);
+    });
+
+    it('has no words line on a day without words', () => {
+        expect(describe_('en', 0).words).toBeNull();
+        expect(describeHeatmapDay(
+            { ...day('2024-01-18', 1), words: 0 },
+            { period: 'day', metPeriods: [] },
+            new Set(),
+            heatmapDateFormatter('en'),
+            'en',
+            (key, params) => getTranslation('en', key, params),
+        ).words).toBeNull();
+    });
+
     it('has no goal line without a goal', () => {
         expect(describe_('en', 2)).toMatchObject({ goal: null, goalMet: false });
         expect(heatmapDayLabel(describe_('en', 2))).toBe('Thursday, January 18, 2024. 2 entries');

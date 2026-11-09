@@ -90,6 +90,28 @@ describe('StatsActivityHeatmap', () => {
         expect(onOpenJournalDay).not.toHaveBeenCalled();
     });
 
+    it.each([
+        ['en', 'Monday, January 15, 2024. 2 entries. 1,240 words', '1,240 words'],
+        ['fr', 'lundi 15 janvier 2024. 2 entrées. 1\u202f240 mots', '1\u202f240 mots'],
+    ] as const)('shows the words of the day under its entries in %s', async (language, name, words) => {
+        const user = userEvent.setup();
+        render(
+            <StatsActivityHeatmap
+                thoughtsPerDay={thoughtsPerDay}
+                wordsPerDay={{ '2024-01-15': 1240, '2024-01-16': 0 }}
+                themeClass="dark"
+                language={language}
+                t={(key, params) => getTranslation(language, key, params)}
+            />,
+        );
+
+        await user.hover(screen.getByRole('gridcell', { name }));
+        expect(tooltip()?.querySelector('.heatmap-tooltip-words')?.textContent).toBe(words);
+        // A day the server counted no words for has no words line
+        await user.hover(screen.getByRole('gridcell', { name: language === 'en' ? 'Tuesday, January 16, 2024. 1 entry' : 'mardi 16 janvier 2024. 1 entrée' }));
+        expect(tooltip()?.querySelector('.heatmap-tooltip-words')).toBeNull();
+    });
+
     it('is one tab stop whose arrows move the active day, with its details beside it, and whose Enter or Space opens it', async () => {
         const user = userEvent.setup();
         const onOpenJournalDay = vi.fn();

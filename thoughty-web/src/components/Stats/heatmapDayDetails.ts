@@ -18,6 +18,8 @@ export interface HeatmapDay {
     /** The Monday of the day's week, `YYYY-MM-DD`. */
     readonly weekStart: string;
     readonly count: number;
+    /** Words written that day, when the server sent them. */
+    readonly words?: number;
 }
 
 /** What the heatmap says about one day, line by line: its tooltip and, joined, its accessible name. */
@@ -26,6 +28,8 @@ export interface HeatmapDayDetails {
     readonly date: string;
     /** "3 entries", "1 entry" or "No entries". */
     readonly entries: string;
+    /** "1,240 words" or "1 word"; null on a day without words. */
+    readonly words: string | null;
     /** Whether the diary's goal was met that day or week; null without a goal. */
     readonly goal: string | null;
     readonly goalMet: boolean;
@@ -61,6 +65,7 @@ export function describeHeatmapDay(
     return {
         date: formatter.format(day.date),
         entries: day.count > 0 ? pluralPhrase(t, 'statsHeatmapEntries', day.count, language) : t('statsHeatmapNoEntries'),
+        words: day.words ? pluralPhrase(t, 'statsHeatmapWords', day.words, language) : null,
         goal: goalState ? t(goalState.text) : null,
         goalMet: goalState?.met ?? false,
     };
@@ -68,5 +73,5 @@ export function describeHeatmapDay(
 
 /** The day's accessible name: the same lines as its tooltip, as sentences. */
 export function heatmapDayLabel(details: HeatmapDayDetails): string {
-    return [details.date, details.entries, details.goal].filter(Boolean).join('. ');
+    return [details.date, details.entries, details.words, details.goal].filter(Boolean).join('. ');
 }

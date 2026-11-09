@@ -203,6 +203,10 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onSearch
         () => effectiveStats.thoughtsPerDay ?? {},
         [effectiveStats.thoughtsPerDay],
     );
+    const wordsPerDay = useMemo(
+        () => effectiveStats.wordsPerDay ?? {},
+        [effectiveStats.wordsPerDay],
+    );
     const goals = effectiveStats.goals ?? EMPTY_STATS.goals;
     const diaryGoal = diaryId ? goals.find((goal) => goal.diaryId === diaryId) : undefined;
 
@@ -264,6 +268,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onSearch
                 {!quiet && (
                     <StatsActivityHeatmap
                         thoughtsPerDay={thoughtsPerDay}
+                        wordsPerDay={wordsPerDay}
                         goal={diaryGoal}
                         themeClass={themeClass}
                         language={uiLanguage}

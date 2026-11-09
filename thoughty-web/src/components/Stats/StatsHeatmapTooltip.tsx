@@ -55,6 +55,7 @@ export default function StatsHeatmapTooltip({ anchorId, details, hint, themeClas
         >
             <p className="heatmap-tooltip-date">{details.date}</p>
             <p>{details.entries}</p>
+            {details.words && <p className="heatmap-tooltip-words">{details.words}</p>}
             {details.goal && (
                 <p className={`heatmap-tooltip-goal${details.goalMet ? ' met' : ''}`}>
                     {details.goalMet && <span aria-hidden="true">✓ </span>}

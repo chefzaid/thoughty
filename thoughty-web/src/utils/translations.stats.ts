@@ -57,6 +57,8 @@ export type StatsTranslationKey =
   | "statsHeatmapEntries_one"
   | "statsHeatmapEntries_other"
   | "statsHeatmapNoEntries"
+  | "statsHeatmapWords_one"
+  | "statsHeatmapWords_other"
   | "statsHeatmapTapToOpen"
   | "statsHeatmapKeyboardHint"
   | "statsHeatmapKeyboardHintReadOnly"
@@ -131,6 +133,8 @@ export const statsTranslations: Record<Language, Record<StatsTranslationKey, str
     statsHeatmapEntries_one: "{count} entry",
     statsHeatmapEntries_other: "{count} entries",
     statsHeatmapNoEntries: "No entries",
+    statsHeatmapWords_one: "{count} word",
+    statsHeatmapWords_other: "{count} words",
     statsHeatmapTapToOpen: "Tap again to open the day",
     statsHeatmapKeyboardHint:
       "Arrow keys move by a day or a week, Page Up and Page Down by a month. Enter opens the day in the journal.",
@@ -209,6 +213,8 @@ export const statsTranslations: Record<Language, Record<StatsTranslationKey, str
     statsHeatmapEntries_one: "{count} entrée",
     statsHeatmapEntries_other: "{count} entrées",
     statsHeatmapNoEntries: "Aucune entrée",
+    statsHeatmapWords_one: "{count} mot",
+    statsHeatmapWords_other: "{count} mots",
     statsHeatmapTapToOpen: "Touchez à nouveau pour ouvrir le jour",
     statsHeatmapKeyboardHint:
       "Les flèches avancent d’un jour ou d’une semaine, Page précédente et Page suivante d’un mois. Entrée ouvre le jour dans le journal.",

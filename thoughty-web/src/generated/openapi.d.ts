@@ -5877,6 +5877,10 @@ export interface components {
          *         "2025-02-10": 1,
          *         "2025-02-11": 3
          *       },
+         *       "wordsPerDay": {
+         *         "2025-02-10": 240,
+         *         "2025-02-11": 1240
+         *       },
          *       "thoughtsPerTag": {
          *         "work": 22,
          *         "health": 9
@@ -6122,6 +6126,16 @@ export interface components {
              *     }
              */
             thoughtsPerDay: {
+                [key: string]: number;
+            };
+            /**
+             * @description Words written on each day of `thoughtsPerDay` (its text split on whitespace, as the other word stats count them), sealed time capsules left out.
+             * @example {
+             *       "2025-02-10": 240,
+             *       "2025-02-11": 1240
+             *     }
+             */
+            wordsPerDay: {
                 [key: string]: number;
             };
             /**
@@ -14212,6 +14226,10 @@ export interface operations {
                      *       "thoughtsPerDay": {
                      *         "2025-02-10": 1,
                      *         "2025-02-11": 3
+                     *       },
+                     *       "wordsPerDay": {
+                     *         "2025-02-10": 240,
+                     *         "2025-02-11": 1240
                      *       },
                      *       "thoughtsPerTag": {
                      *         "work": 22,

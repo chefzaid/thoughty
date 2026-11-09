@@ -77,9 +77,11 @@ export class StatsService {
         .groupBy("TO_CHAR(e.date, 'YYYY-MM')")
         .orderBy('month', 'DESC')
         .getRawMany(),
+      // Entries and words per day; a sealed time capsule keeps no text here, and its words stay out
       createQb()
         .select("TO_CHAR(e.date, 'YYYY-MM-DD')", 'day')
         .addSelect('COUNT(*)', 'count')
+        .addSelect(`COALESCE(SUM(${ENTRY_WORDS_SQL}) FILTER (WHERE e.sealed_until IS NULL), 0)`, 'words')
         .groupBy("TO_CHAR(e.date, 'YYYY-MM-DD')")
         .orderBy('day', 'DESC')
         .getRawMany(),
@@ -128,8 +130,10 @@ export class StatsService {
     }
 
     const thoughtsPerDay: Record<string, number> = {};
+    const wordsPerDay: Record<string, number> = {};
     for (const row of perDayResult) {
       thoughtsPerDay[row.day] = Number.parseInt(row.count, 10);
+      wordsPerDay[row.day] = Number.parseInt(String(row.words ?? '0'), 10);
     }
 
     const thoughtsPerTag: Record<string, number> = {};
@@ -188,6 +192,7 @@ export class StatsService {
       thoughtsPerYear,
       thoughtsPerMonth,
       thoughtsPerDay,
+      wordsPerDay,
       thoughtsPerTag,
       tagsPerYear,
       tagsPerMonth,

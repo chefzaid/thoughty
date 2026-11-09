@@ -201,6 +201,27 @@ describeContract('account', (context) => {
     expect((one.body as { topWords: unknown }).topWords).toEqual({ month: todayIso().slice(0, 7), words: [{ word: 'notes', count: 2 }] });
   });
 
+  it('counts the words of each day beside its entries, without the recycle bin, sealed capsules or other writers', async () => {
+    const { bob } = context;
+    const gail = await registerWriter(context.client, 'gail');
+    await createEntry(context, gail, { text: 'The garden after the rain.', date: todayIso() });
+    await createEntry(context, gail, { text: 'Two more', date: todayIso() });
+    await createEntry(context, gail, { text: 'Yesterday was quiet', date: todayIso(-1) });
+    const binned = await createEntry(context, gail, { text: 'Binned binned binned', date: todayIso() });
+    await call('DELETE /api/entries/{id}', { as: gail, params: { id: binned }, status: 200 });
+    await call('POST /api/entries', {
+      as: gail,
+      json: { text: 'Secret words for later', tags: [], date: todayIso(-2), visibility: 'private', format: 'plain', seal: { opensOn: todayIso(365), timeZone: 'UTC' } },
+      status: 201,
+    });
+    await createEntry(context, bob, { text: 'Bob writes many many words', date: todayIso() });
+
+    const stats = await call('GET /api/stats', { as: gail, query: { today: todayIso() }, status: 200 });
+    const body = stats.body as { thoughtsPerDay: Record<string, number>; wordsPerDay: Record<string, number> };
+    expect(body.wordsPerDay).toEqual({ [todayIso()]: 7, [todayIso(-1)]: 3, [todayIso(-2)]: 0 });
+    expect(Object.keys(body.wordsPerDay).sort()).toEqual(Object.keys(body.thoughtsPerDay).sort());
+  });
+
   it('reviews a year for all diaries or one, and refuses another writer’s diary', async () => {
     const { alice, bob } = context;
     const year = String(new Date().getFullYear());
