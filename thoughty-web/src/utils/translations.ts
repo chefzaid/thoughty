@@ -21,6 +21,7 @@ import { focusModeTranslations, type FocusModeTranslationKey } from "./translati
 import { dictationTranslations, type DictationTranslationKey } from "./translations.dictation";
 import { readerTranslations, type ReaderTranslationKey } from "./translations.reader";
 import { privacyBlurTranslations, type PrivacyBlurTranslationKey } from "./translations.privacyBlur";
+import { navigationTranslations, type NavigationTranslationKey } from "./translations.navigation";
 import { quickCaptureTranslations, type QuickCaptureTranslationKey } from "./translations.quickCapture";
 import { quietModeTranslations, type QuietModeTranslationKey } from "./translations.quietMode";
 import { entryTemplatesTranslations, type EntryTemplatesTranslationKey } from "./translations.entryTemplates";
@@ -87,6 +88,7 @@ export type TranslationKey =
   | DictationTranslationKey
   | ReaderTranslationKey
   | PrivacyBlurTranslationKey
+  | NavigationTranslationKey
   | QuickCaptureTranslationKey
   | QuietModeTranslationKey
   | EntryTemplatesTranslationKey
@@ -158,6 +160,7 @@ export const translations: Translations = {
     ...dictationTranslations.en,
     ...readerTranslations.en,
     ...privacyBlurTranslations.en,
+    ...navigationTranslations.en,
     ...quickCaptureTranslations.en,
     ...quietModeTranslations.en,
     ...entryTemplatesTranslations.en,
@@ -222,6 +225,7 @@ export const translations: Translations = {
     ...dictationTranslations.fr,
     ...readerTranslations.fr,
     ...privacyBlurTranslations.fr,
+    ...navigationTranslations.fr,
     ...quickCaptureTranslations.fr,
     ...quietModeTranslations.fr,
     ...entryTemplatesTranslations.fr,

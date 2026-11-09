@@ -1,6 +1,7 @@
 import { test, expect } from '../support/test';
 import { pauseClock } from '../support/clock';
 import { setupMockApp } from '../support/mockApp';
+import { goToView } from '../support/navigation';
 import { fulfillJson } from '../support/mockApp.route-utils';
 
 const statsEntries = [
@@ -141,7 +142,7 @@ test.describe('Route navigation', () => {
     await expect(statsTitle).toBeVisible();
     await expect(page.getByText(/Total Entries/i)).toBeVisible();
 
-    await page.getByRole('button', { name: 'Tags' }).click();
+    await goToView(page, 'Tags');
     await expect(page).toHaveURL(/\/tags$/);
     await expect(tagsTitle).toBeVisible();
     await expect(statsTitle).toHaveCount(0);

@@ -13,6 +13,12 @@ import {
   setMockAuthState,
 } from './test/appTestHarness';
 
+/** Opens a page from the main navigation: its group, then the page in it. */
+async function openFromNav(user: ReturnType<typeof userEvent.setup>, group: string, page: string) {
+  await user.click(await screen.findByRole('button', { name: group, expanded: false }));
+  await user.click(screen.getByRole('button', { name: page }));
+}
+
 describe('AppShell navigation flows', () => {
   beforeEach(resetAppTestHarness);
   afterEach(cleanupAppTestHarness);
@@ -180,11 +186,7 @@ describe('AppShell navigation flows', () => {
 
     renderAppShell();
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /^Tags$/i })).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole('button', { name: /^Tags$/i }));
+    await openFromNav(user, 'Journaling', 'Tags');
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Tags' })).toBeInTheDocument();
@@ -196,11 +198,7 @@ describe('AppShell navigation flows', () => {
 
     renderAppShell();
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Stats/i })).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole('button', { name: /Stats/i }));
+    await openFromNav(user, 'Insights', 'Stats');
 
     await waitFor(() => {
       expect(screen.getByText('My Diary')).toBeInTheDocument();
@@ -212,11 +210,7 @@ describe('AppShell navigation flows', () => {
 
     renderAppShell();
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Import\/Export/i })).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole('button', { name: /Import\/Export/i }));
+    await openFromNav(user, 'Data', 'Import/Export');
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Import/Export' })).toBeInTheDocument();
@@ -228,11 +222,7 @@ describe('AppShell navigation flows', () => {
 
     renderAppShell();
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Stats/i })).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole('button', { name: /Stats/i }));
+    await openFromNav(user, 'Insights', 'Stats');
 
     await waitFor(() => {
       expect(screen.getByText('My Diary')).toBeInTheDocument();
@@ -254,8 +244,9 @@ describe('AppShell navigation flows', () => {
       expect(globalThis.location.pathname).toBe('/journal');
       expect(globalThis.location.search).toContain('diary=all');
       expect(screen.getByTitle('All Diaries')).toHaveClass('active');
-      expect(screen.getByRole('button', { name: /Stats/i })).toBeInTheDocument();
     });
+    await openFromNav(user, 'Insights', 'Stats');
+    await waitFor(() => expect(globalThis.location.pathname).toBe('/stats'));
   });
 
   it('calls logout when logout button is clicked', async () => {

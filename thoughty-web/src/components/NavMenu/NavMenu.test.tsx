@@ -28,13 +28,117 @@ describe('NavMenu', () => {
     expect(screen.getByText('Thoughty')).toBeInTheDocument();
   });
 
-  it.each(['journal', 'memoir', 'stats', 'tags', 'people', 'openTasksNav', 'importExport'])('renders %s navigation item', (text) => {
+  const openGroup = (label: string) => fireEvent.click(screen.getByRole('button', { name: label }));
+
+  it.each([
+    ['navGroupJournaling', ['journal', 'memoir', 'openTasksNav', 'tags']],
+    ['navGroupSocial', ['feed', 'people']],
+    ['navGroupInsights', ['stats', 'navYearInReview']],
+    ['navGroupData', ['manageDiaries', 'importExport', 'recycleBin']],
+  ])('discloses the %s pages from a closed group button', (group, items) => {
     render(<NavMenu {...defaultProps} />);
-    expect(screen.getByText(text)).toBeInTheDocument();
+    const button = screen.getByRole('button', { name: group });
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    const panel = document.getElementById(button.getAttribute('aria-controls') ?? '');
+    expect(panel).not.toBeVisible();
+
+    fireEvent.click(button);
+
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+    expect(panel).toBeVisible();
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    for (const item of items) {
+      expect(screen.getByRole('button', { name: item })).toBeVisible();
+    }
   });
 
+  it.each([
+    ['navGroupJournaling', 'journal', 'journal'],
+    ['navGroupJournaling', 'memoir', 'memoir'],
+    ['navGroupJournaling', 'openTasksNav', 'tasks'],
+    ['navGroupJournaling', 'tags', 'tags'],
+    ['navGroupSocial', 'feed', 'feed'],
+    ['navGroupSocial', 'people', 'people'],
+    ['navGroupInsights', 'stats', 'stats'],
+    ['navGroupInsights', 'navYearInReview', 'review'],
+    ['navGroupData', 'manageDiaries', 'diaries'],
+    ['navGroupData', 'importExport', 'importExport'],
+    ['navGroupData', 'recycleBin', 'recycleBin'],
+  ])('opens %s › %s and closes the group', (group, item, view) => {
+    render(<NavMenu {...defaultProps} currentView="profile" />);
+    openGroup(group);
+    fireEvent.click(screen.getByRole('button', { name: item }));
 
+    expect(mockOnViewChange).toHaveBeenCalledWith(view);
+    expect(screen.getByRole('button', { name: group })).toHaveAttribute('aria-expanded', 'false');
+  });
 
+  it('closes one group when another opens, and toggles a group shut from its button', () => {
+    render(<NavMenu {...defaultProps} />);
+    openGroup('navGroupJournaling');
+    openGroup('navGroupSocial');
+    expect(screen.getByRole('button', { name: 'navGroupJournaling' })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByRole('button', { name: 'navGroupSocial' })).toHaveAttribute('aria-expanded', 'true');
+
+    openGroup('navGroupSocial');
+    expect(screen.getByRole('button', { name: 'navGroupSocial' })).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('closes on Escape and gives focus back to the group button', () => {
+    render(<NavMenu {...defaultProps} />);
+    openGroup('navGroupInsights');
+    screen.getByRole('button', { name: 'stats' }).focus();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    const button = screen.getByRole('button', { name: 'navGroupInsights' });
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(button).toHaveFocus();
+  });
+
+  it('closes on a press outside the group, but not inside it', () => {
+    render(<NavMenu {...defaultProps} />);
+    openGroup('navGroupData');
+    fireEvent.mouseDown(screen.getByRole('button', { name: 'importExport' }));
+    expect(screen.getByRole('button', { name: 'navGroupData' })).toHaveAttribute('aria-expanded', 'true');
+
+    fireEvent.mouseDown(document.body);
+    expect(screen.getByRole('button', { name: 'navGroupData' })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByRole('button', { name: 'navGroupData' })).not.toHaveFocus();
+  });
+
+  it('closes when focus moves out of the group, not when it moves within', () => {
+    render(<NavMenu {...defaultProps} />);
+    openGroup('navGroupSocial');
+    const button = screen.getByRole('button', { name: 'navGroupSocial' });
+    fireEvent.blur(button, { relatedTarget: screen.getByRole('button', { name: 'feed' }) });
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+
+    fireEvent.blur(screen.getByRole('button', { name: 'people' }), { relatedTarget: screen.getByTitle('logout') });
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('marks the group holding the current view as active and its page as current', () => {
+    render(<NavMenu {...defaultProps} currentView="review" />);
+    expect(screen.getByRole('button', { name: 'navGroupInsights' })).toHaveClass('active');
+    expect(screen.getByRole('button', { name: 'navGroupJournaling' })).not.toHaveClass('active');
+
+    openGroup('navGroupInsights');
+    expect(screen.getByRole('button', { name: 'navYearInReview' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('button', { name: 'stats' })).not.toHaveAttribute('aria-current');
+  });
+
+  it('marks no group active on the profile', () => {
+    render(<NavMenu {...defaultProps} currentView="profile" />);
+    for (const group of ['navGroupJournaling', 'navGroupSocial', 'navGroupInsights', 'navGroupData']) {
+      expect(screen.getByRole('button', { name: group })).not.toHaveClass('active');
+    }
+  });
+
+  it('shows the whole profile name on hover when it is cut short', () => {
+    render(<NavMenu {...defaultProps} name="Alexandrine Montgomery-Dupont" />);
+    expect(screen.getByText('Alexandrine Montgomery-Dupont')).toHaveAttribute('title', 'Alexandrine Montgomery-Dupont');
+  });
 
   it('offers the privacy blur beside the profile when given one', () => {
     const toggle = vi.fn();
@@ -49,73 +153,6 @@ describe('NavMenu', () => {
     expect(toggle).toHaveBeenCalledTimes(1);
   });
 
-  it('highlights active navigation item', () => {
-    render(<NavMenu {...defaultProps} currentView="journal" />);
-    const journalButton = screen.getByText('journal').closest('button');
-    expect(journalButton).toHaveClass('active');
-  });
-
-  it('does not highlight inactive navigation items', () => {
-    render(<NavMenu {...defaultProps} currentView="journal" />);
-    const statsButton = screen.getByText('stats').closest('button');
-    expect(statsButton).not.toHaveClass('active');
-  });
-
-  it('calls onViewChange when journal is clicked', () => {
-    render(<NavMenu {...defaultProps} currentView="stats" />);
-    const journalButton = screen.getByText('journal');
-    fireEvent.click(journalButton);
-    expect(mockOnViewChange).toHaveBeenCalledWith('journal');
-  });
-
-  it('calls onViewChange when stats is clicked', () => {
-    render(<NavMenu {...defaultProps} />);
-    const statsButton = screen.getByText('stats');
-    fireEvent.click(statsButton);
-    expect(mockOnViewChange).toHaveBeenCalledWith('stats');
-  });
-
-  it('calls onViewChange when tags is clicked', () => {
-    render(<NavMenu {...defaultProps} />);
-    const tagsButton = screen.getByText('tags');
-    fireEvent.click(tagsButton);
-    expect(mockOnViewChange).toHaveBeenCalledWith('tags');
-  });
-
-  it('opens the People page and highlights it while it is the current view', () => {
-    const { rerender } = render(<NavMenu {...defaultProps} />);
-    fireEvent.click(screen.getByText('people'));
-    expect(mockOnViewChange).toHaveBeenCalledWith('people');
-
-    rerender(<NavMenu {...defaultProps} currentView="people" />);
-    expect(screen.getByText('people').closest('button')).toHaveClass('active');
-  });
-
-  it('opens the open tasks and highlights them while they are the current view', () => {
-    const { rerender } = render(<NavMenu {...defaultProps} />);
-    fireEvent.click(screen.getByText('openTasksNav'));
-    expect(mockOnViewChange).toHaveBeenCalledWith('tasks');
-
-    rerender(<NavMenu {...defaultProps} currentView="tasks" />);
-    expect(screen.getByText('openTasksNav').closest('button')).toHaveClass('active');
-  });
-
-  it('opens the memoir and highlights it while it is the current view', () => {
-    const { rerender } = render(<NavMenu {...defaultProps} />);
-    fireEvent.click(screen.getByText('memoir'));
-    expect(mockOnViewChange).toHaveBeenCalledWith('memoir');
-
-    rerender(<NavMenu {...defaultProps} currentView="memoir" />);
-    expect(screen.getByText('memoir').closest('button')).toHaveClass('active');
-  });
-
-  it('calls onViewChange when importExport is clicked', () => {
-    render(<NavMenu {...defaultProps} />);
-    const importExportButton = screen.getByText('importExport');
-    fireEvent.click(importExportButton);
-    expect(mockOnViewChange).toHaveBeenCalledWith('importExport');
-  });
-
   it('displays user initial when no avatar', () => {
     render(<NavMenu {...defaultProps} name="Test User" avatarUrl={undefined} />);
     expect(screen.getByText('T')).toBeInTheDocument();
@@ -125,12 +162,6 @@ describe('NavMenu', () => {
     render(<NavMenu {...defaultProps} avatarUrl="https://example.com/avatar.jpg" />);
     const avatar = screen.getByAltText('Test User');
     expect(avatar).toHaveAttribute('src', 'https://example.com/avatar.jpg');
-  });
-
-  it('navigates to the public feed', () => {
-    render(<NavMenu {...defaultProps} />);
-    fireEvent.click(screen.getByText('feed'));
-    expect(mockOnViewChange).toHaveBeenCalledWith('feed');
   });
 
   it('displays a verification badge for verified email accounts', () => {
@@ -159,6 +190,7 @@ describe('NavMenu', () => {
     render(<NavMenu {...defaultProps} currentView="profile" />);
     const profileButton = screen.getByText('T').closest('button');
     expect(profileButton).toHaveClass('active');
+    expect(profileButton).toHaveAttribute('title', 'profile');
   });
 
   it('calls onViewChange with profile when profile button is clicked', () => {

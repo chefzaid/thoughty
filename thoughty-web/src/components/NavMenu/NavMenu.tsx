@@ -1,5 +1,8 @@
+import { useCallback, useMemo, useState } from 'react';
 import './NavMenu.css';
 import type { ViewType } from '../../types';
+import NavGroup from './NavGroup';
+import { buildNavGroups, type NavGroupId } from './navGroups';
 import PrivacyBlurButton from '../PrivacyBlur/PrivacyBlurButton';
 import type { PrivacyBlurState } from '../PrivacyBlur/usePrivacyBlur';
 import QuickCaptureButton from '../QuickCapture/QuickCaptureButton';
@@ -20,8 +23,16 @@ interface NavMenuProps {
 }
 
 function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVerified, t, onLogout, privacyBlur, quickCapture }: NavMenuProps) {
-    const initial = (name || t('user')).charAt(0).toUpperCase();
     const isLight = theme === 'light';
+    const displayName = name || t('user');
+    const initial = displayName.charAt(0).toUpperCase();
+    const groups = useMemo(() => buildNavGroups(t), [t]);
+    const [openGroup, setOpenGroup] = useState<NavGroupId | null>(null);
+    const closeGroup = useCallback(() => setOpenGroup(null), []);
+    const selectView = useCallback((view: ViewType) => {
+        setOpenGroup(null);
+        onViewChange(view);
+    }, [onViewChange]);
 
     return (
         <nav className={`nav-menu ${isLight ? 'light' : 'dark'}`}>
@@ -31,75 +42,21 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
                 <span className="brand-name">Thoughty</span>
             </div>
 
-            {/* Navigation Items */}
+            {/* The pages, grouped */}
             <div className="nav-items">
-                <button type="button"
-                    className={`nav-item ${currentView === 'journal' ? 'active' : ''}`}
-                    onClick={() => onViewChange('journal')}
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                    {t('journal')}
-                </button>
-                <button type="button"
-                    className={`nav-item ${currentView === 'memoir' ? 'active' : ''}`}
-                    onClick={() => onViewChange('memoir')}
-                >
-                    <span className="codicon codicon-history" aria-hidden="true" />
-                    {t('memoir')}
-                </button>
-                <button type="button"
-                    className={`nav-item ${currentView === 'tags' ? 'active' : ''}`}
-                    onClick={() => onViewChange('tags')}
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="nav-tags-icon">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.3} d="M9 4 7 20" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.3} d="M17 4 15 20" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.3} d="M4 9h14" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.3} d="M3 15h14" />
-                    </svg>
-                    {t('tags')}
-                </button>
-                <button type="button"
-                    className={`nav-item ${currentView === 'feed' ? 'active' : ''}`}
-                    onClick={() => onViewChange('feed')}
-                >
-                    <span className="codicon codicon-rss" aria-hidden="true" />
-                    {t('feed')}
-                </button>
-                <button type="button"
-                    className={`nav-item ${currentView === 'people' ? 'active' : ''}`}
-                    onClick={() => onViewChange('people')}
-                >
-                    <span className="codicon codicon-organization" aria-hidden="true" />
-                    {t('people')}
-                </button>
-                <button type="button"
-                    className={`nav-item ${currentView === 'tasks' ? 'active' : ''}`}
-                    onClick={() => onViewChange('tasks')}
-                >
-                    <span className="codicon codicon-checklist" aria-hidden="true" />
-                    {t('openTasksNav')}
-                </button>
-                <button type="button"
-                    className={`nav-item ${currentView === 'stats' ? 'active' : ''}`}
-                    onClick={() => onViewChange('stats')}
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
-                    {t('stats')}
-                </button>
-                <button type="button"
-                    className={`nav-item ${currentView === 'importExport' ? 'active' : ''}`}
-                    onClick={() => onViewChange('importExport')}
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-                    </svg>
-                    {t('importExport')}
-                </button>
+                {groups.map((group) => (
+                    <NavGroup
+                        key={group.id}
+                        label={group.label}
+                        icon={group.icon}
+                        items={group.items}
+                        currentView={currentView}
+                        isOpen={openGroup === group.id}
+                        onToggle={() => setOpenGroup((open) => (open === group.id ? null : group.id))}
+                        onClose={closeGroup}
+                        onSelect={selectView}
+                    />
+                ))}
             </div>
 
             {/* User Profile Section */}
@@ -113,14 +70,14 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
                     onClick={() => onViewChange('profile')}
                     title={t('profile')}
                 >
-                    <div className={`profile-avatar ${avatarUrl ? 'has-image' : ''}`}>
+                    <span className={`profile-avatar ${avatarUrl ? 'has-image' : ''}`}>
                         {avatarUrl ? (
-                            <img src={avatarUrl} alt={name || t('user')} className="profile-avatar-img" />
+                            <img src={avatarUrl} alt={displayName} className="profile-avatar-img" />
                         ) : (
                             initial
                         )}
-                    </div>
-                    <span className="profile-name">{name || t('user')}</span>
+                    </span>
+                    <span className="profile-name" title={displayName}>{displayName}</span>
                     {isEmailVerified && (
                         <span className="verified-badge compact" title={t('verifiedAccount')} aria-label={t('verifiedAccount')}>
                             ✓

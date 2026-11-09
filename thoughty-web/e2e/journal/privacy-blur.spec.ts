@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
+import { goToView } from '../support/navigation';
 import type { MockEntry } from '../support/mockApp.shared';
 
 const TODAY = '2025-04-17';
@@ -86,9 +87,9 @@ test.describe('Privacy blur', () => {
     await expect.poll(() => filterOf(secret)).toMatch(/^blur\(/);
     await page.keyboard.press('Escape');
 
-    await page.getByRole('navigation').getByRole('button', { name: 'Stats' }).click();
+    await goToView(page, 'Stats');
     await expect(toggleButton(page)).toHaveAttribute('aria-pressed', 'true');
-    await page.getByRole('navigation').getByRole('button', { name: 'Journal' }).click();
+    await goToView(page, 'Journal');
     await expect.poll(() => filterOf(page.locator('#entry-401 .privacy-text'))).toMatch(/^blur\(/);
   });
 

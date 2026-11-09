@@ -1,13 +1,14 @@
 import { expect, test } from '../support/test';
 
 import { setupMockApp } from '../support/mockApp';
+import { goToView } from '../support/navigation';
 import { fulfillJson } from '../support/mockApp.route-utils';
 
 test.describe('Guided memoir', () => {
   test('starts the memoir in a new diary, answers this week’s question, and opens it in the journal', async ({ page }) => {
     const { state } = await setupMockApp(page, { startAuthenticated: true });
     await page.goto('/journal');
-    await page.getByRole('button', { name: 'Memoir', exact: true }).click();
+    await goToView(page, 'Memoir');
 
     await expect(page).toHaveURL(/\/memoir$/);
     await expect(page.getByRole('heading', { name: 'Your life story, written one week at a time' })).toBeVisible();

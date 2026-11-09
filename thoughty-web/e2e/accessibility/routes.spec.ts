@@ -3,6 +3,7 @@ import { expect, test, type Locator, type Page } from '../support/test';
 
 import { buildZip } from '../../src/test/zipFixture';
 import { setupMockApp } from '../support/mockApp';
+import { goToView } from '../support/navigation';
 
 type RouteContent = (page: Page) => Locator[];
 
@@ -232,7 +233,7 @@ test.describe('route accessibility', () => {
     await setupMockApp(page, { startAuthenticated: true });
     await page.goto('/journal');
 
-    await page.getByRole('button', { name: 'Tags', exact: true }).click();
+    await goToView(page, 'Tags');
     await expect(page.locator('#main-content')).toBeFocused();
   });
 

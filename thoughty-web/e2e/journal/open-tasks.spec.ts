@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
+import { goToView } from '../support/navigation';
 import type { MockEntry } from '../support/mockApp.shared';
 
 const errands: MockEntry = {
@@ -41,7 +42,7 @@ test.describe('Open tasks', () => {
     const { state } = await setupMockApp(page, { startAuthenticated: true, initialEntries: [errands, trip, plain] });
     await page.goto('/journal?diary=all');
 
-    await page.getByRole('navigation').getByRole('button', { name: 'Tasks' }).click();
+    await goToView(page, 'Tasks');
     await expect(page).toHaveURL(/\/tasks\?diary=all$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Open tasks' })).toBeVisible();
     await expect(page.getByText('3 open tasks')).toBeVisible();

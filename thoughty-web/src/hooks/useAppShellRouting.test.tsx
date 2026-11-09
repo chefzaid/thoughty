@@ -115,6 +115,21 @@ describe('useAppShellRouting', () => {
     expect(navigate).toHaveBeenCalledWith({ pathname: '/journal', search: '?diary=12' }, { state: { focusComposer: true } });
   });
 
+  it('opens the year in review on the current diary, or on all diaries', () => {
+    const navigate = vi.fn();
+    const { result, rerender } = renderHook(
+      ({ currentDiaryId }) => useAppShellRouting(createParams({ currentDiaryId, navigate })),
+      { initialProps: { currentDiaryId: 12 as number | null } },
+    );
+
+    act(() => result.current.handleViewChange('review'));
+    rerender({ currentDiaryId: null });
+    act(() => result.current.handleViewChange('review'));
+
+    expect(navigate).toHaveBeenNthCalledWith(1, { pathname: '/review', search: '?diary=12' });
+    expect(navigate).toHaveBeenNthCalledWith(2, { pathname: '/review', search: '' });
+  });
+
   it('updates the diary without navigation when the current view does not support diary search', () => {
     const navigate = vi.fn();
     const setCurrentDiaryId = vi.fn();

@@ -1,5 +1,6 @@
 import { test, expect } from '../support/test';
 import { setupMockApp } from "../support/mockApp";
+import { goToView } from "../support/navigation";
 
 test.describe("Stats insight surfaces", () => {
   test("shows totals, activity heatmap, top tags, and year-by-year tag breakdowns", async ({
@@ -30,7 +31,7 @@ test.describe("Stats insight surfaces", () => {
     });
 
     await page.goto("/journal");
-    await page.getByRole("button", { name: "Stats" }).click();
+    await goToView(page, "Stats");
 
     await expect(page).toHaveURL(/\/stats(?:\?diary=1)?$/);
     await expect(page.getByRole("heading", { name: "Stats" })).toBeVisible();

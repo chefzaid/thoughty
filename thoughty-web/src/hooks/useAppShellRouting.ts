@@ -57,6 +57,9 @@ export function useAppShellRouting({
     const nextSearchParams = new URLSearchParams();
     if (viewSupportsDiarySearch(view)) {
       nextSearchParams.set('diary', formatDiarySearchParam(currentDiaryId));
+    } else if (view === 'review' && currentDiaryId !== null) {
+      // As from the Stats page: the year in review opens on the diary being read (all diaries otherwise)
+      nextSearchParams.set('diary', String(currentDiaryId));
     }
     const to = {
       pathname: getPathForView(view),

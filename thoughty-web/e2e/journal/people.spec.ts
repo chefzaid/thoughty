@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { test, expect, type Page } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
+import { goToView } from '../support/navigation';
 
 const ENTRIES = [
   { id: 401, date: '2026-10-20', index: 1, content: 'Coffee with @Marie at the market', tags: ['life'], visibility: 'private' as const },
@@ -106,7 +107,7 @@ test.describe('People', () => {
       }],
     });
     await page.goto('/journal?diary=all');
-    await page.getByRole('navigation').getByRole('button', { name: 'People' }).click();
+    await goToView(page, 'People');
     await expect(page).toHaveURL(/\/people$/);
     await expect(page.getByRole('heading', { level: 1, name: 'People' })).toBeVisible();
     const list = page.getByRole('list', { name: '3 people' });
