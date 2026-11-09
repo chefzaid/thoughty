@@ -9,6 +9,7 @@ import { monthName, weekdayName } from '../../utils/calendarNames';
 import type { Language } from '../../utils/translations';
 import { moveHeatmapFocus } from './heatmapFocus';
 import { describeHeatmapDay, heatmapDateFormatter, heatmapDayLabel, type HeatmapGoal } from './heatmapDayDetails';
+import StatsHeatmapLegend from './StatsHeatmapLegend';
 import StatsHeatmapTooltip from './StatsHeatmapTooltip';
 
 export type { HeatmapGoal } from './heatmapDayDetails';
@@ -239,119 +240,103 @@ export default function StatsActivityHeatmap({
 
     return (
         <section className={`chart-card heatmap-card ${themeClass}`} aria-labelledby="journal-activity-heading">
-            <div className="chart-header heatmap-header">
-                <h2 id="journal-activity-heading">{t('journalActivityByDay')}</h2>
-                <div className="heatmap-legend">
-                    <span>{t('lessActivity')}</span>
-                    <div className="heatmap-legend-scale" aria-hidden="true">
-                        {[0, 1, 2, 3, 4].map((level) => (
-                            <span key={level} className={`heatmap-cell ${themeClass} level-${level}`} />
-                        ))}
-                    </div>
-                    <span>{t('moreActivity')}</span>
-                    {goal && (
-                        <span className="heatmap-legend-goal">
-                            {goal.period === 'day'
-                                ? <span className={`heatmap-cell ${themeClass} level-2 goal-met`} aria-hidden="true" />
-                                : <span className="heatmap-goal-week" aria-hidden="true">✓</span>}
-                            {t(goal.period === 'day' ? 'statsHeatmapGoalLegendDay' : 'statsHeatmapGoalLegendWeek')}
-                        </span>
-                    )}
-                </div>
-            </div>
+            <h2 id="journal-activity-heading">{t('journalActivityByDay')}</h2>
 
             {Object.keys(thoughtsPerDay).length === 0 ? (
                 <p className="heatmap-empty">{t('noJournalActivity')}</p>
             ) : (
-                <div className="heatmap-shell" ref={shellRef}>
-                    <div className="heatmap-grid" style={{ '--heatmap-weeks': heatmapWeeks.length } as CSSProperties}>
-                        <div className="heatmap-corner" aria-hidden="true" />
-                        <div className="heatmap-month-row" aria-hidden="true">
-                            {monthLabels.map((label, index) => (
-                                <span key={`${label || 'blank'}-${index}`} className="heatmap-month-label">
-                                    {label}
-                                </span>
-                            ))}
-                        </div>
-                        <div className="heatmap-weekday-column" aria-hidden="true">
-                            {weekdayLabels.map((label, index) => (
-                                <span key={`${label || 'weekday'}-${index}`} className="heatmap-weekday-label">
-                                    {label}
-                                </span>
-                            ))}
-                        </div>
-                        {/* Each row is a week (drawn as a column); keys, presses and clicks are handled by the grid */}
-                        <div
-                            className={`heatmap-weeks${onOpenJournalDay ? ' opens-days' : ''}`}
-                            role="grid"
-                            tabIndex={0}
-                            aria-label={t('journalActivityByDay')}
-                            aria-describedby={`${idPrefix}-hint`}
-                            aria-activedescendant={cellId(activeDate)}
-                            onKeyDown={handleKeyDown}
-                            onPointerDown={handlePointerDown}
-                            onPointerOver={handlePointerOver}
-                            onPointerLeave={handlePointerLeave}
-                            onFocus={handleFocus}
-                            onBlur={handleBlur}
-                            onClick={handleClick}
-                        >
-                            {heatmapWeeks.map((week) => (
-                                <div key={week[0]?.weekStart} className="heatmap-week" role="row">
-                                    {week.map((cell) => {
-                                        const details = detailsByDate.get(cell.dateKey);
-                                        if (!cell.inRange || !details) {
+                <>
+                    <div className="heatmap-shell" ref={shellRef}>
+                        <div className="heatmap-grid" style={{ '--heatmap-weeks': heatmapWeeks.length } as CSSProperties}>
+                            <div className="heatmap-corner" aria-hidden="true" />
+                            <div className="heatmap-month-row" aria-hidden="true">
+                                {monthLabels.map((label, index) => (
+                                    <span key={`${label || 'blank'}-${index}`} className="heatmap-month-label">
+                                        {label}
+                                    </span>
+                                ))}
+                            </div>
+                            <div className="heatmap-weekday-column" aria-hidden="true">
+                                {weekdayLabels.map((label, index) => (
+                                    <span key={`${label || 'weekday'}-${index}`} className="heatmap-weekday-label">
+                                        {label}
+                                    </span>
+                                ))}
+                            </div>
+                            {/* Each row is a week (drawn as a column); keys, presses and clicks are handled by the grid */}
+                            <div
+                                className={`heatmap-weeks${onOpenJournalDay ? ' opens-days' : ''}`}
+                                role="grid"
+                                tabIndex={0}
+                                aria-label={t('journalActivityByDay')}
+                                aria-describedby={`${idPrefix}-hint`}
+                                aria-activedescendant={cellId(activeDate)}
+                                onKeyDown={handleKeyDown}
+                                onPointerDown={handlePointerDown}
+                                onPointerOver={handlePointerOver}
+                                onPointerLeave={handlePointerLeave}
+                                onFocus={handleFocus}
+                                onBlur={handleBlur}
+                                onClick={handleClick}
+                            >
+                                {heatmapWeeks.map((week) => (
+                                    <div key={week[0]?.weekStart} className="heatmap-week" role="row">
+                                        {week.map((cell) => {
+                                            const details = detailsByDate.get(cell.dateKey);
+                                            if (!cell.inRange || !details) {
+                                                return (
+                                                    <span
+                                                        key={cell.dateKey}
+                                                        className="heatmap-cell outside-range"
+                                                        aria-hidden="true"
+                                                    />
+                                                );
+                                            }
+
+                                            const dayMet = goal?.period === 'day' && details.goalMet;
+                                            const active = cell.dateKey === activeDate;
+                                            const tipped = cell.dateKey === tip?.date;
                                             return (
                                                 <span
                                                     key={cell.dateKey}
-                                                    className="heatmap-cell outside-range"
-                                                    aria-hidden="true"
+                                                    id={cellId(cell.dateKey)}
+                                                    role="gridcell"
+                                                    data-date={cell.dateKey}
+                                                    aria-label={heatmapDayLabel(details)}
+                                                    className={`heatmap-cell ${themeClass} level-${cell.level}${dayMet ? ' goal-met' : ''}${active ? ' active' : ''}${tipped ? ' tipped' : ''}`}
                                                 />
                                             );
-                                        }
-
-                                        const dayMet = goal?.period === 'day' && details.goalMet;
-                                        const active = cell.dateKey === activeDate;
-                                        const tipped = cell.dateKey === tip?.date;
-                                        return (
-                                            <span
-                                                key={cell.dateKey}
-                                                id={cellId(cell.dateKey)}
-                                                role="gridcell"
-                                                data-date={cell.dateKey}
-                                                aria-label={heatmapDayLabel(details)}
-                                                className={`heatmap-cell ${themeClass} level-${cell.level}${dayMet ? ' goal-met' : ''}${active ? ' active' : ''}${tipped ? ' tipped' : ''}`}
-                                            />
-                                        );
-                                    })}
-                                </div>
-                            ))}
+                                        })}
+                                    </div>
+                                ))}
+                            </div>
+                            {goal?.period === 'week' && (
+                                <>
+                                    <div aria-hidden="true" />
+                                    <div className="heatmap-goal-row" aria-hidden="true">
+                                        {heatmapWeeks.map((week) => (
+                                            <span key={week[0]?.weekStart ?? 'week'} className="heatmap-goal-week">
+                                                {metPeriods.has(week[0]?.weekStart ?? '') ? '✓' : ''}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
                         </div>
-                        {goal?.period === 'week' && (
-                            <>
-                                <div aria-hidden="true" />
-                                <div className="heatmap-goal-row" aria-hidden="true">
-                                    {heatmapWeeks.map((week) => (
-                                        <span key={week[0]?.weekStart ?? 'week'} className="heatmap-goal-week">
-                                            {metPeriods.has(week[0]?.weekStart ?? '') ? '✓' : ''}
-                                        </span>
-                                    ))}
-                                </div>
-                            </>
+                        <p id={`${idPrefix}-hint`} className="sr-only">
+                            {t(onOpenJournalDay ? 'statsHeatmapKeyboardHint' : 'statsHeatmapKeyboardHintReadOnly')}
+                        </p>
+                        {tip && tipDetails && (
+                            <StatsHeatmapTooltip
+                                anchorId={cellId(tip.date)}
+                                details={tipDetails}
+                                hint={tip.via === 'touch' && onOpenJournalDay ? t('statsHeatmapTapToOpen') : undefined}
+                                themeClass={themeClass}
+                            />
                         )}
                     </div>
-                    <p id={`${idPrefix}-hint`} className="sr-only">
-                        {t(onOpenJournalDay ? 'statsHeatmapKeyboardHint' : 'statsHeatmapKeyboardHintReadOnly')}
-                    </p>
-                    {tip && tipDetails && (
-                        <StatsHeatmapTooltip
-                            anchorId={cellId(tip.date)}
-                            details={tipDetails}
-                            hint={tip.via === 'touch' && onOpenJournalDay ? t('statsHeatmapTapToOpen') : undefined}
-                            themeClass={themeClass}
-                        />
-                    )}
-                </div>
+                    <StatsHeatmapLegend goal={goal} themeClass={themeClass} t={t} />
+                </>
             )}
         </section>
     );

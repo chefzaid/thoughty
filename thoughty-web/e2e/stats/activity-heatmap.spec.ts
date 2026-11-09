@@ -45,7 +45,27 @@ const box = (locator: Locator) => locator.evaluate((element) => {
   return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, width: rect.width, height: rect.height };
 });
 
+/** Whether two boxes share any area. */
+const overlaps = (a: Awaited<ReturnType<typeof box>>, b: Awaited<ReturnType<typeof box>>) =>
+  a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+
 test.describe('Journal activity by day', () => {
+  test('keeps the key under the map, clear of the details of a day at the right edge', async ({ page }) => {
+    const grid = await openStats(page);
+    const legend = page.locator('.heatmap-legend');
+    await expect(legend).toHaveText(/Less\s*More/);
+    await grid.scrollIntoViewIfNeeded();
+    const latest = day(grid, 'Tuesday, March 10, 2026. 1 entry. Daily goal not met yet');
+    await latest.hover();
+    await expect(tooltip(page)).toBeVisible();
+
+    const key = await box(legend);
+    expect(key.top).toBeGreaterThan((await box(grid)).bottom);
+    // The shades sit at the right, under the latest weeks, where the details of the latest days show
+    expect(Math.abs(key.right - (await box(page.locator('.heatmap-shell'))).right)).toBeLessThan(24);
+    expect(overlaps(await box(tooltip(page)), key)).toBe(false);
+  });
+
   test('shows a day’s details on hover and pops the tile out without moving its neighbours', async ({ page }) => {
     const grid = await openStats(page);
     const tuesday = day(grid, 'Tuesday, March 3, 2026. 2 entries. Daily goal met');

@@ -199,5 +199,17 @@ describe('StatsActivityHeatmap', () => {
         render(<StatsActivityHeatmap thoughtsPerDay={{}} themeClass="dark" language="en" t={(key, params) => getTranslation('en', key, params)} />);
         expect(screen.getByText('No journaling activity yet.')).toBeInTheDocument();
         expect(screen.queryByRole('grid')).not.toBeInTheDocument();
+        // Nothing to explain without tiles
+        expect(screen.queryByText('Less')).not.toBeInTheDocument();
+    });
+
+    it('puts the key under the map, the goal on the left and the shades from less to more on the right', () => {
+        const { container } = renderHeatmap('fr', undefined, { period: 'week', metPeriods: [] });
+
+        const legend = container.querySelector('.heatmap-legend');
+        expect(legend?.textContent).toBe('✓' + 'Semaine où l’objectif est atteint' + 'Moins' + 'Plus');
+        // After the map in the page, so a day's details (drawn above the day) never cover it
+        expect(screen.getByRole('grid').compareDocumentPosition(legend!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        expect(legend?.querySelectorAll('.heatmap-legend-scale .heatmap-cell')).toHaveLength(5);
     });
 });
