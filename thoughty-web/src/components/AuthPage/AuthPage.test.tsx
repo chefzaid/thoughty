@@ -52,12 +52,12 @@ describe('AuthPage', () => {
         vi.stubEnv('PROD', true);
         const { unmount } = render(<AuthPage t={mockT} theme="dark" />);
         expect(screen.getByText('orContinueWith')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /continueWithKeycloak/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /continueWithSso/ })).toBeInTheDocument();
         expect(screen.getByLabelText('password')).toBeInTheDocument();
         unmount();
 
         render(<AuthPage t={mockT} theme="dark" mode="register" />);
-        expect(screen.getByRole('button', { name: /continueWithKeycloak/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /continueWithSso/ })).toBeInTheDocument();
         expect(screen.getByLabelText('username')).toBeInTheDocument();
         vi.unstubAllEnvs();
     });
@@ -65,17 +65,17 @@ describe('AuthPage', () => {
     it('shows no provider divider when no sign-in provider is offered', () => {
         render(<AuthPage t={mockT} theme="dark" />);
         expect(screen.queryByText('orContinueWith')).not.toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: /continueWithKeycloak/ })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /continueWithSso/ })).not.toBeInTheDocument();
     });
 
     it('reports a Keycloak sign-in that did not complete once', () => {
         sessionStorage.setItem('thoughty.keycloak-sso-failed', 'true');
         const { unmount } = render(<AuthPage t={mockT} theme="dark" />);
-        expect(screen.getByText('keycloakSignInFailed')).toBeInTheDocument();
+        expect(screen.getByText('ssoSignInFailed')).toBeInTheDocument();
         unmount();
 
         render(<AuthPage t={mockT} theme="dark" />);
-        expect(screen.queryByText('keycloakSignInFailed')).not.toBeInTheDocument();
+        expect(screen.queryByText('ssoSignInFailed')).not.toBeInTheDocument();
     });
 
     it('renders registration mode when controlled by props', () => {

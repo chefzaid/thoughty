@@ -28,7 +28,7 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
   const [username, setUsername] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   // A failed return from Keycloak is reported once, on the sign-in page it came back to
-  const [error, setError] = useState<string>(() => (hasKeycloakSsoFailure() ? t('keycloakSignInFailed') : ''));
+  const [error, setError] = useState<string>(() => (hasKeycloakSsoFailure() ? t('ssoSignInFailed') : ''));
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [website, setWebsite] = useState<string>('');

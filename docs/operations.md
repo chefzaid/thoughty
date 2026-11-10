@@ -82,7 +82,7 @@ Read the [canary limits](./deployment.md#canary-infrak8soverlaysswirl-cloud-cana
 | `02-deploy` timeout | Argo CD status and hook logs. |
 | Attachment errors | S3 endpoint, bucket, credentials; each `stored_filename` exists in the bucket. |
 | AI or cloud provider errors | `OPENROUTER_API_KEY`; OAuth client IDs, secrets, and redirect URIs. |
-| SSO fails ("Keycloak sign-in did not complete" on the sign-in page) | `oauth2-proxy`, the `thoughty-sso` Middleware on the `thoughty-sso-ingress` route, and the `KEYCLOAK_*` values. Local accounts keep working meanwhile. Never trust identity headers alone. |
+| SSO fails ("SSO sign-in did not complete" on the sign-in page) | `oauth2-proxy`, the `thoughty-sso` Middleware on the `thoughty-sso-ingress` route, and the `KEYCLOAK_*` values. Local accounts keep working meanwhile. Never trust identity headers alone. |
 
 The worker runs seven loops, never in API pods:
 

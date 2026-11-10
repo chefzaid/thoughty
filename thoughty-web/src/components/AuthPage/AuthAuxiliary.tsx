@@ -47,7 +47,7 @@ function AuthAuxiliary({
             disabled={loading}
           >
             <span className="keycloak-icon" aria-hidden="true">S</span>
-            <span>{t('continueWithKeycloak')}</span>
+            <span>{t('continueWithSso')}</span>
           </button>
         )}
         {googleClientId && (
