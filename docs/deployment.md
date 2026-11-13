@@ -22,7 +22,7 @@ Overlays build on `infra/k8s/base` and `infra/k8s/components`. Render one with `
 
 ## Production Desired State
 
-Argo CD syncs `infra/k8s/overlays/swirl-cloud` from `main` of `swirlit/thoughty` into `apps`, with prune and self-heal. Sync order:
+Argo CD syncs `infra/k8s/overlays/swirl-cloud` from `main` of `swirl/thoughty` into `apps`, with prune and self-heal. Sync order:
 
 1. Wave `-2`: ConfigMap and External Secrets.
 2. Wave `-1`: `thoughty-db-setup` hook creates the `thoughty` role and database if missing.
@@ -61,7 +61,7 @@ Release is manual on `main`. It runs automatically from **Run pipeline** with `P
 
 `01-release`:
 
-1. Builds and pushes `registry.swirlit.dev/swirlit/thoughty/thoughty-{server,web}:<version>` with Kaniko.
+1. Builds and pushes `registry.swirlit.dev/swirl/thoughty/thoughty-{server,web}:<version>` with Kaniko.
 2. Uploads both archives and `SHA256SUMS` to the Generic Package Registry.
 3. Stops if `main` moved during the pipeline.
 4. Commits `release: <version>` with the new image tags, tags `v<version>`, commits the next minor baseline, and pushes.

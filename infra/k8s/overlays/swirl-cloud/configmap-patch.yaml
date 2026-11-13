@@ -6,8 +6,8 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "-2"
 data:
-  POSTGRES_HOST: postgres.swirlit.internal
-  REDIS_HOST: redis.swirlit.internal
+  POSTGRES_HOST: postgres.swirl.internal
+  REDIS_HOST: redis.swirl.internal
   CORS_ORIGIN: https://thoughty.swirlit.dev
   FRONTEND_URL: https://thoughty.swirlit.dev
   # Two proxies precede the API: Cloudflare (an edge address, or the HA tunnel connector on
@@ -15,6 +15,6 @@ data:
   # Cloudflare edge address. Traefik drops X-Forwarded-For from peers outside its trusted edge
   # ranges, so counting hops cannot be spoofed by requests that bypass Cloudflare.
   TRUST_PROXY: "2"
-  KEYCLOAK_ISSUER: https://keycloak.swirlit.dev/auth/realms/swirlit
-  KEYCLOAK_JWKS_URI: http://keycloak.swirlit.internal:8080/auth/realms/swirlit/protocol/openid-connect/certs
+  KEYCLOAK_ISSUER: https://keycloak.swirlit.dev/auth/realms/swirl
+  KEYCLOAK_JWKS_URI: http://keycloak.swirl.internal:8080/auth/realms/swirl/protocol/openid-connect/certs
   KEYCLOAK_AUDIENCE: oauth2-proxy

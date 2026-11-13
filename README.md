@@ -44,7 +44,7 @@ The implemented and planned backlog is in [TODO.md](./TODO.md).
 
 GitLab builds and tests every push; releases are started manually (or automatically from a `PIPELINE_MODE=full` run) and deployed by Argo CD. See [Deployment](./docs/deployment.md#delivery-pipeline) for the details.
 
-- [Run a pipeline](https://gitlab.swirlit.dev/swirlit/thoughty/-/pipelines/new?ref=main) · [Pipelines](https://gitlab.swirlit.dev/swirlit/thoughty/-/pipelines) · [Releases](https://gitlab.swirlit.dev/swirlit/thoughty/-/releases) · [Packages](https://gitlab.swirlit.dev/swirlit/thoughty/-/packages) · [Container images](https://gitlab.swirlit.dev/swirlit/thoughty/-/container_registry)
+- [Run a pipeline](https://gitlab.swirlit.dev/swirl/thoughty/-/pipelines/new?ref=main) · [Pipelines](https://gitlab.swirlit.dev/swirl/thoughty/-/pipelines) · [Releases](https://gitlab.swirlit.dev/swirl/thoughty/-/releases) · [Packages](https://gitlab.swirlit.dev/swirl/thoughty/-/packages) · [Container images](https://gitlab.swirlit.dev/swirl/thoughty/-/container_registry)
 
 ## License
 

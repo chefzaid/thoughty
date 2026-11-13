@@ -61,7 +61,7 @@ export class IdentityVerificationService {
   ) {
     this.keycloakIssuer = this.configService.get<string>(
       'KEYCLOAK_ISSUER',
-      'https://keycloak.swirlit.dev/auth/realms/swirlit',
+      'https://keycloak.swirlit.dev/auth/realms/swirl',
     );
     this.keycloakAudience = this.configService.get<string>('KEYCLOAK_AUDIENCE', 'oauth2-proxy');
     this.keycloakKeys = new JwksKeyStore(

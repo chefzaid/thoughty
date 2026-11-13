@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: http://gitlab.swirlit.internal/swirlit/thoughty.git
+    repoURL: http://gitlab.swirl.internal/swirl/thoughty.git
     targetRevision: main
     path: infra/k8s/overlays/swirl-cloud
   destination:

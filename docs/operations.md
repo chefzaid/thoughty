@@ -5,9 +5,9 @@ How to check and troubleshoot a deployed Thoughty. Deployment itself is in the [
 | Surface | Location |
 |---|---|
 | Application | `https://thoughty.swirlit.dev` |
-| GitLab | `https://gitlab.swirlit.dev/swirlit/thoughty` |
+| GitLab | `https://gitlab.swirlit.dev/swirl/thoughty` |
 | Argo CD | `https://argocd.swirlit.dev/applications/thoughty` |
-| SonarQube | `https://sonarqube.swirlit.dev/dashboard?id=swirlit%3Athoughty` |
+| SonarQube | `https://sonarqube.swirlit.dev/dashboard?id=swirl%3Athoughty` |
 | Grafana / Kibana | **Thoughty Overview** / **Thoughty — Application Logs** |
 
 ## Health Checks

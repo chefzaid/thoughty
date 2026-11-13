@@ -34,10 +34,10 @@ patches:
   - path: worker-sync-wave-patch.yaml
 images:
   - name: thoughty-server
-    newName: registry.swirlit.dev/swirlit/thoughty/thoughty-server
+    newName: registry.swirlit.dev/swirl/thoughty/thoughty-server
     newTag: 1.17.10
   - name: thoughty-web
-    newName: registry.swirlit.dev/swirlit/thoughty/thoughty-web
+    newName: registry.swirlit.dev/swirl/thoughty/thoughty-web
     newTag: 1.17.10
   # Client for the db-setup hook and the backup CronJob: the multi-arch index digest
   # (Alpine 3.24, built 2026-10-21); see docs/security.md (Container Images).
