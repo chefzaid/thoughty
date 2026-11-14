@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { listFiles, listStylesheets, statements, withoutComments } from './test/stylesheets';
+import { keyframeBlocks, listFiles, listStylesheets, statements, withoutComments } from './test/stylesheets';
 
 /**
  * When the system asks for less motion, one rule in `index.css` ends every animation and transition
@@ -36,17 +36,10 @@ function styleRules(css, reduced = false) {
 
 /** The properties each `@keyframes` of a stylesheet changes, by name. */
 function keyframeProperties(css) {
-  const found = new Map();
-  for (const { prelude, body } of statements(withoutComments(css))) {
-    if (body === null) continue;
-    const name = /^@keyframes\s+([\w-]+)/.exec(prelude)?.[1];
-    if (name) {
-      found.set(name, new Set(statements(body).flatMap((frame) => declarations(frame.body ?? '').map(({ property }) => property))));
-    } else if (prelude.startsWith('@')) {
-      for (const [inner, properties] of keyframeProperties(body)) found.set(inner, properties);
-    }
-  }
-  return found;
+  return new Map(keyframeBlocks(css).map(({ name, body }) => [
+    name,
+    new Set(statements(body).flatMap((frame) => declarations(frame.body ?? '').map(({ property }) => property))),
+  ]));
 }
 
 const IMPORTANT = /!\s*important\s*$/;

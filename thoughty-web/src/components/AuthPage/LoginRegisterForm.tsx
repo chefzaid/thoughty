@@ -140,7 +140,7 @@ function LoginRegisterForm({
       )}
 
       <button type="submit" className="auth-submit-btn" disabled={loading}>
-        {loading ? <span className="loading-spinner motion-loader"></span> : submitLabel}
+        {loading ? <span className="loading-spinner motion-loader animate-spin"></span> : submitLabel}
       </button>
     </>
   );

@@ -46,3 +46,13 @@ export function statements(css) {
   }
   return found;
 }
+
+/** Every `@keyframes` block of a stylesheet, those inside `@media` or `@supports` included: its name and body. */
+export function keyframeBlocks(css) {
+  return statements(withoutComments(css)).flatMap(({ prelude, body }) => {
+    if (body === null) return [];
+    const name = /^@keyframes\s+([\w-]+)/.exec(prelude)?.[1];
+    if (name) return [{ name, body }];
+    return prelude.startsWith('@') ? keyframeBlocks(body) : [];
+  });
+}

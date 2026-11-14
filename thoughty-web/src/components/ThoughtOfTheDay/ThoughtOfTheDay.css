@@ -151,7 +151,7 @@
 }
 
 .thought-of-day-modal .action-button.refresh:hover svg {
-    animation: spin 0.5s ease-in-out;
+    animation: thought-of-day-refresh-turn 0.5s ease-in-out;
 }
 
 /* Inline refresh button next to section title */
@@ -167,8 +167,7 @@
     height: 0.75rem;
 }
 
-@keyframes spin {
-    from { transform: rotate(0deg); }
+@keyframes thought-of-day-refresh-turn {
     to { transform: rotate(360deg); }
 }
 
@@ -398,7 +397,6 @@
     border: 3px solid transparent;
     border-top-color: #3b82f6;
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
 }
 
 .thought-of-day-error p,

@@ -39,7 +39,7 @@ function TwoFactorLoginForm({
         />
       </div>
       <button type="submit" className="auth-submit-btn" disabled={loading || code.length !== 6}>
-        {loading ? <span className="loading-spinner motion-loader" /> : t('verifyAndSignIn')}
+        {loading ? <span className="loading-spinner motion-loader animate-spin" /> : t('verifyAndSignIn')}
       </button>
       <div className="two-factor-actions">
         <button type="button" className="back-to-login-btn" onClick={onBack} disabled={loading}>
