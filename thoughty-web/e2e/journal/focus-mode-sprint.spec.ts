@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright';
+import AxeBuilder from '../support/axe';
 import { test, expect, type Page } from '../support/test';
 import { pauseClock } from '../support/clock';
 import { setupMockApp } from '../support/mockApp';

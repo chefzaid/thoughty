@@ -49,12 +49,15 @@ export default defineConfig([
           name: '@playwright/test',
           importNames: ['test'],
           message: "Import test from e2e/support/test: its fixture keeps every /api request inside the browser.",
+        }, {
+          name: '@axe-core/playwright',
+          message: 'Import AxeBuilder from e2e/support/axe: it waits for animations to finish, which axe reads into contrast.',
         }],
       }],
     },
   },
   {
-    files: ['e2e/support/test.ts'],
+    files: ['e2e/support/test.ts', 'e2e/support/axe.ts'],
     rules: { 'no-restricted-imports': 'off' },
   },
 ]);

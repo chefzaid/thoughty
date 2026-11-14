@@ -1,4 +1,4 @@
-import AxeBuilder from '@axe-core/playwright';
+import AxeBuilder from '../support/axe';
 import { expect, test, type Locator } from '../support/test';
 
 import type { MockEntry } from '../support/mockApp.shared';

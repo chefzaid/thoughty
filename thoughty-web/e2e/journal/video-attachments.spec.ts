@@ -1,5 +1,5 @@
 import { truncate, writeFile } from 'node:fs/promises';
-import AxeBuilder from '@axe-core/playwright';
+import AxeBuilder from '../support/axe';
 import { test, expect } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
 import { MOCK_WEBM } from '../support/mockVideo';

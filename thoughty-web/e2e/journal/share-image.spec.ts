@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import AxeBuilder from '@axe-core/playwright';
+import AxeBuilder from '../support/axe';
 import { test, expect, type Page } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
 
