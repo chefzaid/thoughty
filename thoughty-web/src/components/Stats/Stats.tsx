@@ -217,7 +217,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onSearch
             <div className="stats-container">
                 {header}
                 <div className="stats-loading">
-                    <div className="spinner"></div>
+                    <div className="spinner motion-loader"></div>
                     <p>{t('loadingStats')}</p>
                 </div>
             </div>

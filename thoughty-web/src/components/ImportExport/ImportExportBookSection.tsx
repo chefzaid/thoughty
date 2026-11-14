@@ -257,7 +257,7 @@ export function BookSection({
                             {BOOK_PROGRESS_STEPS.map((step) => (
                                 <span key={step} className="book-progress__marker" style={{ left: `${step}%` }} />
                             ))}
-                            <span className="book-progress__bar" />
+                            <span className="book-progress__bar motion-loader" />
                         </div>
                         <span className="book-progress__label">{progressLabel}</span>
                     </div>

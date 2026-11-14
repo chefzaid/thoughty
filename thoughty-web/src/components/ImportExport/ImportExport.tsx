@@ -13,6 +13,7 @@ import { useTransientMessage } from '../../hooks/useTransientMessage';
 import { downloadBlob } from '../../utils/downloadFile';
 import { writersToday } from '../../utils/entryDate';
 import { pluralPhrase } from '../../utils/pluralPhrase';
+import { scrollBehavior } from '../../utils/motion';
 import { readApiErrorMessage } from '../../services/api/base';
 import {
     DEFAULT_FORMAT_CONFIG,
@@ -102,7 +103,7 @@ function ImportExport({
         } as const;
         const target = sectionRefs[activeSection].current;
         if (target && typeof target.scrollIntoView === 'function') {
-            target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+            target.scrollIntoView({ block: 'start', behavior: scrollBehavior() });
         }
     }, [activeSection, loading]);
 

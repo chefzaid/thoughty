@@ -79,7 +79,7 @@ function ProfileHeaderCard({
         onChange={handlePictureUpload}
         className="hidden-file-input"
       />
-      {uploadingPicture && <div className="upload-spinner"></div>}
+      {uploadingPicture && <div className="upload-spinner motion-loader"></div>}
     </div>
     <div className="profile-header-info">
       <div className="profile-name-row">

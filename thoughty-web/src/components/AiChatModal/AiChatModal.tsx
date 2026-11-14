@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback, useId } from 'react';
 import { useDialogFocus } from '../../hooks/useDialogFocus';
 import type { Entry } from '../../types';
 import { downloadBlob } from '../../utils/downloadFile';
+import { scrollBehavior } from '../../utils/motion';
 import { mutedTextClass } from '../../utils/tintedText';
 import type { TranslationParams } from '../../utils/translations';
 
@@ -108,7 +109,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView?.({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView?.({ behavior: scrollBehavior() });
   }, [messages, loading, historyLoading]);
 
   // The message field is disabled while the history loads, which drops focus out of the dialog;

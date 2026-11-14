@@ -124,7 +124,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
         if (loading) {
             return (
                 <div className="thought-of-day-loading">
-                    <div className="spinner"></div>
+                    <div className="spinner motion-loader"></div>
                     <p>{t('loading')}</p>
                 </div>
             );

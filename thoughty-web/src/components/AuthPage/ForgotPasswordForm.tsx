@@ -33,7 +33,7 @@ function ForgotPasswordForm({
     </div>
 
     <button type="submit" className="auth-submit-btn" disabled={loading}>
-      {loading ? <span className="loading-spinner"></span> : t('sendResetLink')}
+      {loading ? <span className="loading-spinner motion-loader"></span> : t('sendResetLink')}
     </button>
 
     <button type="button" className="back-to-login-btn" onClick={handleBackToLogin}>

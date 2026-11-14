@@ -10,6 +10,7 @@ import type { Notifier } from './useAppNotice';
 import type { EntryListQuery } from '../services/api/entryListQuery';
 import { formatEntryDate } from '../utils/entryDate';
 import { PEOPLE_QUERY_KEY } from '../utils/mentions';
+import { scrollBehavior } from '../utils/motion';
 
 export type EntrySearchMode = 'keyword' | 'semantic';
 export type SemanticSearchStatus = 'idle' | 'loading' | 'complete' | 'error';
@@ -391,7 +392,7 @@ export const useEntries = (
       const entryElement = document.getElementById(`entry-${targetEntryId}`);
       if (entryElement) {
         if (typeof entryElement.scrollIntoView === 'function') {
-          entryElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          entryElement.scrollIntoView({ behavior: scrollBehavior(), block: 'center' });
         }
         const clearTargetTimeout = globalThis.setTimeout(() => {
           setTargetEntryId(null);

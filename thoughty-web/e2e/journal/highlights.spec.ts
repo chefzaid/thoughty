@@ -84,4 +84,47 @@ test.describe('Journal highlights', () => {
       await expect(trigger).toBeFocused();
     });
   }
+
+  test('opens without sliding, spinning or lifting its cards when the system asks for less motion', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.clock.setFixedTime(new Date('2025-04-17T12:00:00'));
+    await setupMockApp(page, {
+      startAuthenticated: true,
+      initialEntries: [
+        { id: 301, date: '2025-04-17', index: 1, content: 'Written today', tags: [], visibility: 'private', diaryId: 1 },
+        { id: 302, date: '2024-04-17', index: 1, content: 'Written a year ago', tags: [], visibility: 'private', diaryId: 1 },
+      ],
+    });
+    let answerHighlights = () => {};
+    const highlightsHeld = new Promise<void>((resolve) => { answerHighlights = resolve; });
+    await page.route('http://localhost:5173/api/entries/highlights**', async (route) => {
+      await highlightsHeld;
+      await route.fallback();
+    });
+    await page.goto('/journal?diary=all');
+    await page.getByRole('button', { name: 'Highlights' }).click();
+
+    const dialog = page.getByRole('dialog', { name: 'Highlights' });
+    const styleOf = (selector: string, property: 'animationName' | 'animationDuration' | 'transitionDuration') =>
+      page.locator(selector).first().evaluate((element, name) => getComputedStyle(element)[name], property);
+    // The loader fades in place instead of spinning while the highlights load
+    await expect(dialog.locator('.spinner')).toBeVisible();
+    expect(await styleOf('.thought-of-day-loading .spinner', 'animationName')).toBe('motion-loader-fade');
+
+    answerHighlights();
+    await expect(dialog.getByRole('button', { name: /Written a year ago/ })).toBeVisible();
+    expect(await styleOf('.thought-of-day-overlay', 'animationDuration')).toBe('0s');
+    expect(await styleOf('.thought-of-day-modal', 'animationDuration')).toBe('0s');
+    const running = () => page.evaluate(() => document.getAnimations()
+      .filter((animation) => animation.playState === 'running')
+      .map((animation) => (animation as CSSAnimation).animationName ?? (animation as CSSTransition).transitionProperty));
+    expect(await running()).toEqual([]);
+
+    // Hovering a card or the refresh button moves nothing over time
+    await dialog.locator('.highlight-card').first().hover();
+    expect(await styleOf('.highlight-card', 'transitionDuration')).toBe('0s');
+    await dialog.locator('.action-button.refresh').first().hover();
+    expect(await styleOf('.action-button.refresh svg', 'animationDuration')).toBe('0s');
+    expect(await running()).toEqual([]);
+  });
 });

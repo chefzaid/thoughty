@@ -294,3 +294,38 @@ span.entry-reference-link:hover {
 .markdown-content .inline-image-alt {
   @apply italic;
 }
+
+/*
+ * Reduce motion, app-wide: when the system asks for less motion, nothing slides, spins, scales or
+ * fades in. Animations and transitions end at once on their final state (no events are lost), and
+ * scrolling jumps. Components may still gate their motion themselves (`no-preference`), but they
+ * never need to repeat this.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* A loading indicator (a spinner, an endless progress bar) fades slowly in place instead of moving. */
+  .motion-loader {
+    animation: motion-loader-fade 2s ease-in-out infinite !important;
+  }
+}
+
+@keyframes motion-loader-fade {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
+}

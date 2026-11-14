@@ -1,6 +1,7 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { listStylesheets, statements, withoutComments } from './test/stylesheets';
 
 /**
  * Every stylesheet ships in the same bundle, so a print rule that targets the whole page (`body *`,
@@ -10,48 +11,13 @@ import { describe, expect, it } from 'vitest';
  */
 const SRC = import.meta.dirname;
 
-function listStylesheets(dir) {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((item) => {
-    const path = join(dir, item.name);
-    if (item.isDirectory()) return listStylesheets(path);
-    return item.name.endsWith('.css') ? [path] : [];
-  });
-}
-
-/** The statements of a block: each prelude with its body (`null` for a statement ending with `;`). */
-function statements(css) {
-  const found = [];
-  let start = 0;
-  let index = 0;
-  while (index < css.length) {
-    const char = css[index];
-    if (char === ';') {
-      found.push({ prelude: css.slice(start, index).trim(), body: null });
-      start = index + 1;
-    } else if (char === '{') {
-      let depth = 1;
-      let end = index + 1;
-      while (end < css.length && depth > 0) {
-        if (css[end] === '{') depth += 1;
-        if (css[end] === '}') depth -= 1;
-        end += 1;
-      }
-      found.push({ prelude: css.slice(start, index).trim(), body: css.slice(index + 1, end - 1) });
-      start = end;
-      index = end - 1;
-    }
-    index += 1;
-  }
-  return found;
-}
-
 /** A selector that starts at the document, body or every element without a class or attribute on it. */
 const WHOLE_PAGE = /^(?:html|body|:root|\*)(?![\w.#[-])/;
 
 /** The rules that would leak into every print of the app, as readable lines. */
 function leakingPrintRules(css, inPrint = false) {
   const leaks = [];
-  for (const { prelude, body } of statements(css.replaceAll(/\/\*[\s\S]*?\*\//g, ''))) {
+  for (const { prelude, body } of statements(withoutComments(css))) {
     if (body === null) continue;
     if (/^@page\b/.test(prelude)) {
       // `@page` and `@page :first` apply to every printed page, in print or not

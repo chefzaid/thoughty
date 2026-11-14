@@ -430,6 +430,13 @@
     }
 }
 
+/* With less motion the bar stops sliding and fades over the whole track (index.css), not stuck at 42% as if it were progress. */
+@media (prefers-reduced-motion: reduce) {
+    .book-progress__bar {
+        width: 100%;
+    }
+}
+
 @media (max-width: 760px) {
     #book-section .book-options-grid--title,
     #book-section .book-options-grid--settings {

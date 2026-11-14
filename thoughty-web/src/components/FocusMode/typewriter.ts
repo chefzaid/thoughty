@@ -1,3 +1,5 @@
+import { scrollBehavior } from '../../utils/motion';
+
 /** The styles that decide where text wraps and how tall its lines are. */
 const MIRRORED_STYLES = [
     'fontFamily',
@@ -78,10 +80,6 @@ export function typewriterScrollTop(lineTop: number, viewHeight: number): number
     return Math.max(0, Math.round(lineTop - viewHeight / 2));
 }
 
-export function prefersReducedMotion(): boolean {
-    return globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-}
-
 /** Scrolls the textarea so the caret's line stays near its vertical middle. */
 export function centerCaretLine(textarea: HTMLTextAreaElement, smooth: boolean): void {
     const top = typewriterScrollTop(caretLineTop(textarea), textarea.clientHeight);
@@ -89,7 +87,7 @@ export function centerCaretLine(textarea: HTMLTextAreaElement, smooth: boolean):
         return;
     }
     if (typeof textarea.scrollTo === 'function') {
-        textarea.scrollTo({ top, behavior: smooth && !prefersReducedMotion() ? 'smooth' : 'auto' });
+        textarea.scrollTo({ top, behavior: smooth ? scrollBehavior() : 'auto' });
     } else {
         textarea.scrollTop = top;
     }
