@@ -51,10 +51,13 @@ describe('QuickCaptureDialog', () => {
         fireEvent.click(button);
         const dialog = screen.getByRole('dialog', { name: 'Quick capture' });
         expect(dialog).toHaveAttribute('aria-modal', 'true');
-        expect(dialog).toHaveAccessibleDescription('Enter saves it as a private entry for today in your default diary.');
+        expect(dialog).toHaveAccessibleDescription('Your note is saved as a private entry for today in your default diary.');
         const field = screen.getByRole('textbox', { name: "What's on your mind?" });
         expect(field).toHaveFocus();
-        expect(field).toHaveClass('privacy-text');
+        expect(field.tagName).toBe('TEXTAREA');
+        expect(field).toHaveClass('privacy-text', 'max-h-60', 'overflow-y-auto');
+        expect(field).toHaveAccessibleDescription('Enter adds a line · Ctrl+Enter saves');
+        expect(field).toHaveAttribute('aria-keyshortcuts', 'Control+Enter Meta+Enter');
         expect(button).toHaveAttribute('aria-expanded', 'true');
 
         fireEvent.keyDown(document, { key: 'Escape' });
@@ -100,18 +103,56 @@ describe('QuickCaptureDialog', () => {
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });
 
-    it('saves on Enter and says so', async () => {
+    it('leaves Enter to start a new line and saves the lines on Ctrl+Enter, saying so', async () => {
         const createEntry = saved();
         render(<Harness createEntry={createEntry} />);
         pressShortcut();
         const field = screen.getByRole('textbox', { name: "What's on your mind?" });
-        fireEvent.change(field, { target: { value: 'Buy stamps' } });
+        fireEvent.change(field, { target: { value: 'Buy stamps\n\nand bread' } });
 
-        await act(async () => { fireEvent.submit(field.closest('form')!); });
+        expect(fireEvent.keyDown(field, { key: 'Enter' })).toBe(true);
+        expect(fireEvent.keyDown(field, { key: 'Enter', ctrlKey: true, shiftKey: true })).toBe(true);
+        expect(fireEvent.keyDown(field, { key: 'Enter', ctrlKey: true, altKey: true })).toBe(true);
+        expect(fireEvent.keyDown(field, { key: 'a', ctrlKey: true })).toBe(true);
+        expect(createEntry).not.toHaveBeenCalled();
 
-        expect(createEntry).toHaveBeenCalledWith(expect.objectContaining({ text: 'Buy stamps', visibility: 'private', format: 'plain', diaryId: null }));
+        let notCancelled = true;
+        await act(async () => { notCancelled = fireEvent.keyDown(field, { key: 'Enter', ctrlKey: true }); });
+
+        expect(notCancelled).toBe(false);
+        expect(createEntry).toHaveBeenCalledWith(expect.objectContaining({ text: 'Buy stamps\n\nand bread', visibility: 'private', format: 'plain', diaryId: null }));
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
         expect(screen.getByTestId('notice')).toHaveTextContent('Saved as a private entry for today.');
+    });
+
+    it('saves on Cmd+Enter and with the Save button', async () => {
+        const createEntry = saved();
+        render(<Harness createEntry={createEntry} />);
+        pressShortcut();
+        fireEvent.change(screen.getByRole('textbox', { name: "What's on your mind?" }), { target: { value: 'From a Mac' } });
+        await act(async () => { fireEvent.keyDown(screen.getByRole('textbox', { name: "What's on your mind?" }), { key: 'Enter', metaKey: true }); });
+        expect(createEntry).toHaveBeenLastCalledWith(expect.objectContaining({ text: 'From a Mac' }));
+
+        pressShortcut();
+        fireEvent.change(screen.getByRole('textbox', { name: "What's on your mind?" }), { target: { value: 'With the button' } });
+        await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Save' })); });
+        expect(createEntry).toHaveBeenLastCalledWith(expect.objectContaining({ text: 'With the button' }));
+        expect(createEntry).toHaveBeenCalledTimes(2);
+    });
+
+    it('grows with its text and is measured again when it opens with the text kept', () => {
+        const scrollHeight = vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(150);
+        render(<Harness createEntry={saved()} />);
+        pressShortcut();
+        fireEvent.change(screen.getByRole('textbox', { name: "What's on your mind?" }), { target: { value: 'One\nTwo\nThree\nFour\nFive' } });
+        expect(screen.getByRole('textbox', { name: "What's on your mind?" })).toHaveStyle({ height: '150px' });
+
+        fireEvent.keyDown(document, { key: 'Escape' });
+        pressShortcut();
+        const field = screen.getByRole('textbox', { name: "What's on your mind?" });
+        expect(field).toHaveValue('One\nTwo\nThree\nFour\nFive');
+        expect(field).toHaveStyle({ height: '150px' });
+        scrollHeight.mockRestore();
     });
 
     it('keeps the text and says why when the save fails, in French', async () => {
@@ -129,7 +170,7 @@ describe('QuickCaptureDialog', () => {
         expect(screen.getByRole('alert')).toHaveTextContent('Impossible d’enregistrer l’entrée. Veuillez réessayer.');
         expect(field).toHaveValue('Appeler maman');
         expect(field).toHaveAttribute('aria-invalid', 'true');
-        expect(field).toHaveAccessibleDescription('Impossible d’enregistrer l’entrée. Veuillez réessayer.');
+        expect(field).toHaveAccessibleDescription('Impossible d’enregistrer l’entrée. Veuillez réessayer. Entrée ajoute une ligne · Ctrl+Entrée enregistre');
         expect(field).toHaveFocus();
         expect(screen.getByRole('button', { name: 'Ouvrir dans l’éditeur' })).toBeInTheDocument();
     });

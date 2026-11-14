@@ -4,6 +4,7 @@ export type QuickCaptureTranslationKey =
   | 'quickCapture'
   | 'quickCaptureHint'
   | 'quickCaptureDescription'
+  | 'quickCaptureKeysHint'
   | 'quickCaptureOpenInFull'
   | 'quickCaptureSaving'
   | 'quickCaptureSaved'
@@ -13,7 +14,8 @@ export const quickCaptureTranslations: Record<Language, Record<QuickCaptureTrans
   en: {
     quickCapture: 'Quick capture',
     quickCaptureHint: 'Quick capture (Ctrl+Shift+Space)',
-    quickCaptureDescription: 'Enter saves it as a private entry for today in your default diary.',
+    quickCaptureDescription: 'Your note is saved as a private entry for today in your default diary.',
+    quickCaptureKeysHint: 'Enter adds a line · Ctrl+Enter saves',
     quickCaptureOpenInFull: 'Open in full',
     quickCaptureSaving: 'Saving...',
     quickCaptureSaved: 'Saved as a private entry for today.',
@@ -22,7 +24,8 @@ export const quickCaptureTranslations: Record<Language, Record<QuickCaptureTrans
   fr: {
     quickCapture: 'Capture rapide',
     quickCaptureHint: 'Capture rapide (Ctrl+Maj+Espace)',
-    quickCaptureDescription: 'La touche Entrée l’enregistre comme entrée privée du jour dans votre journal par défaut.',
+    quickCaptureDescription: 'Votre note est enregistrée comme entrée privée du jour dans votre journal par défaut.',
+    quickCaptureKeysHint: 'Entrée ajoute une ligne · Ctrl+Entrée enregistre',
     quickCaptureOpenInFull: 'Ouvrir dans l’éditeur',
     quickCaptureSaving: 'Enregistrement...',
     quickCaptureSaved: 'Enregistrée comme entrée privée du jour.',

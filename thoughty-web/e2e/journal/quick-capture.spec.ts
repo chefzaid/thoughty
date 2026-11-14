@@ -45,15 +45,23 @@ test.describe('Quick capture', () => {
     await expect(dialog).toHaveAttribute('aria-modal', 'true');
     const field = dialog.getByRole('textbox', { name: "What's on your mind?" });
     await expect(field).toBeFocused();
+    await expect(field).toHaveAccessibleDescription('Enter adds a line · Ctrl+Enter saves');
+    await expect(field).toHaveAttribute('aria-keyshortcuts', 'Control+Enter Meta+Enter');
+    await expect(dialog.getByText('Enter adds a line · Ctrl+Enter saves')).toBeVisible();
 
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).include('[role="dialog"]').analyze();
     expect(results.violations.map(({ id }) => id)).toEqual([]);
 
+    // Enter starts a new line; Ctrl+Enter saves the note with its line breaks
     const saved = page.waitForRequest((request) => request.url().endsWith('/api/entries') && request.method() === 'POST');
-    await field.fill('Call the plumber about the tap');
+    await field.pressSequentially('Call the plumber about the tap');
     await field.press('Enter');
+    await field.pressSequentially('and ask about the boiler');
+    await expect(dialog).toBeVisible();
+    await expect(field).toHaveValue('Call the plumber about the tap\nand ask about the boiler');
+    await field.press('Control+Enter');
     expect((await saved).postDataJSON()).toEqual({
-      text: 'Call the plumber about the tap',
+      text: 'Call the plumber about the tap\nand ask about the boiler',
       tags: [],
       date: TODAY,
       visibility: 'private',
@@ -72,8 +80,11 @@ test.describe('Quick capture', () => {
     await page.getByRole('link', { name: 'View entry' }).click();
     await expect(page).toHaveURL(/\/journal/);
     const card = page.locator(`#entry-${created!.id}`);
-    await expect(card).toContainText('Call the plumber about the tap');
     await expect(card.getByTitle('Private - only you can see')).toBeVisible();
+    // The plain entry shows its two lines
+    const body = card.locator('.privacy-text').filter({ hasText: 'Call the plumber' });
+    await expect(body).toHaveCSS('white-space', 'pre-wrap');
+    expect(await body.innerText()).toBe('Call the plumber about the tap\nand ask about the boiler');
   });
 
   test('opens with Ctrl+Shift+Space while typing, adds the entry to the journal for today, and Escape gives focus back', async ({ page }) => {
@@ -99,7 +110,8 @@ test.describe('Quick capture', () => {
     await page.keyboard.press('Control+Shift+Space');
     await expect(field).toHaveValue('Half a thought');
     await field.fill('Bread, milk, stamps');
-    await field.press('Enter');
+    // Cmd+Enter, as on a Mac, saves too
+    await field.press('Meta+Enter');
     await expect(dialog).toHaveCount(0);
 
     const created = state.entries.find((entry) => entry.content === 'Bread, milk, stamps');
@@ -126,9 +138,33 @@ test.describe('Quick capture', () => {
     expect(state.entries).toHaveLength(0);
 
     await page.unroute('http://localhost:5173/api/entries');
-    await field.press('Enter');
+    await field.press('Control+Enter');
     await expect(dialog).toHaveCount(0);
     await expect.poll(() => state.entries.map((entry) => entry.content)).toEqual(['Do not lose this']);
+  });
+
+  test('grows with the note up to a cap, then scrolls inside, and blurs it with the privacy blur', async ({ page }) => {
+    await setupMockApp(page, { startAuthenticated: true });
+    await page.goto('/journal');
+    await captureButton(page).click();
+    const field = captureDialog(page).getByRole('textbox', { name: "What's on your mind?" });
+    const heightOf = async () => (await field.boundingBox())!.height;
+
+    const empty = await heightOf();
+    expect(empty).toBeGreaterThanOrEqual(70);
+    await field.fill('One\nTwo\nThree\nFour\nFive\nSix');
+    const grown = await heightOf();
+    expect(grown).toBeGreaterThan(empty + 40);
+    expect(await field.evaluate((element) => element.scrollHeight - element.clientHeight)).toBeLessThanOrEqual(1);
+
+    await field.fill(Array.from({ length: 30 }, (_, line) => `Line ${line + 1}`).join('\n'));
+    expect(await heightOf()).toBeLessThanOrEqual(241);
+    expect(await field.evaluate((element) => element.scrollHeight > element.clientHeight + 100)).toBe(true);
+    await expect(field).toHaveCSS('overflow-y', 'auto');
+
+    await field.press('Control+Shift+E');
+    await expect(field).toHaveCSS('-webkit-text-fill-color', 'rgba(0, 0, 0, 0)');
+    await expect(field).toBeFocused();
   });
 
   test('carries the text to the composer with Open in full', async ({ page }) => {
@@ -138,12 +174,12 @@ test.describe('Quick capture', () => {
 
     await page.keyboard.press('Control+Shift+Space');
     const dialog = captureDialog(page);
-    await dialog.getByRole('textbox', { name: "What's on your mind?" }).fill('This needs more room');
+    await dialog.getByRole('textbox', { name: "What's on your mind?" }).fill('This needs more room\n\n- a list\n- of things');
     await dialog.getByRole('button', { name: 'Open in full' }).click();
 
     await expect(page).toHaveURL(/\/journal/);
     const composer = page.getByPlaceholder("What's on your mind?").first();
-    await expect(composer).toHaveValue('This needs more room');
+    await expect(composer).toHaveValue('This needs more room\n\n- a list\n- of things');
     await expect(composer).toBeFocused();
     expect(state.entries).toHaveLength(0);
   });
@@ -172,20 +208,22 @@ test.describe('Quick capture', () => {
     await expect(button).toHaveAttribute('title', 'Capture rapide (Ctrl+Maj+Espace)');
     await button.click();
     const dialog = captureDialog(page, 'Capture rapide');
-    await expect(dialog.getByText('La touche Entrée l’enregistre comme entrée privée du jour dans votre journal par défaut.')).toBeVisible();
+    await expect(dialog.getByText('Votre note est enregistrée comme entrée privée du jour dans votre journal par défaut.')).toBeVisible();
     const field = dialog.getByRole('textbox', { name: "Qu'avez-vous à l'esprit ?" });
     await expect(dialog.getByRole('button', { name: 'Ouvrir dans l’éditeur' })).toBeVisible();
+    await expect(field).toHaveAccessibleDescription('Entrée ajoute une ligne · Ctrl+Entrée enregistre');
 
-    await field.press('Enter');
+    await field.press('Control+Enter');
     await expect(dialog.getByRole('alert')).toHaveText('Veuillez saisir du texte');
+    await expect(field).toHaveAccessibleDescription('Veuillez saisir du texte Entrée ajoute une ligne · Ctrl+Entrée enregistre');
 
     await field.fill('Acheter du pain');
-    await field.press('Enter');
+    await field.press('Control+Enter');
     await expect(dialog.getByRole('alert')).toHaveText('Impossible d’enregistrer l’entrée. Veuillez réessayer.');
     await expect(field).toHaveValue('Acheter du pain');
 
     await page.unroute('http://localhost:5173/api/entries');
-    await field.press('Enter');
+    await field.press('Control+Enter');
     await expect(dialog).toHaveCount(0);
     await expect(page.getByRole('status').filter({ hasText: 'Enregistrée comme entrée privée du jour.' })).toHaveCount(1);
     await expect(page.getByRole('link', { name: 'Voir l’entrée' })).toBeVisible();

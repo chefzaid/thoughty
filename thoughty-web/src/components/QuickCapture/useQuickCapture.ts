@@ -33,9 +33,10 @@ export interface QuickCaptureState {
 }
 
 /**
- * Quick capture: a one-line box, open on any page of the signed-in app, whose text is saved as a
- * private plain entry for the writer's own today in the default diary (the API's choice when no diary
- * is sent), through the same `POST /api/entries` as the composer. A failed save keeps the text.
+ * Quick capture: a short note, open on any page of the signed-in app, whose text (its line breaks
+ * included) is saved as a private plain entry for the writer's own today in the default diary (the
+ * API's choice when no diary is sent), through the same `POST /api/entries` as the composer. A failed
+ * save keeps the text.
  */
 export function useQuickCapture({
     entriesService,

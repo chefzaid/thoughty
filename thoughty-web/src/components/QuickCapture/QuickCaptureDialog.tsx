@@ -1,8 +1,10 @@
-import { useEffect, useId, useRef, type FormEvent } from 'react';
+import { useEffect, useId, useRef, type FormEvent, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 
+import { useAutoGrowTextarea } from '../../hooks/useAutoGrowTextarea';
 import { useDialogFocus } from '../../hooks/useDialogFocus';
 import type { TranslationFunction } from '../../types';
+import { mutedTextClass } from '../../utils/tintedText';
 import { isModalDialogOpen, isQuickCaptureShortcut } from './quickCaptureShortcut';
 import type { QuickCaptureState } from './useQuickCapture';
 
@@ -12,18 +14,24 @@ interface QuickCaptureDialogProps {
     readonly t: TranslationFunction;
 }
 
+/** Ctrl+Enter (Cmd+Enter on a Mac) saves; Enter alone starts a new line. */
+export const QUICK_CAPTURE_SAVE_KEYSHORTCUTS = 'Control+Enter Meta+Enter';
+
 /**
  * The quick capture box and its shortcut. The shortcut opens it from anywhere in the signed-in app, also
  * while typing, but not over focus mode or another dialog. It is a modal dialog: focus starts in its one
- * labelled field, Tab stays inside, Enter saves, Escape closes it and focus goes back to where it was.
+ * labelled field, a short note a few lines tall that grows with its text up to a cap and then scrolls,
+ * Tab stays inside, Enter adds a line, Save or Ctrl+Enter saves, Escape closes it and focus goes back to
+ * where it was.
  */
 function QuickCaptureDialog({ quickCapture, theme, t }: QuickCaptureDialogProps) {
     const { isOpen, open, close, text, setText, saving, error, save, openInFull } = quickCapture;
     const dialogRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const { ref: inputRef } = useAutoGrowTextarea(text, isOpen);
     const titleId = useId();
     const descriptionId = useId();
     const inputId = useId();
+    const keysHintId = useId();
     const errorId = useId();
     const isLight = theme === 'light';
 
@@ -50,14 +58,14 @@ function QuickCaptureDialog({ quickCapture, theme, t }: QuickCaptureDialogProps)
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, open]);
+    }, [inputRef, isOpen, open]);
 
     // A failed save hands the field back, with its text, for another try
     useEffect(() => {
         if (error) {
             inputRef.current?.focus();
         }
-    }, [error]);
+    }, [error, inputRef]);
 
     if (!isOpen) {
         return null;
@@ -66,6 +74,13 @@ function QuickCaptureDialog({ quickCapture, theme, t }: QuickCaptureDialogProps)
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         void save();
+    };
+
+    const handleFieldKeyDown = (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
+        if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey) {
+            event.preventDefault();
+            void save();
+        }
     };
 
     const secondaryButton = `px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -102,19 +117,24 @@ function QuickCaptureDialog({ quickCapture, theme, t }: QuickCaptureDialogProps)
                     <label htmlFor={inputId} className={`block mb-1 text-sm font-medium ${isLight ? 'text-gray-700' : 'text-gray-200'}`}>
                         {t('whatsOnYourMind')}
                     </label>
-                    <input
+                    <textarea
                         ref={inputRef}
                         id={inputId}
-                        type="text"
+                        rows={3}
                         value={text}
                         onChange={(event) => setText(event.target.value)}
+                        onKeyDown={handleFieldKeyDown}
                         aria-invalid={error !== ''}
-                        aria-describedby={error ? errorId : undefined}
+                        aria-describedby={error ? `${errorId} ${keysHintId}` : keysHintId}
+                        aria-keyshortcuts={QUICK_CAPTURE_SAVE_KEYSHORTCUTS}
                         autoComplete="off"
-                        className={`privacy-text w-full border rounded-lg px-3 h-11 focus:ring-1 focus:ring-blue-500 outline-none ${
+                        className={`privacy-text block w-full max-h-60 overflow-y-auto resize-none border rounded-lg px-3 py-2 focus:ring-1 focus:ring-blue-500 outline-none ${
                             isLight ? 'bg-gray-50 border-gray-300 text-gray-900' : 'bg-gray-900 border-gray-600 text-gray-100'
                         } ${error ? 'border-red-500' : ''}`}
                     />
+                    <p id={keysHintId} className={`mt-1 text-xs ${mutedTextClass(!isLight)}`}>
+                        {t('quickCaptureKeysHint')}
+                    </p>
                     {error && (
                         <p id={errorId} role="alert" className={`mt-2 text-sm ${isLight ? 'text-red-700' : 'text-red-300'}`}>
                             {t(error)}
