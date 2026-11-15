@@ -3,6 +3,7 @@ import type { ComponentProps } from 'react';
 import type AboutPage from '../components/AboutPage/AboutPage';
 import type AuthPage from '../components/AuthPage/AuthPage';
 import type BlogPage from '../components/BlogPage/BlogPage';
+import type CompleteSignUpPage from '../components/CompleteSignUpPage/CompleteSignUpPage';
 import type ContactPage from '../components/ContactPage/ContactPage';
 import type FeedbackPage from '../components/FeedbackPage/FeedbackPage';
 import type IntroPage from '../components/IntroPage/IntroPage';
@@ -19,6 +20,7 @@ export type FeedbackPageProps = ComponentProps<typeof FeedbackPage>;
 export type AuthPageProps = ComponentProps<typeof AuthPage>;
 export type LegalPageProps = ComponentProps<typeof LegalPage>;
 export type VerifyEmailPageProps = ComponentProps<typeof VerifyEmailPage>;
+export type CompleteSignUpPageProps = ComponentProps<typeof CompleteSignUpPage>;
 export type UnsubscribePageProps = ComponentProps<typeof UnsubscribePage>;
 
 type AppShellRoutingState = ReturnType<typeof import('../hooks/useAppShellRouting').useAppShellRouting>;
@@ -97,6 +99,17 @@ export function buildPublicShellProps({
     onContinue: () => routingState.handlePublicViewChange('login'),
   };
 
+  const completeSignUpPageProps: CompleteSignUpPageProps = {
+    t,
+    theme,
+    onComplete: () => {
+      routingState.handleAuthSuccess();
+      routingState.handleViewChange('journal');
+    },
+    onSignUp: () => routingState.handlePublicViewChange('register'),
+    onSignIn: () => routingState.handlePublicViewChange('login'),
+  };
+
   const unsubscribePageProps: UnsubscribePageProps = {
     t,
     theme,
@@ -112,6 +125,7 @@ export function buildPublicShellProps({
     legalPageProps,
     authPageProps,
     verifyEmailPageProps,
+    completeSignUpPageProps,
     unsubscribePageProps,
   };
 }

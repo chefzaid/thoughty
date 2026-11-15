@@ -15,7 +15,7 @@ describe('AccountPurgeWorkerService', () => {
   });
 
   it('purges expired accounts on start and then every hour until shut down', async () => {
-    const purge = { purgeAfterDays: 30, purgeExpired: jest.fn().mockResolvedValue(none) };
+    const purge = { purgeAfterDays: 30, purgeExpiredSignUps: jest.fn().mockResolvedValue(0), purgeExpired: jest.fn().mockResolvedValue(none) };
     const worker = new AccountPurgeWorkerService(purge as never);
 
     await worker.start();
@@ -32,7 +32,7 @@ describe('AccountPurgeWorkerService', () => {
   it('never overlaps runs and waits for the current one when shutting down', async () => {
     let finish: () => void = () => undefined;
     const purge = {
-      purgeAfterDays: 30,
+      purgeAfterDays: 30, purgeExpiredSignUps: jest.fn().mockResolvedValue(0),
       purgeExpired: jest.fn(() => new Promise((resolve) => { finish = () => resolve(none); })),
     };
     const worker = new AccountPurgeWorkerService(purge as never);
@@ -53,7 +53,7 @@ describe('AccountPurgeWorkerService', () => {
     const log = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
     const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
     const purge = {
-      purgeAfterDays: 30,
+      purgeAfterDays: 30, purgeExpiredSignUps: jest.fn().mockResolvedValue(0),
       purgeExpired: jest.fn()
         .mockResolvedValueOnce({ purgedUserIds: [3, 8], failedUserIds: [5] })
         .mockResolvedValue(none),
@@ -74,7 +74,7 @@ describe('AccountPurgeWorkerService', () => {
   it('logs a failed run and tries again on the next tick', async () => {
     const error = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
     const purge = {
-      purgeAfterDays: 30,
+      purgeAfterDays: 30, purgeExpiredSignUps: jest.fn().mockResolvedValue(0),
       purgeExpired: jest.fn().mockRejectedValueOnce(new Error('database down')).mockResolvedValue(none),
     };
     const worker = new AccountPurgeWorkerService(purge as never);
@@ -84,6 +84,53 @@ describe('AccountPurgeWorkerService', () => {
 
     await jest.advanceTimersByTimeAsync(3_600_000);
     expect(purge.purgeExpired).toHaveBeenCalledTimes(2);
+    await worker.onModuleDestroy();
+  });
+
+  it('removes expired sign-up requests before each account purge and logs only their count', async () => {
+    const log = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
+    const purge = {
+      purgeAfterDays: 30,
+      purgeExpiredSignUps: jest.fn().mockResolvedValueOnce(4).mockResolvedValue(0),
+      purgeExpired: jest.fn().mockResolvedValue(none),
+    };
+    const worker = new AccountPurgeWorkerService(purge as never);
+
+    await worker.start();
+    expect(log).toHaveBeenCalledWith('Removed 4 expired sign-up requests');
+    log.mockClear();
+    await jest.advanceTimersByTimeAsync(3_600_000);
+    expect(purge.purgeExpiredSignUps).toHaveBeenCalledTimes(2);
+    expect(log).not.toHaveBeenCalledWith(expect.stringContaining('sign-up'));
+    await worker.onModuleDestroy();
+  });
+
+  it('still purges accounts when removing sign-up requests fails', async () => {
+    const error = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    const purge = {
+      purgeAfterDays: 30,
+      purgeExpiredSignUps: jest.fn().mockRejectedValue(new Error('database down')),
+      purgeExpired: jest.fn().mockResolvedValue(none),
+    };
+    const worker = new AccountPurgeWorkerService(purge as never);
+
+    await worker.start();
+    expect(error).toHaveBeenCalledWith('Failed to remove expired sign-up requests', expect.stringContaining('database down'));
+    expect(purge.purgeExpired).toHaveBeenCalledTimes(1);
+    await worker.onModuleDestroy();
+  });
+
+  it('logs a sign-up purge failure that is not an Error without a stack', async () => {
+    const error = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    const purge = {
+      purgeAfterDays: 30,
+      purgeExpiredSignUps: jest.fn().mockRejectedValue('down'),
+      purgeExpired: jest.fn().mockResolvedValue(none),
+    };
+    const worker = new AccountPurgeWorkerService(purge as never);
+
+    await worker.start();
+    expect(error).toHaveBeenCalledWith('Failed to remove expired sign-up requests', undefined);
     await worker.onModuleDestroy();
   });
 });

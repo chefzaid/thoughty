@@ -3,8 +3,9 @@ import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User, RefreshToken, Diary } from '@/database/entities';
+import { User, RefreshToken, Diary, SignUpRequest } from '@/database/entities';
 import { AuthController } from './auth.controller';
+import { SignUpController } from './sign-up.controller';
 import {
   AccountService,
   AuthService,
@@ -13,6 +14,7 @@ import {
   EmailVerificationService,
   IdentityVerificationService,
   PasswordService,
+  SignUpService,
   TwoFactorService,
 } from './services';
 import { JwtStrategy } from './strategies';
@@ -21,7 +23,7 @@ import { getSigningSecret } from './auth-secrets';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, RefreshToken, Diary]),
+    TypeOrmModule.forFeature([User, RefreshToken, Diary, SignUpRequest]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -37,7 +39,7 @@ import { getSigningSecret } from './auth-secrets';
       }),
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, SignUpController],
   providers: [
     AuthService,
     AuthSessionService,
@@ -46,6 +48,7 @@ import { getSigningSecret } from './auth-secrets';
     AccountService,
     EmailService,
     EmailVerificationService,
+    SignUpService,
     TwoFactorService,
     JwtStrategy,
     JwtAuthGuard,

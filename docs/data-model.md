@@ -59,7 +59,7 @@ Uniqueness rules worth knowing: diary names per user, one setting per key, one A
 
 ## Ownership and Deletion Rules
 
-Every table except `users` references a user, and those foreign keys cascade. Accounts are first soft-deleted (`users.deleted_at`). The worker hard-deletes the user row after `ACCOUNT_PURGE_AFTER_DAYS` (default 30), after removing the account's files from object storage, and the cascades remove the rest. A new table that references users must cascade too; `account-purge.integration.spec.ts` checks every foreign key to `users`.
+Every table except `users` and `sign_up_requests` (sign-ups that have no account yet, below) references a user, and those foreign keys cascade. Accounts are first soft-deleted (`users.deleted_at`). The worker hard-deletes the user row after `ACCOUNT_PURGE_AFTER_DAYS` (default 30), after removing the account's files from object storage, and the cascades remove the rest. A new table that references users must cascade too; `account-purge.integration.spec.ts` checks every foreign key to `users`.
 
 | Entity | Deletion behavior |
 |---|---|
@@ -78,6 +78,7 @@ Every table except `users` references a user, and those foreign keys cascade. Ac
 | `Person`, `PersonHandle`, `EntryPerson` | Deleted with the user. An entry's links (`entry_people`) are rebuilt from its text on every save and go with the entry when it is purged; they stay while it is in the recycle bin, which only counts leave out. Deleting a person deletes their handles and links, keeps the text, and sets `personId` to null in saved searches filtered by them; merging moves the duplicate's handles and links to the person kept and points those saved searches at them. |
 | `ShareLink` | Deleted with the user, its entry or its book version (`ON DELETE CASCADE`), and when revoked. Moving its entry to the recycle bin or sealing it deletes its links at once (trigger `trg_entries_drop_share_links`), so restoring the entry does not bring them back. Expired links are deleted as the writer next makes or lists links. |
 | `ComposerDraft` | Deleted with the user, when the entry it was is published, when the writer discards it or empties the composer, and from the other devices' local copies as they learn of it. |
+| `SignUpRequest` | Deleted when its link creates the account (in the same transaction), when the address got an account another way before the link was used, and by the worker once it has expired (24 hours after its last email). It references no user, so an account's deletion leaves it alone. |
 | `OnThisDayEmail`, `MonthlyRecapEmail` | Deleted with the user. Deleting its diary widens the email to all diaries (`SET NULL`). Unsubscribing only turns it off and keeps the hour, zone and diary. |
 | Everything else | Deleted with the user. Votes also go with their request. |
 
@@ -227,6 +228,15 @@ Progress is computed on request (`StatsGoalService`, in `GET /api/stats` as `goa
 - The composer fields that follow the writer: `content` (`TEXT`, at most 50,000 characters, `chk_composer_drafts_content_length`), `title` (`VARCHAR(200)`), `tags`, `format` (`plain` or `markdown`, `chk_composer_drafts_format`), `mood` (1 to 5, `chk_composer_drafts_mood`) and `feelings`, within the entry limits the DTO checks too. The date, time of day, visibility, time capsule and files waiting to upload stay on the device that set them; a picture placed in the text but not uploaded shows as its description elsewhere once published.
 - `revision` (from 1, `chk_composer_drafts_revision`) grows by one with every save. A save names the revision it was written on (`baseRevision`, null for none) and is one statement: `INSERT … ON CONFLICT (user_id) DO NOTHING` for the first, `UPDATE … WHERE revision = $base` after, so a save from a device behind the stored revision (or two at once) is refused with `409 COMPOSER_DRAFT_CONFLICT` instead of overwriting newer text. A discard can name the revision too, and then keeps a newer draft.
 - Drafts are private text, stored like entries (no application-level encryption, as for entries), never logged, read only by their owner, and part of the data download (`composerDraft`).
+
+## Sign-up Requests
+
+`sign_up_requests` holds the local sign-ups waiting for their address to be proven (`SignUpService`, migration `1788048000000-sign-up-requests`): wherever the server can send email, registration writes here and creates no account ([Security](./security.md#authentication-and-sessions)).
+
+- One row per address: `email` is unique and lowercase (`chk_sign_up_requests_email_lowercase`), so a new request replaces the previous one and its link.
+- `token_hash` (unique) is the SHA-256 of the emailed link's token, and `password_hash` the bcrypt hash of the password chosen on the form; `chk_sign_up_requests_token_and_password` keeps them together. A row without them belongs to an address that already has an account: it was sent a notice instead of a link, and the row only spaces out further notices. `username` is the one asked for, checked only when the account is created.
+- `sent_count` (from 1, `chk_sign_up_requests_sent_count`) and `last_sent_at` space the emails to one address (one a minute, five until it expires); `expires_at` is 24 hours after the last email, indexed (`idx_sign_up_requests_expires_at`) for the worker's hourly purge.
+- Rows are not part of any data download: until its link is used, a request belongs to no account.
 
 ## Life Eras
 

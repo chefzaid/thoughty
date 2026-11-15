@@ -3,6 +3,7 @@ import { readApiErrorMessage, safeJsonParse } from '../services/api/base';
 import {
   API_BASE,
   authFailure,
+  completeSignUpRequest,
   loginWithPassword,
   registerWithPassword,
   resendTwoFactorChallenge,
@@ -17,7 +18,11 @@ interface SignInActionsOptions {
   startSession: (session: TokenResponse) => void;
 }
 
-/** Ways to start a session: register, password login with optional two-factor step, and Google. */
+/**
+ * Ways to start a session: register (which, where the server can send email, only emails a link
+ * that `completeSignUp` turns into the account), password login with optional two-factor step,
+ * and Google.
+ */
 export function useSignInActions({ googleClientId, setError, startSession }: SignInActionsOptions) {
   // Register with email/password
   const register = useCallback(async (
@@ -30,10 +35,29 @@ export function useSignInActions({ googleClientId, setError, startSession }: Sig
     try {
       const data = await registerWithPassword({ email, password, username, website });
 
+      if ('verificationRequired' in data) {
+        return { success: true, verificationRequired: true };
+      }
       startSession(data);
       return { success: true };
     } catch (err) {
       return authFailure(err, 'authFailed', setError);
+    }
+  }, [setError, startSession]);
+
+  // Create the account from the emailed sign-up link
+  const completeSignUp = useCallback(async (
+    token: string,
+    password: string,
+    username?: string,
+  ): Promise<AuthResult> => {
+    setError(null);
+    try {
+      const data = await completeSignUpRequest(username ? { token, password, username } : { token, password });
+      startSession(data);
+      return { success: true, isNewUser: data.user.isNewUser };
+    } catch (err) {
+      return authFailure(err, 'completeSignUpFailed', setError);
     }
   }, [setError, startSession]);
 
@@ -120,5 +144,5 @@ export function useSignInActions({ googleClientId, setError, startSession }: Sig
     return signInWithGoogleAccount(googleClientId, googleCredentialLogin);
   }, [googleClientId, googleCredentialLogin]);
 
-  return { register, login, verifyTwoFactor, resendTwoFactor, signInWithGoogle };
+  return { register, completeSignUp, login, verifyTwoFactor, resendTwoFactor, signInWithGoogle };
 }

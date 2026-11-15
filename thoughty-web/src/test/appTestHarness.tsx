@@ -21,6 +21,7 @@ export interface MockAuthState {
   login: ReturnType<typeof vi.fn>;
   logout: ReturnType<typeof vi.fn>;
   register: ReturnType<typeof vi.fn>;
+  completeSignUp: ReturnType<typeof vi.fn>;
   signInWithGoogle: ReturnType<typeof vi.fn>;
   forgotPassword: ReturnType<typeof vi.fn>;
   changePassword: ReturnType<typeof vi.fn>;
@@ -45,6 +46,7 @@ function createMockAuthState(overrides: Partial<MockAuthState> = {}): MockAuthSt
     login: vi.fn(),
     logout: vi.fn(),
     register: vi.fn(),
+    completeSignUp: vi.fn(),
     signInWithGoogle: vi.fn(),
     forgotPassword: vi.fn(),
     changePassword: vi.fn(),

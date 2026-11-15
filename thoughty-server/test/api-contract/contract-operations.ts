@@ -6,7 +6,6 @@
  */
 export const CONTRACT_SUITES = {
   auth: [
-    'POST /api/auth/register',
     'POST /api/auth/login',
     'POST /api/auth/two-factor/verify',
     'POST /api/auth/two-factor/resend',
@@ -29,6 +28,7 @@ export const CONTRACT_SUITES = {
     'POST /api/auth/resend-verification-email',
     'POST /api/auth/delete-account',
   ],
+  'sign-up': ['POST /api/auth/register', 'POST /api/auth/register/complete'],
   entries: [
     'GET /api/entries',
     'POST /api/entries',

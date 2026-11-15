@@ -30,88 +30,6 @@
         ]
       }
     },
-    "/api/auth/register": {
-      "post": {
-        "operationId": "AuthController_register",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterDto"
-              },
-              "example": {
-                "email": "user@example.com",
-                "password": "Password123!",
-                "username": "johndoe",
-                "website": "example"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "User registered and signed in. Sets the httpOnly `thoughty_refresh_token` refresh token cookie (path /api/auth).",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthResponseDto"
-                },
-                "example": {
-                  "user": {
-                    "id": 1,
-                    "email": "writer@example.com",
-                    "username": "writer",
-                    "authProvider": "local",
-                    "emailVerified": true,
-                    "twoFactorEnabled": true,
-                    "isNewUser": true
-                  },
-                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Validation error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "statusCode": 400,
-                  "message": "Validation error",
-                  "error": "Bad Request",
-                  "code": "VALIDATION_FAILED"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Email already registered",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "statusCode": 409,
-                  "message": "Email already registered",
-                  "error": "Conflict",
-                  "code": "CONFLICT"
-                }
-              }
-            }
-          }
-        },
-        "summary": "Register a new user",
-        "tags": [
-          "Authentication"
-        ]
-      }
-    },
     "/api/auth/login": {
       "post": {
         "operationId": "AuthController_login",
@@ -1221,6 +1139,217 @@
           }
         ],
         "summary": "Delete user account",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "description": "Where the server can send email, no account is created yet: every address gets the same `202` answer, a new one an email with a single-use link to `POST /api/auth/register/complete` and one that already has an account a notice to sign in instead. Only outside production and without a mail server is the account created and signed in at once (`201`).",
+        "operationId": "SignUpController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              },
+              "example": {
+                "email": "user@example.com",
+                "password": "Password123!",
+                "username": "johndoe",
+                "website": "example"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "No mail server, outside production only: registered and signed in. Sets the httpOnly `thoughty_refresh_token` refresh token cookie (path /api/auth).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDto"
+                },
+                "example": {
+                  "user": {
+                    "id": 1,
+                    "email": "writer@example.com",
+                    "username": "writer",
+                    "authProvider": "local",
+                    "emailVerified": true,
+                    "twoFactorEnabled": true,
+                    "isNewUser": true
+                  },
+                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Check your email: the same answer whether or not the address has an account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignUpStartedResponseDto"
+                },
+                "example": {
+                  "verificationRequired": true,
+                  "message": "Check your email to finish creating your account."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Validation error",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email or username taken (only when signed in at once)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "Email or username taken (only when signed in at once)",
+                  "error": "Conflict",
+                  "code": "CONFLICT"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Production without a mail server (`EMAIL_DELIVERY_NOT_CONFIGURED`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "Production without a mail server (`EMAIL_DELIVERY_NOT_CONFIGURED`)",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Start a sign-up",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/register/complete": {
+      "post": {
+        "description": "The link works once and for 24 hours, and needs the password chosen on the sign-up form. A username already taken answers `409` and keeps the link working, so another can be sent.",
+        "operationId": "SignUpController_complete",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteSignUpDto"
+              },
+              "example": {
+                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                "password": "Password123!",
+                "username": "johndoe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Account created with a verified email and signed in. Sets the httpOnly `thoughty_refresh_token` refresh token cookie (path /api/auth).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDto"
+                },
+                "example": {
+                  "user": {
+                    "id": 1,
+                    "email": "writer@example.com",
+                    "username": "writer",
+                    "authProvider": "local",
+                    "emailVerified": true,
+                    "twoFactorEnabled": true,
+                    "isNewUser": true
+                  },
+                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid, expired, or used link (`AUTH_INVALID_SIGN_UP_TOKEN`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Invalid, expired, or used link (`AUTH_INVALID_SIGN_UP_TOKEN`)",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not the password chosen on the sign-up form",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "Not the password chosen on the sign-up form",
+                  "error": "Unauthorized",
+                  "code": "UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Username taken, or the address got an account meanwhile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "Username taken, or the address got an account meanwhile",
+                  "error": "Conflict",
+                  "code": "CONFLICT"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create the account from an emailed sign-up link and sign in",
         "tags": [
           "Authentication"
         ]
@@ -14255,37 +14384,6 @@
           "expiresInSeconds": 600
         }
       },
-      "RegisterDto": {
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string",
-            "example": "user@example.com"
-          },
-          "password": {
-            "type": "string",
-            "example": "Password123!"
-          },
-          "username": {
-            "type": "string",
-            "example": "johndoe"
-          },
-          "website": {
-            "type": "string",
-            "description": "Hidden bot-trap field; must be left empty by real users"
-          }
-        },
-        "required": [
-          "email",
-          "password"
-        ],
-        "example": {
-          "email": "user@example.com",
-          "password": "Password123!",
-          "username": "johndoe",
-          "website": "example"
-        }
-      },
       "LoginDto": {
         "type": "object",
         "properties": {
@@ -14627,6 +14725,85 @@
         },
         "example": {
           "password": "Password123!"
+        }
+      },
+      "SignUpStartedResponseDto": {
+        "type": "object",
+        "properties": {
+          "verificationRequired": {
+            "type": "boolean",
+            "example": true
+          },
+          "message": {
+            "type": "string",
+            "example": "Check your email to finish creating your account."
+          }
+        },
+        "required": [
+          "verificationRequired",
+          "message"
+        ],
+        "example": {
+          "verificationRequired": true,
+          "message": "Check your email to finish creating your account."
+        }
+      },
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "Password123!"
+          },
+          "username": {
+            "type": "string",
+            "example": "johndoe"
+          },
+          "website": {
+            "type": "string",
+            "description": "Hidden bot-trap field; must be left empty by real users"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "example": {
+          "email": "user@example.com",
+          "password": "Password123!",
+          "username": "johndoe",
+          "website": "example"
+        }
+      },
+      "CompleteSignUpDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The single-use token from the emailed sign-up link"
+          },
+          "password": {
+            "type": "string",
+            "description": "The password chosen on the sign-up form, entered again"
+          },
+          "username": {
+            "type": "string",
+            "example": "johndoe",
+            "description": "Replaces the username asked for on the sign-up form, for when that one is already taken"
+          }
+        },
+        "required": [
+          "token",
+          "password"
+        ],
+        "example": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+          "password": "Password123!",
+          "username": "johndoe"
         }
       },
       "AttachmentResponseDto": {
@@ -25894,6 +26071,7 @@
           "AUTH_CURRENT_PASSWORD_INCORRECT",
           "AUTH_INVALID_RESET_TOKEN",
           "AUTH_INVALID_VERIFICATION_TOKEN",
+          "AUTH_INVALID_SIGN_UP_TOKEN",
           "EMAIL_DELIVERY_NOT_CONFIGURED",
           "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY",
           "AUTH_2FA_EMAIL_NOT_VERIFIED",

@@ -27,14 +27,15 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import {
+  REFRESH_COOKIE_NOTE,
   REFRESH_TOKEN_COOKIE,
   clearRefreshTokenCookie,
   readRefreshTokenCookie,
   setRefreshTokenCookie,
+  startSession,
 } from './refresh-token-cookie';
 import {
   AccessTokenResponseDto,
-  RegisterDto,
   LoginDto,
   OAuthDto,
   ChangePasswordDto,
@@ -56,7 +57,6 @@ import {
   AuthService,
   AuthSessionService,
   EmailVerificationService,
-  type IssuedSession,
   PasswordService,
   TwoFactorService,
 } from './services';
@@ -64,8 +64,6 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public, CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { SuccessMessageResponseDto, SuccessResponseDto } from '@/common/dto';
 import { RATE_LIMITS, throttleDefault } from '@/common';
-
-const REFRESH_COOKIE_NOTE = `Sets the httpOnly \`${REFRESH_TOKEN_COOKIE}\` refresh token cookie (path /api/auth).`;
 
 @ApiTags('Authentication')
 @ApiExtraModels(AuthResponseDto, TwoFactorChallengeResponseDto)
@@ -79,33 +77,6 @@ export class AuthController {
     private readonly emailVerificationService: EmailVerificationService,
     private readonly twoFactorService: TwoFactorService,
   ) {}
-
-  /** Moves a new session's refresh token into its cookie and returns the rest. */
-  private startSession(res: Response, session: IssuedSession): AuthResponseDto {
-    const { refreshToken, ...response } = session;
-    setRefreshTokenCookie(res, refreshToken);
-    return response;
-  }
-
-  @Public()
-  @Post('register')
-  @Throttle(throttleDefault(RATE_LIMITS.authAttempt))
-  @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({
-    status: 201,
-    description: `User registered and signed in. ${REFRESH_COOKIE_NOTE}`,
-    type: AuthResponseDto,
-  })
-  @ApiResponse({ status: 400, description: 'Validation error' })
-  @ApiResponse({ status: 409, description: 'Email already registered' })
-  async register(
-    @Body() dto: RegisterDto,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<AuthResponseDto> {
-    const result = await this.authService.register(dto);
-    await this.emailVerificationService.sendVerificationEmail(result.user.id);
-    return this.startSession(res, result);
-  }
 
   @Public()
   @Post('login')
@@ -128,7 +99,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<AuthResponseDto | TwoFactorChallengeResponseDto> {
     const result = await this.authService.login(dto);
-    return 'refreshToken' in result ? this.startSession(res, result) : result;
+    return 'refreshToken' in result ? startSession(res, result) : result;
   }
 
   @Public()
@@ -146,7 +117,7 @@ export class AuthController {
     @Body() dto: TwoFactorCodeDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<AuthResponseDto> {
-    return this.startSession(res, await this.authService.verifyTwoFactorLogin(dto));
+    return startSession(res, await this.authService.verifyTwoFactorLogin(dto));
   }
 
   @Public()
@@ -240,7 +211,7 @@ export class AuthController {
     @Body() dto: OAuthDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<AuthResponseDto> {
-    return this.startSession(res, await this.authService.oauthLogin(dto));
+    return startSession(res, await this.authService.oauthLogin(dto));
   }
 
   @Public()
@@ -256,7 +227,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
     @Headers('x-auth-request-access-token') accessToken?: string,
   ): Promise<AuthResponseDto> {
-    return this.startSession(res, await this.authService.keycloakLogin(accessToken));
+    return startSession(res, await this.authService.keycloakLogin(accessToken));
   }
 
   @Public()

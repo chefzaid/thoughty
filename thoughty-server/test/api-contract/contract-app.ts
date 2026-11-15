@@ -111,14 +111,36 @@ function pointAtDatabase(url: string): void {
  * Only the log sink differs: the request log and Nest's own logs are kept in memory instead of
  * written to stdout.
  */
-export async function startContractApi(): Promise<ContractApi> {
+export interface ContractApiOptions {
+  /**
+   * Settings for this API only, applied after the outside services are switched off and put back
+   * when it closes: a suite that mocks a service (such as the SMTP transport) switches it on here.
+   */
+  env?: Record<string, string>;
+}
+
+/** Sets the given environment variables and returns how to put back what they were. */
+function applyEnv(env: Record<string, string>): () => void {
+  const previous = Object.entries(env).map(([name]) => [name, process.env[name]] as const);
+  Object.assign(process.env, env);
+  return () => {
+    for (const [name, value] of previous) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  };
+}
+
+export async function startContractApi(options: ContractApiOptions = {}): Promise<ContractApi> {
   const database = await createPostgresTestDatabase();
   const storage = new FakeObjectStorage();
   const blockedRequests: string[] = [];
   const restoreFetch = blockOutboundFetch(blockedRequests);
+  let restoreEnv = () => {};
   try {
     pointAtDatabase(database.url);
     for (const name of EXTERNAL_SERVICE_SETTINGS) process.env[name] = '';
+    restoreEnv = applyEnv(options.env ?? {});
     process.env.S3_ENDPOINT = await storage.start();
     process.env.S3_BUCKET = CONTRACT_BUCKET;
     process.env.S3_ACCESS_KEY = 'contract';
@@ -154,12 +176,14 @@ export async function startContractApi(): Promise<ContractApi> {
       blockedRequests,
       close: async () => {
         await app.close();
+        restoreEnv();
         restoreFetch();
         await storage.stop();
         await database.drop();
       },
     };
   } catch (error) {
+    restoreEnv();
     restoreFetch();
     await storage.stop();
     await database.drop();

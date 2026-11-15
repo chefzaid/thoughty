@@ -6,6 +6,7 @@ import AuthFormContent from './AuthFormContent';
 import AuthStatusMessages from './AuthStatusMessages';
 import AuthAuxiliary from './AuthAuxiliary';
 import TwoFactorLoginForm from './TwoFactorLoginForm';
+import SignUpEmailSent from './SignUpEmailSent';
 import { clearKeycloakSsoFailure, hasKeycloakSsoFailure, startKeycloakSso } from '../../utils/keycloakSso';
 import './AuthPage.css';
 
@@ -34,6 +35,8 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
   const [website, setWebsite] = useState<string>('');
   const [twoFactorChallenge, setTwoFactorChallenge] = useState<string>('');
   const [twoFactorCode, setTwoFactorCode] = useState<string>('');
+  // When the last sign-up email was asked for; set only while "check your email" is shown
+  const [signUpEmailSentAt, setSignUpEmailSentAt] = useState<number | null>(null);
 
   const {
     login,
@@ -74,6 +77,7 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
     setSuccessMessage('');
     setTwoFactorChallenge('');
     setTwoFactorCode('');
+    setSignUpEmailSentAt(null);
   }, [mode]);
 
   const validateForm = (): boolean => {
@@ -142,7 +146,9 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
         result = await register(email, password, username, website);
       }
 
-      if (result.twoFactorRequired && result.challengeToken) {
+      if (result.verificationRequired) {
+        setSignUpEmailSentAt(Date.now());
+      } else if (result.twoFactorRequired && result.challengeToken) {
         setTwoFactorChallenge(result.challengeToken);
         setTwoFactorCode('');
         setPassword('');
@@ -201,6 +207,27 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
     }
   };
 
+  // Asks again with the same form: the server sends a new link only once a minute has passed
+  const handleResendSignUp = async (): Promise<void> => {
+    setLoading(true);
+    setError('');
+    setSuccessMessage('');
+    const result = await register(email, password, username, website);
+    setLoading(false);
+    if (result.success) {
+      setSignUpEmailSentAt(Date.now());
+      setSuccessMessage(t('signUpEmailResent'));
+    } else {
+      setError(t(result.error || 'authFailed'));
+    }
+  };
+
+  const handleUseAnotherEmail = (): void => {
+    setSignUpEmailSentAt(null);
+    setError('');
+    setSuccessMessage('');
+  };
+
   const handleTwoFactorBack = (): void => {
     setTwoFactorChallenge('');
     setTwoFactorCode('');
@@ -235,9 +262,11 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
     setSuccessMessage('');
   };
 
-  const getAuthSubtitle = (): string => twoFactorChallenge
-    ? t('twoFactorLoginSubtitle')
-    : getAuthSubtitleText({ showForgotPassword, isLogin, t });
+  const getAuthSubtitle = (): string => {
+    if (signUpEmailSentAt !== null) return t('signUpCheckEmailTitle');
+    if (twoFactorChallenge) return t('twoFactorLoginSubtitle');
+    return getAuthSubtitleText({ showForgotPassword, isLogin, t });
+  };
 
   return (
     <main className={`auth-page ${isDark ? 'dark' : 'light'}`}>
@@ -253,7 +282,18 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
           <p className="auth-subtitle">{getAuthSubtitle()}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        {signUpEmailSentAt !== null ? (
+          <SignUpEmailSent
+            email={email}
+            t={t}
+            loading={loading}
+            error={error}
+            successMessage={successMessage}
+            sentAt={signUpEmailSentAt}
+            onResend={() => void handleResendSignUp()}
+            onUseAnotherEmail={handleUseAnotherEmail}
+          />
+        ) : <form onSubmit={handleSubmit} className="auth-form">
           <AuthStatusMessages error={error} successMessage={successMessage} />
           <div className="auth-honeypot" aria-hidden="true">
             <label htmlFor="website">Website</label>
@@ -298,9 +338,9 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
             handleForgotPassword={handleForgotPassword}
             handleBackToLogin={handleBackToLogin}
           />}
-        </form>
+        </form>}
 
-        {!twoFactorChallenge && <AuthAuxiliary
+        {!twoFactorChallenge && signUpEmailSentAt === null && <AuthAuxiliary
           showForgotPassword={showForgotPassword}
           googleClientId={googleClientId}
           loading={loading}

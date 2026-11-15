@@ -1,5 +1,12 @@
 import { readApiErrorMessage, safeJsonParse } from '../services/api/base';
-import type { AuthResult, LoginResponse, TokenResponse, TwoFactorChallengeResponse } from './authTypes';
+import type {
+  AuthResult,
+  CompleteSignUpRequest,
+  LoginResponse,
+  RegisterResponse,
+  TokenResponse,
+  TwoFactorChallengeResponse,
+} from './authTypes';
 
 export const API_BASE = '/api/auth';
 
@@ -36,8 +43,12 @@ async function postAuthRequest<T>(path: string, payload: object, fallbackError: 
   return data;
 }
 
-export function registerWithPassword(payload: RegisterRequest): Promise<TokenResponse> {
-  return postAuthRequest('register', payload, 'authFailed') as Promise<TokenResponse>;
+export function registerWithPassword(payload: RegisterRequest): Promise<RegisterResponse> {
+  return postAuthRequest('register', payload, 'authFailed') as Promise<RegisterResponse>;
+}
+
+export function completeSignUpRequest(payload: CompleteSignUpRequest): Promise<TokenResponse> {
+  return postAuthRequest('register/complete', payload, 'completeSignUpFailed') as Promise<TokenResponse>;
 }
 
 export function loginWithPassword(payload: LoginRequest): Promise<LoginResponse> {

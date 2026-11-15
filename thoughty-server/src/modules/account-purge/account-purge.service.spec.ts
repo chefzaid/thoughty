@@ -88,6 +88,20 @@ describe('AccountPurgeService', () => {
 
   const createService = () => new AccountPurgeService(dataSource as never, attachmentsService as never);
 
+  it('deletes the sign-up requests whose link has expired and reports how many', async () => {
+    const remove = jest.fn().mockResolvedValue({ affected: 3 });
+    dataSource.getRepository.mockReturnValueOnce({ delete: remove });
+
+    await expect(createService().purgeExpiredSignUps(now)).resolves.toBe(3);
+    expect(remove).toHaveBeenCalledWith({ expiresAt: expect.objectContaining({ _type: 'lessThanOrEqual', _value: now }) });
+  });
+
+  it('reports no expired sign-up requests when the driver gives no count', async () => {
+    dataSource.getRepository.mockReturnValueOnce({ delete: jest.fn().mockResolvedValue({}) });
+
+    await expect(createService().purgeExpiredSignUps(now)).resolves.toBe(0);
+  });
+
   it('removes every stored file of an expired account before deleting its row', async () => {
     listUsers.mockResolvedValueOnce([{ id: 4 }, { id: 9 }]);
 

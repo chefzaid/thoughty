@@ -30,6 +30,7 @@ import { handleComposerDraftRoutes } from "./mockApp.routes.composer-draft";
 import { refuseInvalidJsonBody, refuseInvalidQueryParameters, refuseMislabelledUpload } from "./mockApp.routes.multipart";
 import { checkWritersDaySent } from "./mockApp.writers-day";
 import { handleFeatureFlagRoutes } from "./mockApp.feature-flags";
+import { handleSignUpRoutes } from "./mockApp.sign-up";
 
 async function handleAuthRoutes({
   route,
@@ -152,29 +153,6 @@ async function handleAuthRoutes({
     return true;
   }
 
-  if (pathname === "/api/auth/register") {
-    const payload = request.postDataJSON() as {
-      email?: string;
-      username?: string;
-    };
-    state.lastRegisterPayload = payload;
-    state.authenticated = true;
-    state.user = {
-      id: 1,
-      username: payload.username || "NewUser",
-      email: payload.email || "new@example.com",
-      authProvider: "local",
-      emailVerified: false,
-      twoFactorEnabled: false,
-    };
-
-    await fulfillJson(route, {
-      accessToken: "test-access-token",
-      user: state.user,
-    });
-    return true;
-  }
-
   if (pathname === "/api/auth/login") {
     state.lastLoginPayload = request.postDataJSON();
     if (state.user.twoFactorEnabled) {
@@ -196,7 +174,7 @@ async function handleAuthRoutes({
   }
 
   // The refresh token is an httpOnly cookie in the real app; the mock tracks it as
-  // `state.authenticated`, set by login/register/2FA and cleared by logout.
+  // `state.authenticated`, set by login, sign-up and 2FA and cleared by logout.
   if (pathname === "/api/auth/refresh") {
     if (!state.authenticated) {
       await fulfillApiError(route, 401, "AUTH_REFRESH_TOKEN_MISSING", "Refresh token is missing");
@@ -352,6 +330,9 @@ export async function registerMockAppRoutes(page: Page, state: MockAppState) {
       return;
     }
     checkWritersDaySent(context);
+    if (await handleSignUpRoutes(context)) {
+      return;
+    }
     if (await handleAuthRoutes(context)) {
       return;
     }

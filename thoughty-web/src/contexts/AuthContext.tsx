@@ -20,6 +20,7 @@ interface AuthContextValue {
   error: string | null;
   isAuthenticated: boolean;
   register: (email: string, password: string, username: string, website?: string) => Promise<AuthResult>;
+  completeSignUp: (token: string, password: string, username?: string) => Promise<AuthResult>;
   login: (identifier: string, password: string, website?: string) => Promise<AuthResult>;
   verifyTwoFactor: (challengeToken: string, code: string) => Promise<AuthResult>;
   resendTwoFactor: (challengeToken: string) => Promise<AuthResult>;
@@ -59,6 +60,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
   } = useAuthSession();
   const {
     register,
+    completeSignUp,
     login,
     verifyTwoFactor,
     resendTwoFactor,
@@ -79,6 +81,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     error,
     isAuthenticated: !!user,
     register,
+    completeSignUp,
     login,
     verifyTwoFactor,
     resendTwoFactor,
@@ -98,6 +101,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     loading,
     error,
     register,
+    completeSignUp,
     login,
     verifyTwoFactor,
     resendTwoFactor,

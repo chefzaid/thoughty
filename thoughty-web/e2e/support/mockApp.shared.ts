@@ -16,6 +16,7 @@ import {
   DEFAULT_FEATURE_REQUESTS,
 } from "./mockApp.defaults";
 import type { MockCloudFile, MockCloudProvider, MockCloudProviderStatus, MockCloudSchedule } from "./mockApp.cloud";
+import { createMockSignUpState, type MockSignUpOptions, type MockSignUpState } from "./mockApp.sign-up";
 
 export type { MockCloudFile, MockCloudProvider, MockCloudProviderStatus, MockCloudSchedule } from "./mockApp.cloud";
 
@@ -151,6 +152,7 @@ export interface SetupMockAppOptions {
   people?: MockPerson[];
   /** Runtime feature flags to switch off, such as `{ ai: false }`; every feature is on by default. */
   featureFlags?: MockFeatureFlags;
+  signUp?: MockSignUpOptions;
 }
 
 export interface MockAppState {
@@ -215,7 +217,7 @@ export interface MockAppState {
   review: MockReviewState;
   nextEntryId: number;
   lastLoginPayload: AuthPayload | null;
-  lastRegisterPayload: AuthPayload | null;
+  signUp: MockSignUpState;
   lastVerificationToken: string | null;
   verificationResendCount: number;
   twoFactorSetupCount: number;
@@ -455,7 +457,7 @@ export function createMockAppState(
         0,
       ) + 1,
     lastLoginPayload: null,
-    lastRegisterPayload: null,
+    signUp: createMockSignUpState(options.signUp),
     lastVerificationToken: null,
     verificationResendCount: 0,
     twoFactorSetupCount: 0,

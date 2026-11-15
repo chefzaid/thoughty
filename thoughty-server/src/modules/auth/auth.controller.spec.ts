@@ -41,7 +41,7 @@ describe('AuthController', () => {
   const mockUser = { userId: 1, email: 'test@example.com' };
 
   beforeEach(async () => {
-    authService = mockMethods('register', 'login', 'oauthLogin');
+    authService = mockMethods('login', 'oauthLogin');
     sessionService = mockMethods(
       'refreshToken',
       'logout',
@@ -75,7 +75,6 @@ describe('AuthController', () => {
 
   describe('rate limiting', () => {
     const cases = [
-      ['register', RATE_LIMITS.authAttempt],
       ['login', RATE_LIMITS.authAttempt],
       ['verifyTwoFactor', RATE_LIMITS.authAttempt],
       ['resendTwoFactor', RATE_LIMITS.authAttempt],
@@ -98,28 +97,6 @@ describe('AuthController', () => {
       const handler = AuthController.prototype[methodName];
 
       expect(getThrottleMetadata(handler)).toEqual(expected);
-    });
-  });
-
-  describe('register', () => {
-    it('signs the new user in with a refresh token cookie only', async () => {
-      const dto = { email: 'a@b.com', password: 'Pass123!@' } as any;
-      authService.register!.mockResolvedValue({
-        user: { id: 1 },
-        accessToken: 'token',
-        refreshToken: 'rt',
-      });
-      emailVerificationService.sendVerificationEmail.mockResolvedValue({ success: true });
-      const res = mockResponse();
-
-      const result = await controller.register(dto, res);
-      expect(authService.register).toHaveBeenCalledWith(dto);
-      expect(emailVerificationService.sendVerificationEmail).toHaveBeenCalledWith(1);
-      expect(result).toEqual({ user: { id: 1 }, accessToken: 'token' });
-      expect(res.cookie).toHaveBeenCalledWith(COOKIE, 'rt', {
-        ...COOKIE_OPTIONS,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-      });
     });
   });
 

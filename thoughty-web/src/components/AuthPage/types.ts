@@ -9,6 +9,7 @@ export interface AuthResult {
   error?: string;
   twoFactorRequired?: boolean;
   challengeToken?: string;
+  verificationRequired?: boolean;
 }
 
 export function isValidEmail(email: string): boolean {

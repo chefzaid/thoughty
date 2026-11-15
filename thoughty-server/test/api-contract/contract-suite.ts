@@ -2,7 +2,7 @@ import {
   describePostgres,
   POSTGRES_SETUP_TIMEOUT_MS,
 } from '../../src/database/postgres-test-database.test-helpers';
-import { startContractApi, type ContractApi } from './contract-app';
+import { startContractApi, type ContractApi, type ContractApiOptions } from './contract-app';
 import { ContractClient, type ContractUser } from './contract-client';
 import { CONTRACT_SUITES, type ContractSuiteName } from './contract-operations';
 
@@ -25,7 +25,10 @@ export function readRefreshCookie(setCookie: string[] | string | undefined): str
   return cookie.split(';')[0] ?? '';
 }
 
-/** Registers a writer with the web's sign-up request: its fields, and the empty bot trap. */
+/**
+ * Registers a writer with the web's sign-up request: its fields, and the empty bot trap. The
+ * contract API has no mail server, so outside production it signs the writer in at once.
+ */
 export async function registerWriter(
   client: ContractClient,
   username: string,
@@ -46,6 +49,11 @@ export async function registerWriter(
   };
 }
 
+export interface ContractSuiteOptions extends ContractApiOptions {
+  /** How the suite's two writers sign up; `registerWriter` by default. */
+  signUp?: (client: ContractClient, username: string) => Promise<ContractUser>;
+}
+
 /**
  * A real-API contract suite: the whole API on a database of its own, with two registered writers.
  * After its tests it checks it called every operation `CONTRACT_SUITES[name]` lists.
@@ -53,19 +61,20 @@ export async function registerWriter(
 export function describeContract(
   name: ContractSuiteName,
   defineTests: (context: ContractContext) => void,
+  { signUp = registerWriter, ...apiOptions }: ContractSuiteOptions = {},
 ): void {
   describePostgres(`API contract: ${name}`, () => {
     const context = {} as ContractContext;
 
     beforeAll(async () => {
-      context.api = await startContractApi();
+      context.api = await startContractApi(apiOptions);
       context.client = new ContractClient(context.api.http, () =>
         context.api.logger.lines.length > 0
           ? `\nAPI log:\n  ${context.api.logger.lines.slice(-5).join('\n  ')}`
           : '',
       );
-      context.alice = await registerWriter(context.client, `alice_${name}`);
-      context.bob = await registerWriter(context.client, `bob_${name}`);
+      context.alice = await signUp(context.client, `alice_${name}`);
+      context.bob = await signUp(context.client, `bob_${name}`);
     }, POSTGRES_SETUP_TIMEOUT_MS);
 
     afterAll(async () => {

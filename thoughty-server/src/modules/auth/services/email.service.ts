@@ -21,6 +21,15 @@ export interface RenderedEmail {
   headers?: Record<string, string>;
 }
 
+/**
+ * A failed send as it may be logged: the error's name and SMTP reply code, never its message,
+ * which can quote the address.
+ */
+export function describeEmailFailure(error: unknown): string {
+  const code = (error as { responseCode?: unknown } | null)?.responseCode;
+  return `${error instanceof Error ? error.name : 'unknown error'}${typeof code === 'number' ? ` ${code}` : ''}`;
+}
+
 @Injectable()
 export class EmailService {
   private readonly transporter: nodemailer.Transporter | null = null;
@@ -148,6 +157,90 @@ export class EmailService {
 
         If you did not create a Thoughty account, please ignore this email.
       `,
+    });
+  }
+
+  /** The link that creates the account for an address that has none yet. */
+  async sendSignUpLinkEmail(toEmail: string, signUpUrl: string): Promise<void> {
+    await this.sendRenderedEmail(toEmail, {
+      subject: 'Finish creating your Thoughty account',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #333;">Finish creating your account</h2>
+          <p style="color: #666; font-size: 16px;">
+            Someone, hopefully you, asked to create a Thoughty account with this email address.
+            Open the link below and enter the password you chose to finish.
+          </p>
+          <p style="color: #666; font-size: 16px;">This link works once and expires in 24 hours.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${escapeHtml(signUpUrl)}"
+               style="background-color: #6366f1; color: white; padding: 12px 24px;
+                      text-decoration: none; border-radius: 6px; font-size: 16px;">
+              Create my account
+            </a>
+          </div>
+          <p style="color: #999; font-size: 14px;">
+            If you did not sign up, ignore this email: no account is created without it.
+          </p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #999; font-size: 12px;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${escapeHtml(signUpUrl)}" style="color: #6366f1;">${escapeHtml(signUpUrl)}</a>
+          </p>
+        </div>
+      `,
+      text: [
+        'Finish creating your Thoughty account',
+        '',
+        'Someone, hopefully you, asked to create a Thoughty account with this email address.',
+        'Open the link below and enter the password you chose to finish.',
+        'This link works once and expires in 24 hours.',
+        '',
+        signUpUrl,
+        '',
+        'If you did not sign up, ignore this email: no account is created without it.',
+        '',
+      ].join('\n'),
+    });
+  }
+
+  /** Sent instead of a sign-up link when the address already has an account. */
+  async sendSignUpNoticeEmail(toEmail: string, signInUrl: string): Promise<void> {
+    await this.sendRenderedEmail(toEmail, {
+      subject: 'Someone tried to sign up to Thoughty with your email',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #333;">You already have an account</h2>
+          <p style="color: #666; font-size: 16px;">
+            Someone tried to create a Thoughty account with this email address, which already has one.
+            Nothing was changed.
+          </p>
+          <p style="color: #666; font-size: 16px;">
+            If it was you, sign in instead. If you forgot your password, choose
+            <strong>Forgot password?</strong> on the sign-in page to reset it.
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${escapeHtml(signInUrl)}"
+               style="background-color: #6366f1; color: white; padding: 12px 24px;
+                      text-decoration: none; border-radius: 6px; font-size: 16px;">
+              Sign in
+            </a>
+          </div>
+          <p style="color: #999; font-size: 14px;">If it was not you, you can ignore this email.</p>
+        </div>
+      `,
+      text: [
+        'Someone tried to sign up to Thoughty with your email',
+        '',
+        'Someone tried to create a Thoughty account with this email address, which already has one.',
+        'Nothing was changed.',
+        'If it was you, sign in instead. If you forgot your password, choose "Forgot password?" on the sign-in page to reset it.',
+        '',
+        signInUrl,
+        '',
+        'If it was not you, you can ignore this email.',
+        '',
+      ].join('\n'),
     });
   }
 

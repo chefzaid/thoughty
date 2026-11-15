@@ -29,9 +29,22 @@ import { IdentityVerificationService } from './identity-verification.service';
  */
 const TIMING_EQUALIZER_HASH = '$2b$12$HlgReIVskPRRIFDGvS47oeqqKbNUqNQAzAUD8AR1l9NSG1SKXl7Mq';
 
+/** The private "Thoughts" diary every new account starts with. */
+export function defaultDiaryFor(userId: number): Partial<Diary> {
+  return {
+    userId,
+    name: 'Thoughts',
+    icon: '💭',
+    color: getDefaultDiaryColor(0),
+    isDefault: true,
+    visibility: 'private',
+  };
+}
+
 /**
- * Signing in: registration and password login (with the two-factor step), and Google and
- * Keycloak sign-in, which link or create the account. Each ends in a new session from
+ * Signing in: registration without email verification (only where no mail server is configured,
+ * outside production; see `SignUpService`) and password login (with the two-factor step), and
+ * Google and Keycloak sign-in, which link or create the account. Each ends in a new session from
  * `AuthSessionService`; a new account gets its default diary.
  */
 @Injectable()
@@ -207,15 +220,7 @@ export class AuthService {
     return this.sessionService.createSession(user, isNewUser);
   }
 
-  /** The private "Thoughts" diary every new account starts with. */
   private async createDefaultDiary(userId: number): Promise<void> {
-    await this.diaryRepository.save({
-      userId,
-      name: 'Thoughts',
-      icon: '💭',
-      color: getDefaultDiaryColor(0),
-      isDefault: true,
-      visibility: 'private',
-    });
+    await this.diaryRepository.save(defaultDiaryFor(userId));
   }
 }

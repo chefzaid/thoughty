@@ -16,6 +16,8 @@ export interface AuthResult {
   twoFactorRequired?: boolean;
   challengeToken?: string;
   expiresInSeconds?: number;
+  /** Registration created no account yet: the address was emailed a link to finish. */
+  verificationRequired?: boolean;
 }
 
 /** A new session. The refresh token never reaches the page: it is an httpOnly cookie. */
@@ -31,3 +33,10 @@ export interface TwoFactorChallengeResponse {
 }
 
 export type LoginResponse = TokenResponse | TwoFactorChallengeResponse;
+
+/** Where the server can send email, registration only emails a link that creates the account. */
+export type SignUpStartedResponse = Schemas['SignUpStartedResponseDto'];
+
+export type RegisterResponse = TokenResponse | SignUpStartedResponse;
+
+export type CompleteSignUpRequest = Schemas['CompleteSignUpDto'];

@@ -92,6 +92,20 @@ describe('AppShell public flows', () => {
     expect(verifyEmail).toHaveBeenCalledWith('route-token');
   });
 
+  it('loads the sign-up link route and opens the journal once the account is created', async () => {
+    const completeSignUp = vi.fn().mockResolvedValue({ success: true, isNewUser: true });
+    globalThis.history.replaceState({}, '', '/complete-sign-up?token=link-token');
+    setMockAuthState({ user: null, isAuthenticated: false, completeSignUp });
+
+    renderAppShell();
+
+    expect(await screen.findByRole('heading', { name: 'Finish creating your account' })).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText('Password'), 'Pass123!@');
+    await userEvent.click(screen.getByRole('button', { name: 'Create my account' }));
+    expect(completeSignUp).toHaveBeenCalledWith('link-token', 'Pass123!@', undefined);
+    await waitFor(() => expect(globalThis.location.pathname).toBe('/journal'));
+  });
+
   it('loads the public unsubscribe route and turns the email off without signing in', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ success: true, kind: 'on-this-day' }), { status: 200, headers: { 'Content-Type': 'application/json' } }),

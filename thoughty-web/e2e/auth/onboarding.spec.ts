@@ -2,8 +2,9 @@ import { test, expect } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
 
 test.describe('Authentication onboarding', () => {
-  test('signs up from the public intro page and opens the journal', async ({ page }) => {
-    const { state } = await setupMockApp(page);
+  // A server without email (outside production) signs in at once; sign-up.spec.ts has the verify-first flow
+  test('signs up from the public intro page and opens the journal when the server cannot send email', async ({ page }) => {
+    const { state } = await setupMockApp(page, { signUp: { instant: true } });
 
     await page.goto('/');
     await page.getByRole('button', { name: 'Sign Up' }).first().click();
@@ -14,7 +15,7 @@ test.describe('Authentication onboarding', () => {
     await page.locator('#confirmPassword').fill('password123');
     await page.getByRole('button', { name: 'Sign Up' }).click();
 
-    await expect.poll(() => state.lastRegisterPayload?.username).toBe('NewWriter');
+    await expect.poll(() => state.signUp.lastRegisterPayload?.username).toBe('NewWriter');
     await expect(page.getByPlaceholder("What's on your mind?")).toBeVisible();
   });
 

@@ -36,6 +36,8 @@ describeContract('auth', (context) => {
       status: 400,
       code: 'AUTH_INVALID_REQUEST',
     });
+    // No mail server outside production: registration signs in at once, so it still reports a
+    // taken address (the verify-first answer is in sign-up.e2e-spec.ts)
     await call('POST /api/auth/register', {
       json: {
         email: alice.email,

@@ -20,6 +20,7 @@ import { moveToDiaryTranslations, type MoveToDiaryTranslationKey } from "./trans
 import { personDatesTranslations, type PersonDatesTranslationKey } from "./translations.personDates";
 import { focusModeTranslations, type FocusModeTranslationKey } from "./translations.focusMode";
 import { composerDraftTranslations, type ComposerDraftTranslationKey } from "./translations.composerDraft";
+import { signUpTranslations, type SignUpTranslationKey } from "./translations.signUp";
 import { dictationTranslations, type DictationTranslationKey } from "./translations.dictation";
 import { readerTranslations, type ReaderTranslationKey } from "./translations.reader";
 import { privacyBlurTranslations, type PrivacyBlurTranslationKey } from "./translations.privacyBlur";
@@ -90,6 +91,7 @@ export type TranslationKey =
   | PersonDatesTranslationKey
   | FocusModeTranslationKey
   | ComposerDraftTranslationKey
+  | SignUpTranslationKey
   | DictationTranslationKey
   | ReaderTranslationKey
   | PrivacyBlurTranslationKey
@@ -165,6 +167,7 @@ export const translations: Translations = {
     ...personDatesTranslations.en,
     ...focusModeTranslations.en,
     ...composerDraftTranslations.en,
+    ...signUpTranslations.en,
     ...dictationTranslations.en,
     ...readerTranslations.en,
     ...privacyBlurTranslations.en,
@@ -233,6 +236,7 @@ export const translations: Translations = {
     ...personDatesTranslations.fr,
     ...focusModeTranslations.fr,
     ...composerDraftTranslations.fr,
+    ...signUpTranslations.fr,
     ...dictationTranslations.fr,
     ...readerTranslations.fr,
     ...privacyBlurTranslations.fr,

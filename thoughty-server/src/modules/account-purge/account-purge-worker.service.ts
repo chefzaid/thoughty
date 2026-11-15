@@ -3,7 +3,10 @@ import { AccountPurgeService } from './account-purge.service';
 
 const PURGE_SCAN_INTERVAL_MS = 60 * 60 * 1000;
 
-/** Purges deleted accounts past their grace period inside the background worker process, never in API replicas. */
+/**
+ * Purges deleted accounts past their grace period, and sign-up requests whose link expired, inside the
+ * background worker process, never in API replicas.
+ */
 @Injectable()
 export class AccountPurgeWorkerService implements OnModuleDestroy {
   private readonly logger = new Logger(AccountPurgeWorkerService.name);
@@ -31,14 +34,26 @@ export class AccountPurgeWorkerService implements OnModuleDestroy {
     await this.running;
   }
 
+  /** A failure is logged and does not hold up the account purge. */
+  private async purgeExpiredSignUps(): Promise<void> {
+    try {
+      const removed = await this.accountPurgeService.purgeExpiredSignUps();
+      if (removed > 0) {
+        this.logger.log(`Removed ${removed} expired sign-up requests`);
+      }
+    } catch (error) {
+      this.logger.error('Failed to remove expired sign-up requests', error instanceof Error ? error.stack : undefined);
+    }
+  }
+
   /** Logs only counts and user ids, never anything that identifies the person behind an account. */
   private scan(): Promise<void> {
     if (this.stopping || this.running) {
       return this.running ?? Promise.resolve();
     }
 
-    this.running = this.accountPurgeService
-      .purgeExpired()
+    this.running = this.purgeExpiredSignUps()
+      .then(() => this.accountPurgeService.purgeExpired())
       .then(({ purgedUserIds, failedUserIds }) => {
         if (purgedUserIds.length > 0) {
           this.logger.log(`Purged ${purgedUserIds.length} deleted accounts: ${purgedUserIds.join(', ')}`);

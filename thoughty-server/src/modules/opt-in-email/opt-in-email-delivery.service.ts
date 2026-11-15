@@ -3,7 +3,11 @@ import type { ConfigService as NestConfigService } from '@nestjs/config';
 import type { DataSource } from 'typeorm';
 import { isValidTimeZone, localDateIn } from '@/common/utils/time-zone.util';
 import { getUnsubscribeSecret } from '@/modules/auth/auth-secrets';
-import type { EmailService, RenderedEmail } from '@/modules/auth/services/email.service';
+import {
+  describeEmailFailure,
+  type EmailService,
+  type RenderedEmail,
+} from '@/modules/auth/services/email.service';
 import type { ConfigService } from '@/modules/config';
 import { createEmailUnsubscribeToken } from './email-unsubscribe-token';
 import type { OptInEmailKind } from './opt-in-email-kind';
@@ -173,9 +177,7 @@ export abstract class OptInEmailDeliveryService<TContent> {
       );
       return true;
     } catch (error) {
-      // SMTP errors can quote the address, so only their name and reply code are logged
-      const code = (error as { responseCode?: unknown }).responseCode;
-      const reason = `${error instanceof Error ? error.name : 'unknown error'}${typeof code === 'number' ? ` ${code}` : ''}`;
+      const reason = describeEmailFailure(error);
       this.logger.warn(`${this.label} email for user ${due.userId} failed: ${reason}`);
       return false;
     }

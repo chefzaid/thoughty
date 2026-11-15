@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DataSource } from 'typeorm';
-import { Attachment, User } from '@/database/entities';
+import { DataSource, LessThanOrEqual } from 'typeorm';
+import { Attachment, SignUpRequest, User } from '@/database/entities';
 import { AttachmentsService, storedKeysOf } from '@/modules/attachments';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -46,6 +46,17 @@ export class AccountPurgeService {
       );
     }
     this.purgeAfterDays = days ?? DEFAULT_ACCOUNT_PURGE_AFTER_DAYS;
+  }
+
+  /**
+   * Deletes the sign-up requests whose link has expired (the address waiting for its account, and
+   * the password hash chosen with it); returns how many.
+   */
+  async purgeExpiredSignUps(now = new Date()): Promise<number> {
+    const { affected } = await this.dataSource
+      .getRepository(SignUpRequest)
+      .delete({ expiresAt: LessThanOrEqual(now) });
+    return affected ?? 0;
   }
 
   /** Purges, in batches, every account deleted longer ago than the grace period. */

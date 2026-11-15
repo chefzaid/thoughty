@@ -1,0 +1,47 @@
+/* The verify-first sign-up: "check your email" on the sign-up page, and the page its link opens */
+.sign-up-step {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.sign-up-step-text {
+    margin: 0;
+    color: #cbd5e1;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.auth-page.light .sign-up-step-text {
+    color: #334155;
+}
+
+.sign-up-step-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.sign-up-step-actions .auth-submit-btn {
+    width: 100%;
+}
+
+/* The light-theme indigo of the sign-up page's links reads below AA on the dark card */
+.sign-up-step-link {
+    background: none;
+    border: none;
+    padding: 0.25rem;
+    color: #a5b4fc;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+.sign-up-step-link:hover {
+    text-decoration: underline;
+}
+
+.auth-page.light .sign-up-step-link {
+    color: #4338ca;
+}

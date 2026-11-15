@@ -22,6 +22,19 @@ export function setRefreshTokenCookie(res: Response, refreshToken: string): void
   });
 }
 
+/** How the API docs describe a response that signs in. */
+export const REFRESH_COOKIE_NOTE = `Sets the httpOnly \`${REFRESH_TOKEN_COOKIE}\` refresh token cookie (path /api/auth).`;
+
+/** Moves a new session's refresh token into its cookie and returns the rest of the session. */
+export function startSession<T extends { refreshToken: string }>(
+  res: Response,
+  session: T,
+): Omit<T, 'refreshToken'> {
+  const { refreshToken, ...response } = session;
+  setRefreshTokenCookie(res, refreshToken);
+  return response;
+}
+
 export function clearRefreshTokenCookie(res: Response): void {
   res.clearCookie(REFRESH_TOKEN_COOKIE, cookieOptions());
 }

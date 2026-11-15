@@ -47,6 +47,7 @@ export const API_ERROR_MESSAGES = {
   AUTH_CURRENT_PASSWORD_INCORRECT: 'Current password is incorrect',
   AUTH_INVALID_RESET_TOKEN: 'Invalid or expired reset token',
   AUTH_INVALID_VERIFICATION_TOKEN: 'Invalid or expired verification token',
+  AUTH_INVALID_SIGN_UP_TOKEN: 'Invalid, expired, or already used sign-up link',
   EMAIL_DELIVERY_NOT_CONFIGURED: 'Email delivery is not configured.',
 
   // Two-factor authentication.

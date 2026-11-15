@@ -6,3 +6,4 @@ export * from './account.service';
 export * from './email-verification.service';
 export * from './two-factor.service';
 export * from './email.service';
+export * from './sign-up.service';

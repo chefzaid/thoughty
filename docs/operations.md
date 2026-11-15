@@ -111,7 +111,7 @@ The worker runs seven loops, never in API pods:
 | Monthly recap emails (on the 1st of each local month, at most one per writer and local month, skipped for a month with no entries and no past memory) | 60s | `Monthly recap email for user <id> failed: <error name> <SMTP reply code>` (not retried that month); `Sent <n> monthly recap emails` after a run that sent some |
 | Time capsules (opened at their local day and hour, emailed once to a verified address; capsules in the recycle bin wait until restored) | 60s | `Time capsule email for user <id> failed: <error name> <SMTP reply code>` (the capsule is open; the email is not retried); `Sent <n> time capsule emails` after a run that sent some |
 | Recycle-bin purge (deleted over 30 days, with files) | hourly | `Failed to empty expired recycle bin entries` |
-| Account purge (accounts deleted over `ACCOUNT_PURGE_AFTER_DAYS`, default 30) | hourly | `Failed to purge deleted account <id>` (retried next run) |
+| Account purge (accounts deleted over `ACCOUNT_PURGE_AFTER_DAYS`, default 30), after removing expired sign-up requests | hourly | `Failed to purge deleted account <id>` (retried next run); `Failed to remove expired sign-up requests` (the account purge still runs); `Removed <n> expired sign-up requests` |
 
 A sync lease older than 15 minutes is requeued on the next scan, or failed after 3 attempts. Inspect before changing data:
 
@@ -129,6 +129,17 @@ where tc.opened_at is null and tc.open_at <= now() and e.deleted_at is null limi
 ```
 
 Memoir, "On this day", monthly recap or time capsule rows that stay due mean the worker is down or failing (rows of deleted accounts stay due until the account purge removes them, and are never sent). The opt-in email logs carry only the user ID, never the address or entry text; an SMTP error's message is left out because it can quote the address. A capsule opens within a minute of its time, and the journal list shows it open from the next read on every API replica.
+
+## Email Delivery
+
+Production needs working SMTP (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`, in Vault `apps/thoughty/app`) for local accounts: sign-up is verify-first and only an emailed link creates the account ([Security](./security.md#authentication-and-sessions)), and password reset, verification resends and email 2FA send mail too. Without it, `POST /api/auth/register` answers `503 EMAIL_DELIVERY_NOT_CONFIGURED` for every address and the sign-up page shows "Email delivery is not set up on this server."; SSO, Google sign-in and existing accounts keep working. Outside production (`NODE_ENV` other than `production`) a server without SMTP signs new accounts in at once instead, for development.
+
+The API sends sign-up emails in the background, so a mail server that refuses them does not change the answer. Look for `Sign-up link email not sent: <error name> <SMTP reply code>` and `Sign-up notice email not sent: …` in the API logs; like the opt-in email logs they never carry the address or the link. A writer who gets no email can ask again from the "check your email" step once a minute (at most five emails per address until its request expires after 24 hours). Pending sign-ups are in `sign_up_requests`; a row without a `token_hash` belongs to an address that already has an account:
+
+```sql
+select email, token_hash is not null as pending, sent_count, last_sent_at, expires_at
+from sign_up_requests order by last_sent_at desc limit 20;
+```
 
 ## Backup and Recovery
 

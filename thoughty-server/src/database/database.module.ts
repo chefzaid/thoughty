@@ -33,6 +33,7 @@ import {
   TimeCapsule,
   ShareLink,
   ComposerDraft,
+  SignUpRequest,
 } from './entities';
 import { buildPostgresConnectionOptions } from './postgres-connection-options';
 import { buildPostgresPoolOptions } from './postgres-pool-options';
@@ -90,6 +91,7 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
           TimeCapsule,
           ShareLink,
           ComposerDraft,
+          SignUpRequest,
         ],
         extra: buildPostgresPoolOptions({
           POSTGRES_POOL_MAX: configService.get<string>('POSTGRES_POOL_MAX'),
@@ -133,6 +135,7 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
       TimeCapsule,
       ShareLink,
       ComposerDraft,
+      SignUpRequest,
     ]),
   ],
   exports: [TypeOrmModule],

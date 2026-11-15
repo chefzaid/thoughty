@@ -3,7 +3,7 @@ import { ConfigService as NestConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { isValidTimeZone } from '@/common/utils/time-zone.util';
 import { type Entry, TimeCapsule } from '@/database/entities';
-import { EmailService } from '@/modules/auth/services/email.service';
+import { describeEmailFailure, EmailService } from '@/modules/auth/services/email.service';
 import { ConfigService } from '@/modules/config';
 import { resolveEmailLanguage } from '@/modules/opt-in-email/opt-in-email-layout';
 import { buildTimeCapsuleEmail } from './time-capsule-email-content';
@@ -103,9 +103,7 @@ export class TimeCapsuleDeliveryService {
       );
       return true;
     } catch (error) {
-      // SMTP errors can quote the address, so only their name and reply code are logged
-      const code = (error as { responseCode?: unknown }).responseCode;
-      const reason = `${error instanceof Error ? error.name : 'unknown error'}${typeof code === 'number' ? ` ${code}` : ''}`;
+      const reason = describeEmailFailure(error);
       this.logger.warn(`Time capsule email for user ${capsule.userId} failed: ${reason}`);
       return false;
     }
