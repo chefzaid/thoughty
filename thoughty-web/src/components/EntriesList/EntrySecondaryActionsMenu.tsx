@@ -26,6 +26,8 @@ interface EntrySecondaryActionsMenuProps {
     onSummarize?: () => void;
     /** Copies the entry's text, tags and format into the new entry form. */
     onUseAsStartingPoint?: () => void;
+    /** Opens the dialog that moves this entry to another diary. */
+    onMoveToDiary?: () => void;
     onToggleArchived: () => void;
     onDelete: () => void;
     t: TranslationFn;
@@ -45,6 +47,7 @@ export default function EntrySecondaryActionsMenu({
     onToggleHistory,
     onSummarize,
     onUseAsStartingPoint,
+    onMoveToDiary,
     onToggleArchived,
     onDelete,
     t,
@@ -151,6 +154,11 @@ export default function EntrySecondaryActionsMenu({
         closeMenuForDialog();
         onUseAsStartingPoint?.();
     }, [closeMenuForDialog, onUseAsStartingPoint]);
+
+    const handleMoveToDiary = useCallback(() => {
+        closeMenuForDialog();
+        onMoveToDiary?.();
+    }, [closeMenuForDialog, onMoveToDiary]);
 
     const handleDelete = useCallback(() => {
         closeMenuForDialog();
@@ -287,6 +295,19 @@ export default function EntrySecondaryActionsMenu({
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2" />
                             </svg>
                             <span>{t('useAsStartingPoint')}</span>
+                        </MenuActionButton>
+                    )}
+                    {onMoveToDiary && (
+                        <MenuActionButton
+                            onClick={handleMoveToDiary}
+                            className={secondaryActionClass}
+                            title={t('moveToDiaryAction')}
+                        >
+                            <svg className="h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h4l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M10 13h6m-2-2l2 2-2 2" />
+                            </svg>
+                            <span>{t('moveToDiaryAction')}</span>
                         </MenuActionButton>
                     )}
                     <MenuActionButton

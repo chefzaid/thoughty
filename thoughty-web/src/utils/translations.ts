@@ -16,6 +16,7 @@ import { inlineImagesTranslations, type InlineImagesTranslationKey } from "./tra
 import { videoAttachmentsTranslations, type VideoAttachmentsTranslationKey } from "./translations.videoAttachments";
 import { printTranslations, type PrintTranslationKey } from "./translations.print";
 import { rereadReminderTranslations, type RereadReminderTranslationKey } from "./translations.rereadReminder";
+import { moveToDiaryTranslations, type MoveToDiaryTranslationKey } from "./translations.moveToDiary";
 import { personDatesTranslations, type PersonDatesTranslationKey } from "./translations.personDates";
 import { focusModeTranslations, type FocusModeTranslationKey } from "./translations.focusMode";
 import { dictationTranslations, type DictationTranslationKey } from "./translations.dictation";
@@ -83,6 +84,7 @@ export type TranslationKey =
   | VideoAttachmentsTranslationKey
   | PrintTranslationKey
   | RereadReminderTranslationKey
+  | MoveToDiaryTranslationKey
   | PersonDatesTranslationKey
   | FocusModeTranslationKey
   | DictationTranslationKey
@@ -155,6 +157,7 @@ export const translations: Translations = {
     ...videoAttachmentsTranslations.en,
     ...printTranslations.en,
     ...rereadReminderTranslations.en,
+    ...moveToDiaryTranslations.en,
     ...personDatesTranslations.en,
     ...focusModeTranslations.en,
     ...dictationTranslations.en,
@@ -220,6 +223,7 @@ export const translations: Translations = {
     ...videoAttachmentsTranslations.fr,
     ...printTranslations.fr,
     ...rereadReminderTranslations.fr,
+    ...moveToDiaryTranslations.fr,
     ...personDatesTranslations.fr,
     ...focusModeTranslations.fr,
     ...dictationTranslations.fr,

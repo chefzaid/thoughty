@@ -7,7 +7,7 @@ import { normalizeEntriesPerPage, type Config, type Entry, type ImportExportForm
 import type AuthenticatedAppLayout from '../routes/AuthenticatedAppLayout';
 import type AuthenticatedRoutes from '../routes/AuthenticatedRoutes';
 import type { DuplicateEntryScan, RephraseMode, SummaryGuidance } from '../services/api/aiService';
-import { buildEntryPermalink } from './appRouting';
+import { buildEntriesListProps } from './entriesListProps';
 import { createEntryTemplate, getEntryTemplates, serializeCustomEntryTemplates, type EntryTemplateDraft } from './entryTemplates';
 import { listKnownTags, type TagMetadataMap } from './tagMetadata';
 
@@ -55,19 +55,21 @@ interface BuildAuthenticatedLayoutPropsParams {
   userName: string;
 }
 
-interface BuildAuthenticatedRoutesPropsParams {
+export interface BuildAuthenticatedRoutesPropsParams {
   bulkSelectState: Pick<BulkSelectState, 'bulkMode' | 'clearSelection' | 'requestBulkAction' | 'selectedIds' | 'selectAll' | 'toggleBulkMode' | 'toggleSelect'>;
   config: Config;
   deleteModalState: Pick<DeleteModalState, 'handleDelete'>;
   diariesState: Pick<DiariesState, 'currentDiaryId' | 'diaries' | 'fetchDiaries' | 'handleCreateDiary' | 'handleDeleteDiary' | 'handleReorderDiaries' | 'handleSetDefaultDiary' | 'handleUpdateDiary'>;
   downloadUserData: AuthenticatedRoutesProps['profileRouteProps']['onDownloadData'];
   entriesState: Pick<EntriesState, 'activeTargetId' | 'allTags' | 'availableMonths' | 'availableYears' | 'backlinksVersion' | 'deleteRevision' | 'entries' | 'fetchEntries' | 'fetchEntryBacklinks' | 'fetchEntryHistory' | 'filterArchiveStatus' | 'filterDateObj' | 'filterEraId' | 'filterFavorites' | 'filterMood' | 'filterPersonId' | 'filterTags' | 'filterVisibility' | 'groupedEntries' | 'inputPage' | 'listQuery' | 'loading' | 'page' | 'rankedResults' | 'reorderEntries' | 'runSemanticSearch' | 'search' | 'searchMode' | 'searchSort' | 'semanticSearchResult' | 'semanticSearchStatus' | 'setEntryTask' | 'setFilterArchiveStatus' | 'setFilterDateObj' | 'setFilterEraId' | 'setFilterFavorites' | 'setFilterMood' | 'setFilterPersonId' | 'setFilterTags' | 'setFilterVisibility' | 'setInputPage' | 'setPage' | 'setSearch' | 'setSearchMode' | 'setSearchSort' | 'sourceEntry' | 'targetEntryId' | 'toggleArchived' | 'toggleFavorite' | 'togglePinned' | 'toggleVisibility' | 'totalPages' | 'unsealEntry'>;
-  entryEditState: Pick<EntryEditState, 'addEditPendingFile' | 'editDate' | 'editExistingAttachments' | 'editFeelings' | 'editFormat' | 'editMood' | 'editPendingFiles' | 'editTags' | 'editText' | 'editTimeOfDay' | 'editTitle' | 'editVisibility' | 'editingEntry' | 'handleCancelEdit' | 'handleEdit' | 'handleSaveEdit' | 'removeEditAttachment' | 'removeEditPendingFile' | 'setEditDate' | 'setEditFeelings' | 'setEditFormat' | 'setEditMood' | 'setEditTags' | 'setEditText' | 'setEditTimeOfDay' | 'setEditTitle' | 'setEditVisibility'>;
+  entryEditState: Pick<EntryEditState, 'addEditPendingFile' | 'editDate' | 'editDiaryId' | 'editExistingAttachments' | 'editFeelings' | 'editFormat' | 'editMood' | 'editPendingFiles' | 'editTags' | 'editText' | 'editTimeOfDay' | 'editTitle' | 'editVisibility' | 'editingEntry' | 'handleCancelEdit' | 'handleEdit' | 'handleSaveEdit' | 'removeEditAttachment' | 'removeEditPendingFile' | 'setEditDate' | 'setEditDiaryId' | 'setEditFeelings' | 'setEditFormat' | 'setEditMood' | 'setEditTags' | 'setEditText' | 'setEditTimeOfDay' | 'setEditTitle' | 'setEditVisibility'>;
   entryFormState: Pick<EntryFormState, 'addPendingFile' | 'feelings' | 'fixingWriting' | 'formError' | 'format' | 'handleFixWriting' | 'handleSubmit' | 'handleSuggestTags' | 'mood' | 'newEntryText' | 'pendingFiles' | 'removePendingFile' | 'removeUploadedAttachment' | 'savedEntry' | 'selectedDate' | 'setFeelings' | 'setFormat' | 'setMood' | 'setNewEntryText' | 'setSelectedDate' | 'setTags' | 'setTimeCapsule' | 'setTimeOfDay' | 'setTitle' | 'setVisibility' | 'suggestingTags' | 'tags' | 'timeCapsule' | 'timeOfDay' | 'title' | 'uploadedAttachments' | 'visibility'>;
   entryNavigationState: Pick<EntryNavigationState, 'handleBackToSource' | 'handleNavigateToEntry' | 'handleOpenEntryInList' | 'handleShareEntry'>;
   handleDiscuss: (entry: Entry) => void;
   handleRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
   handleSummarize?: (entryId: number, guidance: SummaryGuidance) => Promise<string | null>;
+  /** Moves one entry to another diary; resolves `false` when it could not. */
+  handleMoveToDiary?: (entry: Entry, diaryId: number, closeAsker?: () => void) => Promise<boolean>;
   handleGetInspiration?: () => Promise<string | null>;
   handleFindDuplicateEntries: (diaryId?: number) => Promise<DuplicateEntryScan | null>;
   handleNavigateToFirst: AuthenticatedRoutesProps['journalRouteProps']['yearMonthNavigator']['onNavigate'];
@@ -150,6 +152,7 @@ export function buildAuthenticatedRoutesProps({
   handleDiscuss,
   handleRephrase,
   handleSummarize,
+  handleMoveToDiary,
   handleGetInspiration,
   handleFindDuplicateEntries,
   handleNavigateToFirst,
@@ -397,71 +400,20 @@ export function buildAuthenticatedRoutesProps({
         tagMetadata,
         setPage: entriesState.setPage,
       },
-      entriesList: {
-        loading: entriesState.loading,
-        entries: entriesState.entries,
-        groupedEntries: entriesState.groupedEntries,
-        rankedOrder: entriesState.rankedResults,
-        onEdit: entryEditState.handleEdit,
-        onDelete: deleteModalState.handleDelete,
-        onToggleVisibility: entriesState.toggleVisibility,
-        onToggleFavorite: entriesState.toggleFavorite,
-        onToggleArchived: entriesState.toggleArchived,
-        onTogglePinned: entriesState.togglePinned,
-        onToggleTask: entriesState.setEntryTask,
-        onUnseal: entriesState.unsealEntry,
-        editingEntry: entryEditState.editingEntry,
-        editText: entryEditState.editText,
-        setEditText: entryEditState.setEditText,
-        editTitle: entryEditState.editTitle,
-        setEditTitle: entryEditState.setEditTitle,
-        editTimeOfDay: entryEditState.editTimeOfDay,
-        setEditTimeOfDay: entryEditState.setEditTimeOfDay,
-        editMood: entryEditState.editMood,
-        setEditMood: entryEditState.setEditMood,
-        editFeelings: entryEditState.editFeelings,
-        setEditFeelings: entryEditState.setEditFeelings,
-        editTags: entryEditState.editTags,
-        setEditTags: entryEditState.setEditTags,
-        editDate: entryEditState.editDate,
-        setEditDate: entryEditState.setEditDate,
-        editVisibility: entryEditState.editVisibility,
-        setEditVisibility: entryEditState.setEditVisibility,
-        editFormat: entryEditState.editFormat,
-        setEditFormat: entryEditState.setEditFormat,
-        allTags: knownTags,
+      entriesList: buildEntriesListProps({
+        bulkSelectState,
+        deleteModalState,
+        diariesState,
+        entriesState,
+        entryEditState,
+        entryNavigationState,
+        handleDiscuss,
+        handleMoveToDiary,
+        handleRephrase,
+        handleSummarize,
+        knownTags,
         tagMetadata,
-        onSaveEdit: entryEditState.handleSaveEdit,
-        onCancelEdit: entryEditState.handleCancelEdit,
-        editPendingFiles: entryEditState.editPendingFiles,
-        editExistingAttachments: entryEditState.editExistingAttachments,
-        onAddEditFile: entryEditState.addEditPendingFile,
-        onRemoveEditPendingFile: entryEditState.removeEditPendingFile,
-        onRemoveEditAttachment: entryEditState.removeEditAttachment,
-        onNavigateToEntry: entryNavigationState.handleNavigateToEntry,
-        onShareEntry: entryNavigationState.handleShareEntry,
-        getEntryPermalink: buildEntryPermalink,
-        sourceEntry: entriesState.sourceEntry,
-        targetEntryId: entriesState.targetEntryId,
-        activeTargetId: entriesState.activeTargetId,
-        onBackToSource: entryNavigationState.handleBackToSource,
-        bulkMode: bulkSelectState.bulkMode,
-        selectedIds: bulkSelectState.selectedIds,
-        onToggleSelect: bulkSelectState.toggleSelect,
-        onSelectAll: bulkSelectState.selectAll,
-        onClearSelection: bulkSelectState.clearSelection,
-        onBulkAction: bulkSelectState.requestBulkAction,
-        onToggleBulkMode: bulkSelectState.toggleBulkMode,
-        diaries: diariesState.diaries,
-        onFetchHistory: entriesState.fetchEntryHistory,
-        onFetchBacklinks: entriesState.fetchEntryBacklinks,
-        backlinksVersion: entriesState.backlinksVersion,
-        onDeleteRevision: entriesState.deleteRevision,
-        onReorderEntries: entriesState.reorderEntries,
-        onDiscuss: handleDiscuss,
-        onRephrase: handleRephrase,
-        onSummarize: handleSummarize,
-      },
+      }),
       pagination: {
         page: entriesState.page,
         totalPages: entriesState.totalPages,

@@ -135,7 +135,9 @@ describe('useAppShellModel', () => {
 
     const notifier = expect.objectContaining({ notify: expect.any(Function), t, language: 'en' });
     expect(mocks.useEntries).toHaveBeenCalledWith(true, expect.anything(), expect.anything(), notifier, expect.anything());
-    expect(mocks.useEntryEdit).toHaveBeenCalledWith(expect.anything(), expect.any(Function), notifier);
+    // The editor moves an entry through the same move as the entry's menu, which the journal list gets too
+    expect(mocks.useEntryEdit).toHaveBeenCalledWith(expect.anything(), expect.any(Function), notifier, expect.any(Function));
+    expect(mocks.buildAuthenticatedRoutesProps).toHaveBeenCalledWith(expect.objectContaining({ handleMoveToDiary: expect.any(Function) }));
     expect(mocks.useDeleteModal).toHaveBeenCalledWith(expect.any(Function), notifier);
     expect(mocks.useBulkSelect).toHaveBeenCalledWith(expect.any(Function), expect.anything(), notifier, expect.any(Function), offerDeleteUndo);
     expect(mocks.useDeleteUndo).toHaveBeenCalledWith(expect.any(Function), notifier);

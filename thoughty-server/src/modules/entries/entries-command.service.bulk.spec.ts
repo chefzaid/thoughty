@@ -130,6 +130,21 @@ describe('EntriesCommandService', () => {
       .rejects.toThrow(BadRequestException);
   });
 
+  // The journal moves one entry from its menu or its editor through this same operation
+  it('moves a single entry by changing only its diary, and only to a diary of the writer', async () => {
+    entryRepository.find.mockResolvedValue([{ id: 4, userId: 9, diaryId: 1, visibility: 'public', tags: [] }]);
+    entryRepository.update.mockResolvedValue({ affected: 1 });
+    diaryRepository.findOne.mockResolvedValueOnce({ id: 2, userId: 9 }).mockResolvedValueOnce(null);
+
+    await expect(service.bulkOperation(9, { ids: [4], action: 'move', diaryId: 2 }))
+      .resolves.toEqual({ success: true, affectedCount: 1 });
+    expect(diaryRepository.findOne).toHaveBeenCalledWith({ where: { id: 2, userId: 9 } });
+    expect(entryRepository.update).toHaveBeenCalledWith({ id: expect.anything(), userId: 9 }, { diaryId: 2 });
+
+    await expectApiError(service.bulkOperation(9, { ids: [4], action: 'move', diaryId: 3 }), NotFoundException, 'DIARY_NOT_FOUND');
+    expect(entryRepository.update).toHaveBeenCalledTimes(1);
+  });
+
   it('throws when bulk operation does not match any entries', async () => {
     entryRepository.find.mockResolvedValue([]);
 

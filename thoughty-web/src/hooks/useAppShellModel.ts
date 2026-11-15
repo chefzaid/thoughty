@@ -9,6 +9,7 @@ import { useAppShellEffects } from './useAppShellEffects';
 import { useAppShellRouting } from './useAppShellRouting';
 import { useDeleteUndo } from './useDeleteUndo';
 import { useEntryNavigation } from './useEntryNavigation';
+import { useMoveToDiary } from './useMoveToDiary';
 import {
   useApiServices,
   useBulkSelect,
@@ -113,17 +114,12 @@ export function useAppShellModel(): AppShellModel {
     void refreshEntryQueries();
   });
 
-  // An edit can add or remove links as well
-  const entryEditState = useEntryEdit(config, useCallback(() => {
-    refreshBacklinks();
-    void fetchEntries();
-  }, [fetchEntries, refreshBacklinks]), notifier);
-
   // Every view measured from the entries (list, calendar, writing streak, backlinks) reads them again
   const refreshEntryViews = useCallback(() => {
     refreshBacklinks();
     void refreshEntryQueries();
   }, [refreshBacklinks, refreshEntryQueries]);
+
 
   // An undone delete brings the entries back to every view measured from them
   const offerDeleteUndo = useDeleteUndo(refreshEntryViews, notifier);
@@ -210,6 +206,25 @@ export function useAppShellModel(): AppShellModel {
     searchParams,
     setCurrentDiaryId,
   });
+
+  // A moved entry leaves the views that follow its old diary and joins those of the new one
+  const moveToDiary = useMoveToDiary({
+    diaries: diariesState.diaries,
+    currentDiaryId,
+    onMoved: refreshEntryViews,
+    notifier,
+    onShowDiary: routingState.handleDiaryChange,
+  });
+  const moveEntryToDiary = useCallback(
+    (entry: Entry, diaryId: number, closeAsker?: () => void) => moveToDiary(entry.id, diaryId, closeAsker),
+    [moveToDiary],
+  );
+
+  // An edit can add or remove links as well
+  const entryEditState = useEntryEdit(config, useCallback(() => {
+    refreshBacklinks();
+    void fetchEntries();
+  }, [fetchEntries, refreshBacklinks]), notifier, moveToDiary);
 
   const quickCapture = useAppQuickCapture({
     entriesService: entriesState.entriesService,
@@ -346,6 +361,7 @@ export function useAppShellModel(): AppShellModel {
     handleDiscuss,
     handleRephrase,
     handleSummarize,
+    handleMoveToDiary: moveEntryToDiary,
     handleGetInspiration,
     handleFindDuplicateEntries,
     handleNavigateToFirst,

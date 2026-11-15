@@ -3,7 +3,7 @@ import TagPicker from '../TagPicker/TagPicker';
 import AttachmentUpload from '../AttachmentUpload/AttachmentUpload';
 import TypedDatePicker from '../TypedDatePicker/TypedDatePicker';
 import VisibilityIcon from '../VisibilityIcon/VisibilityIcon';
-import type { Attachment, Config, TranslationFunction as TranslationFn } from '../../types';
+import type { Attachment, Config, Diary, TranslationFunction as TranslationFn } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import { getEditFormatButtonClass, getVisibilityButtonClass } from './EntriesList.utils';
 import { entryTextStyle } from '../../types/config';
@@ -18,6 +18,7 @@ import { useMentionAutocomplete } from '../People/useMentionAutocomplete';
 import { resolveLanguage } from '../../utils/language';
 import { useInlineImageInsert } from '../InlineImages/useInlineImageInsert';
 import { useDictationField } from '../Dictation/useDictationField';
+import EntryDiaryField from './EntryDiaryField';
 
 const LazyMDEditor = lazy(() => import('../MarkdownEditor/MarkdownEditor'));
 
@@ -156,6 +157,10 @@ interface EditFormProps {
     setEditVisibility: Dispatch<SetStateAction<'public' | 'private'>>;
     editFormat: 'plain' | 'markdown';
     setEditFormat: Dispatch<SetStateAction<'plain' | 'markdown'>>;
+    /** The writer's diaries, and the diary the editor puts the entry in (`null`: the default diary). */
+    diaries?: readonly Diary[];
+    editDiaryId?: number | null;
+    setEditDiaryId?: Dispatch<SetStateAction<number | null>>;
     editPendingFiles?: File[];
     editExistingAttachments?: Attachment[];
     onAddEditFile?: (file: File) => void;
@@ -189,6 +194,9 @@ export function EditForm({
     setEditVisibility,
     editFormat,
     setEditFormat,
+    diaries = [],
+    editDiaryId = null,
+    setEditDiaryId,
     editPendingFiles,
     editExistingAttachments,
     onAddEditFile,
@@ -319,6 +327,16 @@ export function EditForm({
                         onChange={setEditTimeOfDay}
                         inputClass={`border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${inputClass}`}
                         theme={config.theme}
+                        t={t}
+                    />
+                )}
+                {setEditDiaryId && (
+                    <EntryDiaryField
+                        id={`${fieldId}-diary`}
+                        diaries={diaries}
+                        value={editDiaryId}
+                        onChange={setEditDiaryId}
+                        selectClass={`border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${inputClass}`}
                         t={t}
                     />
                 )}

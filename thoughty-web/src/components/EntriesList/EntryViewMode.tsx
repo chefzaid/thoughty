@@ -2,7 +2,7 @@ import { useState as useLocalState } from 'react';
 import ListenButton from '../ListenButton/ListenButton';
 import type { SpeechEntry } from '../../hooks/useSpeech';
 import type { RephraseMode, SummaryGuidance } from '../../services/api/aiService';
-import type { Config, Entry, EntryBacklink, EntryRevision, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
+import type { Config, Diary, Entry, EntryBacklink, EntryRevision, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
 import { resolveLanguage } from '../../utils/language';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import { mutedTextClass } from '../../utils/tintedText';
@@ -27,6 +27,7 @@ import PrintEntriesDialog from '../PrintSheet/PrintEntriesDialog';
 import RereadReminderDialog from '../RereadReminder/RereadReminderDialog';
 import RereadReminderBadge from '../RereadReminder/RereadReminderBadge';
 import { canReplyToEntry, replyLabel } from './entryReply';
+import MoveToDiaryDialog from './MoveToDiaryDialog';
 
 
 interface EntryViewModeProps {
@@ -66,6 +67,10 @@ interface EntryViewModeProps {
     onUseAsStartingPoint?: (entry: Entry) => void;
     /** Opens the new entry form on a reply: a short quote of the entry and a link to it. */
     onReply?: (entry: Entry) => void;
+    /** Moves an entry to another diary, closing the dialog that asked once it moved; resolves `false` when it could not. */
+    onMoveToDiary?: (entry: Entry, diaryId: number, closeAsker?: () => void) => Promise<boolean>;
+    /** The writer's diaries; with two or more, the entry can move between them. */
+    diaries?: readonly Diary[];
     searchTerm?: string;
     showDiaryLabel: boolean;
     tagMetadata: TagMetadataMap;
@@ -75,7 +80,8 @@ interface EntryViewModeProps {
 /** The actions an entry list hands to each of its cards as they are. */
 export type EntryCardActions = Pick<EntryViewModeProps,
     'onToggleTask' | 'onUnseal' | 'onShareEntry' | 'getEntryPermalink' | 'onFetchHistory' | 'onFetchBacklinks'
-    | 'backlinksVersion' | 'onDeleteRevision' | 'onDiscuss' | 'onRephrase' | 'onSummarize' | 'onUseAsStartingPoint' | 'onReply'>;
+    | 'backlinksVersion' | 'onDeleteRevision' | 'onDiscuss' | 'onRephrase' | 'onSummarize' | 'onUseAsStartingPoint' | 'onReply'
+    | 'onMoveToDiary'>;
 
 /** An entry card's content: a sealed time capsule shows only its placeholder, any other entry all of itself. */
 export default function EntryViewMode(props: Readonly<EntryViewModeProps>) {
@@ -124,6 +130,8 @@ function OpenEntryViewMode({
     onSummarize,
     onUseAsStartingPoint,
     onReply,
+    onMoveToDiary,
+    diaries = [],
     searchTerm,
     showDiaryLabel,
     tagMetadata,
@@ -134,6 +142,7 @@ function OpenEntryViewMode({
     const [sharePrivatelyOpen, setSharePrivatelyOpen] = useLocalState(false);
     const [printOpen, setPrintOpen] = useLocalState(false);
     const [rereadOpen, setRereadOpen] = useLocalState(false);
+    const [moveOpen, setMoveOpen] = useLocalState(false);
     const isDark = config.theme !== 'light';
     const archiveActionLabel = entry.is_archived ? t('unarchive') : t('archive');
     const entryPermalink = getEntryPermalink?.(entry.id);
@@ -275,6 +284,7 @@ function OpenEntryViewMode({
                         onToggleHistory={onFetchHistory ? handleToggleHistory : undefined}
                         onSummarize={onSummarize ? () => setSummaryOpen(true) : undefined}
                         onUseAsStartingPoint={onUseAsStartingPoint ? () => onUseAsStartingPoint(entry) : undefined}
+                        onMoveToDiary={onMoveToDiary && diaries.length > 1 ? () => setMoveOpen(true) : undefined}
                         onToggleArchived={() => onToggleArchived(entry)}
                         onDelete={() => onDelete(entry.id)}
                         t={t}
@@ -334,6 +344,17 @@ function OpenEntryViewMode({
                     isDark={isDark}
                     language={resolveLanguage(config.language)}
                     onClose={() => setRereadOpen(false)}
+                    t={t}
+                />
+            )}
+            {moveOpen && onMoveToDiary && (
+                <MoveToDiaryDialog
+                    entry={entry}
+                    diaries={diaries}
+                    isDark={isDark}
+                    language={resolveLanguage(config.language)}
+                    onMove={(diaryId) => onMoveToDiary(entry, diaryId, () => setMoveOpen(false))}
+                    onClose={() => setMoveOpen(false)}
                     t={t}
                 />
             )}

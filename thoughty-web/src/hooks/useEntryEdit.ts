@@ -6,8 +6,13 @@ import { cleanEntryTitle } from '../utils/entryTime';
 import { useApiServices } from './useApiServices';
 import { storePlacedFiles } from '../utils/inlineImages';
 import type { Notifier } from './useAppNotice';
+import type { MoveToDiary } from './useMoveToDiary';
 
-export const useEntryEdit = (config: Config, onSave: () => void, { notify, t }: Notifier) => {
+/**
+ * The entry editor's state and save. `moveToDiary` moves the entry when the editor chose another diary for it,
+ * after its changes are saved, through the same move as the entry's **Move to diary** (it says where it went).
+ */
+export const useEntryEdit = (config: Config, onSave: () => void, { notify, t }: Notifier, moveToDiary?: MoveToDiary) => {
   const { entriesService, attachmentsService } = useApiServices();
   const autoTagLimit = getAutoTagLimit(config.autoTagMaxTags);
 
@@ -21,6 +26,7 @@ export const useEntryEdit = (config: Config, onSave: () => void, { notify, t }: 
   const [editDate, setEditDate] = useState<Date | null>(null);
   const [editVisibility, setEditVisibility] = useState<'public' | 'private'>('private');
   const [editFormat, setEditFormat] = useState<'plain' | 'markdown'>('plain');
+  const [editDiaryId, setEditDiaryId] = useState<number | null>(null);
   const [editPendingFiles, setEditPendingFiles] = useState<File[]>([]);
   const [editExistingAttachments, setEditExistingAttachments] = useState<Attachment[]>([]);
 
@@ -34,6 +40,7 @@ export const useEntryEdit = (config: Config, onSave: () => void, { notify, t }: 
     setEditTags(entry.tags || []);
     setEditVisibility(entry.visibility || 'private');
     setEditFormat(entry.format || 'plain');
+    setEditDiaryId(entry.diary_id ?? null);
     setEditPendingFiles([]);
     setEditExistingAttachments(entry.attachments || []);
     let dateStr = entry.date;
@@ -55,6 +62,7 @@ export const useEntryEdit = (config: Config, onSave: () => void, { notify, t }: 
     setEditDate(null);
     setEditVisibility('private');
     setEditFormat('plain');
+    setEditDiaryId(null);
     setEditPendingFiles([]);
     setEditExistingAttachments([]);
   }, []);
@@ -102,9 +110,17 @@ export const useEntryEdit = (config: Config, onSave: () => void, { notify, t }: 
       }
     }
 
+    // The changes are saved whatever happens to the move, which says itself where the entry went
+    if (moveToDiary && editDiaryId !== null && editDiaryId !== (editingEntry.diary_id ?? null)) {
+      const moved = await moveToDiary(entryId, editDiaryId);
+      if (!moved) {
+        notify(t('entrySavedNotMoved'));
+      }
+    }
+
     handleCancelEdit();
     onSave();
-  }, [attachmentsService, autoTagLimit, editDate, editExistingAttachments, editFeelings, editFormat, editMood, editPendingFiles, editTags, editText, editTimeOfDay, editTitle, editVisibility, editingEntry, entriesService, handleCancelEdit, notify, onSave, t]);
+  }, [attachmentsService, autoTagLimit, editDate, editDiaryId, editExistingAttachments, editFeelings, editFormat, editMood, editPendingFiles, editTags, editText, editTimeOfDay, editTitle, editVisibility, editingEntry, entriesService, handleCancelEdit, moveToDiary, notify, onSave, t]);
 
   const addEditPendingFile = useCallback((file: File) => {
     setEditPendingFiles((prev) => [...prev, file]);
@@ -138,6 +154,8 @@ export const useEntryEdit = (config: Config, onSave: () => void, { notify, t }: 
     setEditVisibility,
     editFormat,
     setEditFormat,
+    editDiaryId,
+    setEditDiaryId,
     handleEdit,
     handleCancelEdit,
     handleSaveEdit,

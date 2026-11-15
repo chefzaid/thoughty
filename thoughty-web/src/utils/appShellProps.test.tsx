@@ -144,6 +144,7 @@ describe('appShellProps', () => {
       entryEditState: {
         addEditPendingFile: vi.fn(),
         editDate: null,
+        editDiaryId: null,
         editExistingAttachments: [],
         editFeelings: [],
         editFormat: 'plain',
@@ -161,6 +162,7 @@ describe('appShellProps', () => {
         removeEditAttachment: vi.fn(),
         removeEditPendingFile: vi.fn(),
         setEditDate: vi.fn(),
+        setEditDiaryId: vi.fn(),
         setEditFeelings: vi.fn(),
         setEditFormat: vi.fn(),
         setEditMood: vi.fn(),

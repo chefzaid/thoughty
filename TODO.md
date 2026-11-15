@@ -167,7 +167,7 @@ Parts of tasks that cannot advance without the owner's decision or information. 
 - [x] Composable filtering: full-text search, multi-tag, date, visibility, archive state, and diary scope can all be combined
 - [x] Multiple diaries across all features, with reordering (drag or keyboard), renaming, emoji icons, accent colors, per-diary default visibility, and a configurable default diary
 - [x] Safe diary deletion: entries move to the default diary, and the default diary itself cannot be deleted
-- [ ] Move a single entry to another diary from the entry itself (a **Move to diary** choice in the entry's **More actions** and a diary picker in the editor). Today an entry can only change diary through the journal's bulk selection (**Move to diary** in the bulk action bar).
+- [x] Move a single entry to another diary from the entry itself: **Move to diary…** in the entry's **More actions** opens an accessible diary picker, and the editor has a **Diary** field; both use the bulk move with the one entry, so only the diary changes, and a toast says where it went (and that it left the diary shown)
 - [ ] An entry in two or more diaries at once (e.g. a trip entry in both "Travel" and "Family"): it shows in each diary's journal, stats, books and exports without being copied, keeps one text, history and set of attachments, and is only deleted or moved to the recycle bin from all of them together. Needs a decision on which diary owns its default visibility, how the diary filter and per-diary goals count it, and what deleting one of its diaries does (an ADR, replacing `entries.diary_id` with a link table).
 
 ## Profile, Settings & Auth

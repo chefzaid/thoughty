@@ -53,6 +53,8 @@ interface EntriesListProps extends EntryCardActions {
     setEditVisibility: Dispatch<SetStateAction<'public' | 'private'>>;
     editFormat: 'plain' | 'markdown';
     setEditFormat: Dispatch<SetStateAction<'plain' | 'markdown'>>;
+    editDiaryId?: number | null;
+    setEditDiaryId?: Dispatch<SetStateAction<number | null>>;
     allTags: string[];
     tagMetadata?: TagMetadataMap;
     onSaveEdit: () => void;
@@ -111,6 +113,8 @@ function EntriesList({
     setEditVisibility,
     editFormat,
     setEditFormat,
+    editDiaryId,
+    setEditDiaryId,
     allTags,
     tagMetadata = {},
     onSaveEdit,
@@ -410,6 +414,9 @@ function EntriesList({
                                                     setEditVisibility={setEditVisibility}
                                                     editFormat={editFormat}
                                                     setEditFormat={setEditFormat}
+                                                    diaries={diaries}
+                                                    editDiaryId={editDiaryId}
+                                                    setEditDiaryId={setEditDiaryId}
                                                     editPendingFiles={editPendingFiles}
                                                     editExistingAttachments={editExistingAttachments}
                                                     onAddEditFile={onAddEditFile}
@@ -440,6 +447,7 @@ function EntriesList({
                                                     onNavigateToEntry={onNavigateToEntry}
                                                     onBackToSource={onBackToSource}
                                                     {...cardActions}
+                                                    diaries={diaries}
                                                     searchTerm={searchTerm}
                                                     showDiaryLabel={showDiaryAccent}
                                                     tagMetadata={tagMetadata}
