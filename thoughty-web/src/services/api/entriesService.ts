@@ -1,6 +1,6 @@
 import { readApiErrorMessage, safeJsonParse } from './base';
-import type { Entry, EntryBacklink, EntriesResponse, EntryRevision } from '../../types';
-import { entryListParams, type EntryListQuery } from './entryListQuery';
+import type { Entry, EntryBacklink, EntriesBatch, EntryRevision } from '../../types';
+import { entryBatchParams, entryListParams, type EntryBatchPosition, type EntryListQuery } from './entryListQuery';
 import type { components, paths } from '../../generated/openapi';
 
 type CreateEntryRequestDto = components['schemas']['CreateEntryDto'];
@@ -36,19 +36,29 @@ interface CreateEntryInput {
 
 export const createEntriesService = (authFetch: (url: string, options?: RequestInit) => Promise<Response>) => {
   /**
-   * Fetch entries with filters and pagination
+   * A batch of the journal list with its filters: from the start, after or before a cursor, or around an entry.
+   * `notFound` when the filters leave out the entry to open around; null when the list could not be read.
    */
-  const fetchEntries = async (params: EntryListQuery): Promise<EntriesResponse | null> => {
+  const fetchEntries = async (
+    params: EntryListQuery,
+    limit: number,
+    position: EntryBatchPosition = {},
+  ): Promise<EntriesBatch | 'notFound' | null> => {
     try {
-      const urlParams = entryListParams(params);
-      const response = await authFetch(`/api/entries?${urlParams}`);
+      const response = await authFetch(`/api/entries?${entryBatchParams(params, limit, position)}`);
+      if (response.status === 404 && 'around' in position) {
+        return 'notFound';
+      }
       const data = await safeJsonParse<EntriesListApiResponse>(response);
 
       if (response.ok && data) {
         return {
           entries: (data.entries as Entry[]) || [],
-          totalPages: data.totalPages || 1,
-          allTags: data.allTags || []
+          total: data.total ?? 0,
+          offset: data.offset ?? 0,
+          nextCursor: data.nextCursor ?? null,
+          prevCursor: data.prevCursor ?? null,
+          allTags: data.allTags || [],
         };
       }
       return null;
@@ -176,19 +186,19 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
   };
 
   /**
-   * Navigate to first entry of a year/month
+   * The first entry of a year or month among the journal filters, to open the list around
    */
   const navigateToFirst = async (
     year: number,
     month: number | null,
-    limit: number
+    filters: EntryListQuery,
   ): Promise<NavigateToFirstResponse | null> => {
     try {
-      const params = new URLSearchParams({
-        year: year.toString(),
-        limit: limit.toString()
-      });
-      if (month) params.append('month', month.toString());
+      // A day filter has no say in which month to open
+      const params = entryListParams(filters);
+      params.delete('date');
+      params.set('year', year.toString());
+      if (month) params.set('month', month.toString());
 
       const response = await authFetch(`/api/entries/first?${params}`);
       return safeJsonParse<NavigateToFirstResponse>(response);
@@ -199,36 +209,16 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
   };
 
   /**
-   * Navigate to entry by date and index
+   * The entry a cross-reference names, by its date and same-day index
    */
   const navigateByDate = async (
     date: string,
     index: number,
-    limit: number
   ): Promise<NavigateByDateResponse | null> => {
     try {
       const params = new URLSearchParams({
         date,
         index: index.toString(),
-        limit: limit.toString()
-      });
-
-      const response = await authFetch(`/api/entries/by-date?${params}`);
-      return safeJsonParse<NavigateByDateResponse>(response);
-    } catch (error) {
-      console.error('Error navigating to entry:', error);
-      return null;
-    }
-  };
-
-  /**
-   * Navigate to entry by ID
-   */
-  const navigateById = async (id: number, limit: number): Promise<NavigateByDateResponse | null> => {
-    try {
-      const params = new URLSearchParams({
-        id: id.toString(),
-        limit: limit.toString()
       });
 
       const response = await authFetch(`/api/entries/by-date?${params}`);
@@ -466,7 +456,6 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     deleteTag,
     navigateToFirst,
     navigateByDate,
-    navigateById,
     fetchYearsMonths,
     fetchEntryHistory,
     fetchEntryBacklinks,

@@ -5,14 +5,10 @@ import {
   POSTGRES_SETUP_TIMEOUT_MS,
   type PostgresTestDatabase,
 } from '@/database/postgres-test-database.test-helpers';
-import { Entry, EntryRevision, User } from '@/database/entities';
-import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
-import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
-import { personDatesServiceOn } from '@/modules/people/person-dates.test-helpers';
+import { Entry, User } from '@/database/entities';
 import type { EntriesListResponseDto, GetEntriesQueryDto } from './dto';
-import { EntriesQueryService } from './entries-query.service';
 import { EntryListCacheService } from './entry-list-cache.service';
-import { EntrySearchService } from './entry-search.service';
+import { entryListOn } from './entry-list.test-helpers';
 
 /** Every journal filter at once, so the list query reads every table it can. */
 const EVERY_FILTER: GetEntriesQueryDto = {
@@ -54,7 +50,6 @@ describePostgres('PostgreSQL entry list cache', () => {
   /** A second connection pool: another replica, the worker, or any process writing the database. */
   let elsewhere: DataSource;
   let recorder: QueryRecorder;
-  let queries: EntriesQueryService;
   let cache: EntryListCacheService;
   let writerId: number;
   let otherId: number;
@@ -66,8 +61,6 @@ describePostgres('PostgreSQL entry list cache', () => {
     dataSource = database.dataSource;
     recorder = new QueryRecorder();
     elsewhere = await new DataSource({ ...dataSource.options, migrations: [], logger: recorder } as never).initialize();
-    const entries = dataSource.getRepository(Entry);
-    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries), timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => {
     await elsewhere?.destroy();
@@ -88,7 +81,7 @@ describePostgres('PostgreSQL entry list cache', () => {
   const list = (query: GetEntriesQueryDto = {}, userId = writerId): Promise<EntriesListResponseDto> =>
     cache.getOrLoad(userId, query, () => {
       loads += 1;
-      return queries.getEntries(userId, query);
+      return entryListOn(dataSource.getRepository(Entry)).getEntries(userId, query);
     });
 
   const insertEntry = async (content: string, date = '2024-05-01', userId = writerId): Promise<number> => {
@@ -103,17 +96,13 @@ describePostgres('PostgreSQL entry list cache', () => {
     (await dataSource.query('SELECT version FROM entry_list_versions WHERE user_id = $1', [userId]))[0]?.version;
 
   it('watches every table the journal list reads', async () => {
-    const elsewhereQueries = new EntriesQueryService(
-      elsewhere.getRepository(Entry),
-      elsewhere.getRepository(EntryRevision),
-      new EntrySearchService(elsewhere.getRepository(Entry)),
-      timeCapsuleServiceOn(elsewhere),
-      rereadReminderServiceOn(elsewhere),
-      personDatesServiceOn(elsewhere),
-    );
+    const elsewhereList = entryListOn(elsewhere.getRepository(Entry));
+    // An entry listed, so its diary and files are read too
+    const entryId = await insertEntry('A walk outside');
     recorder.queries.length = 0;
-    await elsewhereQueries.getEntries(writerId, EVERY_FILTER);
-    await elsewhereQueries.getEntries(writerId, { ...EVERY_FILTER, search: '"walk"', ids: undefined });
+    await elsewhereList.getEntries(writerId, EVERY_FILTER);
+    await elsewhereList.getEntries(writerId, { ...EVERY_FILTER, search: '"walk"', ids: undefined });
+    await elsewhereList.getEntries(writerId, { around: entryId });
 
     const tables: string[] = (await dataSource.query(
       `SELECT tablename FROM pg_tables WHERE schemaname = current_schema()`,

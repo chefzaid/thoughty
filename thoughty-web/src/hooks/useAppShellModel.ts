@@ -9,6 +9,7 @@ import { useAppShellEffects } from './useAppShellEffects';
 import { useAppShellRouting } from './useAppShellRouting';
 import { useDeleteUndo } from './useDeleteUndo';
 import { useEntryNavigation } from './useEntryNavigation';
+import { useTransientMessage } from './useTransientMessage';
 import { useMoveToDiary } from './useMoveToDiary';
 import {
   useApiServices,
@@ -101,8 +102,11 @@ export function useAppShellModel(): AppShellModel {
   const diariesState = useDiaries(isAuthenticated, routeEntryId !== undefined || routeDiaryId !== undefined);
   const { currentDiaryId, setCurrentDiaryId, fetchDiaries, diarySelectionReady } = diariesState;
 
-  const entriesState = useEntries(isAuthenticated, config, currentDiaryId, notifier, {
+  // Says that an entry to open (a link, a cross-reference, the entry being read) could not be found
+  const entryToast = useTransientMessage();
+  const entriesState = useEntries(isAuthenticated, currentDiaryId, notifier, {
     configLoaded,
+    onEntryMissing: entryToast.show,
     // A diary in the route is applied after the first render; the list waits for it
     filtersReady: diarySelectionReady && (routeDiaryId === undefined || routeDiaryId === currentDiaryId),
     routeEntryId,
@@ -111,7 +115,8 @@ export function useAppShellModel(): AppShellModel {
 
   const { fetchEntries, refreshBacklinks, refreshEntryQueries } = entriesState;
   const entryFormState = useEntryForm(config, currentDiaryId, () => {
-    entriesState.setPage(1);
+    // The list goes back to its start, where the new entry is
+    entriesState.openListAt(null);
     // The list, its dates, and every view measured from the entries (calendar, writing streak) read them again,
     // and so do the backlinks, which the new entry's links (a reply's, say) add to
     refreshBacklinks();
@@ -142,21 +147,22 @@ export function useAppShellModel(): AppShellModel {
 
   const bulkSelectState = useBulkSelect(entriesState.fetchEntries, entriesState.entries, notifier, handleMakeBook, offerDeleteUndo);
 
+  /** Opens the list at the first entry of a year or month among the filters, leaving out the day filter. */
+  const { entriesService, listQuery, openListAt, setFilterDateObj, setTargetEntryId } = entriesState;
   const handleNavigateToFirst = useCallback(async (year: number, month: number | null) => {
-    const data = await entriesState.entriesService.navigateToFirst(year, month, entriesState.getLimit());
-    if (data?.found) {
-      entriesState.setPage(data.page || 1);
-      if (data.entryId) {
-        entriesState.setTargetEntryId(data.entryId);
-      }
+    const data = await entriesService.navigateToFirst(year, month, { ...listQuery, filterDate: '' });
+    if (data?.found && data.entryId) {
+      setFilterDateObj(null);
+      openListAt(data.entryId);
+      setTargetEntryId(data.entryId);
+    } else {
+      entryToast.show();
     }
-  }, [entriesState]);
+  }, [entriesService, entryToast, listQuery, openListAt, setFilterDateObj, setTargetEntryId]);
 
   const entryNavigationState = useEntryNavigation({
-    configLoaded,
     currentDiaryId,
     currentView,
-    entries: entriesState.entries,
     entriesService: entriesState.entriesService,
     filterArchiveStatus: entriesState.filterArchiveStatus,
     filterMood: entriesState.filterMood,
@@ -166,12 +172,11 @@ export function useAppShellModel(): AppShellModel {
     filterFavorites: entriesState.filterFavorites,
     filterTags: entriesState.filterTags,
     filterVisibility: entriesState.filterVisibility,
-    getLimit: entriesState.getLimit,
+    entryToast,
     handledPermalinkEntryId: entriesState.handledPermalinkEntryId,
     isAuthenticated,
-    loading: entriesState.loading,
     navigate,
-    page: entriesState.page,
+    openListAt: entriesState.openListAt,
     routeEntryId,
     search: entriesState.search,
     searchParams,
@@ -186,7 +191,8 @@ export function useAppShellModel(): AppShellModel {
     setFilterTags: entriesState.setFilterTags,
     setFilterVisibility: entriesState.setFilterVisibility,
     setHandledPermalinkEntryId: entriesState.setHandledPermalinkEntryId,
-    setPage: entriesState.setPage,
+    filtersResetting: entriesState.filtersResetting,
+    setFiltersResetting: entriesState.setFiltersResetting,
     setSearch: entriesState.setSearch,
     setSourceEntry: entriesState.setSourceEntry,
     setTargetEntryId: entriesState.setTargetEntryId,
@@ -247,6 +253,8 @@ export function useAppShellModel(): AppShellModel {
     setChatEntry(entry);
   }, []);
 
+  // Kept the same between renders, so the entry cards that offer it are not drawn again with each batch
+  const { handleEdit: editEntry, setEditText } = entryEditState;
   const handleRephrase = useCallback(async (entry: Entry, mode: RephraseMode) => {
     const rewritten = await aiService.fixWriting(entry.content, mode);
 
@@ -255,9 +263,9 @@ export function useAppShellModel(): AppShellModel {
       return;
     }
 
-    entryEditState.handleEdit(entry);
-    entryEditState.setEditText(rewritten);
-  }, [aiService, entryEditState, notifier, t]);
+    editEntry(entry);
+    setEditText(rewritten);
+  }, [aiService, editEntry, notifier, setEditText, t]);
 
   const handleSummarize = useCallback(async (entryId: number, guidance: SummaryGuidance) => {
     return aiService.summarizeEntry(entryId, guidance);
@@ -396,7 +404,7 @@ export function useAppShellModel(): AppShellModel {
     currentView,
     deleteModalState,
     appNotice,
-    entryToast: entryNavigationState.entryToast,
+    entryToast,
     handleAiChat,
     handleLoadAiChatHistory,
     isEmailVerified: user?.emailVerified ?? false,

@@ -90,7 +90,6 @@ describe('with AI switched off', () => {
         filterPersonId={null}
         setFilterPersonId={vi.fn()}
         allTags={[]}
-        setPage={vi.fn()}
         onOpenHighlights={vi.fn()}
         theme="dark"
         t={t}

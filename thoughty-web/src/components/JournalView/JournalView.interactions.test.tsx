@@ -11,7 +11,7 @@ vi.mock('../ComfortReads/ComfortReadsCard', async () => ({ default: (await impor
 vi.mock('../EntryForm/EntryForm', async () => ({ default: (await import('./JournalView.test-helpers')).MockEntryForm }));
 vi.mock('../FilterControls/FilterControls', async () => ({ default: (await import('./JournalView.test-helpers')).MockFilterControls }));
 vi.mock('../EntriesList/EntriesList', async () => ({ default: (await import('./JournalView.test-helpers')).MockEntriesList }));
-vi.mock('../Pagination/Pagination', async () => ({ default: (await import('./JournalView.test-helpers')).MockPagination }));
+vi.mock('./JournalFeed', async () => ({ default: (await import('./JournalView.test-helpers')).MockJournalFeed }));
 vi.mock('../YearMonthNavigator/YearMonthNavigator', async () => ({ default: (await import('./JournalView.test-helpers')).MockYearMonthNavigator }));
 vi.mock('../BackToTopButton/BackToTopButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockBackToTopButton }));
 vi.mock('../DuplicateReview/DuplicateReview', async () => ({ default: (await import('./JournalView.test-helpers')).MockDuplicateReview }));
@@ -91,28 +91,6 @@ describe('JournalView', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
 
     expect(props.thoughtOfDay.setOpen).toHaveBeenCalledWith(false);
-  });
-
-  it('changes pages with arrow keys outside editable fields', () => {
-    const props = createProps({ pagination: { page: 2, totalPages: 5 } });
-    render(<JournalView {...props} />);
-
-    fireEvent.keyDown(document, { key: 'ArrowRight' });
-    fireEvent.keyDown(document, { key: 'ArrowLeft' });
-
-    expect(props.pagination.setPage).toHaveBeenCalledWith(3);
-    expect(props.pagination.setPage).toHaveBeenCalledWith(1);
-  });
-
-  it('does not change pages with arrow keys while typing', () => {
-    const props = createProps({ pagination: { page: 2, totalPages: 5 } });
-    render(<JournalView {...props} />);
-
-    const entryText = screen.getByTestId('entry-text');
-    entryText.focus();
-    fireEvent.keyDown(entryText, { key: 'ArrowRight' });
-
-    expect(props.pagination.setPage).not.toHaveBeenCalled();
   });
 
   it('passes available years and months to navigator', () => {

@@ -8,7 +8,6 @@ describe('AppearanceSection', () => {
   const defaultProps = {
     localConfig: {
       theme: 'dark' as const,
-      entriesPerPage: '10',
       language: 'en',
       readDates: true,
     } as ProfileConfig,
@@ -41,17 +40,16 @@ describe('AppearanceSection', () => {
     expect(defaultProps.handleThemeToggle).toHaveBeenCalledTimes(1);
   });
 
-  it('renders entries per page select with current value', () => {
+  it('offers no page size, since the journal scrolls on', () => {
     render(<AppearanceSection {...defaultProps} />);
-    const select = screen.getByDisplayValue('10');
-    expect(select).toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'entriesPerPage' })).not.toBeInTheDocument();
   });
 
-  it('calls handleChange when entries per page changes', async () => {
+  it('calls handleChange when the pinned entry limit changes', async () => {
     const user = userEvent.setup();
     render(<AppearanceSection {...defaultProps} />);
 
-    await user.selectOptions(screen.getByDisplayValue('10'), '25');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'maxPinnedEntries' }), '5');
     expect(defaultProps.handleChange).toHaveBeenCalled();
   });
 
@@ -243,19 +241,7 @@ describe('AppearanceSection', () => {
     expect(themeBtn.className).toContain('dark');
   });
 
-  it('defaults entriesPerPage to 20 when not set', () => {
-    render(
-      <AppearanceSection
-        {...defaultProps}
-        localConfig={{ ...defaultProps.localConfig, entriesPerPage: undefined }}
-      />
-    );
-    const select = screen.getByDisplayValue('20');
-    expect(select).toBeInTheDocument();
-  });
-
   it.each([
-    ['entriesPerPage', 'entriesPerPageDescription', '10'],
     ['maxPinnedEntries', 'maxPinnedEntriesDescription', '3'],
     ['ttsVoice', 'ttsVoiceDescription', ''],
   ])('names the %s select by its label and describes it', (label, description, value) => {

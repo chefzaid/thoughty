@@ -8,7 +8,7 @@ import {
   fetchProfileStats,
   updateConfig,
   fetchEntries,
-  setPage,
+  openListAt,
   setTargetEntryId,
   setFilterTags,
   setTags,
@@ -75,8 +75,8 @@ describe('useAppShellModel', () => {
     expect(fetchProfileStats).not.toHaveBeenCalled();
   });
 
-  it('skips page updates when navigate-to-first does not find an entry', async () => {
-    navigateToFirst.mockResolvedValueOnce({ found: false, page: 9, entryId: 88 });
+  it('says so, and leaves the list where it is, when a month has no entry among the filters', async () => {
+    navigateToFirst.mockResolvedValueOnce({ found: false, years: [2023], months: [] });
     const { result } = renderHook(() => useAppShellModel());
     const routesProps = result.current.authenticatedRoutesProps as MockedRoutesProps;
 
@@ -84,9 +84,10 @@ describe('useAppShellModel', () => {
       await routesProps.handleNavigateToFirst(2023, null);
     });
 
-    expect(navigateToFirst).toHaveBeenCalledWith(2023, null, 25);
-    expect(setPage).not.toHaveBeenCalled();
+    expect(navigateToFirst).toHaveBeenCalledWith(2023, null, expect.objectContaining({ filterDate: '' }));
+    expect(openListAt).not.toHaveBeenCalled();
     expect(setTargetEntryId).not.toHaveBeenCalled();
+    expect(result.current.authenticatedLayoutProps).toMatchObject({ entryToast: expect.objectContaining({ visible: true }) });
   });
 
   it('shows a notice and skips edit state updates when rephrasing returns null', async () => {
@@ -134,7 +135,7 @@ describe('useAppShellModel', () => {
     renderHook(() => useAppShellModel());
 
     const notifier = expect.objectContaining({ notify: expect.any(Function), t, language: 'en' });
-    expect(mocks.useEntries).toHaveBeenCalledWith(true, expect.anything(), expect.anything(), notifier, expect.anything());
+    expect(mocks.useEntries).toHaveBeenCalledWith(true, expect.anything(), notifier, expect.anything());
     // The editor moves an entry through the same move as the entry's menu, which the journal list gets too
     expect(mocks.useEntryEdit).toHaveBeenCalledWith(expect.anything(), expect.any(Function), notifier, expect.any(Function));
     expect(mocks.buildAuthenticatedRoutesProps).toHaveBeenCalledWith(expect.objectContaining({ handleMoveToDiary: expect.any(Function) }));

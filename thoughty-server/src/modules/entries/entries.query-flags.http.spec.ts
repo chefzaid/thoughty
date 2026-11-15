@@ -42,15 +42,19 @@ describe('EntriesController query flags over HTTP', () => {
     );
   });
 
-  it('reads paging as whole numbers and keeps the defaults when it is left out', async () => {
-    await request(app.getHttpServer()).get('/api/entries?page=3&limit=25').expect(200);
-    await request(app.getHttpServer()).get('/api/entries').expect(200);
+  it('reads the batch size and the entry to open at as whole numbers, with the default size when it is left out', async () => {
+    await request(app.getHttpServer()).get('/api/entries?around=42&limit=25').expect(200);
+    await request(app.getHttpServer()).get('/api/entries?after=1_2024-01-15_08:30_2_41').expect(200);
 
-    expect(entriesService.getEntries).toHaveBeenNthCalledWith(1, HTTP_SPEC_USER.userId, expect.objectContaining({ page: 3, limit: 25 }));
-    expect(entriesService.getEntries).toHaveBeenNthCalledWith(2, HTTP_SPEC_USER.userId, expect.objectContaining({ page: 1, limit: 10 }));
+    expect(entriesService.getEntries).toHaveBeenNthCalledWith(1, HTTP_SPEC_USER.userId, expect.objectContaining({ around: 42, limit: 25 }));
+    expect(entriesService.getEntries).toHaveBeenNthCalledWith(2, HTTP_SPEC_USER.userId, expect.objectContaining({ after: '1_2024-01-15_08:30_2_41', limit: 10 }));
   });
 
-  it.each(['favorites=yes', 'favorites=', 'diaryId=', 'diaryId=abc', 'page=0', 'eraId=1.5', 'personId=2&personId=3'])(
+  it.each([
+    'favorites=yes', 'favorites=', 'diaryId=', 'diaryId=abc', 'page=2', 'limit=0', 'limit=101', 'eraId=1.5', 'personId=2&personId=3',
+    'around=0', 'around=abc', 'after=3', 'before=2024-01-15_1_7', 'after=1_2024-01-15__1_4&before=1_2024-01-15__1_4',
+    'around=4&after=1_2024-01-15__1_4', 'from=1_2024-01-15__1_4&before=1_2024-01-15__1_4', 'from=x',
+  ])(
     'refuses %s with VALIDATION_FAILED',
     async (query) => {
       const response = await request(app.getHttpServer()).get(`/api/entries?${query}`).expect(400);
@@ -63,6 +67,6 @@ describe('EntriesController query flags over HTTP', () => {
   it('reads the year and month of the first-entry lookup as numbers', async () => {
     await request(app.getHttpServer()).get('/api/entries/first?year=2024&month=0').expect(200);
 
-    expect(entriesService.getFirstEntry).toHaveBeenCalledWith(HTTP_SPEC_USER.userId, { year: 2024, month: 0, limit: 10 });
+    expect(entriesService.getFirstEntry).toHaveBeenCalledWith(HTTP_SPEC_USER.userId, { year: 2024, month: 0 });
   });
 });

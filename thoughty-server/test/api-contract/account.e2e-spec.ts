@@ -29,7 +29,7 @@ describeContract('account', (context) => {
       json: {
         theme: 'light',
         language: 'fr',
-        entriesPerPage: 25,
+        maxPinnedEntries: 5,
         highContrast: false,
         streakCard: true,
         quietMode: true,
@@ -47,7 +47,7 @@ describeContract('account', (context) => {
     expect(saved.body).toMatchObject({
       theme: 'light',
       language: 'fr',
-      entriesPerPage: '25',
+      maxPinnedEntries: '5',
       highContrast: 'false',
       streakCard: 'true',
       quietMode: 'true',
@@ -70,7 +70,7 @@ describeContract('account', (context) => {
     expect(unchanged.body).toMatchObject({ fontFamily: 'legible', lineSpacing: 'loose', letterSpacing: 'wide' });
     await call('POST /api/config', {
       as: alice,
-      json: { entriesPerPage: '' },
+      json: { maxPinnedEntries: '' },
       status: 400,
       code: 'VALIDATION_FAILED',
     });

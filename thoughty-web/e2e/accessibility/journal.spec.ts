@@ -100,11 +100,18 @@ test.describe('journal accessibility with entries', () => {
         await expectNoAccessibilityViolations(page);
       });
 
-      test(`${mode} pagination`, async ({ page }) => {
-        await setupMockApp(page, { startAuthenticated: true, config: { theme, highContrast, entriesPerPage: 2 }, initialEntries: ENTRIES });
-        await page.goto('/journal');
-        await page.getByRole('button', { name: 'All Diaries' }).click();
-        await expect(page.getByText('of 2', { exact: true })).toBeVisible();
+      test(`${mode} infinite scroll, opened at an old entry`, async ({ page }) => {
+        // More entries than a batch, so the list opens at an old one with entries to load both ways
+        const older = Array.from({ length: 40 }, (_, day): MockEntry => ({
+          id: 700 + day, date: `2026-09-${String(30 - (day % 30)).padStart(2, '0')}`, index: 1 + Math.floor(day / 30),
+          content: `An older day, number ${day}.`, tags: [], visibility: 'private', diaryId: 1,
+        }));
+        await setupMockApp(page, { startAuthenticated: true, config: { theme, highContrast }, initialEntries: [...ENTRIES, ...older] });
+        await page.goto('/journal?entry=712');
+        await expect(page.locator('#entry-712')).toHaveClass(/highlight-entry/);
+        await expect(page.getByRole('button', { name: 'Show newer entries' })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Load more entries' })).toBeAttached();
+        await expect(page.getByRole('feed', { name: 'Journal entries' })).toHaveAttribute('aria-busy', 'false');
         await expectNoAccessibilityViolations(page);
       });
 

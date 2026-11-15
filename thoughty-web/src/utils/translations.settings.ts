@@ -63,8 +63,6 @@ export type SettingsTranslationKey =
   | "previewTtsVoice"
   | "previewingTtsVoice"
   | "ttsVoicePreviewSample"
-  | "entriesPerPage"
-  | "entriesPerPageDescription"
   | "maxPinnedEntries"
   | "maxPinnedEntriesDescription"
   | "defaultVisibility"
@@ -149,8 +147,6 @@ export const settingsTranslations: Record<Language, Record<SettingsTranslationKe
     previewingTtsVoice: "Previewing...",
     ttsVoicePreviewSample:
       "This is how your journal will sound when Thoughty reads it aloud.",
-    entriesPerPage: "Entries per page",
-    entriesPerPageDescription: "Number of entries to display per page",
     maxPinnedEntries: "Pinned entries limit",
     maxPinnedEntriesDescription:
       "Maximum entries that can stay pinned at the top of the journal",
@@ -238,8 +234,6 @@ export const settingsTranslations: Record<Language, Record<SettingsTranslationKe
     previewingTtsVoice: "Lecture...",
     ttsVoicePreviewSample:
       "Voici comment votre journal sonnera lorsque Thoughty le lira à voix haute.",
-    entriesPerPage: "Entrées par page",
-    entriesPerPageDescription: "Nombre d'entrées à afficher par page",
     maxPinnedEntries: "Limite des entrées épinglées",
     maxPinnedEntriesDescription:
       "Nombre maximum d'entrées qui peuvent rester épinglées en haut du journal",

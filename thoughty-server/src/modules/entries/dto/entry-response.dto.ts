@@ -195,14 +195,27 @@ export class EntriesListResponseDto {
   @ApiProperty({ type: [EntryResponseDto] })
   entries: EntryResponseDto[];
 
-  @ApiProperty()
+  @ApiProperty({ description: 'Entries the filters match, in every batch', example: 340 })
   total: number;
 
-  @ApiProperty()
-  page: number;
+  @ApiProperty({ description: 'Entries listed before this batch, so its first entry is number `offset + 1`', example: 40 })
+  offset: number;
 
-  @ApiProperty()
-  totalPages: number;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'Pass as `after` for the batch that follows; null when this batch ends the list',
+    example: '1_2026-10-21__1_42',
+  })
+  nextCursor: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'Pass as `before` for the batch that comes before; null when this batch starts the list',
+    example: '1_2026-10-25_08:30_2_57',
+  })
+  prevCursor: string | null;
 
   @ApiProperty({ type: [String] })
   allTags: string[];
@@ -297,9 +310,6 @@ export class EntryDatesResponseDto {
 
 export class FirstEntryResponseDto {
   @ApiProperty()
-  page: number;
-
-  @ApiProperty()
   found: boolean;
 
   @ApiPropertyOptional()
@@ -318,9 +328,6 @@ export class EntryLookupResponseDto {
 
   @ApiPropertyOptional({ type: EntryResponseDto })
   entry?: EntryResponseDto;
-
-  @ApiPropertyOptional()
-  page?: number;
 
   @ApiPropertyOptional()
   entryId?: number;

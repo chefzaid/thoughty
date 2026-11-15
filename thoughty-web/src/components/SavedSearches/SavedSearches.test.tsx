@@ -49,7 +49,6 @@ describe('SavedSearches', () => {
       filterTags: ['family'],
       date: new Date(2019, 6, 14).toDateString(),
       filterFavorites: true,
-      page: 1,
     }));
     await waitFor(() => expect(location()).toBe('?diary=2&view=4'));
     const trigger = screen.getByRole('button', { name: 'savedSearchesShowing Family' });

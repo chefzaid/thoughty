@@ -2,7 +2,6 @@ import { test, expect } from '../support/test';
 import { pauseClock } from '../support/clock';
 import { setupMockApp } from '../support/mockApp';
 import { goToView } from '../support/navigation';
-import { fulfillJson } from '../support/mockApp.route-utils';
 
 const statsEntries = [
   {
@@ -41,28 +40,32 @@ test.describe('Route navigation', () => {
     await expect(page.getByLabel('Open entry permalink')).toHaveAttribute('href', /\/journal\?entry=7$/);
   });
 
-  test('lands a permalink on its page with one lookup at the configured page size', async ({ page }) => {
+  test('lands a permalink on its entry with one request around it, and no lookup', async ({ page }) => {
     await setupMockApp(page, {
       startAuthenticated: true,
-      config: { entriesPerPage: 2 },
-      initialEntries: [
-        { id: 31, date: '2024-03-03', index: 1, content: 'Newest entry', tags: [], visibility: 'private', diaryId: 1 },
-        { id: 32, date: '2024-03-02', index: 1, content: 'Middle entry', tags: [], visibility: 'private', diaryId: 1 },
-        { id: 33, date: '2024-03-01', index: 1, content: 'Oldest permalink entry', tags: [], visibility: 'private', diaryId: 1 },
-      ],
+      initialEntries: Array.from({ length: 30 }, (_, day) => ({
+        id: 100 + day,
+        date: `2024-03-${String(30 - day).padStart(2, '0')}`,
+        index: 1,
+        content: day === 25 ? 'Old permalink entry' : `Entry of day ${30 - day}`,
+        tags: [],
+        visibility: 'private' as const,
+        diaryId: 1,
+      })),
     });
-    const lookupLimits: string[] = [];
+    const lookups: string[] = [];
     page.on('request', (request) => {
-      if (request.url().includes('/api/entries/by-date?id=33')) {
-        lookupLimits.push(new URL(request.url()).searchParams.get('limit') ?? '');
-      }
+      if (new URL(request.url()).pathname.startsWith('/api/entries/by-date')) lookups.push(request.url());
     });
 
-    await page.goto('/journal?entry=33');
+    await page.goto('/journal?entry=125');
 
-    await expect(page.getByText('Oldest permalink entry')).toBeVisible();
-    await expect(page.getByText('Newest entry')).toHaveCount(0);
-    expect(lookupLimits).toEqual(['2']);
+    await expect(page.locator('#entry-125')).toHaveClass(/highlight-entry/);
+    await expect(page.locator('#entry-125')).toBeInViewport();
+    // The window holds the entries around it, the newest ones load on demand
+    await expect(page.getByText('Entry of day 30', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Show newer entries' })).toBeVisible();
+    expect(lookups).toEqual([]);
   });
 
   test('shows a toast for a missing journal permalink', async ({ page }) => {
@@ -71,22 +74,22 @@ test.describe('Route navigation', () => {
       startAuthenticated: true,
       initialEntries: statsEntries,
     });
-    // Hold the lookups so time can be frozen before the toast's countdown starts. The journal
-    // sends one lookup, but every lookup is held and then answered so a repeat could never hang.
+    // Hold the list request around the entry so time can be frozen before the toast's countdown starts.
+    // The journal sends one, but every one is held and then answered so a repeat could never hang.
     const heldLookups: Array<() => void> = [];
     let lookupsReleased = false;
     let markLookupRequested: () => void = () => undefined;
     const lookupRequested = new Promise<void>((requested) => {
       markLookupRequested = requested;
     });
-    await page.route('**/api/entries/by-date?id=999*', async (route) => {
+    await page.route(/\/api\/entries\?.*around=999/, async (route) => {
       if (!lookupsReleased) {
         await new Promise<void>((answer) => {
           heldLookups.push(answer);
           markLookupRequested();
         });
       }
-      await fulfillJson(route, { found: false });
+      await route.fallback();
     });
 
     await page.goto('/journal?entry=999');

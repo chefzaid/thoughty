@@ -21,7 +21,6 @@ export interface ProfileConfig {
   highContrast?: boolean | string;
   ttsVoiceUri?: string;
   language?: string;
-  entriesPerPage?: number | string;
   maxPinnedEntries?: number | string;
   defaultVisibility?: 'public' | 'private';
   readDates?: boolean;

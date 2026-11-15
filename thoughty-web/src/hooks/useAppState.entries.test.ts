@@ -22,34 +22,19 @@ describe("useAppState Hooks", () => {
   });
 
   describe("useEntries", () => {
-    const mockConfig = { entriesPerPage: 10 };
-
     it("initializes with default state", () => {
-      const { result } = renderHook(() => useEntries(false, mockConfig, null, notifier));
+      const { result } = renderHook(() => useEntries(false, null, notifier));
 
       expect(result.current.entries).toEqual([]);
       expect(result.current.groupedEntries).toEqual({});
       expect(result.current.loading).toBe(true);
-      expect(result.current.page).toBe(1);
-      expect(result.current.totalPages).toBe(1);
+      expect(result.current.feed).toMatchObject({ total: 0, offset: 0, hasOlder: false, hasNewer: false });
       expect(result.current.allTags).toEqual([]);
       expect(result.current.entryDates).toEqual([]);
     });
 
-    it("syncs inputPage with page changes", async () => {
-      const { result } = renderHook(() => useEntries(false, mockConfig, null, notifier));
-
-      act(() => {
-        result.current.setPage(3);
-      });
-
-      await waitFor(() => {
-        expect(result.current.inputPage).toBe("3");
-      });
-    });
-
     it("updates filter and navigation state", () => {
-      const { result } = renderHook(() => useEntries(false, mockConfig, null, notifier));
+      const { result } = renderHook(() => useEntries(false, null, notifier));
       const filterDate = new Date("2024-01-15");
 
       act(() => {
@@ -96,7 +81,7 @@ describe("useAppState Hooks", () => {
               tags: [],
             },
           ],
-          totalPages: 1,
+          total: 3, offset: 0, nextCursor: null, prevCursor: null,
           allTags: [],
         }),
         fetchEntryDates: vi.fn().mockResolvedValue([]),
@@ -113,7 +98,6 @@ describe("useAppState Hooks", () => {
         bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
-        navigateById: vi.fn(),
         fetchEntryHistory: vi.fn(),
         fetchEntryBacklinks: vi.fn(),
         deleteRevision: vi.fn(),
@@ -123,7 +107,7 @@ describe("useAppState Hooks", () => {
         deleteTag: vi.fn(),
       });
 
-      const { result } = renderHook(() => useEntries(true, mockConfig, null, notifier));
+      const { result } = renderHook(() => useEntries(true, null, notifier));
 
       await waitFor(() => {
         expect(result.current.groupedEntries).toEqual({
@@ -150,24 +134,10 @@ describe("useAppState Hooks", () => {
       });
     });
 
-    it("calculates page limit from config", () => {
-      const numeric = renderHook(() =>
-        useEntries(false, { entriesPerPage: 25 }, null, notifier),
-      );
-      const stringValue = renderHook(() =>
-        useEntries(false, { entriesPerPage: "7" }, null, notifier),
-      );
-      const fallback = renderHook(() => useEntries(false, {}, null, notifier));
-
-      expect(numeric.result.current.getLimit()).toBe(25);
-      expect(stringValue.result.current.getLimit()).toBe(7);
-      expect(fallback.result.current.getLimit()).toBe(20);
-    });
-
     it("runs diary-scoped meaning search and filters entries by ranked IDs", async () => {
       const fetchEntries = vi
         .fn()
-        .mockResolvedValue({ entries: [], totalPages: 1, allTags: [] });
+        .mockResolvedValue({ entries: [], total: 3, offset: 0, nextCursor: null, prevCursor: null, allTags: [] });
       const semanticSearch = vi.fn().mockResolvedValue({
         analyzedEntries: 3,
         totalEntries: 3,
@@ -195,7 +165,6 @@ describe("useAppState Hooks", () => {
         bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
-        navigateById: vi.fn(),
         fetchEntryHistory: vi.fn(),
         fetchEntryBacklinks: vi.fn(),
         deleteRevision: vi.fn(),
@@ -221,7 +190,7 @@ describe("useAppState Hooks", () => {
         previewJournalRetag: vi.fn(),
         applyJournalRetag: vi.fn(),
       });
-      const { result } = renderHook(() => useEntries(true, mockConfig, 4, notifier));
+      const { result } = renderHook(() => useEntries(true, 4, notifier));
 
       act(() => {
         result.current.setSearchMode("semantic");
@@ -236,12 +205,15 @@ describe("useAppState Hooks", () => {
         4,
       );
       await waitFor(() => {
+        // A meaning search's matches come in one batch, in their order
         expect(fetchEntries).toHaveBeenCalledWith(
           expect.objectContaining({
             search: "",
             entryIds: [9, 3],
             diaryId: 4,
           }),
+          50,
+          {},
         );
       });
       expect(result.current.semanticSearchStatus).toBe("complete");
@@ -269,7 +241,7 @@ describe("useAppState Hooks", () => {
               tags: [],
             },
           ],
-          totalPages: 1,
+          total: 3, offset: 0, nextCursor: null, prevCursor: null,
           allTags: [],
         }),
         fetchEntryDates: vi.fn().mockResolvedValue([]),
@@ -286,7 +258,6 @@ describe("useAppState Hooks", () => {
         bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
-        navigateById: vi.fn(),
         fetchEntryHistory: vi.fn(),
         fetchEntryBacklinks: vi.fn(),
         deleteRevision: vi.fn(),
@@ -296,7 +267,7 @@ describe("useAppState Hooks", () => {
         deleteTag: vi.fn(),
       });
 
-      const { result } = renderHook(() => useEntries(true, mockConfig, null, notifier));
+      const { result } = renderHook(() => useEntries(true, null, notifier));
 
       await waitFor(() => {
         expect(result.current.entries).toHaveLength(3);
@@ -329,7 +300,7 @@ describe("useAppState Hooks", () => {
         entries: [
           { id: 7, date: "2024-01-15", index: 1, content: "- [ ] One\n- [ ] Two", tags: [], format: "markdown" },
         ],
-        totalPages: 1,
+        total: 3, offset: 0, nextCursor: null, prevCursor: null,
         allTags: [],
       });
       const { createEntriesService } = await import("../services/api");
@@ -349,7 +320,6 @@ describe("useAppState Hooks", () => {
         bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
-        navigateById: vi.fn(),
         fetchEntryHistory: vi.fn(),
         fetchEntryBacklinks: vi.fn(),
         deleteRevision: vi.fn(),
@@ -369,7 +339,7 @@ describe("useAppState Hooks", () => {
         .mockResolvedValue({ success: true });
       const fetchEntries = await mockTaskEntriesService(setEntryTask);
 
-      const { result } = renderHook(() => useEntries(true, mockConfig, null, notifier));
+      const { result } = renderHook(() => useEntries(true, null, notifier));
       await waitFor(() => expect(result.current.entries).toHaveLength(1));
       const entry = result.current.entries[0]!;
 
@@ -399,7 +369,7 @@ describe("useAppState Hooks", () => {
       const setEntryTask = vi.fn().mockResolvedValue({ success: false, error });
       const fetchEntries = await mockTaskEntriesService(setEntryTask);
 
-      const { result } = renderHook(() => useEntries(true, { ...mockConfig, language }, null, languageNotifier));
+      const { result } = renderHook(() => useEntries(true, null, languageNotifier));
       await waitFor(() => expect(result.current.entries).toHaveLength(1));
 
       act(() => {
@@ -421,7 +391,7 @@ describe("useAppState Hooks", () => {
       const togglePinned = vi.fn().mockResolvedValue({ success: false, error });
       const fetchEntries = await mockTaskEntriesService(vi.fn(), vi.fn(), { togglePinned });
 
-      const { result } = renderHook(() => useEntries(true, { ...mockConfig, language }, null, languageNotifier));
+      const { result } = renderHook(() => useEntries(true, null, languageNotifier));
       await waitFor(() => expect(result.current.entries).toHaveLength(1));
 
       await act(async () => {
@@ -442,7 +412,7 @@ describe("useAppState Hooks", () => {
       const unsealEntry = vi.fn().mockResolvedValue(answer);
       const fetchEntries = await mockTaskEntriesService(vi.fn(), vi.fn(), { unsealEntry });
 
-      const { result } = renderHook(() => useEntries(true, { ...mockConfig, language: "en" }, null, languageNotifier));
+      const { result } = renderHook(() => useEntries(true, null, languageNotifier));
       await waitFor(() => expect(result.current.entries).toHaveLength(1));
 
       await act(async () => {
@@ -455,7 +425,7 @@ describe("useAppState Hooks", () => {
     });
 
     it("exposes entry actions", () => {
-      const { result } = renderHook(() => useEntries(false, mockConfig, null, notifier));
+      const { result } = renderHook(() => useEntries(false, null, notifier));
 
       expect(typeof result.current.fetchEntries).toBe("function");
       expect(typeof result.current.fetchEntryDates).toBe("function");
@@ -470,7 +440,7 @@ describe("useAppState Hooks", () => {
     });
 
     it("moves the backlinks on once asked, so every card reads them again", () => {
-      const { result } = renderHook(() => useEntries(false, mockConfig, null, notifier));
+      const { result } = renderHook(() => useEntries(false, null, notifier));
 
       expect(result.current.backlinksVersion).toBe(0);
       act(() => result.current.refreshBacklinks());

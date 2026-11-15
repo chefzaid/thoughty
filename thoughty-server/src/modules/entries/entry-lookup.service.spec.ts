@@ -5,6 +5,7 @@ import { createQueryBuilder } from './entries-query.test-helpers';
 describe('EntryLookupService', () => {
   let service: EntryLookupService;
   let entryRepository: Record<string, jest.Mock>;
+  let entrySearch: { prepare: jest.Mock };
 
   beforeEach(() => {
     entryRepository = {
@@ -12,7 +13,8 @@ describe('EntryLookupService', () => {
       findOne: jest.fn(),
     };
 
-    service = new EntryLookupService(entryRepository as never);
+    entrySearch = { prepare: jest.fn().mockResolvedValue({ kind: 'literal', text: 'walk' }) };
+    service = new EntryLookupService(entryRepository as never, entrySearch as never);
   });
 
   afterEach(() => {
@@ -28,67 +30,63 @@ describe('EntryLookupService', () => {
     });
     entryRepository.createQueryBuilder.mockReturnValueOnce(yearsQb).mockReturnValueOnce(monthsQb);
 
-    await expect(service.getFirstEntry(1, { limit: 10 })).resolves.toEqual({
-      page: 1,
+    await expect(service.getFirstEntry(1, {})).resolves.toEqual({
       found: false,
       years: [2024, 2023],
       months: ['2024-01'],
     });
   });
 
-  it('finds the first entry for a year-month selection and returns the containing page', async () => {
-    const yearsQb = createQueryBuilder({
-      getRawMany: jest.fn().mockResolvedValue([{ year: '2024' }]),
-    });
+  it('finds the first entry of a month among the journal filters', async () => {
+    const yearsQb = createQueryBuilder({ getRawMany: jest.fn().mockResolvedValue([{ year: '2024' }]) });
     const monthsQb = createQueryBuilder({
       getRawMany: jest.fn().mockResolvedValue([{ month: '2024-01' }, { month: '2024-02' }]),
     });
-    const firstDateQb = createQueryBuilder({
-      getRawOne: jest.fn().mockResolvedValue({ first_date: '2024-02-03' }),
-    });
     const firstIdQb = createQueryBuilder({ getRawOne: jest.fn().mockResolvedValue({ e_id: 44 }) });
-    const countQb = createQueryBuilder({ getCount: jest.fn().mockResolvedValue(13) });
-
     entryRepository.createQueryBuilder
       .mockReturnValueOnce(yearsQb)
       .mockReturnValueOnce(monthsQb)
-      .mockReturnValueOnce(firstDateQb)
-      .mockReturnValueOnce(firstIdQb)
-      .mockReturnValueOnce(countQb);
+      .mockReturnValueOnce(firstIdQb);
 
-    const result = await service.getFirstEntry(5, { year: 2024, month: 2, limit: 10 });
+    const result = await service.getFirstEntry(5, { year: 2024, month: 2, diaryId: 3, search: 'walk' });
 
-    expect(firstDateQb.andWhere).toHaveBeenCalledWith("TO_CHAR(e.date, 'YYYY-MM') = :dateFilter", {
-      dateFilter: '2024-02',
+    expect(entrySearch.prepare).toHaveBeenCalledWith('walk');
+    expect(firstIdQb.orderBy).toHaveBeenCalledWith('e.date', 'ASC');
+    expect(firstIdQb.andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 3 });
+    expect(firstIdQb.andWhere).toHaveBeenCalledWith('e.date >= :monthStart AND e.date < :nextMonthStart', {
+      monthStart: '2024-02-01',
+      nextMonthStart: '2024-03-01',
     });
-    expect(firstIdQb.andWhere).toHaveBeenCalledWith("TO_CHAR(e.date, 'YYYY-MM') = :dateFilter", {
-      dateFilter: '2024-02',
-    });
-    expect(result).toEqual({
-      page: 2,
-      found: true,
-      entryId: 44,
-      years: [2024],
-      months: ['2024-01', '2024-02'],
-    });
+    expect(result).toEqual({ found: true, entryId: 44, years: [2024], months: ['2024-01', '2024-02'] });
   });
 
-  it('navigates to an entry by explicit id and returns the containing page', async () => {
-    entryRepository.findOne.mockResolvedValue({ id: 7, userId: 3, date: '2024-01-20', index: 4 });
-    const countBeforeQb = createQueryBuilder({ getCount: jest.fn().mockResolvedValue(16) });
-    entryRepository.createQueryBuilder.mockReturnValueOnce(countBeforeQb);
+  it('finds the first entry of a year, or none when the filters leave every entry of it out', async () => {
+    const lists = () => [
+      createQueryBuilder({ getRawMany: jest.fn().mockResolvedValue([{ year: '2024' }]) }),
+      createQueryBuilder({ getRawMany: jest.fn().mockResolvedValue([{ month: '2024-01' }]) }),
+    ];
+    const firstIdQb = createQueryBuilder({ getRawOne: jest.fn().mockResolvedValue(undefined) });
+    entryRepository.createQueryBuilder.mockReturnValueOnce(lists()[0]).mockReturnValueOnce(lists()[1]).mockReturnValueOnce(firstIdQb);
 
-    const result = await service.getEntryByDate(3, { id: 7, limit: 10 });
+    await expect(service.getFirstEntry(5, { year: 2024, favorites: true })).resolves.toEqual({
+      found: false,
+      years: [2024],
+      months: ['2024-01'],
+    });
+    expect(entrySearch.prepare).not.toHaveBeenCalled();
+    expect(firstIdQb.andWhere).toHaveBeenCalledWith('EXTRACT(YEAR FROM e.date) = :year', { year: 2024 });
+    expect(firstIdQb.andWhere).toHaveBeenCalledWith('e.is_favorite = true');
+  });
+
+  it('finds an entry by explicit id', async () => {
+    entryRepository.findOne.mockResolvedValue({ id: 7, userId: 3, date: '2024-01-20', index: 4 });
+
+    const result = await service.getEntryByDate(3, { id: 7 });
 
     expect(entryRepository.findOne).toHaveBeenCalledWith({ where: { userId: 3, id: 7 } });
-    expect(countBeforeQb.andWhere).toHaveBeenCalledWith(
-      "(e.is_pinned = true OR (e.is_pinned = false AND (e.date > :date OR (e.date = :date AND (e.time_of_day IS NOT NULL, COALESCE(e.time_of_day, TIME '00:00'), e.index) < (CAST(:hasTime AS boolean), COALESCE(CAST(:timeOfDay AS time), TIME '00:00'), CAST(:index AS integer))))))",
-      { date: '2024-01-20', hasTime: false, timeOfDay: null, index: 4 },
-    );
     expect(result).toEqual({
       found: true,
       entry: { id: 7, userId: 3, date: '2024-01-20', index: 4 },
-      page: 2,
       entryId: 7,
     });
   });

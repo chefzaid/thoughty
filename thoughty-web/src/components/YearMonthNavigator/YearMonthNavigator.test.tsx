@@ -12,7 +12,6 @@ describe('YearMonthNavigator', () => {
   const mockConfig: Config = {
     theme: 'dark',
     language: 'en',
-    entriesPerPage: 10
   };
 
   const defaultProps = {

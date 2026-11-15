@@ -5,19 +5,15 @@ import {
   POSTGRES_SETUP_TIMEOUT_MS,
   type PostgresTestDatabase,
 } from '@/database/postgres-test-database.test-helpers';
-import { Entry, EntryRevision, User } from '@/database/entities';
-import { EntriesQueryService } from './entries-query.service';
-import { EntrySearchService } from './entry-search.service';
+import { Entry, User } from '@/database/entities';
 import { EntryLookupService } from './entry-lookup.service';
-import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
-import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
-import { personDatesServiceOn } from '@/modules/people/person-dates.test-helpers';
+import { EntrySearchService } from './entry-search.service';
+import { entryListOn } from './entry-list.test-helpers';
 
 describePostgres('PostgreSQL entry titles and times of day', () => {
   let database: PostgresTestDatabase;
   let dataSource: DataSource;
   let entries: Repository<Entry>;
-  let queries: EntriesQueryService;
   let lookup: EntryLookupService;
   let userId: number;
 
@@ -25,8 +21,7 @@ describePostgres('PostgreSQL entry titles and times of day', () => {
     database = await createPostgresTestDatabase();
     dataSource = database.dataSource;
     entries = dataSource.getRepository(Entry);
-    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries), timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
-    lookup = new EntryLookupService(entries);
+    lookup = new EntryLookupService(entries, new EntrySearchService(entries));
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });
 
@@ -45,7 +40,7 @@ describePostgres('PostgreSQL entry titles and times of day', () => {
     await write({ index: 4, content: 'also untimed' });
     await write({ date: '2024-01-16', index: 1, content: 'next day', timeOfDay: '06:00' });
 
-    const { entries: listed } = await queries.getEntries(userId, { page: 1, limit: 10 });
+    const { entries: listed } = await entryListOn(entries).getEntries(userId, { limit: 10 });
 
     expect(listed.map((entry) => [entry.content, entry.index, entry.time_of_day])).toEqual([
       ['next day', 1, '06:00'],
@@ -56,26 +51,28 @@ describePostgres('PostgreSQL entry titles and times of day', () => {
     ]);
   });
 
-  it('finds the page of an entry by the same order, timed or not', async () => {
+  it('opens the list at an entry in the same order, timed or not', async () => {
     await write({ index: 1, content: 'evening', timeOfDay: '21:00' });
     await write({ index: 2, content: 'untimed' });
     await write({ index: 3, content: 'morning', timeOfDay: '07:30' });
     await write({ date: '2024-01-16', index: 1, content: 'pinned', isPinned: true });
 
-    const pageOf = async (date: string, index: number) =>
-      (await lookup.getEntryByDate(userId, { date, index, limit: 1 })).page;
+    const placeOf = async (date: string, index: number) => {
+      const { entryId } = await lookup.getEntryByDate(userId, { date, index });
+      return (await entryListOn(entries).getEntries(userId, { around: entryId, limit: 1 })).offset + 1;
+    };
 
-    expect(await pageOf('2024-01-16', 1)).toBe(1);
-    expect(await pageOf('2024-01-15', 2)).toBe(2);
-    expect(await pageOf('2024-01-15', 3)).toBe(3);
-    expect(await pageOf('2024-01-15', 1)).toBe(4);
+    expect(await placeOf('2024-01-16', 1)).toBe(1);
+    expect(await placeOf('2024-01-15', 2)).toBe(2);
+    expect(await placeOf('2024-01-15', 3)).toBe(3);
+    expect(await placeOf('2024-01-15', 1)).toBe(4);
   });
 
   it('searches titles with the weight of tags and highlights title words apart from the text', async () => {
     await write({ date: '2024-01-10', content: 'A long walk to the harbour and back home.' });
     await write({ date: '2024-01-11', title: 'Harbour', content: 'Grey sky, a few boats.' });
 
-    const { entries: found } = await queries.getEntries(userId, { search: 'harbour', page: 1, limit: 10 });
+    const { entries: found } = await entryListOn(entries).getEntries(userId, { search: 'harbour', limit: 10 });
 
     expect(found.map((entry) => entry.title)).toEqual(['Harbour', null]);
     expect(found[0].search_matches).toEqual(['Harbour']);
@@ -85,7 +82,7 @@ describePostgres('PostgreSQL entry titles and times of day', () => {
   it('matches titles literally for searches without words', async () => {
     await write({ title: 'Plans 🎉', content: 'Nothing special' });
 
-    const { entries: found } = await queries.getEntries(userId, { search: '🎉', page: 1, limit: 10 });
+    const { entries: found } = await entryListOn(entries).getEntries(userId, { search: '🎉', limit: 10 });
 
     expect(found).toHaveLength(1);
   });
@@ -110,7 +107,7 @@ describePostgres('PostgreSQL entry titles and times of day', () => {
 
     await dataSource.runMigrations({ transaction: 'all' });
     await entries.update({ userId }, { title: 'Lighthouse' });
-    const { entries: found } = await queries.getEntries(userId, { search: 'lighthouse', page: 1, limit: 10 });
+    const { entries: found } = await entryListOn(entries).getEntries(userId, { search: 'lighthouse', limit: 10 });
     expect(found).toHaveLength(1);
   });
 });

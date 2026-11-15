@@ -7,18 +7,17 @@ import {
   type PostgresTestDatabase,
 } from '@/database/postgres-test-database.test-helpers';
 import { expectApiError } from '@/common/errors/api-error.test-helpers';
-import { Entry, EntryRevision, User } from '@/database/entities';
-import { EntriesQueryService } from './entries-query.service';
+import { Entry, User } from '@/database/entities';
 import { EntryRandomService } from './entry-random.service';
 import { EntrySearchService } from './entry-search.service';
 import type { GetRandomEntryQueryDto } from './dto';
+import { entryListOn } from './entry-list.test-helpers';
 
 describePostgres('PostgreSQL random entry', () => {
   let database: PostgresTestDatabase;
   let dataSource: DataSource;
   let entries: Repository<Entry>;
   let random: EntryRandomService;
-  let list: EntriesQueryService;
   let userId: number;
   let otherUserId: number;
 
@@ -28,7 +27,6 @@ describePostgres('PostgreSQL random entry', () => {
     entries = dataSource.getRepository(Entry);
     const search = new EntrySearchService(entries);
     random = new EntryRandomService(entries, search);
-    list = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), search, {} as never, {} as never, {} as never);
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });
 
@@ -73,7 +71,7 @@ describePostgres('PostgreSQL random entry', () => {
     expect((await random.pick(userId, { mood: '5', excludeId: only.id })).id).toBe(only.id);
   });
 
-  it('gives the page of the filtered list that shows the entry, in the list order', async () => {
+  it('picks an entry the journal list opens around, with the same filters and order', async () => {
     const written: Entry[] = [];
     for (let day = 1; day <= 7; day += 1) {
       written.push(await write({ date: `2026-10-0${day}`, content: `Harbor day ${day}`, tags: ['harbor'] }));
@@ -82,16 +80,16 @@ describePostgres('PostgreSQL random entry', () => {
     await entries.update(written[0]!.id, { isPinned: true });
 
     const queries: GetRandomEntryQueryDto[] = [
-      { tags: 'harbor', limit: 3 },
-      { search: 'harbor', limit: 2 },
-      { search: 'harbor', sort: 'date', limit: 2 },
-      { ids: [written[2]!.id, written[5]!.id, written[0]!.id].join(','), limit: 1 },
+      { tags: 'harbor' },
+      { search: 'harbor' },
+      { search: 'harbor', sort: 'date' },
+      { ids: [written[2]!.id, written[5]!.id, written[0]!.id].join(',') },
     ];
     for (const query of queries) {
       for (let attempt = 0; attempt < 8; attempt += 1) {
         const pick = await random.pick(userId, query);
-        const page = await list.getEntries(userId, { ...query, page: pick.page, limit: query.limit ?? 10 });
-        expect(page.entries.map((entry) => entry.id)).toContain(pick.id);
+        const batch = await entryListOn(entries).getEntries(userId, { ...query, around: pick.id, limit: 3 });
+        expect(batch.entries.map((entry) => entry.id)).toContain(pick.id);
         expect(pick).toMatchObject({ date: expect.stringMatching(/^2026-10-0\d$/), index: 1 });
       }
     }

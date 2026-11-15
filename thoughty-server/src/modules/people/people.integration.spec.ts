@@ -10,16 +10,14 @@ import {
 import { Attachment, BookVersion, Diary, Entry, EntryRevision, Person, SavedSearch, Setting, User } from '@/database/entities';
 import { EntryInlineImagesService, EntryMentionsService, EntrySearchService } from '@/modules/entries';
 import { EntriesCommandService } from '@/modules/entries/entries-command.service';
-import { EntriesQueryService } from '@/modules/entries/entries-query.service';
 import { EntryCalendarService } from '@/modules/entries/entry-calendar.service';
 import { IoService } from '@/modules/io/io.service';
 import { RecycleBinService } from '@/modules/recycle-bin/recycle-bin.service';
 import { SavedSearchesService } from '@/modules/saved-searches';
 import { PeopleService } from './people.service';
 import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
-import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
-import { personDatesServiceOn } from '@/modules/people/person-dates.test-helpers';
 import { featureFlagsWith } from '@/common/feature-flags/feature-flags.test-helpers';
+import { entryListOn } from '@/modules/entries/entry-list.test-helpers';
 
 const anyFilters = {
   search: '',
@@ -38,7 +36,6 @@ describePostgres('PostgreSQL people', () => {
   let dataSource: DataSource;
   let people: PeopleService;
   let commands: EntriesCommandService;
-  let queries: EntriesQueryService;
   let calendar: EntryCalendarService;
   let bin: RecycleBinService;
   let io: IoService;
@@ -64,7 +61,6 @@ describePostgres('PostgreSQL people', () => {
       featureFlagsWith(),
     );
     const search = new EntrySearchService(entries);
-    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), search, timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
     calendar = new EntryCalendarService(entries, search);
     bin = new RecycleBinService(
       dataSource,
@@ -93,7 +89,7 @@ describePostgres('PostgreSQL people', () => {
   const summary = async (userId = writerId) =>
     (await people.list(userId)).people.map((person) => [person.name, person.handles, person.entryCount, person.lastMentionedOn]);
   const mentioning = async (personId: number, userId = writerId) =>
-    (await queries.getEntries(userId, { personId, archiveStatus: 'all', limit: 20 })).entries.map((entry) => entry.content).sort();
+    (await entryListOn(dataSource.getRepository(Entry)).getEntries(userId, { personId, archiveStatus: 'all', limit: 20 })).entries.map((entry) => entry.content).sort();
   const personNamed = async (name: string) => (await people.list(writerId)).people.find((person) => person.name === name)!;
 
   it('adds people from mentions whatever their case, and counts the entries that mention them', async () => {

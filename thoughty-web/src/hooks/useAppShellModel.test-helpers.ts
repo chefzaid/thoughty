@@ -73,7 +73,7 @@ export const fetchEntries = vi.fn();
 export const fetchEntryDates = vi.fn();
 export const fetchEntryHistory = vi.fn();
 export const fetchEntryBacklinks = vi.fn();
-export const setPage = vi.fn();
+export const openListAt = vi.fn();
 export const setTargetEntryId = vi.fn();
 export const setFilterTags = vi.fn();
 export const setCurrentDiaryId = vi.fn();
@@ -99,7 +99,7 @@ export const fetchTagUsage = vi.fn().mockResolvedValue([{ tag: 'current', count:
 export const offerDeleteUndo = vi.fn();
 export const refreshEntryQueries = vi.fn().mockResolvedValue(undefined);
 export const refreshBacklinks = vi.fn();
-export const navigateToFirst = vi.fn().mockResolvedValue({ found: true, page: 4, entryId: 77 });
+export const navigateToFirst = vi.fn().mockResolvedValue({ found: true, entryId: 77, years: [2024], months: ['2024-01'] });
 
 export type MockedLayoutProps = ReturnType<typeof mocks.buildAuthenticatedLayoutProps>;
 export type MockedRoutesProps = ReturnType<typeof mocks.buildAuthenticatedRoutesProps>;
@@ -174,11 +174,10 @@ export function stubShellModelHooks() {
     filterFavorites: false,
     filterTags: ['current'],
     filterVisibility: 'all',
-    getLimit: vi.fn(() => 25),
     groupedEntries: {},
-    inputPage: '1',
+    listQuery: { search: 'focus', filterTags: ['current'], filterDate: '2024-01-03', filterVisibility: '', favorites: false, archiveStatus: 'active', diaryId: 9 },
     loading: false,
-    page: 2,
+    openListAt,
     reorderEntries: vi.fn(),
     runSemanticSearch: vi.fn().mockResolvedValue(undefined),
     search: 'focus',
@@ -191,8 +190,6 @@ export function stubShellModelHooks() {
     setFilterFavorites,
     setFilterTags,
     setFilterVisibility,
-    setInputPage: vi.fn(),
-    setPage,
     setSearch,
     setSearchMode: vi.fn(),
     setSourceEntry,

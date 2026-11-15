@@ -5,8 +5,6 @@ import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_LETTER_SPACING,
   DEFAULT_LINE_SPACING,
-  entriesPerPageChoices,
-  normalizeEntriesPerPage,
   normalizeFontSize,
   resolveFontColor,
 } from '../../types/config';
@@ -133,8 +131,7 @@ function LanguageSetting({
   );
 }
 
-function ThemeAndPaginationSettings({
-  entriesPerPage,
+function ThemeAndPinSettings({
   maxPinnedEntries,
   handleChange,
   handleThemeToggle,
@@ -142,7 +139,6 @@ function ThemeAndPaginationSettings({
   isLight,
   t,
 }: Readonly<{
-  entriesPerPage: ProfileConfig['entriesPerPage'];
   maxPinnedEntries: ProfileConfig['maxPinnedEntries'];
   handleChange: HandleAppearanceChange;
   handleThemeToggle: () => void;
@@ -177,25 +173,6 @@ function ThemeAndPaginationSettings({
             </svg>
           </span>
         </div>
-      </div>
-
-      <div className="setting-row horizontal">
-        <div className="setting-info">
-          <label className="setting-label" htmlFor="profile-entries-per-page">{t('entriesPerPage')}</label>
-          <span id="profile-entries-per-page-description" className="setting-description">{t('entriesPerPageDescription')}</span>
-        </div>
-        <select
-          id="profile-entries-per-page"
-          name="entriesPerPage"
-          aria-describedby="profile-entries-per-page-description"
-          value={String(normalizeEntriesPerPage(entriesPerPage))}
-          onChange={handleChange}
-          className={`setting-select ${isDark ? 'dark' : 'light'}`}
-        >
-          {entriesPerPageChoices(normalizeEntriesPerPage(entriesPerPage)).map((size) => (
-            <option key={size} value={size}>{size}</option>
-          ))}
-        </select>
       </div>
 
       <div className="setting-row horizontal">
@@ -332,8 +309,7 @@ function AppearanceSection({
         t={t}
       />
 
-      <ThemeAndPaginationSettings
-        entriesPerPage={localConfig.entriesPerPage}
+      <ThemeAndPinSettings
         maxPinnedEntries={localConfig.maxPinnedEntries}
         handleChange={handleChange}
         handleThemeToggle={handleThemeToggle}

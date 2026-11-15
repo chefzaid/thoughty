@@ -23,7 +23,7 @@ vi.mock('./useApiServices', () => ({
 
 describe('useConfig', () => {
   it('reports when the config has loaded', async () => {
-    mocks.fetchConfig.mockResolvedValue({ entriesPerPage: 25 });
+    mocks.fetchConfig.mockResolvedValue({ maxPinnedEntries: 5 });
     mocks.fetchProfileStats.mockResolvedValue(null);
 
     const { result } = renderHook(() => useConfig(true));
@@ -32,7 +32,7 @@ describe('useConfig', () => {
     await waitFor(() => {
       expect(result.current.configLoaded).toBe(true);
     });
-    expect(result.current.config.entriesPerPage).toBe(25);
+    expect(result.current.config.maxPinnedEntries).toBe(5);
   });
 
   it('counts a failed config request as loaded so lookups fall back to the default page size', async () => {

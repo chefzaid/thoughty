@@ -10,6 +10,7 @@ import { mockPersonDates } from './mockApp.person-dates';
 import { mockCurrentDate, mockOnThisDay } from './mockApp.on-this-day';
 import { buildMockGoals } from './mockApp.goals';
 import { buildMockStreak } from './mockApp.streak';
+import { getFilteredEntries } from './mockApp.routes.entries';
 
 function getAiFixPrefix(mode?: string): string {
   if (mode === 'rewrite') {
@@ -222,23 +223,22 @@ async function handleEntryReferenceRoutes({ route, pathname, searchParams, state
     const years = unique(state.entries.map((entry) => Number(entry.date.slice(0, 4)))).sort(
       (left, right) => left - right,
     );
-    const months = sortStrings(unique(state.entries.map((entry) => entry.date.slice(5, 7))));
+    // Each month with entries as YYYY-MM, newest first, as the API lists them
+    const months = sortStrings(unique(state.entries.map((entry) => entry.date.slice(0, 7)))).reverse();
 
-    // The first entry of the journal, or of the year and month asked for, and the page it is on
+    // The first entry, oldest first, of the year and month asked for among the journal filters
     const year = searchParams.get('year');
     const month = searchParams.get('month');
     const prefix = year ? `${year}-${month ? month.padStart(2, '0') : ''}` : '';
-    const sorted = sortEntries(state.entries);
-    const first = [...sorted].reverse().find((entry) => entry.date.startsWith(prefix));
-    const limit = Number(searchParams.get('limit') || '10');
+    const { filtered } = getFilteredEntries(state, searchParams);
+    const first = year ? [...sortEntries(filtered)].reverse().find((entry) => entry.date.startsWith(prefix)) : undefined;
     await fulfillJson(route, first
-      ? { page: Math.floor(sorted.indexOf(first) / limit) + 1, found: true, entryId: first.id, years, months }
-      : { page: 1, found: false, years, months });
+      ? { found: true, entryId: first.id, years, months }
+      : { found: false, years, months });
     return true;
   }
 
   if (pathname === '/api/entries/by-date') {
-    const limit = Number(searchParams.get('limit') || '10');
     const entryId = Number(searchParams.get('id') || '0');
     const date = searchParams.get('date');
     const entryIndex = Number(searchParams.get('index') || '0');
@@ -253,10 +253,7 @@ async function handleEntryReferenceRoutes({ route, pathname, searchParams, state
       return true;
     }
 
-    const entryPosition = sortedEntries.findIndex((entry) => entry.id === matchedEntry.id);
-    const page = entryPosition >= 0 ? Math.floor(entryPosition / Math.max(limit, 1)) + 1 : 1;
-
-    await fulfillJson(route, { found: true, entry: toEntryResponse(matchedEntry, state), page, entryId: matchedEntry.id });
+    await fulfillJson(route, { found: true, entry: toEntryResponse(matchedEntry, state), entryId: matchedEntry.id });
     return true;
   }
 

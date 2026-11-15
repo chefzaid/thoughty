@@ -67,7 +67,7 @@ describeContract('app-import', (context) => {
     const [stored] = (thawPhoto.body as { attachments: { id: number }[] }).attachments;
     const thaw = await call('GET /api/entries', {
       as: alice,
-      query: new URLSearchParams({ page: '1', limit: '10', ids: String(thawId), archiveStatus: 'active' }),
+      query: new URLSearchParams({ limit: '20', ids: String(thawId), archiveStatus: 'active' }),
       status: 200,
     });
     expect((thaw.body as { entries: { content: string }[] }).entries[0]!.content).toBe(`Thaw ![Melt](attachment:${stored!.id})`);
@@ -113,7 +113,7 @@ describeContract('app-import', (context) => {
     const [photo] = (attached.body as { attachments: { id: number }[] }).attachments;
     const listed = await call('GET /api/entries', {
       as: alice,
-      query: new URLSearchParams({ page: '1', limit: '10', diaryId: String(diaryId), archiveStatus: 'active' }),
+      query: new URLSearchParams({ limit: '20', diaryId: String(diaryId), archiveStatus: 'active' }),
       status: 200,
     });
     const entries = (listed.body as { entries: { date: string; content: string; tags: string[]; visibility: string }[] }).entries;
@@ -179,7 +179,7 @@ describeContract('app-import', (context) => {
     type Listed = { title: string | null; time_of_day: string | null; content: string; tags: string[]; is_archived: boolean; is_pinned: boolean };
     const list = async (archiveStatus: string) => ((await call('GET /api/entries', {
       as: alice,
-      query: new URLSearchParams({ page: '1', limit: '10', ids: `${trip!.entryId},${groceries!.entryId}`, archiveStatus }),
+      query: new URLSearchParams({ limit: '20', ids: `${trip!.entryId},${groceries!.entryId}`, archiveStatus }),
       status: 200,
     })).body as { entries: Listed[] }).entries;
     expect((await list('archived')).map(({ title, time_of_day, content, tags, is_archived, is_pinned }) => ({ title, time_of_day, content, tags, is_archived, is_pinned }))).toEqual([

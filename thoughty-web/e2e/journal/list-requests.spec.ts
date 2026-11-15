@@ -21,8 +21,8 @@ function recordListRequests(page: Page): URLSearchParams[] {
 }
 
 test.describe('Journal list requests', () => {
-  test('asks for the list once on first load, with the configured page size and default diary', async ({ page }) => {
-    await setupMockApp(page, { startAuthenticated: true, config: { entriesPerPage: 2 }, initialEntries: entries });
+  test('asks for the first batch once on first load, in the default diary', async ({ page }) => {
+    await setupMockApp(page, { startAuthenticated: true, initialEntries: entries });
     const requests = recordListRequests(page);
 
     await page.goto('/journal');
@@ -30,13 +30,14 @@ test.describe('Journal list requests', () => {
     await expect(page.getByText('Newest entry')).toBeVisible();
     await page.waitForLoadState('networkidle');
     expect(requests).toHaveLength(1);
-    expect(requests[0]?.get('limit')).toBe('2');
+    expect(requests[0]?.get('limit')).toBe('20');
+    expect(['after', 'before', 'from', 'around', 'page'].filter((name) => requests[0]?.has(name))).toEqual([]);
     expect(requests[0]?.get('diaryId')).toBe('1');
     expect(requests[0]?.get('archiveStatus')).toBe('active');
   });
 
-  test('asks for the list once on a permalink, on the page the entry is on', async ({ page }) => {
-    await setupMockApp(page, { startAuthenticated: true, config: { entriesPerPage: 2 }, initialEntries: entries });
+  test('asks for the list once on a permalink, around the entry it opens', async ({ page }) => {
+    await setupMockApp(page, { startAuthenticated: true, initialEntries: entries });
     const requests = recordListRequests(page);
 
     await page.goto('/journal?entry=33');
@@ -44,15 +45,15 @@ test.describe('Journal list requests', () => {
     await expect(page.getByText('Oldest permalink entry')).toBeVisible();
     await page.waitForLoadState('networkidle');
     expect(requests).toHaveLength(1);
-    expect(requests[0]?.get('page')).toBe('2');
-    expect(requests[0]?.get('limit')).toBe('2');
+    expect(requests[0]?.get('around')).toBe('33');
+    expect(requests[0]?.get('limit')).toBe('20');
     // The permalink shows every diary and archived entries too
     expect(requests[0]?.has('diaryId')).toBe(false);
     expect(requests[0]?.has('archiveStatus')).toBe(false);
   });
 
-  test('still shows the journal, at the default page size, when the config request fails', async ({ page }) => {
-    await setupMockApp(page, { startAuthenticated: true, config: { entriesPerPage: 2 }, initialEntries: entries });
+  test('still shows the journal when the config request fails', async ({ page }) => {
+    await setupMockApp(page, { startAuthenticated: true, initialEntries: entries });
     await page.route('**/api/config', (route) => fulfillJson(route, { statusCode: 500, message: 'Internal server error' }, { status: 500 }));
     const requests = recordListRequests(page);
 

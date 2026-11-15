@@ -19,7 +19,7 @@ vi.mock("../components/ComposerDraft/useComposerDraftSync", () => ({
 }));
 
 const custom = { id: "custom-1", name: "Evening walk", content: "Where I walked:", tags: ["walks"], visibility: "private", format: "markdown" };
-const config = { defaultVisibility: "private" as const, entriesPerPage: 10, entryTemplates: JSON.stringify([custom]) };
+const config = { defaultVisibility: "private" as const, entryTemplates: JSON.stringify([custom]) };
 const diaries: Diary[] = [
   makeDiary({ id: 1, name: "Personal", isDefault: true, defaultTemplateId: "builtin-daily-reflection" }),
   makeDiary({ id: 2, name: "Walks", defaultTemplateId: "custom-1" }),

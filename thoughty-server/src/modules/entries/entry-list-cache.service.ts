@@ -95,6 +95,10 @@ export class EntryListCacheService {
 
     const normalized = {
       userId,
+      after: query.after ?? '',
+      around: query.around ?? '',
+      before: query.before ?? '',
+      from: query.from ?? '',
       archiveStatus: query.archiveStatus ?? '',
       date: query.date ?? '',
       diaryId: query.diaryId ?? '',
@@ -103,7 +107,6 @@ export class EntryListCacheService {
       ids: query.ids ?? '',
       limit: query.limit ?? 10,
       mood: query.mood ?? '',
-      page: query.page ?? 1,
       personId: query.personId ?? '',
       search: query.search?.trim() ?? '',
       sort: query.sort ?? 'relevance',

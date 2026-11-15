@@ -22,9 +22,6 @@ export type CommonTranslationKey =
   | "go"
   | "previous"
   | "next"
-  | "first"
-  | "last"
-  | "page"
   | "ofTotal"
   | "close"
   | "closeDialog"
@@ -68,9 +65,6 @@ export const commonTranslations: Record<Language, Record<CommonTranslationKey, s
     go: "Go",
     previous: "Previous",
     next: "Next",
-    first: "First",
-    last: "Last",
-    page: "Page",
     ofTotal: "of {total}",
     close: "Close",
     closeDialog: "Close dialog",
@@ -113,9 +107,6 @@ export const commonTranslations: Record<Language, Record<CommonTranslationKey, s
     go: "Aller",
     previous: "Précédent",
     next: "Suivant",
-    first: "Premier",
-    last: "Dernier",
-    page: "Page",
     ofTotal: "sur {total}",
     close: "Fermer",
     closeDialog: "Fermer la fenêtre",

@@ -52,7 +52,6 @@ interface FilterControlsProps {
     readonly onManagePeople?: () => void;
     readonly allTags: string[];
     readonly tagMetadata?: TagMetadataMap;
-    readonly setPage: Dispatch<SetStateAction<number>>;
     readonly theme?: 'light' | 'dark';
     readonly t: (key: string, params?: Record<string, string | number>) => string;
     readonly onOpenHighlights: () => void;
@@ -91,7 +90,6 @@ function FilterControls({
     onManagePeople,
     allTags,
     tagMetadata,
-    setPage,
     theme,
     t,
     onOpenHighlights,
@@ -128,7 +126,6 @@ function FilterControls({
         setFilterMood('');
         setFilterEraId(null);
         setFilterPersonId(null);
-        setPage(1);
     };
 
     const cycleVisibility = (): void => {
@@ -136,7 +133,6 @@ function FilterControls({
         const currentIndex = order.indexOf(filterVisibility);
         const nextIndex = (currentIndex + 1) % order.length;
         setFilterVisibility(order[nextIndex] ?? 'all');
-        setPage(1);
     };
 
     const getVisibilityButtonStyle = (): string => {
@@ -171,7 +167,6 @@ function FilterControls({
         const currentIndex = order.indexOf(filterArchiveStatus);
         const nextIndex = (currentIndex + 1) % order.length;
         setFilterArchiveStatus(order[nextIndex] ?? 'active');
-        setPage(1);
     };
 
     const getArchiveButtonClass = (): string => {
@@ -261,7 +256,7 @@ function FilterControls({
                     aria-describedby={searchMode === 'keyword' ? searchHelpId : undefined}
                     className={`semantic-search-control ${inputClass} min-w-0 flex-1 basis-64`}
                     value={search}
-                    onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                    onChange={(e) => setSearch(e.target.value)}
                     onFocus={() => setSearchFocused(true)}
                     onBlur={() => setSearchFocused(false)}
                     onKeyDown={(event) => {
@@ -291,7 +286,7 @@ function FilterControls({
                         availableTags={allTags}
                         selectedTags={filterTags}
                         tagMetadata={tagMetadata}
-                        onChange={(newTags) => { setFilterTags(newTags); setPage(1); }}
+                        onChange={(newTags) => setFilterTags(newTags)}
                         placeholder={t('filterTagsPlaceholder')}
                         t={t}
                         singleSelect={false}
@@ -316,7 +311,7 @@ function FilterControls({
                                     type="button"
                                     className={`h-full px-3 font-medium ${searchSort === sort ? 'bg-blue-600 text-white' : inactiveSearchClass}`}
                                     aria-pressed={searchSort === sort}
-                                    onClick={() => { setSearchSort(sort); setPage(1); }}
+                                    onClick={() => setSearchSort(sort)}
                                 >
                                     {t(sort === 'relevance' ? 'searchSortRelevance' : 'searchSortDate')}
                                 </button>
@@ -332,7 +327,7 @@ function FilterControls({
                     <div className="relative z-20 w-[9.5rem] sm:w-[10.5rem]">
                         <TypedDatePicker
                             selected={filterDateObj}
-                            onChange={(date: Date | null) => { setFilterDateObj(date); setPage(1); }}
+                            onChange={(date: Date | null) => setFilterDateObj(date)}
                             className={`w-full border rounded-lg px-3 h-10 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${theme === 'light'
                                 ? 'bg-gray-50 border-gray-300 text-gray-900'
                                 : 'bg-gray-900 border-gray-700 text-gray-100'
@@ -363,7 +358,7 @@ function FilterControls({
                         <span>{getArchiveLabel()}</span>
                     </button>
                     <button type="button"
-                        onClick={() => { setFilterFavorites(!filterFavorites); setPage(1); }}
+                        onClick={() => setFilterFavorites(!filterFavorites)}
                         className={`flex h-10 shrink-0 items-center gap-2 px-3 rounded-lg border transition-all text-sm font-medium ${getFavoriteButtonClass()}`}
                         title={t('filterFavorites')}
                     >
@@ -377,7 +372,6 @@ function FilterControls({
                         onChange={(event) => {
                             const value = event.target.value;
                             setFilterMood(isMoodFilter(value) ? value : '');
-                            setPage(1);
                         }}
                         className={`h-10 shrink-0 rounded-lg border px-3 text-sm font-medium outline-none focus:ring-1 focus:ring-blue-500 ${filterMood
                             ? `bg-blue-500/10 border-blue-500/50 ${tintedTextClass('blue', theme)}`
@@ -393,7 +387,7 @@ function FilterControls({
                     <EraFilterSelect
                         eras={eras}
                         value={filterEraId}
-                        onChange={(eraId) => { setFilterEraId(eraId); setPage(1); }}
+                        onChange={(eraId) => setFilterEraId(eraId)}
                         onManageEras={onManageEras}
                         theme={theme}
                         t={t}
@@ -401,7 +395,7 @@ function FilterControls({
                     <PersonFilterSelect
                         people={people}
                         value={filterPersonId}
-                        onChange={(personId) => { setFilterPersonId(personId); setPage(1); }}
+                        onChange={(personId) => setFilterPersonId(personId)}
                         onManagePeople={onManagePeople}
                         theme={theme}
                         t={t}

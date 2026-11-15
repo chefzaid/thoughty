@@ -5,13 +5,14 @@ import {
   type MockAppState,
   type MockEntry,
 } from './mockApp.shared';
-import { fulfillApiError, fulfillJson, readQueryFlag, sortStrings, toEntryMutationResponse, toEntryResponse, toRevisionResponse, type RouteContext } from './mockApp.route-utils';
+import { fulfillApiError, fulfillJson, readQueryFlag, toEntryMutationResponse, toRevisionResponse, type RouteContext } from './mockApp.route-utils';
 import { matchMockSearch, type MockSearchResult } from './mockApp.search';
 import { getMockBacklinks } from './mockApp.backlinks';
 import { mockEraContains } from './mockApp.routes.life-eras';
 import { addMockMentionedPeople, mockMentions } from './mockApp.routes.people';
 import { isMockSealed, mockSeal } from './mockApp.routes.time-capsules';
 import { placeInlineImages } from './mockApp.routes.attachments';
+import { handleEntryListRoute } from './mockApp.routes.entry-list';
 
 const TASK_LINE = /^((?:[\t ]*>)*[\t ]*(?:[*+-]|\d{1,9}[.)])[\t ]+\[)([ xX])(\](?:[\t \r]|$)[^\n]*)$/;
 
@@ -35,7 +36,7 @@ function resolveTags(state: MockAppState, tags: string[]): string[] {
 export function getFilteredEntries(
   state: MockAppState,
   searchParams: URLSearchParams,
-): { filtered: MockEntry[]; pageNumber: number; limit: number; searchResults: Map<number, MockSearchResult> | null } {
+): { filtered: MockEntry[]; searchResults: Map<number, MockSearchResult> | null; leadOf: (entry: MockEntry) => number } {
   let filtered = sortEntries(state.entries);
   const search = (searchParams.get('search') || '').trim();
   const sort = searchParams.get('sort') || 'relevance';
@@ -51,8 +52,6 @@ export function getFilteredEntries(
   const semanticIds = searchParams.get('ids')
     ?.split(',')
     .map((id) => Number(id)) ?? null;
-  const pageNumber = Number(searchParams.get('page') || '1');
-  const limit = Number(searchParams.get('limit') || '10');
 
   // Like the API, a sealed time capsule matches nothing about its words, tags, mood or people
   if (search || tags.length > 0 || mood || personId) {
@@ -116,29 +115,19 @@ export function getFilteredEntries(
       .sort((left, right) => semanticRank.get(left.id)! - semanticRank.get(right.id)!);
   }
 
-  return { filtered, pageNumber, limit, searchResults };
+  // The list's first sort value, as the API's cursors hold it: the place among a meaning search's IDs, the
+  // negated score of a search by relevance, else 0 for a pinned entry and 1 for the others
+  const semanticPlace = new Map((semanticIds ?? []).map((id, index) => [id, index + 1]));
+  const leadOf = (entry: MockEntry): number => {
+    if (semanticIds) return semanticPlace.get(entry.id) ?? 0;
+    if (searchResults && sort === 'relevance') return -(searchResults.get(entry.id)?.score ?? 0);
+    return entry.is_pinned ? 0 : 1;
+  };
+
+  return { filtered, searchResults, leadOf };
 }
 
-async function handleEntriesCollectionRoute({ route, request, pathname, searchParams, state }: RouteContext): Promise<boolean> {
-  if (pathname === '/api/entries' && request.method() === 'GET') {
-    const { filtered, pageNumber, limit, searchResults } = getFilteredEntries(state, searchParams);
-    const totalPages = Math.max(1, Math.ceil(filtered.length / limit));
-    const startIndex = (pageNumber - 1) * limit;
-    const pagedEntries = filtered.slice(startIndex, startIndex + limit);
-
-    await fulfillJson(route, {
-      entries: pagedEntries.map((entry) => ({
-        ...toEntryResponse(entry, state),
-        ...(searchResults ? { search_matches: searchResults.get(entry.id)?.matches ?? [] } : {}),
-      })),
-      total: filtered.length,
-      page: pageNumber,
-      totalPages,
-      allTags: sortStrings(unique(state.entries.flatMap((entry) => entry.tags))),
-    });
-    return true;
-  }
-
+async function handleEntriesCollectionRoute({ route, request, pathname, state }: RouteContext): Promise<boolean> {
   if (pathname !== '/api/entries' || request.method() !== 'POST') {
     return false;
   }
@@ -473,7 +462,7 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
 }
 
 export async function handleEntriesRoutes(context: RouteContext): Promise<boolean> {
-  if (await handleEntriesCollectionRoute(context)) {
+  if (await handleEntryListRoute(context) || await handleEntriesCollectionRoute(context)) {
     return true;
   }
 

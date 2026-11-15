@@ -112,8 +112,9 @@ export const mockEntries = [
 export const mockEntriesResponse = {
   entries: mockEntries,
   total: 2,
-  page: 1,
-  totalPages: 2,
+  offset: 0,
+  nextCursor: null,
+  prevCursor: null,
   allTags: ['work', 'personal'],
 };
 
@@ -136,7 +137,7 @@ export function createDefaultFetchResponse(url: string) {
     return createJsonResponse(mockConfig);
   }
   if (url.includes('/api/entries/by-date')) {
-    return createJsonResponse({ found: true, page: 1, entryId: 2 });
+    return createJsonResponse({ found: true, entryId: 2 });
   }
   if (url.includes('/api/entries/first')) {
     return createJsonResponse({ years: [2024], months: ['2024-01'] });

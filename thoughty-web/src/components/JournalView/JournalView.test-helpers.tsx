@@ -131,15 +131,17 @@ export const MockEntriesList = (props: {
   </div>
 );
 
-export const MockPagination = (props: {
-  page: number;
-  totalPages: number;
-  setPage: (p: number) => void;
+export const MockJournalFeed = (props: {
+  feed: { total: number; hasOlder: boolean; loadOlder: () => void; loadNewer: () => void };
+  autoLoadNewer: boolean;
+  children: ReactNode;
 }) => (
-  <div data-testid="pagination">
-    <span data-testid="current-page">{props.page}</span>
-    <span data-testid="total-pages">{props.totalPages}</span>
-    <button type="button" data-testid="next-page-btn" onClick={() => props.setPage(props.page + 1)}>Next</button>
+  <div data-testid="journal-feed">
+    <span data-testid="feed-total">{props.feed.total}</span>
+    <span data-testid="feed-auto-newer">{String(props.autoLoadNewer)}</span>
+    <button type="button" data-testid="load-older-btn" onClick={props.feed.loadOlder}>Older</button>
+    <button type="button" data-testid="load-newer-btn" onClick={props.feed.loadNewer}>Newer</button>
+    {props.children}
   </div>
 );
 
@@ -167,8 +169,8 @@ export const MockSavedSearches = ({ currentDiaryId, diaries, notify }: {
   </div>
 );
 
-export const MockRandomEntryButton = ({ listEmpty, onOpen }: { listEmpty: boolean; onOpen: (entryId: number, page: number) => void }) => (
-  <button type="button" data-testid="random-entry" data-list-empty={String(listEmpty)} onClick={() => onOpen(7, 3)}>Random entry</button>
+export const MockRandomEntryButton = ({ listEmpty, onOpen }: { listEmpty: boolean; onOpen: (entryId: number) => void }) => (
+  <button type="button" data-testid="random-entry" data-list-empty={String(listEmpty)} onClick={() => onOpen(7)}>Random entry</button>
 );
 
 export const MockDuplicateReview = ({ diaryId }: { diaryId: number | null }) => (
@@ -208,7 +210,6 @@ export const mockT = vi.fn((key: string) => key);
 export const mockConfig: Config = {
   theme: 'dark',
   language: 'en',
-  entriesPerPage: 10,
   defaultVisibility: 'private',
 };
 
@@ -299,7 +300,6 @@ export const createProps = (overrides: PropsOverrides = {}): JournalViewProps =>
       filterPersonId: null,
       setFilterPersonId: vi.fn(),
       allTags: ['tag1', 'tag2', 'tag3'],
-      setPage: vi.fn(),
     },
     entriesList: {
       loading: false,
@@ -331,12 +331,16 @@ export const createProps = (overrides: PropsOverrides = {}): JournalViewProps =>
       activeTargetId: null,
       onBackToSource: vi.fn(),
     },
-    pagination: {
-      page: 1,
-      totalPages: 5,
-      inputPage: '1',
-      setPage: vi.fn(),
-      setInputPage: vi.fn(),
+    feed: {
+      total: 42,
+      offset: 0,
+      hasOlder: true,
+      hasNewer: false,
+      loadingOlder: false,
+      loadingNewer: false,
+      loadError: false,
+      loadOlder: vi.fn(),
+      loadNewer: vi.fn(),
     },
     yearMonthNavigator: {
       availableYears: [2023, 2024],
@@ -345,7 +349,7 @@ export const createProps = (overrides: PropsOverrides = {}): JournalViewProps =>
     },
     randomEntry: {
       query: {
-        page: 1, limit: 10, search: '', filterTags: [], filterDate: '', filterVisibility: '',
+        search: '', filterTags: [], filterDate: '', filterVisibility: '',
         favorites: false, archiveStatus: 'active', diaryId: 1, entryIds: null,
       },
       listEmpty: false,
@@ -368,7 +372,7 @@ export const createProps = (overrides: PropsOverrides = {}): JournalViewProps =>
     entryForm: { ...base.entryForm, ...overrides.entryForm },
     filters: { ...base.filters, ...overrides.filters },
     entriesList: { ...base.entriesList, ...overrides.entriesList },
-    pagination: { ...base.pagination, ...overrides.pagination },
+    feed: { ...base.feed, ...overrides.feed },
     yearMonthNavigator: { ...base.yearMonthNavigator, ...overrides.yearMonthNavigator },
     randomEntry: { ...base.randomEntry, ...overrides.randomEntry },
   };

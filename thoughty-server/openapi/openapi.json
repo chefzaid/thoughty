@@ -1437,6 +1437,7 @@
     },
     "/api/entries": {
       "get": {
+        "description": "Reads the list a batch at a time for infinite scroll: from the start, `after` the `nextCursor` of the batch before, `before` the `prevCursor` of the batch after, or `around` an entry, to open the list at it.",
         "operationId": "EntriesController_getEntries",
         "parameters": [
           {
@@ -1566,27 +1567,61 @@
             }
           },
           {
-            "name": "page",
+            "name": "limit",
             "required": false,
             "in": "query",
+            "description": "Entries in the batch",
             "schema": {
-              "default": 1,
+              "minimum": 1,
+              "maximum": 100,
+              "default": 10,
               "type": "number"
             }
           },
           {
-            "name": "limit",
+            "name": "after",
             "required": false,
             "in": "query",
+            "description": "The `nextCursor` of the batch before: this batch starts right after its last entry, even when entries were written or deleted meanwhile. Only one of `after`, `from`, `before` and `around`",
             "schema": {
-              "default": 10,
+              "example": "1_2026-10-21__1_42",
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "The `prevCursor` of a batch: the batch starts at its first entry, included, to read that batch again (one opened `around` an entry, say) with the entries it holds now",
+            "schema": {
+              "example": "1_2026-10-25_08:30_2_57",
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "description": "The `prevCursor` of the batch after: this batch holds the entries right before its first entry, in list order",
+            "schema": {
+              "example": "1_2026-10-25_08:30_2_57",
+              "type": "string"
+            }
+          },
+          {
+            "name": "around",
+            "required": false,
+            "in": "query",
+            "description": "An entry ID: the batch holds that entry with the entries listed just before and after it (half the batch each way, more of one when the other ends sooner), to open the list at an entry. 404 `ENTRY_NOT_FOUND` when the filters leave it out",
+            "schema": {
+              "example": 42,
               "type": "number"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "List of entries",
+            "description": "A batch of entries",
             "content": {
               "application/json": {
                 "schema": {
@@ -1640,12 +1675,45 @@
                       ]
                     }
                   ],
-                  "total": 1,
-                  "page": 1,
-                  "totalPages": 1,
+                  "total": 340,
+                  "offset": 40,
+                  "nextCursor": "1_2026-10-21__1_42",
+                  "prevCursor": "1_2026-10-25_08:30_2_57",
                   "allTags": [
                     "reflection"
                   ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A filter or cursor is invalid, or `after`, `before` and `around` are combined",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "A filter or cursor is invalid, or `after`, `before` and `around` are combined",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ENTRY_NOT_FOUND: the filters leave out the entry `around` names",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "ENTRY_NOT_FOUND: the filters leave out the entry `around` names",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
                 }
               }
             }
@@ -1656,7 +1724,7 @@
             "bearer": []
           }
         ],
-        "summary": "Get all entries with optional filters and pagination",
+        "summary": "A batch of the journal list, with its filters",
         "tags": [
           "Entries"
         ]
@@ -2048,7 +2116,7 @@
     },
     "/api/entries/random": {
       "get": {
-        "description": "Picks one entry, every match equally likely, among those the journal list shows with the same filters, and gives the page of that list (at its page size and order) that shows it. Sealed time capsules and entries in the recycle bin are never picked; with `excludeId`, that entry comes back only when it is the only match.",
+        "description": "Picks one entry, every match equally likely, among those the journal list shows with the same filters; the journal then opens the list `around` it. Sealed time capsules and entries in the recycle bin are never picked; with `excludeId`, that entry comes back only when it is the only match.",
         "operationId": "EntriesController_getRandomEntry",
         "parameters": [
           {
@@ -2178,15 +2246,6 @@
             }
           },
           {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "type": "number"
-            }
-          },
-          {
             "name": "excludeId",
             "required": false,
             "in": "query",
@@ -2199,7 +2258,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The picked entry and its page",
+            "description": "The picked entry",
             "content": {
               "application/json": {
                 "schema": {
@@ -2208,8 +2267,7 @@
                 "example": {
                   "id": 42,
                   "date": "2024-03-10",
-                  "index": 1,
-                  "page": 3
+                  "index": 1
                 }
               }
             }
@@ -2575,6 +2633,109 @@
         "operationId": "EntriesController_getFirstEntry",
         "parameters": [
           {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Full-text search over content and tags, with English and French word forms and accents ignored. Supports \"exact phrases\" in quotes, a leading minus to exclude a word or phrase, and OR between alternatives; the last word also matches the longer words it starts.",
+            "schema": {
+              "maxLength": 500,
+              "example": "\"morning run\" -rain OR swim",
+              "type": "string"
+            }
+          },
+          {
+            "name": "ids",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated entry IDs to include, in relevance order",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tags",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated list of tags to filter by",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "visibility",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "public",
+                "private"
+              ]
+            }
+          },
+          {
+            "name": "favorites",
+            "required": false,
+            "in": "query",
+            "description": "Filter by favorites only",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "archiveStatus",
+            "required": false,
+            "in": "query",
+            "description": "Filter by archive state",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "active",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "mood",
+            "required": false,
+            "in": "query",
+            "description": "Filter by recorded mood: one or more levels from 1 (very low) to 5 (very good), comma-separated; \"any\" for entries with a mood, or \"none\" for entries without one",
+            "schema": {
+              "example": "4,5",
+              "type": "string"
+            }
+          },
+          {
+            "name": "diaryId",
+            "required": false,
+            "in": "query",
+            "description": "Diary ID",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "eraId",
+            "required": false,
+            "in": "query",
+            "description": "Life era ID: only entries dated within the era (from its start to its end, with no end while it is ongoing)",
+            "schema": {
+              "example": 3,
+              "type": "number"
+            }
+          },
+          {
+            "name": "personId",
+            "required": false,
+            "in": "query",
+            "description": "Person ID: only entries that mention the person",
+            "schema": {
+              "example": 12,
+              "type": "number"
+            }
+          },
+          {
             "name": "year",
             "required": false,
             "in": "query",
@@ -2591,27 +2752,17 @@
             "schema": {
               "type": "number"
             }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
-              "type": "number"
-            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Page info",
+            "description": "The entry to open the list around",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/FirstEntryResponseDto"
                 },
                 "example": {
-                  "page": 1,
                   "found": true,
                   "entryId": 1,
                   "years": [
@@ -2630,7 +2781,7 @@
             "bearer": []
           }
         ],
-        "summary": "Get page number containing first entry for a year/month",
+        "summary": "The first entry of a year or month among the journal filters, and the years and months with entries",
         "tags": [
           "Entries"
         ]
@@ -2665,15 +2816,6 @@
             "in": "query",
             "description": "Entry ID",
             "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": 10,
               "type": "number"
             }
           }
@@ -2733,7 +2875,6 @@
                       "swimming"
                     ]
                   },
-                  "page": 1,
                   "entryId": 1,
                   "error": "example"
                 }
@@ -4358,7 +4499,6 @@
                   "subscriptionPlan": "free",
                   "paymentMethodLabel": "example",
                   "fontSize": "example",
-                  "entriesPerPage": "example",
                   "maxPinnedEntries": "example",
                   "autoTagMaxTags": "reflection",
                   "highContrast": "true",
@@ -4408,7 +4548,6 @@
                 "highContrast": "true",
                 "ttsVoiceUri": "https://thoughty.example.com/callback",
                 "language": "en",
-                "entriesPerPage": "example",
                 "maxPinnedEntries": "example",
                 "defaultVisibility": "public",
                 "readDates": "true",
@@ -15138,13 +15277,26 @@
             }
           },
           "total": {
-            "type": "number"
+            "type": "number",
+            "description": "Entries the filters match, in every batch",
+            "example": 340
           },
-          "page": {
-            "type": "number"
+          "offset": {
+            "type": "number",
+            "description": "Entries listed before this batch, so its first entry is number `offset + 1`",
+            "example": 40
           },
-          "totalPages": {
-            "type": "number"
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Pass as `after` for the batch that follows; null when this batch ends the list",
+            "example": "1_2026-10-21__1_42"
+          },
+          "prevCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Pass as `before` for the batch that comes before; null when this batch starts the list",
+            "example": "1_2026-10-25_08:30_2_57"
           },
           "allTags": {
             "type": "array",
@@ -15156,8 +15308,9 @@
         "required": [
           "entries",
           "total",
-          "page",
-          "totalPages",
+          "offset",
+          "nextCursor",
+          "prevCursor",
           "allTags"
         ],
         "example": {
@@ -15208,9 +15361,10 @@
               ]
             }
           ],
-          "total": 1,
-          "page": 1,
-          "totalPages": 1,
+          "total": 340,
+          "offset": 40,
+          "nextCursor": "1_2026-10-21__1_42",
+          "prevCursor": "1_2026-10-25_08:30_2_57",
           "allTags": [
             "reflection"
           ]
@@ -15458,24 +15612,17 @@
             "type": "number",
             "description": "Same-day index, as cross-references use it",
             "example": 1
-          },
-          "page": {
-            "type": "number",
-            "description": "The page of the filtered journal list, at the requested page size and order, that shows the entry",
-            "example": 3
           }
         },
         "required": [
           "id",
           "date",
-          "index",
-          "page"
+          "index"
         ],
         "example": {
           "id": 42,
           "date": "2024-03-10",
-          "index": 1,
-          "page": 3
+          "index": 1
         }
       },
       "ComfortReadDto": {
@@ -15644,9 +15791,6 @@
       "FirstEntryResponseDto": {
         "type": "object",
         "properties": {
-          "page": {
-            "type": "number"
-          },
           "found": {
             "type": "boolean"
           },
@@ -15667,13 +15811,11 @@
           }
         },
         "required": [
-          "page",
           "found",
           "years",
           "months"
         ],
         "example": {
-          "page": 1,
           "found": true,
           "entryId": 1,
           "years": [
@@ -15692,9 +15834,6 @@
           },
           "entry": {
             "$ref": "#/components/schemas/EntryResponseDto"
-          },
-          "page": {
-            "type": "number"
           },
           "entryId": {
             "type": "number"
@@ -15753,7 +15892,6 @@
               "swimming"
             ]
           },
-          "page": 1,
           "entryId": 1,
           "error": "example"
         }
@@ -17286,11 +17424,6 @@
             "pattern": "^\\d{1,3}$",
             "description": "Font size in pixels"
           },
-          "entriesPerPage": {
-            "type": "string",
-            "pattern": "^\\d{1,3}$",
-            "description": "Entries per page"
-          },
           "maxPinnedEntries": {
             "type": "string",
             "pattern": "^\\d{1,3}$",
@@ -17371,7 +17504,6 @@
           "subscriptionPlan": "free",
           "paymentMethodLabel": "example",
           "fontSize": "example",
-          "entriesPerPage": "example",
           "maxPinnedEntries": "example",
           "autoTagMaxTags": "reflection",
           "highContrast": "true",
@@ -17501,21 +17633,6 @@
               "fr"
             ],
             "description": "Interface language"
-          },
-          "entriesPerPage": {
-            "oneOf": [
-              {
-                "type": "string",
-                "maxLength": 3,
-                "pattern": "^\\d{1,3}$"
-              },
-              {
-                "type": "integer",
-                "minimum": 0,
-                "maximum": 999
-              }
-            ],
-            "description": "Entries per page"
           },
           "maxPinnedEntries": {
             "oneOf": [
@@ -17702,7 +17819,6 @@
           "highContrast": "true",
           "ttsVoiceUri": "https://thoughty.example.com/callback",
           "language": "en",
-          "entriesPerPage": "example",
           "maxPinnedEntries": "example",
           "defaultVisibility": "public",
           "readDates": "true",

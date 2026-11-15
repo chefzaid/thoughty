@@ -1,7 +1,8 @@
 import { useEffect, type RefObject } from 'react';
 import { isFocusModeShortcut, openFocusModeFrom } from '../FocusMode/focusModeShortcut';
 
-function isEditableTarget(target: EventTarget | null): boolean {
+/** Whether keys typed at `target` go into text (a field or editable content). */
+export function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) {
     return false;
   }
@@ -25,24 +26,15 @@ function focusFirstField(container: HTMLElement | null): void {
 interface UseJournalKeyboardShortcutsParams {
   entryFormRef: RefObject<HTMLElement | null>;
   searchRef: RefObject<HTMLElement | null>;
-  page: number;
-  totalPages: number;
-  setPage: (page: number) => void;
   closeHighlights: () => void;
   highlightsOpen: boolean;
-  /** Whether the arrow keys turn the list's pages (not while the calendar is shown). */
-  pageKeysEnabled?: boolean;
 }
 
 export function useJournalKeyboardShortcuts({
   entryFormRef,
   searchRef,
-  page,
-  totalPages,
-  setPage,
   closeHighlights,
   highlightsOpen,
-  pageKeysEnabled = true,
 }: UseJournalKeyboardShortcutsParams): void {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -71,27 +63,10 @@ export function useJournalKeyboardShortcuts({
 
       if (event.key === 'Escape' && highlightsOpen) {
         closeHighlights();
-        return;
-      }
-
-      if (!pageKeysEnabled || event.defaultPrevented || isEditableTarget(event.target)
-        || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
-        return;
-      }
-
-      if (event.key === 'ArrowLeft' && page > 1) {
-        event.preventDefault();
-        setPage(Math.max(1, page - 1));
-        return;
-      }
-
-      if (event.key === 'ArrowRight' && page < totalPages) {
-        event.preventDefault();
-        setPage(Math.min(totalPages, page + 1));
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [closeHighlights, entryFormRef, highlightsOpen, page, pageKeysEnabled, searchRef, setPage, totalPages]);
+  }, [closeHighlights, entryFormRef, highlightsOpen, searchRef]);
 }

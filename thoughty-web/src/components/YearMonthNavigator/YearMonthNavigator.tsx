@@ -29,7 +29,7 @@ function YearMonthNavigator({
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   return (
-    <div className="flex justify-center items-center gap-3 mt-4">
+    <div className="flex flex-wrap items-center gap-3">
       <span className={`text-sm ${config.theme === 'light' ? 'text-gray-600' : 'text-gray-400'}`}>
         {t('goToFirst')}:
       </span>

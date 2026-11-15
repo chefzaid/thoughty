@@ -30,6 +30,7 @@ import { EntriesQueryService } from './entries-query.service';
 import { EntryLookupService } from './entry-lookup.service';
 import { EntriesCommandService } from './entries-command.service';
 import { EntryListCacheService } from './entry-list-cache.service';
+import { EntryListService } from './entry-list.service';
 import { EntryTaskListService } from './entry-task-list.service';
 import { EntryOpenTasksService } from './entry-open-tasks.service';
 import { EntryCalendarService } from './entry-calendar.service';
@@ -45,6 +46,7 @@ export class EntriesService {
     private readonly entryLookupService: EntryLookupService,
     private readonly entriesCommandService: EntriesCommandService,
     private readonly entryListCacheService: EntryListCacheService,
+    private readonly entryListService: EntryListService,
     private readonly entryTaskListService: EntryTaskListService,
     private readonly entryOpenTasksService: EntryOpenTasksService,
     private readonly entryCalendarService: EntryCalendarService,
@@ -56,7 +58,7 @@ export class EntriesService {
 
   async getEntries(userId: number, query: GetEntriesQueryDto): Promise<EntriesListResponseDto> {
     return this.entryListCacheService.getOrLoad(userId, query, () =>
-      this.entriesQueryService.getEntries(userId, query),
+      this.entryListService.getEntries(userId, query),
     );
   }
 
@@ -84,7 +86,6 @@ export class EntriesService {
     userId: number,
     query: GetFirstEntryQueryDto,
   ): Promise<{
-    page: number;
     found: boolean;
     entryId?: number;
     years: number[];

@@ -147,7 +147,7 @@ describeContract('io', (context) => {
       (
         await call('GET /api/entries', {
           as: alice,
-          query: new URLSearchParams({ page: '1', limit: '50', archiveStatus: 'active' }),
+          query: new URLSearchParams({ limit: '50', archiveStatus: 'active' }),
           status: 200,
         })
       ).body as Listed;
@@ -204,7 +204,7 @@ describeContract('io', (context) => {
     });
     const listed = await call('GET /api/entries', {
       as: alice,
-      query: new URLSearchParams({ page: '1', limit: '10', ids: String(entryId), archiveStatus: 'active' }),
+      query: new URLSearchParams({ limit: '20', ids: String(entryId), archiveStatus: 'active' }),
       status: 200,
     });
     const [entry] = (listed.body as { entries: { content: string; attachments: { id: number }[] }[] }).entries;

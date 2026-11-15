@@ -4,8 +4,8 @@ import { IsOptional, Min } from 'class-validator';
 import { StrictInt } from '@/common/validation';
 import { GetEntriesQueryDto } from './entry-query.dto';
 
-/** The journal list's query without its page, and the entry not to land on again. */
-export class GetRandomEntryQueryDto extends OmitType(GetEntriesQueryDto, ['page'] as const) {
+/** The journal list's filters and order without its batch, and the entry not to land on again. */
+export class GetRandomEntryQueryDto extends OmitType(GetEntriesQueryDto, ['limit', 'after', 'from', 'before', 'around'] as const) {
   @ApiPropertyOptional({
     description:
       'The entry picked last time: another one is picked when the filters match any other, so asking again moves on',
@@ -26,10 +26,4 @@ export class RandomEntryResponseDto {
 
   @ApiProperty({ description: 'Same-day index, as cross-references use it', example: 1 })
   index: number;
-
-  @ApiProperty({
-    description: 'The page of the filtered journal list, at the requested page size and order, that shows the entry',
-    example: 3,
-  })
-  page: number;
 }

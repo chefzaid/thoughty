@@ -24,6 +24,7 @@ import { timeCapsuleServiceOn } from './time-capsules.test-helpers';
 import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
 import { personDatesServiceOn } from '@/modules/people/person-dates.test-helpers';
 import { featureFlagsWith } from '@/common/feature-flags/feature-flags.test-helpers';
+import { EntryListService } from '@/modules/entries/entry-list.service';
 
 /** The journal services as the API wires them, on a PostgreSQL integration spec's database, with email captured. */
 export function buildTimeCapsuleBed(dataSource: DataSource) {
@@ -45,12 +46,13 @@ export function buildTimeCapsuleBed(dataSource: DataSource) {
     new EntryInlineImagesService(dataSource.getRepository(Attachment), entries),
     featureFlagsWith(),
   );
-  const queries = new EntriesQueryService(entries, revisions, search, timeCapsules, rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
+  const queries = new EntriesQueryService(entries, revisions, timeCapsules, rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
   const journal = new EntriesService(
     queries,
-    new EntryLookupService(entries),
+    new EntryLookupService(entries, search),
     commands,
     cache,
+    new EntryListService(entries, search),
     new EntryTaskListService(dataSource),
     new EntryOpenTasksService(entries),
     new EntryCalendarService(entries, search),

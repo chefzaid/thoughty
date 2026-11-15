@@ -1,9 +1,7 @@
 import type { ArchiveStatusFilter, EntrySearchSort } from '../../types';
 
-/** The journal list's page and filters, as the entry list holds them. */
+/** The journal list's filters and order, as the entry list holds them. */
 export interface EntryListQuery {
-  page: number;
-  limit: number;
   search: string;
   /** Order of keyword search results; sent only with a search. */
   sort?: EntrySearchSort;
@@ -22,11 +20,15 @@ export interface EntryListQuery {
   entryIds?: number[] | null;
 }
 
-/** The `GET /api/entries` query for a page of the journal: the paging, then each filter that is set. */
+/**
+ * Where a batch of the list starts: after a batch's `nextCursor`, before its `prevCursor`, from its own `prevCursor`
+ * (to read it again), around an entry, or (none) at the start.
+ */
+export type EntryBatchPosition = { after: string } | { before: string } | { from: string } | { around: number } | Record<string, never>;
+
+/** The journal list's query for `GET /api/entries` and the lookups that follow it: each filter that is set. */
 export function entryListParams(params: EntryListQuery): URLSearchParams {
   const urlParams = new URLSearchParams({
-    page: params.page.toString(),
-    limit: params.limit.toString(),
     search: params.search,
     tags: params.filterTags.join(','),
     date: params.filterDate,
@@ -41,5 +43,15 @@ export function entryListParams(params: EntryListQuery): URLSearchParams {
   if (params.personId) urlParams.append('personId', params.personId.toString());
   // No meaning-search match at all still narrows the list, to nothing
   if (params.entryIds) urlParams.append('ids', params.entryIds.length > 0 ? params.entryIds.join(',') : '0');
+  return urlParams;
+}
+
+/** The `GET /api/entries` query for a batch of the journal: the filters, the batch size and where it starts. */
+export function entryBatchParams(params: EntryListQuery, limit: number, position: EntryBatchPosition): URLSearchParams {
+  const urlParams = entryListParams(params);
+  urlParams.set('limit', String(limit));
+  for (const [key, value] of Object.entries(position)) {
+    urlParams.set(key, String(value));
+  }
   return urlParams;
 }

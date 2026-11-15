@@ -3,7 +3,7 @@ import type { ComponentProps } from 'react';
 import type { AppNotice } from '../hooks/useAppNotice';
 import type { TransientMessage } from '../hooks/useTransientMessage';
 
-import { normalizeEntriesPerPage, type Config, type Entry, type ImportExportFormat, type ImportExportSection, type TranslationFunction, type ViewType } from '../types';
+import { type Config, type Entry, type ImportExportFormat, type ImportExportSection, type TranslationFunction, type ViewType } from '../types';
 import type AuthenticatedAppLayout from '../routes/AuthenticatedAppLayout';
 import type AuthenticatedRoutes from '../routes/AuthenticatedRoutes';
 import type { DuplicateEntryScan, RephraseMode, SummaryGuidance } from '../services/api/aiService';
@@ -63,7 +63,7 @@ export interface BuildAuthenticatedRoutesPropsParams {
   deleteModalState: Pick<DeleteModalState, 'handleDelete'>;
   diariesState: Pick<DiariesState, 'currentDiaryId' | 'diaries' | 'fetchDiaries' | 'handleCreateDiary' | 'handleDeleteDiary' | 'handleReorderDiaries' | 'handleSetDefaultDiary' | 'handleUpdateDiary'>;
   downloadUserData: AuthenticatedRoutesProps['profileRouteProps']['onDownloadData'];
-  entriesState: Pick<EntriesState, 'activeTargetId' | 'allTags' | 'availableMonths' | 'availableYears' | 'backlinksVersion' | 'deleteRevision' | 'entries' | 'fetchEntries' | 'fetchEntryBacklinks' | 'fetchEntryHistory' | 'filterArchiveStatus' | 'filterDateObj' | 'filterEraId' | 'filterFavorites' | 'filterMood' | 'filterPersonId' | 'filterTags' | 'filterVisibility' | 'groupedEntries' | 'inputPage' | 'listQuery' | 'loading' | 'page' | 'rankedResults' | 'reorderEntries' | 'runSemanticSearch' | 'search' | 'searchMode' | 'searchSort' | 'semanticSearchResult' | 'semanticSearchStatus' | 'setEntryTask' | 'setFilterArchiveStatus' | 'setFilterDateObj' | 'setFilterEraId' | 'setFilterFavorites' | 'setFilterMood' | 'setFilterPersonId' | 'setFilterTags' | 'setFilterVisibility' | 'setInputPage' | 'setPage' | 'setSearch' | 'setSearchMode' | 'setSearchSort' | 'sourceEntry' | 'targetEntryId' | 'toggleArchived' | 'toggleFavorite' | 'togglePinned' | 'toggleVisibility' | 'totalPages' | 'unsealEntry'>;
+  entriesState: Pick<EntriesState, 'activeTargetId' | 'allTags' | 'availableMonths' | 'availableYears' | 'backlinksVersion' | 'deleteRevision' | 'entries' | 'fetchEntries' | 'fetchEntryBacklinks' | 'fetchEntryHistory' | 'filterArchiveStatus' | 'filterDateObj' | 'filterEraId' | 'filterFavorites' | 'filterMood' | 'filterPersonId' | 'filterTags' | 'filterVisibility' | 'feed' | 'groupedEntries' | 'listQuery' | 'loading' | 'rankedResults' | 'reorderEntries' | 'runSemanticSearch' | 'search' | 'searchMode' | 'searchSort' | 'semanticSearchResult' | 'semanticSearchStatus' | 'setEntryTask' | 'setFilterArchiveStatus' | 'setFilterDateObj' | 'setFilterEraId' | 'setFilterFavorites' | 'setFilterMood' | 'setFilterPersonId' | 'setFilterTags' | 'setFilterVisibility' | 'setSearch' | 'setSearchMode' | 'setSearchSort' | 'sourceEntry' | 'targetEntryId' | 'toggleArchived' | 'toggleFavorite' | 'togglePinned' | 'toggleVisibility' | 'unsealEntry'>;
   entryEditState: Pick<EntryEditState, 'addEditPendingFile' | 'editDate' | 'editDiaryId' | 'editExistingAttachments' | 'editFeelings' | 'editFormat' | 'editMood' | 'editPendingFiles' | 'editTags' | 'editText' | 'editTimeOfDay' | 'editTitle' | 'editVisibility' | 'editingEntry' | 'handleCancelEdit' | 'handleEdit' | 'handleSaveEdit' | 'removeEditAttachment' | 'removeEditPendingFile' | 'setEditDate' | 'setEditDiaryId' | 'setEditFeelings' | 'setEditFormat' | 'setEditMood' | 'setEditTags' | 'setEditText' | 'setEditTimeOfDay' | 'setEditTitle' | 'setEditVisibility'>;
   entryFormState: Pick<EntryFormState, 'addPendingFile' | 'diaryTemplateName' | 'draft' | 'feelings' | 'fixingWriting' | 'formError' | 'format' | 'handleFixWriting' | 'handleSubmit' | 'handleSuggestTags' | 'mood' | 'newEntryText' | 'pendingFiles' | 'removePendingFile' | 'removeUploadedAttachment' | 'savedEntry' | 'selectedDate' | 'setFeelings' | 'setFormat' | 'setMood' | 'setNewEntryText' | 'setSelectedDate' | 'setTags' | 'setTimeCapsule' | 'setTimeOfDay' | 'setTitle' | 'setVisibility' | 'suggestingTags' | 'tags' | 'timeCapsule' | 'timeOfDay' | 'title' | 'uploadedAttachments' | 'visibility'>;
   entryNavigationState: Pick<EntryNavigationState, 'handleBackToSource' | 'handleNavigateToEntry' | 'handleOpenEntryInList' | 'handleShareEntry'>;
@@ -252,13 +252,11 @@ export function buildAuthenticatedRoutesProps({
       onManageDiaries: () => routingState.handleManageDiaries('stats'),
       onOpenJournalDay: (date: string) => {
         entriesState.setFilterDateObj(new Date(`${date}T00:00:00.000Z`));
-        entriesState.setPage(1);
         routingState.handleViewChange('journal');
       },
       onOpenJournalTag: (tag: string) => {
         entriesState.setFilterTags([tag]);
         entriesState.setFilterDateObj(null);
-        entriesState.setPage(1);
         routingState.handleViewChange('journal');
       },
       // The journal's search has no month filter, so a word opens its results from every month
@@ -266,7 +264,6 @@ export function buildAuthenticatedRoutesProps({
         entriesState.setSearchMode('keyword');
         entriesState.setSearch(word);
         entriesState.setFilterDateObj(null);
-        entriesState.setPage(1);
         routingState.handleViewChange('journal');
       },
       theme: config.theme,
@@ -403,7 +400,6 @@ export function buildAuthenticatedRoutesProps({
         setFilterPersonId: entriesState.setFilterPersonId,
         allTags: entriesState.allTags,
         tagMetadata,
-        setPage: entriesState.setPage,
       },
       entriesList: buildEntriesListProps({
         bulkSelectState,
@@ -419,23 +415,7 @@ export function buildAuthenticatedRoutesProps({
         knownTags,
         tagMetadata,
       }),
-      pagination: {
-        page: entriesState.page,
-        totalPages: entriesState.totalPages,
-        inputPage: entriesState.inputPage,
-        setPage: entriesState.setPage,
-        setInputPage: entriesState.setInputPage,
-        pageSize: normalizeEntriesPerPage(config.entriesPerPage),
-        // The new page holds the first entry shown before, so the writer keeps their place
-        onPageSizeChange: (pageSize: number) => {
-          const previousPage = entriesState.page;
-          const firstShown = (previousPage - 1) * normalizeEntriesPerPage(config.entriesPerPage);
-          entriesState.setPage(Math.floor(firstShown / pageSize) + 1);
-          void saveConfig({ ...config, entriesPerPage: String(pageSize) }).then((saved) => {
-            if (!saved) entriesState.setPage(previousPage);
-          });
-        },
-      },
+      feed: entriesState.feed,
       savedEntry: entryFormState.savedEntry,
       randomEntry: {
         query: entriesState.listQuery,

@@ -44,7 +44,6 @@ export const apiModuleMock = () => ({
     bulkOperation: vi.fn(),
     navigateToFirst: vi.fn(),
     navigateByDate: vi.fn(),
-    navigateById: vi.fn(),
     fetchEntryHistory: vi.fn(),
     fetchEntryBacklinks: vi.fn(),
     deleteRevision: vi.fn(),

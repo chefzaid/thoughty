@@ -10,7 +10,6 @@ import { DiariesService } from '@/modules/diaries/diaries.service';
 import { DiaryEntryTransferService } from '@/modules/diaries/diary-entry-transfer.service';
 import { EntriesCommandService } from '@/modules/entries/entries-command.service';
 import { EntriesQueryService } from '@/modules/entries/entries-query.service';
-import { EntrySearchService } from '@/modules/entries/entry-search.service';
 import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
 import { EntryInlineImagesService } from '@/modules/entries/entry-inline-images.service';
 import { RecycleBinService } from './recycle-bin.service';
@@ -18,6 +17,7 @@ import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test
 import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
 import { personDatesServiceOn } from '@/modules/people/person-dates.test-helpers';
 import { featureFlagsWith } from '@/common/feature-flags/feature-flags.test-helpers';
+import { entryListOn } from '@/modules/entries/entry-list.test-helpers';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -66,7 +66,7 @@ describePostgres('PostgreSQL recycle bin', () => {
       new EntryInlineImagesService(attachments, entries),
       featureFlagsWith(),
     );
-    queries = new EntriesQueryService(entries, revisions, new EntrySearchService(entries), timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
+    queries = new EntriesQueryService(entries, revisions, timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
     removeStoredFiles = jest.fn().mockResolvedValue(undefined);
     bin = new RecycleBinService(
       dataSource,
@@ -87,7 +87,7 @@ describePostgres('PostgreSQL recycle bin', () => {
     content,
     ...overrides,
   });
-  const journal = async () => (await queries.getEntries(userId, { page: 1, limit: 20 })).entries
+  const journal = async () => (await entryListOn(entries).getEntries(userId, { limit: 20 })).entries
     .map((entry) => `${entry.content}#${entry.index}`);
 
   it('takes a deleted entry out of the journal with its history kept, then restores it at the end of its day', async () => {

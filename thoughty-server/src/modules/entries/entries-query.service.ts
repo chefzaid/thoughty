@@ -4,16 +4,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry, EntryRevision } from '@/database/entities';
 import {
-  GetEntriesQueryDto,
   GetHighlightsQueryDto,
-  EntriesListResponseDto,
   EntryHighlightsResponseDto,
   EntryResponseDto,
 } from './dto';
 import { toEntryResponse } from './entry-response.mapper';
-import { addSameDayOrder, dayParts, writersDayOr } from '@/common/utils';
-import { applyEntryListFilters, entrySearchRank, parseEntryIdsFilter } from './entry-list-filters';
-import { EntrySearchService } from './entry-search.service';
+import { dayParts, writersDayOr } from '@/common/utils';
 import { ENTRY_WORDS_SQL } from '@/modules/stats/stats-sql';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 import { RereadReminderService } from '@/modules/reread-reminders/reread-reminders.service';
@@ -45,8 +41,8 @@ export interface MonthMemoryQuery {
 }
 
 /**
- * Reading the journal: the filtered and searched entry list, the days with entries, tag usage,
- * the day's highlights and an entry's revisions. Finding a single entry is `EntryLookupService`.
+ * Reading the journal: the days with entries, tag usage, the day's highlights and an entry's revisions.
+ * The entry list is `EntryListService`; finding a single entry is `EntryLookupService`.
  */
 @Injectable()
 export class EntriesQueryService {
@@ -55,7 +51,6 @@ export class EntriesQueryService {
     private readonly entryRepository: Repository<Entry>,
     @InjectRepository(EntryRevision)
     private readonly revisionRepository: Repository<EntryRevision>,
-    private readonly entrySearch: EntrySearchService,
     private readonly timeCapsules: TimeCapsuleService,
     private readonly rereadReminders: RereadReminderService,
     private readonly personDates: PersonDatesService,
@@ -73,81 +68,6 @@ export class EntriesQueryService {
     );
 
     return { tags: rows.map(({ tag, count }) => ({ tag, count: Number(count) })) };
-  }
-
-  async getEntries(userId: number, query: GetEntriesQueryDto): Promise<EntriesListResponseDto> {
-    const { search, sort, ids, date, page = 1, limit = 10 } = query;
-
-    const qb = this.entryRepository
-      .createQueryBuilder('e')
-      .leftJoinAndSelect('e.diary', 'd')
-      .leftJoinAndSelect('e.attachments', 'a')
-      .where('e.user_id = :userId', { userId });
-
-    const prepared = search ? await this.entrySearch.prepare(search) : null;
-    applyEntryListFilters(qb, query, prepared);
-
-    const entryIds = parseEntryIdsFilter(ids);
-    if (entryIds.length > 0) {
-      qb.addSelect('array_position(CAST(:semanticOrder AS integer[]), e.id)', 'semantic_rank');
-      qb.setParameter('semanticOrder', entryIds);
-    }
-
-    if (prepared?.kind === 'text') {
-      qb.addSelect(entrySearchRank(qb, prepared), 'search_rank');
-    }
-
-    if (date) {
-      qb.andWhere('e.date = :date', { date });
-    }
-
-    const totalPromise = qb.getCount();
-
-    if (entryIds.length > 0) {
-      qb.orderBy('semantic_rank', 'ASC');
-    } else if (prepared?.kind === 'text' && sort !== 'date') {
-      addSameDayOrder(qb.orderBy('search_rank', 'DESC').addOrderBy('e.date', 'DESC'), 'e');
-    } else {
-      addSameDayOrder(qb.orderBy('e.isPinned', 'DESC').addOrderBy('e.date', 'DESC'), 'e');
-    }
-    qb.skip((page - 1) * limit).take(limit);
-
-    const entriesPromise = qb.getMany();
-    const tagsPromise = this.entryRepository
-      .createQueryBuilder('e')
-      .select('DISTINCT UNNEST(e.tags)', 'tag')
-      .where('e.user_id = :userId', { userId })
-      .getRawMany();
-
-    const [total, entries, tagsResult] = await Promise.all([
-      totalPromise,
-      entriesPromise,
-      tagsPromise,
-    ]);
-
-    const searchMatches =
-      prepared?.kind === 'text'
-        ? await this.entrySearch.findMatches(
-            userId,
-            entries.map((entry) => entry.id),
-            prepared.terms,
-          )
-        : undefined;
-
-    const allTags = tagsResult
-      .map((result) => result.tag)
-      .sort((left, right) => left.localeCompare(right));
-
-    return {
-      entries: entries.map((entry) => ({
-        ...toEntryResponse(entry),
-        ...(searchMatches ? { search_matches: searchMatches.get(entry.id) ?? [] } : {}),
-      })),
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
-      allTags,
-    };
   }
 
   async getDates(userId: number): Promise<{ dates: string[] }> {

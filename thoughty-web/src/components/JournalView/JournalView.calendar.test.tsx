@@ -14,7 +14,7 @@ vi.mock('../ComfortReads/ComfortReadsCard', async () => ({ default: (await impor
 vi.mock('../EntryForm/EntryForm', async () => ({ default: (await import('./JournalView.test-helpers')).MockEntryForm }));
 vi.mock('../FilterControls/FilterControls', async () => ({ default: (await import('./JournalView.test-helpers')).MockFilterControls }));
 vi.mock('../EntriesList/EntriesList', async () => ({ default: (await import('./JournalView.test-helpers')).MockEntriesList }));
-vi.mock('../Pagination/Pagination', async () => ({ default: (await import('./JournalView.test-helpers')).MockPagination }));
+vi.mock('./JournalFeed', async () => ({ default: (await import('./JournalView.test-helpers')).MockJournalFeed }));
 vi.mock('../YearMonthNavigator/YearMonthNavigator', async () => ({ default: (await import('./JournalView.test-helpers')).MockYearMonthNavigator }));
 vi.mock('../BackToTopButton/BackToTopButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockBackToTopButton }));
 vi.mock('../DuplicateReview/DuplicateReview', async () => ({ default: (await import('./JournalView.test-helpers')).MockDuplicateReview }));
@@ -66,7 +66,7 @@ describe('JournalView calendar layout', () => {
     expect(location()).toBe('?diary=1&layout=calendar');
     expect(screen.getByTestId('journal-calendar')).toHaveTextContent('default month');
     expect(screen.queryByTestId('entries-list')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('pagination')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('journal-feed')).not.toBeInTheDocument();
     expect(screen.queryByTestId('year-month-navigator')).not.toBeInTheDocument();
     expect(screen.queryByTestId('back-to-top')).not.toBeInTheDocument();
 
@@ -85,7 +85,7 @@ describe('JournalView calendar layout', () => {
 
     expect(screen.getByTestId('random-entry')).toHaveAttribute('data-list-empty', 'true');
     fireEvent.click(screen.getByTestId('random-entry'));
-    expect(props.randomEntry.onOpen).toHaveBeenCalledWith(7, 3);
+    expect(props.randomEntry.onOpen).toHaveBeenCalledWith(7);
     expect(location()).toBe('?diary=1');
     expect(screen.getByTestId('entries-list')).toBeInTheDocument();
 
@@ -97,7 +97,7 @@ describe('JournalView calendar layout', () => {
   it('reads the current filters from the toolbar, and a month of the calendar under its filters', () => {
     const props = createProps({
       filters: { search: 'harbor', filterTags: ['walks'], filterFavorites: true },
-      randomEntry: { query: { ...createProps().randomEntry.query, page: 3, search: 'harbor', filterTags: ['walks'], favorites: true, filterDate: '2026-10-21' } },
+      randomEntry: { query: { ...createProps().randomEntry.query, search: 'harbor', filterTags: ['walks'], favorites: true, filterDate: '2026-10-21' } },
     });
     renderJournal(props, '?diary=1');
 
@@ -225,33 +225,11 @@ describe('JournalView calendar layout', () => {
 
     act(() => calendar().onOpenDay('2026-10-20'));
     expect(props.filters.setFilterDateObj).toHaveBeenCalledWith(new Date(2026, 9, 20));
-    expect(props.filters.setPage).toHaveBeenCalledWith(1);
     expect(location()).toBe('?diary=1');
 
     fireEvent.click(screen.getByRole('button', { name: 'journalLayoutCalendar' }));
     act(() => calendar().onOpenEntry({ id: 42, diary_id: 1, date: '2026-10-20', index: 2, time_of_day: null, title: null, snippet: '', mood: null, sealed: false }));
     expect(location()).toBe('?diary=all&entry=42');
     expect(screen.getByTestId('entries-list')).toBeInTheDocument();
-  });
-
-  it('leaves the arrow keys to the calendar instead of turning list pages', () => {
-    const props = createProps({ pagination: { page: 2 } });
-    renderJournal(props, '?diary=1&layout=calendar');
-
-    fireEvent.keyDown(document.body, { key: 'ArrowRight' });
-    expect(props.pagination.setPage).not.toHaveBeenCalled();
-  });
-
-  it('leaves the list pages alone for an arrow key a control has already handled', () => {
-    const props = createProps({ pagination: { page: 2 } });
-    renderJournal(props);
-
-    const handled = new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true });
-    handled.preventDefault();
-    document.body.dispatchEvent(handled);
-    expect(props.pagination.setPage).not.toHaveBeenCalled();
-
-    fireEvent.keyDown(document.body, { key: 'ArrowRight' });
-    expect(props.pagination.setPage).toHaveBeenCalledWith(3);
   });
 });

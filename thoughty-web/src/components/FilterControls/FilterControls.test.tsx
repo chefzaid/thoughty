@@ -24,7 +24,6 @@ describe('FilterControls', () => {
   const mockSetFilterTags = vi.fn();
   const mockSetFilterDateObj = vi.fn();
   const mockSetFilterVisibility = vi.fn();
-  const mockSetPage = vi.fn();
   const mockOnOpenHighlights = vi.fn();
 
   const defaultProps = {
@@ -54,7 +53,6 @@ describe('FilterControls', () => {
     filterPersonId: null,
     setFilterPersonId: vi.fn(),
     allTags: ['tag1', 'tag2', 'tag3'],
-    setPage: mockSetPage,
     theme: 'dark' as const,
     t: mockT,
     onOpenHighlights: mockOnOpenHighlights
@@ -86,12 +84,11 @@ describe('FilterControls', () => {
     expect(screen.getByTestId('date-picker')).toBeInTheDocument();
   });
 
-  it('updates search and resets page on input change', () => {
+  it('updates search on input change', () => {
     render(<FilterControls {...defaultProps} />);
     const searchInput = screen.getByPlaceholderText('searchPlaceholder');
     fireEvent.change(searchInput, { target: { value: 'test search' } });
     expect(mockSetSearch).toHaveBeenCalledWith('test search');
-    expect(mockSetPage).toHaveBeenCalledWith(1);
   });
 
   it('updates the filter date when a full date is typed', () => {
@@ -102,7 +99,6 @@ describe('FilterControls', () => {
     const updatedDate = mockSetFilterDateObj.mock.calls[0]?.[0];
     expect(updatedDate).toBeInstanceOf(Date);
     expect(formatDate(updatedDate)).toBe('2024-04-18');
-    expect(mockSetPage).toHaveBeenCalledWith(1);
   });
 
   it('cycles visibility filter when button is clicked', () => {
@@ -110,7 +106,6 @@ describe('FilterControls', () => {
     const visibilityButton = screen.getByTitle('visibilityFilter');
     fireEvent.click(visibilityButton);
     expect(mockSetFilterVisibility).toHaveBeenCalledWith('public');
-    expect(mockSetPage).toHaveBeenCalledWith(1);
   });
 
   it('cycles from public to private', () => {
@@ -140,7 +135,6 @@ describe('FilterControls', () => {
     expect(defaultProps.setFilterMood).toHaveBeenCalledWith('');
     expect(defaultProps.setFilterEraId).toHaveBeenCalledWith(null);
     expect(defaultProps.setFilterPersonId).toHaveBeenCalledWith(null);
-    expect(mockSetPage).toHaveBeenCalledWith(1);
   });
 
   const eras = [
@@ -154,7 +148,7 @@ describe('FilterControls', () => {
     expect(screen.queryByRole('combobox', { name: 'eraFilterLabel' })).not.toBeInTheDocument();
   });
 
-  it('filters by a life era, back to page one, and opens the eras', () => {
+  it('filters by a life era and opens the eras', () => {
     const setFilterEraId = vi.fn();
     const onManageEras = vi.fn();
     const { rerender } = render(<FilterControls {...defaultProps} eras={eras} setFilterEraId={setFilterEraId} onManageEras={onManageEras} />);
@@ -163,7 +157,6 @@ describe('FilterControls', () => {
     expect(Array.from((select as HTMLSelectElement).options).map((option) => option.text)).toEqual(['eraFilterAll', '🎓 University', 'Paris']);
     fireEvent.change(select, { target: { value: '4' } });
     expect(setFilterEraId).toHaveBeenCalledWith(4);
-    expect(mockSetPage).toHaveBeenCalledWith(1);
 
     rerender(<FilterControls {...defaultProps} eras={eras} filterEraId={3} setFilterEraId={setFilterEraId} theme="light" />);
     expect(screen.getByRole('combobox', { name: 'eraFilterLabel' })).toHaveValue('3');
@@ -187,7 +180,7 @@ describe('FilterControls', () => {
     { id: 14, name: 'Paul', handles: ['paul'], entryCount: 1, lastMentionedOn: null, date: null, createdAt: '', updatedAt: '' },
   ];
 
-  it('filters by a person once the writer mentions someone, back to page one, and opens the People page', () => {
+  it('filters by a person once the writer mentions someone, and opens the People page', () => {
     const setFilterPersonId = vi.fn();
     const onManagePeople = vi.fn();
     const { rerender } = render(<FilterControls {...defaultProps} />);
@@ -198,7 +191,6 @@ describe('FilterControls', () => {
     expect(Array.from((select as HTMLSelectElement).options).map((option) => option.text)).toEqual(['personFilterAll', 'Marie', 'Paul']);
     fireEvent.change(select, { target: { value: '14' } });
     expect(setFilterPersonId).toHaveBeenCalledWith(14);
-    expect(mockSetPage).toHaveBeenCalledWith(1);
     fireEvent.click(screen.getByRole('button', { name: 'personFilterManage' }));
     expect(onManagePeople).toHaveBeenCalled();
 
@@ -212,7 +204,7 @@ describe('FilterControls', () => {
     expect(screen.getByRole('combobox', { name: 'personFilterLabel' })).toHaveValue('9');
   });
 
-  it('filters by mood level, by any mood or none, and back to page one', () => {
+  it('filters by mood level, by any mood or none', () => {
     const setFilterMood = vi.fn();
     render(<FilterControls {...defaultProps} setFilterMood={setFilterMood} />);
 
@@ -223,7 +215,6 @@ describe('FilterControls', () => {
 
     fireEvent.change(select, { target: { value: '4,5' } });
     expect(setFilterMood).toHaveBeenCalledWith('4,5');
-    expect(mockSetPage).toHaveBeenCalledWith(1);
 
     fireEvent.change(select, { target: { value: 'none' } });
     expect(setFilterMood).toHaveBeenLastCalledWith('none');
@@ -236,7 +227,6 @@ describe('FilterControls', () => {
     fireEvent.click(screen.getByTitle('filterArchived'));
 
     expect(setFilterArchiveStatus).toHaveBeenCalledWith('archived');
-    expect(mockSetPage).toHaveBeenCalledWith(1);
   });
 
   it('cycles archive filter from archived to all', () => {
@@ -246,7 +236,6 @@ describe('FilterControls', () => {
     fireEvent.click(screen.getByTitle('filterArchived'));
 
     expect(setFilterArchiveStatus).toHaveBeenCalledWith('all');
-    expect(mockSetPage).toHaveBeenCalledWith(1);
   });
 
   it('cycles archive filter from all to active', () => {
@@ -256,7 +245,6 @@ describe('FilterControls', () => {
     fireEvent.click(screen.getByTitle('filterArchived'));
 
     expect(setFilterArchiveStatus).toHaveBeenCalledWith('active');
-    expect(mockSetPage).toHaveBeenCalledWith(1);
   });
 
   it('opens highlights modal when highlights button is clicked', () => {
@@ -385,7 +373,6 @@ describe('FilterControls', () => {
     expect(screen.getByRole('button', { name: 'searchSortRelevance' })).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(screen.getByRole('button', { name: 'searchSortDate' }));
     expect(setSearchSort).toHaveBeenCalledWith('date');
-    expect(mockSetPage).toHaveBeenCalledWith(1);
 
     rerender(<FilterControls {...defaultProps} search="walk" searchMode="semantic" setSearchSort={setSearchSort} />);
     expect(screen.queryByRole('group', { name: 'searchSort' })).not.toBeInTheDocument();

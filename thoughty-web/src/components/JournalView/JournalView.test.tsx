@@ -11,7 +11,7 @@ vi.mock('../ComfortReads/ComfortReadsCard', async () => ({ default: (await impor
 vi.mock('../EntryForm/EntryForm', async () => ({ default: (await import('./JournalView.test-helpers')).MockEntryForm }));
 vi.mock('../FilterControls/FilterControls', async () => ({ default: (await import('./JournalView.test-helpers')).MockFilterControls }));
 vi.mock('../EntriesList/EntriesList', async () => ({ default: (await import('./JournalView.test-helpers')).MockEntriesList }));
-vi.mock('../Pagination/Pagination', async () => ({ default: (await import('./JournalView.test-helpers')).MockPagination }));
+vi.mock('./JournalFeed', async () => ({ default: (await import('./JournalView.test-helpers')).MockJournalFeed }));
 vi.mock('../YearMonthNavigator/YearMonthNavigator', async () => ({ default: (await import('./JournalView.test-helpers')).MockYearMonthNavigator }));
 vi.mock('../BackToTopButton/BackToTopButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockBackToTopButton }));
 vi.mock('../DuplicateReview/DuplicateReview', async () => ({ default: (await import('./JournalView.test-helpers')).MockDuplicateReview }));
@@ -47,7 +47,7 @@ describe('JournalView', () => {
     expect(screen.getByTestId('entry-form')).toBeInTheDocument();
     expect(screen.getByTestId('filter-controls')).toBeInTheDocument();
     expect(screen.getByTestId('entries-list')).toBeInTheDocument();
-    expect(screen.getByTestId('pagination')).toBeInTheDocument();
+    expect(screen.getByTestId('journal-feed')).toContainElement(screen.getByTestId('entries-list'));
     expect(screen.getByTestId('year-month-navigator')).toBeInTheDocument();
     expect(screen.getByTestId('back-to-top')).toBeInTheDocument();
   });
@@ -76,13 +76,12 @@ describe('JournalView', () => {
     expect(screen.getByTestId('theme')).toHaveTextContent('dark');
   });
 
-  it('handles diary change and resets page to 1', () => {
+  it('changes the diary, which starts the list over', () => {
     render(<JournalView {...defaultProps} />);
 
     fireEvent.click(screen.getByTestId('diary-change-btn'));
 
     expect(defaultProps.diaryTabs.onDiaryChange).toHaveBeenCalledWith(2);
-    expect(defaultProps.pagination.setPage).toHaveBeenCalledWith(1);
   });
 
   it('handles manage diaries action', () => {
@@ -136,20 +135,19 @@ describe('JournalView', () => {
     expect(screen.getByTestId('loading')).toHaveTextContent('true');
   });
 
-  it('passes pagination data correctly', () => {
-    render(<JournalView {...createProps({ pagination: { page: 3, totalPages: 10 } })} />);
+  it('hands the infinite scroll its state, loading newer entries by themselves only once no jump is settling', () => {
+    const props = createProps({ feed: { total: 340 } });
+    const { rerender } = render(<JournalView {...props} />);
 
-    expect(screen.getByTestId('current-page')).toHaveTextContent('3');
-    expect(screen.getByTestId('total-pages')).toHaveTextContent('10');
-  });
+    expect(screen.getByTestId('feed-total')).toHaveTextContent('340');
+    expect(screen.getByTestId('feed-auto-newer')).toHaveTextContent('true');
+    fireEvent.click(screen.getByTestId('load-older-btn'));
+    fireEvent.click(screen.getByTestId('load-newer-btn'));
+    expect(props.feed.loadOlder).toHaveBeenCalled();
+    expect(props.feed.loadNewer).toHaveBeenCalled();
 
-  it('handles page navigation', () => {
-    const props = createProps({ pagination: { page: 2 } });
-    render(<JournalView {...props} />);
-
-    fireEvent.click(screen.getByTestId('next-page-btn'));
-
-    expect(props.pagination.setPage).toHaveBeenCalledWith(3);
+    rerender(<JournalView {...createProps({ entriesList: { targetEntryId: 9 } })} />);
+    expect(screen.getByTestId('feed-auto-newer')).toHaveTextContent('false');
   });
 
   it('renders with light theme', () => {

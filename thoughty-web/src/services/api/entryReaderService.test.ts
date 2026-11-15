@@ -5,12 +5,12 @@ import type { EntryListQuery } from './entryListQuery';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 const everything: EntryListQuery = {
-  page: 3, limit: 10, search: '', filterTags: [], filterDate: '', filterVisibility: '',
+  search: '', filterTags: [], filterDate: '', filterVisibility: '',
   favorites: false, archiveStatus: 'active', diaryId: null, entryIds: null,
 };
 
 describe('entryReaderService', () => {
-  it("reads the list's filters and day as they are set, without its page, size or order", () => {
+  it("reads the list's filters and day as they are set, without its order", () => {
     expect(readerScopeFromList(everything)).toBe('archiveStatus=active');
     expect(readerScopeFromList({
       ...everything, search: 'harbor', sort: 'date', filterTags: ['walks', 'sea'], filterDate: '2024-03-11', filterVisibility: 'private',

@@ -5,20 +5,15 @@ import {
   POSTGRES_SETUP_TIMEOUT_MS,
   type PostgresTestDatabase,
 } from '@/database/postgres-test-database.test-helpers';
-import { Attachment, Diary, Entry, EntryRevision, User, YearReviewMood } from '@/database/entities';
+import { Attachment, Diary, Entry, User, YearReviewMood } from '@/database/entities';
 import { StatsMoodService } from '@/modules/stats/stats-mood.service';
 import { YearReviewService } from '@/modules/review/year-review.service';
-import { EntriesQueryService } from './entries-query.service';
-import { EntrySearchService } from './entry-search.service';
-import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
-import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
-import { personDatesServiceOn } from '@/modules/people/person-dates.test-helpers';
+import { entryListOn } from './entry-list.test-helpers';
 
 describePostgres('PostgreSQL entry moods', () => {
   let database: PostgresTestDatabase;
   let dataSource: DataSource;
   let entries: Repository<Entry>;
-  let queries: EntriesQueryService;
   let stats: StatsMoodService;
   let review: YearReviewService;
   let userId: number;
@@ -28,7 +23,6 @@ describePostgres('PostgreSQL entry moods', () => {
     database = await createPostgresTestDatabase();
     dataSource = database.dataSource;
     entries = dataSource.getRepository(Entry);
-    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries), timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
     stats = new StatsMoodService(entries);
     review = new YearReviewService(
       entries,
@@ -56,15 +50,15 @@ describePostgres('PostgreSQL entry moods', () => {
     await write({ date: '2025-01-09', content: 'unrecorded' });
 
     const contents = async (mood?: string) =>
-      (await queries.getEntries(userId, { mood, page: 1, limit: 10 })).entries.map((entry) => entry.content);
+      (await entryListOn(entries).getEntries(userId, { mood, limit: 10 })).entries.map((entry) => entry.content);
 
     expect(await contents('4,5')).toEqual(['great', 'good']);
     expect(await contents('1')).toEqual(['low']);
     expect(await contents('any')).toEqual(['great', 'good', 'low']);
     expect(await contents('none')).toEqual(['unrecorded']);
-    const [low] = (await queries.getEntries(userId, { mood: '1', page: 1, limit: 10 })).entries;
+    const [low] = (await entryListOn(entries).getEntries(userId, { mood: '1', limit: 10 })).entries;
     expect(low).toMatchObject({ mood: 1, feelings: ['tired', 'anxious'] });
-    expect((await queries.getEntries(userId, { mood: 'none', page: 1, limit: 10 })).entries[0].feelings).toEqual([]);
+    expect((await entryListOn(entries).getEntries(userId, { mood: 'none', limit: 10 })).entries[0].feelings).toEqual([]);
   });
 
   it('rejects moods off the scale in the database too', async () => {

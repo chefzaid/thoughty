@@ -11,7 +11,6 @@ const BooleanText = (description: string) => ApiPropertyOptional({ type: String,
  */
 export class UserConfigDto extends OmitType(UpdateConfigDto, [
   'fontSize',
-  'entriesPerPage',
   'maxPinnedEntries',
   'autoTagMaxTags',
   'highContrast',
@@ -22,9 +21,6 @@ export class UserConfigDto extends OmitType(UpdateConfigDto, [
 ] as const) {
   @NumberText('Font size in pixels')
   fontSize?: string;
-
-  @NumberText('Entries per page')
-  entriesPerPage?: string;
 
   @NumberText('Maximum pinned entries')
   maxPinnedEntries?: string;

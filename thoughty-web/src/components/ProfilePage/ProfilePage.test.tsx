@@ -102,7 +102,6 @@ describe('ProfilePage', () => {
         config: {
             name: 'John Doe',
             theme: 'dark',
-            entriesPerPage: '10',
             language: 'en',
             defaultVisibility: 'private',
             autoTagMaxTags: '0'
@@ -266,16 +265,6 @@ describe('ProfilePage', () => {
             await user.click(toggle);
 
             expect(toggle).toHaveClass('dark');
-        });
-
-        it('updates entries per page', async () => {
-            const user = userEvent.setup();
-            const { container } = render(<ProfilePage {...defaultProps} />);
-
-            const select = container.querySelector('select[name="entriesPerPage"]') as HTMLSelectElement;
-            await user.selectOptions(select, '25');
-
-            expect(select.value).toBe('25');
         });
 
         it('updates language on click', async () => {

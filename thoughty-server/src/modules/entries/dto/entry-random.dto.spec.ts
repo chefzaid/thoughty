@@ -8,7 +8,6 @@ describe('GetRandomEntryQueryDto', () => {
     await expect(invalidProperties({})).resolves.toEqual([]);
     await expect(
       invalidProperties({
-        limit: '10',
         search: '',
         tags: 'family,travel',
         date: '',
@@ -25,18 +24,18 @@ describe('GetRandomEntryQueryDto', () => {
       }),
     ).resolves.toEqual([]);
 
-    await expect(parseLikeApi(GetRandomEntryQueryDto, { limit: '25', excludeId: '41' }, 'query'))
-      .resolves.toMatchObject({ limit: 25, excludeId: 41 });
-    await expect(parseLikeApi(GetRandomEntryQueryDto, {}, 'query')).resolves.toMatchObject({ limit: 10 });
+    await expect(parseLikeApi(GetRandomEntryQueryDto, { excludeId: '41' }, 'query')).resolves.toMatchObject({ excludeId: 41 });
   });
 
-  it('takes no page, and rejects an invalid entry to skip or filter', async () => {
-    await expect(parseLikeApi(GetRandomEntryQueryDto, {}, 'query')).resolves.not.toHaveProperty('page');
+  it('takes no batch, and rejects an invalid entry to skip or filter', async () => {
+    await expect(parseLikeApi(GetRandomEntryQueryDto, {}, 'query')).resolves.not.toHaveProperty('limit');
+    for (const batch of ['limit', 'after', 'from', 'before', 'around', 'page']) {
+      await expect(invalidProperties({ [batch]: '1' })).resolves.toEqual([batch]);
+    }
     for (const excludeId of ['0', '-1', 'abc', '1.5']) {
       await expect(invalidProperties({ excludeId })).resolves.toEqual(['excludeId']);
     }
     await expect(invalidProperties({ mood: '6' })).resolves.toEqual(['mood']);
     await expect(invalidProperties({ sort: 'random' })).resolves.toEqual(['sort']);
-    await expect(invalidProperties({ limit: '0' })).resolves.toEqual(['limit']);
   });
 });

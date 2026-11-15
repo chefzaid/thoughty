@@ -60,9 +60,15 @@ export interface SourceEntryInfo {
   index: number;
 }
 
-export interface EntriesResponse {
+/** A batch of the journal list, with the cursors to the batches beside it (null at either end). */
+export interface EntriesBatch {
   entries: Entry[];
-  totalPages: number;
+  /** Entries the filters match. */
+  total: number;
+  /** Entries listed before this batch. */
+  offset: number;
+  nextCursor: string | null;
+  prevCursor: string | null;
   allTags: string[];
 }
 

@@ -196,7 +196,7 @@ export function createEntryViewModeProps(
         activeEntryId: null,
         activeTargetId: null,
         sourceEntry: null,
-        flatEntries: mockEntries.map(({ id, content, date }) => ({ id, content, date })),
+        listEntries: () => mockEntries.map(({ id, content, date }) => ({ id, content, date })),
         speakEntry: vi.fn(),
         speakFromEntry: vi.fn(),
         stop: vi.fn(),

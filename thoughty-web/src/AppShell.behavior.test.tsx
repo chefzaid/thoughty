@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {
@@ -92,41 +92,14 @@ describe('AppShell behavior flows', () => {
     });
   });
 
-  it('displays pagination controls', async () => {
+  it('shows the journal entries as a feed, with no page buttons', async () => {
     renderAppShell();
 
-    await waitFor(() => {
-      expect(screen.getByTitle('Previous')).toBeInTheDocument();
-      expect(screen.getByTitle('Next')).toBeInTheDocument();
-      expect(screen.getByTitle('First')).toBeInTheDocument();
-      expect(screen.getByTitle('Last')).toBeInTheDocument();
-    });
-  });
-
-  it('disables Previous and First on first page', async () => {
-    renderAppShell();
-
-    await waitFor(() => {
-      expect(screen.getByTitle('Previous')).toBeDisabled();
-      expect(screen.getByTitle('First')).toBeDisabled();
-    });
-  });
-
-  it('supports manual page input', async () => {
-    const user = userEvent.setup();
-
-    renderAppShell();
-
-    await waitFor(() => {
-      expect(screen.getByRole('spinbutton')).toBeInTheDocument();
-    });
-
-    const pageInput = screen.getByRole('spinbutton');
-    await user.clear(pageInput);
-    await user.type(pageInput, '1');
-    await user.keyboard('{Enter}');
-
-    expect((pageInput as HTMLInputElement).value).toBe('1');
+    const feed = await screen.findByRole('feed', { name: 'Journal entries' });
+    await waitFor(() => expect(within(feed).getAllByRole('article')).toHaveLength(2));
+    expect(within(feed).getAllByRole('article')[0]).toHaveAttribute('aria-setsize', '2');
+    expect(screen.queryByTitle('First')).not.toBeInTheDocument();
+    expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
   });
 
   it.each(['Thoughty', 'Reset Filters'])('displays %s in the journal shell', async (text) => {

@@ -68,8 +68,15 @@ export class EntriesController {
   constructor(private readonly entriesService: EntriesService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get all entries with optional filters and pagination' })
-  @ApiResponse({ status: 200, description: 'List of entries', type: EntriesListResponseDto })
+  @ApiOperation({
+    summary: 'A batch of the journal list, with its filters',
+    description:
+      'Reads the list a batch at a time for infinite scroll: from the start, `after` the `nextCursor` of the batch '
+      + 'before, `before` the `prevCursor` of the batch after, or `around` an entry, to open the list at it.',
+  })
+  @ApiResponse({ status: 200, description: 'A batch of entries', type: EntriesListResponseDto })
+  @ApiResponse({ status: 400, description: 'A filter or cursor is invalid, or `after`, `before` and `around` are combined' })
+  @ApiResponse({ status: 404, description: 'ENTRY_NOT_FOUND: the filters leave out the entry `around` names' })
   async getEntries(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: GetEntriesQueryDto,
@@ -126,12 +133,12 @@ export class EntriesController {
   @ApiOperation({
     summary: 'A random entry among the journal filters',
     description:
-      'Picks one entry, every match equally likely, among those the journal list shows with the same filters, ' +
-      'and gives the page of that list (at its page size and order) that shows it. Sealed time capsules and ' +
+      'Picks one entry, every match equally likely, among those the journal list shows with the same filters; ' +
+      'the journal then opens the list `around` it. Sealed time capsules and ' +
       'entries in the recycle bin are never picked; with `excludeId`, that entry comes back only when it is ' +
       'the only match.',
   })
-  @ApiResponse({ status: 200, description: 'The picked entry and its page', type: RandomEntryResponseDto })
+  @ApiResponse({ status: 200, description: 'The picked entry', type: RandomEntryResponseDto })
   @ApiResponse({ status: 400, description: 'A filter is invalid' })
   @ApiResponse({ status: 404, description: 'No entry matches the filters' })
   async getRandomEntry(
@@ -178,8 +185,10 @@ export class EntriesController {
   }
 
   @Get('first')
-  @ApiOperation({ summary: 'Get page number containing first entry for a year/month' })
-  @ApiResponse({ status: 200, description: 'Page info', type: FirstEntryResponseDto })
+  @ApiOperation({
+    summary: 'The first entry of a year or month among the journal filters, and the years and months with entries',
+  })
+  @ApiResponse({ status: 200, description: 'The entry to open the list around', type: FirstEntryResponseDto })
   async getFirstEntry(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: GetFirstEntryQueryDto,

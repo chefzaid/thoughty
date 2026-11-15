@@ -12,15 +12,15 @@ vi.mock('../../hooks/useAuthenticatedService', () => ({
 }));
 
 const baseQuery: EntryListQuery = {
-  page: 1, limit: 10, search: '', filterTags: ['walks'], filterDate: '', filterVisibility: '',
+  search: '', filterTags: ['walks'], filterDate: '', filterVisibility: '',
   favorites: false, archiveStatus: 'active', diaryId: null, entryIds: null,
 };
 
-/** The button inside a journal whose page and tags can change, as the list's own query does. */
+/** The button inside a journal whose tags can change, as the list's own query does. */
 function Harness({ listEmpty = false, language = 'en' as Language, onOpen, onNotify }: {
   listEmpty?: boolean;
   language?: Language;
-  onOpen: (entryId: number, page: number) => void;
+  onOpen: (entryId: number) => void;
   onNotify: (message: string) => void;
 }) {
   const [query, setQuery] = useState(baseQuery);
@@ -29,7 +29,7 @@ function Harness({ listEmpty = false, language = 'en' as Language, onOpen, onNot
       <RandomEntryButton
         query={query}
         listEmpty={listEmpty}
-        onOpen={(entryId, page) => { setQuery((current) => ({ ...current, page })); onOpen(entryId, page); }}
+        onOpen={onOpen}
         onNotify={onNotify}
         language={language}
         theme="light"
@@ -48,28 +48,28 @@ describe('RandomEntryButton', () => {
     vi.clearAllMocks();
   });
 
-  it('opens an entry picked among the filters on its page, then offers another one that moves on', async () => {
+  it('opens the list around an entry picked among the filters, then offers another one that moves on', async () => {
     randomService.pick
-      .mockResolvedValueOnce({ data: { id: 7, date: '2024-03-10', index: 1, page: 3 }, error: null })
-      .mockResolvedValueOnce({ data: { id: 9, date: '2023-12-01', index: 2, page: 1 }, error: null });
+      .mockResolvedValueOnce({ data: { id: 7, date: '2024-03-10', index: 1 }, error: null })
+      .mockResolvedValueOnce({ data: { id: 9, date: '2023-12-01', index: 2 }, error: null });
     render(<Harness onOpen={onOpen} onNotify={onNotify} />);
 
     const button = screen.getByRole('button', { name: 'Random entry' });
     expect(button).toHaveAccessibleDescription('Open an entry picked at random among the current filters');
     fireEvent.click(button);
 
-    await waitFor(() => expect(onOpen).toHaveBeenCalledWith(7, 3));
+    await waitFor(() => expect(onOpen).toHaveBeenCalledWith(7));
     expect(randomService.pick).toHaveBeenCalledWith(baseQuery, null);
     expect(screen.getByText('Showing a random entry from Mar 10, 2024.')).toBeInTheDocument();
 
-    // The page moved to the pick, but the filters did not, so it is another pick among them
+    // The filters did not change, so it is another pick among them
     fireEvent.click(screen.getByRole('button', { name: 'Another one' }));
-    await waitFor(() => expect(onOpen).toHaveBeenCalledWith(9, 1));
-    expect(randomService.pick).toHaveBeenLastCalledWith({ ...baseQuery, page: 3 }, 7);
+    await waitFor(() => expect(onOpen).toHaveBeenCalledWith(9));
+    expect(randomService.pick).toHaveBeenLastCalledWith(baseQuery, 7);
   });
 
   it('starts afresh when the filters change', async () => {
-    randomService.pick.mockResolvedValue({ data: { id: 7, date: '2024-03-10', index: 1, page: 1 }, error: null });
+    randomService.pick.mockResolvedValue({ data: { id: 7, date: '2024-03-10', index: 1 }, error: null });
     render(<Harness onOpen={onOpen} onNotify={onNotify} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Random entry' }));

@@ -13,7 +13,7 @@ vi.mock('../ComfortReads/ComfortReadsCard', async () => ({ default: (await impor
 vi.mock('../EntryForm/EntryForm', async () => ({ default: (await import('./JournalView.test-helpers')).MockEntryForm }));
 vi.mock('../FilterControls/FilterControls', async () => ({ default: (await import('./JournalView.test-helpers')).MockFilterControls }));
 vi.mock('../EntriesList/EntriesList', async () => ({ default: (await import('./JournalView.test-helpers')).MockEntriesList }));
-vi.mock('../Pagination/Pagination', async () => ({ default: (await import('./JournalView.test-helpers')).MockPagination }));
+vi.mock('./JournalFeed', async () => ({ default: (await import('./JournalView.test-helpers')).MockJournalFeed }));
 vi.mock('../YearMonthNavigator/YearMonthNavigator', async () => ({ default: (await import('./JournalView.test-helpers')).MockYearMonthNavigator }));
 vi.mock('../BackToTopButton/BackToTopButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockBackToTopButton }));
 vi.mock('../DuplicateReview/DuplicateReview', async () => ({ default: (await import('./JournalView.test-helpers')).MockDuplicateReview }));
@@ -77,7 +77,6 @@ describe('JournalView people', () => {
     expect(filters.setFilterTags).toHaveBeenCalledWith([]);
     expect(filters.setFilterArchiveStatus).toHaveBeenCalledWith('all');
     expect(filters.setFilterEraId).toHaveBeenCalledWith(null);
-    expect(filters.setPage).toHaveBeenCalledWith(1);
   });
 
   it('keeps the filters of a saved search the address also names', () => {
@@ -101,7 +100,6 @@ describe('JournalView people', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'personViewClear' }));
     expect(props.filters.setFilterPersonId).toHaveBeenCalledWith(null);
-    expect(props.filters.setPage).toHaveBeenCalledWith(1);
   });
 
   it('writes a person chosen in the filter bar to the address, and removes it when cleared', () => {

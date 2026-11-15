@@ -8,7 +8,7 @@ import {
 import { Diary, Entry, EntryRevision, OnThisDayEmail, Setting, User } from '@/database/entities';
 import type { RenderedEmail } from '@/modules/auth/services/email.service';
 import { ConfigService } from '@/modules/config';
-import { EntriesQueryService, EntrySearchService } from '@/modules/entries';
+import { EntriesQueryService } from '@/modules/entries';
 import { OnThisDayDeliveryService } from './on-this-day-delivery.service';
 import { OnThisDayEmailService } from './on-this-day-email.service';
 import { createUnsubscribeToken } from './on-this-day-unsubscribe-token';
@@ -34,7 +34,7 @@ describePostgres('PostgreSQL On this day email', () => {
     database = await createPostgresTestDatabase();
     dataSource = database.dataSource;
     const entries = dataSource.getRepository(Entry);
-    const queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries), timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
+    const queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
     const emailService = {
       isConfigured: () => true,
       sendRenderedEmail: async (to: string, email: RenderedEmail) => {

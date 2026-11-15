@@ -26,7 +26,7 @@ export function normalizeReaderScope(raw: string | URLSearchParams): string {
   return scope.toString();
 }
 
-/** Reading the journal list as it is filtered now (its day included), whatever its page, size and order. */
+/** Reading the journal list as it is filtered now (its day included), whatever its order. */
 export function readerScopeFromList(query: EntryListQuery): string {
   return normalizeReaderScope(entryListParams(query));
 }

@@ -7,19 +7,16 @@ import {
   POSTGRES_SETUP_TIMEOUT_MS,
   type PostgresTestDatabase,
 } from '@/database/postgres-test-database.test-helpers';
-import { BookVersion, Diary, Entry, EntryRevision, LifeEra, SavedSearch, User } from '@/database/entities';
+import { BookVersion, Diary, Entry, LifeEra, SavedSearch, User } from '@/database/entities';
 import { EntrySearchService } from '@/modules/entries';
-import { EntriesQueryService } from '@/modules/entries/entries-query.service';
 import { EntryCalendarService } from '@/modules/entries/entry-calendar.service';
 import { SavedSearchesService } from '@/modules/saved-searches';
 import { BookEntrySourceService } from '@/modules/books/book-entry-source.service';
 import { BooksService } from '@/modules/books/books.service';
 import { LIFE_ERA_LIMIT } from './dto';
 import { LifeErasService } from './life-eras.service';
-import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
-import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
-import { personDatesServiceOn } from '@/modules/people/person-dates.test-helpers';
 import { featureFlagsWith } from '@/common/feature-flags/feature-flags.test-helpers';
+import { entryListOn } from '@/modules/entries/entry-list.test-helpers';
 
 const anyFilters = {
   search: '',
@@ -37,7 +34,6 @@ describePostgres('PostgreSQL life eras', () => {
   let database: PostgresTestDatabase;
   let dataSource: DataSource;
   let service: LifeErasService;
-  let queries: EntriesQueryService;
   let calendar: EntryCalendarService;
   let savedSearches: SavedSearchesService;
   let books: BooksService;
@@ -51,7 +47,6 @@ describePostgres('PostgreSQL life eras', () => {
     const entries = dataSource.getRepository(Entry);
     const search = new EntrySearchService(entries);
     service = new LifeErasService(dataSource.getRepository(LifeEra));
-    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), search, timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
     calendar = new EntryCalendarService(entries, search);
     savedSearches = new SavedSearchesService(dataSource.getRepository(SavedSearch), dataSource.getRepository(BookVersion));
     const source = new BookEntrySourceService(entries, dataSource.getRepository(Diary), savedSearches, search);
@@ -128,7 +123,7 @@ describePostgres('PostgreSQL life eras', () => {
     await write('2012-01-01', 'Someone else.', otherId);
 
     const listed = async (eraId: number, userId = writerId) =>
-      (await queries.getEntries(userId, { eraId, limit: 20 })).entries.map((entry) => entry.content).sort();
+      (await entryListOn(dataSource.getRepository(Entry)).getEntries(userId, { eraId, limit: 20 })).entries.map((entry) => entry.content).sort();
     expect(await listed(university.id)).toEqual(['First day.', 'Last day.']);
     expect(await listed(paris.id)).toEqual(['After.', 'Last day.', 'Recent.']);
     // Another writer's era matches none of their own entries

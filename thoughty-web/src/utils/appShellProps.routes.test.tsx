@@ -181,7 +181,6 @@ describe('appShellProps', () => {
     // A word from the words used most opens a keyword search for it, over every date
     expect(props.journalRouteProps.filters.setSearchMode).toHaveBeenCalledWith('keyword');
     expect(props.journalRouteProps.filters.setSearch).toHaveBeenCalledWith('jardin');
-    expect(props.journalRouteProps.filters.setPage).toHaveBeenCalledWith(1);
     expect(handleViewChange).toHaveBeenCalledWith('journal');
     expect(handleImportExportRouteStateChange).toHaveBeenCalledWith({
       section: 'import',
@@ -190,37 +189,10 @@ describe('appShellProps', () => {
     });
   });
 
-  it('saves a new page size and moves to the page that holds the first entry shown', async () => {
-    const saveConfig = vi.fn().mockResolvedValue(true);
-    const params = createRoutesParams({
-      saveConfig,
-      config: { theme: 'dark', name: 'Zaid', entriesPerPage: '10' },
-      entriesState: { ...createRoutesParams().entriesState, page: 4 },
-    });
-    const { pagination } = buildAuthenticatedRoutesProps(params).journalRouteProps;
+  it('hands the journal the infinite scroll of the list', () => {
+    const params = createRoutesParams();
+    const { feed } = buildAuthenticatedRoutesProps(params).journalRouteProps;
 
-    expect(pagination.pageSize).toBe(10);
-    // Page 4 of 10 starts with the 31st entry, which is on page 2 of 20
-    pagination.onPageSizeChange?.(20);
-
-    expect(params.entriesState.setPage).toHaveBeenCalledWith(2);
-    expect(saveConfig).toHaveBeenCalledWith(expect.objectContaining({ entriesPerPage: '20' }));
-    await vi.waitFor(() => expect(params.entriesState.setPage).toHaveBeenCalledTimes(1));
-  });
-
-  it('goes back to the page it was on when the new page size is not saved', async () => {
-    const saveConfig = vi.fn().mockResolvedValue(false);
-    const params = createRoutesParams({
-      saveConfig,
-      config: { theme: 'dark', name: 'Zaid' },
-      entriesState: { ...createRoutesParams().entriesState, page: 3 },
-    });
-    const { pagination } = buildAuthenticatedRoutesProps(params).journalRouteProps;
-
-    expect(pagination.pageSize).toBe(20);
-    pagination.onPageSizeChange?.(5);
-
-    expect(params.entriesState.setPage).toHaveBeenNthCalledWith(1, 9);
-    await vi.waitFor(() => expect(params.entriesState.setPage).toHaveBeenNthCalledWith(2, 3));
+    expect(feed).toBe(params.entriesState.feed);
   });
 });

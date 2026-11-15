@@ -2,7 +2,7 @@ import { describeContract } from './contract-suite';
 import { defaultDiaryId } from './contract-fixtures';
 import { journalQuery, listJournalIds, writeJournal, type JournalIds } from './contract-journal';
 
-/** Writing and reading the journal: the list and its filters, the date lookups and a random pick. */
+/** Writing and reading the journal: the list in batches and its filters, the date lookups and a random pick. */
 describeContract('entries', (context) => {
   const call: typeof context.client.call = (operation, options) =>
     context.client.call(operation, options);
@@ -46,9 +46,39 @@ describeContract('entries', (context) => {
       status: 400,
       code: 'VALIDATION_FAILED',
     });
+    // Pages are gone: the list is read a batch at a time, from a cursor or around an entry
+    const refusedBatches: Array<Record<string, string>> = [{ page: '2' }, { limit: '101' }, { after: 'page-2' }, { around: '1.5' }];
+    for (const refused of refusedBatches) {
+      await call('GET /api/entries', { as: alice, query: journalQuery(refused), status: 400, code: 'VALIDATION_FAILED' });
+    }
+  });
+
+  it('reads the journal a batch at a time, after, before or from a cursor and around an entry', async () => {
+    const { alice, bob } = context;
+    const batch = async (overrides: Record<string, string>) =>
+      (await call('GET /api/entries', { as: alice, query: journalQuery({ limit: '2', ...overrides }), status: 200 })).body as {
+        entries: { id: number }[]; total: number; offset: number; nextCursor: string | null; prevCursor: string | null;
+      };
+    const everything = await listIds(journalQuery());
+    const first = await batch({});
+    expect(first).toMatchObject({ total: everything.length, offset: 0, prevCursor: null, nextCursor: expect.any(String) });
+    expect(first.entries.map((entry) => entry.id)).toEqual(everything.slice(0, 2));
+
+    const second = await batch({ after: first.nextCursor! });
+    expect(second.entries.map((entry) => entry.id)).toEqual(everything.slice(2, 4));
+    expect(second).toMatchObject({ offset: 2, prevCursor: expect.any(String) });
+    expect((await batch({ before: second.prevCursor! })).entries.map((entry) => entry.id)).toEqual(everything.slice(0, 2));
+    expect((await batch({ from: second.prevCursor! })).entries.map((entry) => entry.id)).toEqual(everything.slice(2, 4));
+
+    const around = await batch({ around: String(everything[2]) });
+    expect(around.entries.map((entry) => entry.id)).toContain(everything[2]);
+    expect(around.offset).toBe(everything.indexOf(around.entries[0]!.id));
+    // Another writer's entry, or one the filters leave out, is not there to open at
+    await call('GET /api/entries', { as: alice, query: journalQuery({ around: String(ids.bob) }), status: 404, code: 'ENTRY_NOT_FOUND' });
+    await call('GET /api/entries', { as: bob, query: journalQuery({ around: String(ids.walk) }), status: 404, code: 'ENTRY_NOT_FOUND' });
     await call('GET /api/entries', {
       as: alice,
-      query: journalQuery({ page: '1.5' }),
+      query: journalQuery({ after: first.nextCursor!, around: String(ids.walk) }),
       status: 400,
       code: 'VALIDATION_FAILED',
     });
@@ -89,26 +119,31 @@ describeContract('entries', (context) => {
     });
     const first = await call('GET /api/entries/first', {
       as: alice,
-      query: { year: '2024', limit: '10', month: '3' },
+      query: { year: '2024', month: '3', tags: 'walks', archiveStatus: 'active' },
       status: 200,
     });
-    expect(first.body).toMatchObject({ found: true });
+    expect(first.body).toMatchObject({ found: true, entryId: expect.any(Number) });
+    expect(first.body).not.toHaveProperty('page');
+    const none = await call('GET /api/entries/first', { as: alice, query: { year: '2024', month: '3', favorites: 'true' }, status: 200 });
+    expect(none.body).toMatchObject({ found: false });
+    await call('GET /api/entries/first', { as: alice, query: { year: '2024', limit: '10' }, status: 400, code: 'VALIDATION_FAILED' });
     await call('GET /api/entries/first', { as: alice, status: 200 });
     const byDate = await call('GET /api/entries/by-date', {
       as: alice,
-      query: { date: '2024-03-10', index: '2', limit: '10' },
+      query: { date: '2024-03-10', index: '2' },
       status: 200,
     });
     expect(byDate.body).toMatchObject({ found: true, entryId: ids.second });
+    expect(byDate.body).not.toHaveProperty('page');
     const byId = await call('GET /api/entries/by-date', {
       as: alice,
-      query: { id: String(ids.tasks), limit: '10' },
+      query: { id: String(ids.tasks) },
       status: 200,
     });
     expect(byId.body).toMatchObject({ found: true, entryId: ids.tasks });
     const hidden = await call('GET /api/entries/by-date', {
       as: alice,
-      query: { id: String(ids.bob), limit: '10' },
+      query: { id: String(ids.bob) },
       status: 200,
     });
     expect(hidden.body).toMatchObject({ found: false });
@@ -122,22 +157,25 @@ describeContract('entries', (context) => {
     ).toEqual([ids.reference]);
   });
 
-  it('picks a random entry among the list filters, with its page, and moves on from the last one', async () => {
+  it('picks a random entry among the list filters and moves on from the last one', async () => {
     const { alice, bob } = context;
     const random = (as: typeof alice, overrides: Record<string, string>, status: number) => {
       const query = journalQuery(overrides);
-      query.delete('page');
+      query.delete('limit');
       const code = ({ 400: 'VALIDATION_FAILED', 404: 'ENTRY_RANDOM_NO_MATCH' } as const)[status as 400 | 404];
       return call('GET /api/entries/random', { as, query, status, code });
     };
-    const walks = await random(alice, { tags: 'walks', limit: '1' }, 200);
+    const walks = await random(alice, { tags: 'walks' }, 200);
     expect([ids.walk, ids.second]).toContain((walks.body as { id: number }).id);
-    expect(walks.body).toMatchObject({ date: '2024-03-10', page: expect.any(Number) });
+    expect(walks.body).toMatchObject({ date: '2024-03-10' });
+    expect(walks.body).not.toHaveProperty('page');
     const next = await random(alice, { tags: 'walks', excludeId: String((walks.body as { id: number }).id) }, 200);
     expect((next.body as { id: number }).id).not.toBe((walks.body as { id: number }).id);
-    expect((await random(alice, { tags: 'river' }, 200)).body).toMatchObject({ id: ids.walk, index: 1, page: 1 });
+    expect((await random(alice, { tags: 'river' }, 200)).body).toEqual({ id: ids.walk, date: '2024-03-10', index: 1 });
     await random(alice, { tags: 'river', favorites: 'true' }, 404);
     await random(bob, { tags: 'river' }, 404);
     await random(alice, { excludeId: 'last' }, 400);
+    // The pick takes the filters, not a batch
+    await call('GET /api/entries/random', { as: alice, query: journalQuery(), status: 400, code: 'VALIDATION_FAILED' });
   });
 });

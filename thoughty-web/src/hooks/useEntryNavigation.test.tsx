@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { MoodFilter } from '../utils/entryMood';
@@ -131,106 +131,56 @@ describe('useEntryNavigation', () => {
     expect(consoleError).toHaveBeenCalledWith('Error sharing entry:', expect.any(Error));
   });
 
-  it('loads a permalink target from route state', async () => {
-    const navigateById = vi.fn().mockResolvedValue({ found: true, page: 2, entryId: 9 });
-    const setPage = createSetterSpy<number>();
-    const setTargetEntryId = vi.fn();
-    const setActiveTargetId = vi.fn();
+  it('opens the list around a permalink target from route state, without a lookup', () => {
+    const navigateByDate = vi.fn();
     const params = createParams({
-      entriesService: {
-        navigateByDate: vi.fn(),
-        navigateById,
-      } as unknown as UseEntryNavigationParams['entriesService'],
+      entriesService: { navigateByDate } as unknown as UseEntryNavigationParams['entriesService'],
       routeEntryId: 7,
       searchParams: new URLSearchParams('entry=7&diary=all'),
-      setPage,
-      setTargetEntryId,
-      setActiveTargetId,
     });
 
-    renderHook(() => useNavigation(params));
+    const { rerender } = renderHook((props: UseEntryNavigationParams) => useNavigation(props), { initialProps: params });
 
-    await waitFor(() => {
-      expect(navigateById).toHaveBeenCalledWith(7, 10);
-    });
+    expect(params.openListAt).toHaveBeenCalledWith(7);
+    expect(params.setTargetEntryId).toHaveBeenCalledWith(7);
+    expect(params.setActiveTargetId).toHaveBeenCalledWith(7);
+    expect(navigateByDate).not.toHaveBeenCalled();
 
-    expect(setPage).toHaveBeenCalledWith(2);
-    expect(setTargetEntryId).toHaveBeenCalledWith(9);
-    expect(setActiveTargetId).toHaveBeenCalledWith(9);
+    // Once landed, the permalink is left alone
+    rerender({ ...params, filterArchiveStatus: 'all' });
+    expect(params.openListAt).toHaveBeenCalledTimes(1);
   });
 
-  it('looks a permalink up once, with the page size from the loaded config', async () => {
-    const navigateById = vi.fn().mockResolvedValue({ found: true, page: 3, entryId: 7 });
-    const setPage = createSetterSpy<number>();
-    const entriesService = {
-      navigateByDate: vi.fn(),
-      navigateById,
-    } as unknown as UseEntryNavigationParams['entriesService'];
-    const initialProps = createParams({
-      configLoaded: false,
-      entriesService,
-      getLimit: () => 10,
-      routeEntryId: 7,
-      searchParams: new URLSearchParams('entry=7&diary=all'),
-      setPage,
-    });
-    const { rerender } = renderHook((props: UseEntryNavigationParams) => useNavigation(props), { initialProps });
-
-    expect(navigateById).not.toHaveBeenCalled();
-
-    // The config arrives: the page size callback changes along with the loaded flag
-    rerender({ ...initialProps, configLoaded: true, getLimit: () => 25 });
-
-    await waitFor(() => {
-      expect(setPage).toHaveBeenCalledWith(3);
-    });
-    expect(navigateById).toHaveBeenCalledTimes(1);
-    expect(navigateById).toHaveBeenCalledWith(7, 25);
-
-    // Once landed, the permalink keeps its page and a later page size change does not repeat it
-    rerender({ ...initialProps, configLoaded: true, getLimit: () => 50, page: 3 });
-    expect(navigateById).toHaveBeenCalledTimes(1);
-    expect(setPage).not.toHaveBeenCalledWith(1);
-  });
-
-  it('resets journal filters for a permalink before the config has loaded', () => {
-    const navigateById = vi.fn();
+  it('resets journal filters for a permalink first, holding the list until they are reset', () => {
     const setFilterArchiveStatus = createSetterSpy<'all' | 'active' | 'archived'>();
-
-    renderHook(() => useNavigation(createParams({
-      configLoaded: false,
-      entriesService: {
-        navigateByDate: vi.fn(),
-        navigateById,
-      } as unknown as UseEntryNavigationParams['entriesService'],
+    const setFiltersResetting = vi.fn();
+    const params = createParams({
       filterArchiveStatus: 'active',
       routeEntryId: 7,
       searchParams: new URLSearchParams('entry=7&diary=all'),
       setFilterArchiveStatus,
-    })));
+      setFiltersResetting,
+    });
+    const { rerender } = renderHook((props: UseEntryNavigationParams) => useNavigation(props), { initialProps: params });
 
     expect(setFilterArchiveStatus).toHaveBeenCalledWith('all');
-    expect(navigateById).not.toHaveBeenCalled();
+    expect(setFiltersResetting).toHaveBeenCalledWith(true);
+    expect(params.openListAt).not.toHaveBeenCalled();
+
+    rerender({ ...params, filterArchiveStatus: 'all' });
+    expect(setFiltersResetting).toHaveBeenLastCalledWith(false);
+    expect(params.openListAt).toHaveBeenCalledWith(7);
   });
 
   it('clears active permalinks before navigating to a cross-reference target', async () => {
     const navigate = vi.fn();
-    const navigateByDate = vi.fn().mockResolvedValue({ found: true, page: 3, entryId: 11 });
+    const navigateByDate = vi.fn().mockResolvedValue({ found: true, entryId: 11 });
     const setSourceEntry = vi.fn();
-    const setPage = createSetterSpy<number>();
-    const setTargetEntryId = vi.fn();
-    const setActiveTargetId = vi.fn();
     const params = createParams({
-      entriesService: {
-        navigateByDate,
-        navigateById: vi.fn(),
-      } as unknown as UseEntryNavigationParams['entriesService'],
+      entriesService: { navigateByDate } as unknown as UseEntryNavigationParams['entriesService'],
       navigate,
       searchParams: new URLSearchParams('entry=2&diary=all'),
       setSourceEntry,
-      setPage,
-      setTargetEntryId,
-      setActiveTargetId,
     });
     const { result } = renderHook(() => useNavigation(params));
 
@@ -247,51 +197,40 @@ describe('useEntryNavigation', () => {
       search: '?diary=all',
     }, { replace: true });
     expect(setSourceEntry).toHaveBeenCalledWith({ id: 5, date: '2024-01-14', index: 1 });
-    expect(navigateByDate).toHaveBeenCalledWith('2024-01-16', 1, 10);
-    expect(setPage).toHaveBeenCalledWith(3);
-    expect(setTargetEntryId).toHaveBeenCalledWith(11);
-    expect(setActiveTargetId).toHaveBeenCalledWith(11);
+    expect(navigateByDate).toHaveBeenCalledWith('2024-01-16', 1);
+    expect(params.openListAt).toHaveBeenCalledWith(11);
+    expect(params.setTargetEntryId).toHaveBeenCalledWith(11);
+    expect(params.setActiveTargetId).toHaveBeenCalledWith(11);
   });
 
-  it('shows toast state when a permalink target cannot be resolved', async () => {
-    const navigateById = vi.fn().mockResolvedValue({ found: false });
-    const setSourceEntry = vi.fn();
-    const setActiveTargetId = vi.fn();
+  it('shows the toast when a cross-reference names no entry', async () => {
+    const show = vi.fn();
     const params = createParams({
-      entriesService: {
-        navigateByDate: vi.fn(),
-        navigateById,
-      } as unknown as UseEntryNavigationParams['entriesService'],
-      routeEntryId: 77,
-      searchParams: new URLSearchParams('entry=77&diary=all'),
-      setSourceEntry,
-      setActiveTargetId,
+      entriesService: { navigateByDate: vi.fn().mockResolvedValue({ found: false }) } as unknown as UseEntryNavigationParams['entriesService'],
+      entryToast: { visible: false, showCount: 0, show, hide: vi.fn() },
     });
     const { result } = renderHook(() => useNavigation(params));
 
-    await waitFor(() => {
-      expect(result.current.entryToast.visible).toBe(true);
+    await act(async () => {
+      await result.current.handleNavigateToEntry('2024-01-16', 3);
     });
 
-    expect(navigateById).toHaveBeenCalledWith(77, 10);
-    expect(setSourceEntry).toHaveBeenCalledWith(null);
-    expect(setActiveTargetId).toHaveBeenCalledWith(null);
+    expect(show).toHaveBeenCalledTimes(1);
+    expect(params.setSourceEntry).toHaveBeenCalledWith(null);
+    expect(params.setActiveTargetId).toHaveBeenCalledWith(null);
+    expect(params.openListAt).not.toHaveBeenCalled();
   });
 
   it('returns early for unauthenticated permalink access', () => {
-    const navigateById = vi.fn();
-
-    renderHook(() => useNavigation(createParams({
-      entriesService: {
-        navigateByDate: vi.fn(),
-        navigateById,
-      } as unknown as UseEntryNavigationParams['entriesService'],
+    const params = createParams({
       isAuthenticated: false,
       routeEntryId: 44,
       searchParams: new URLSearchParams('entry=44&diary=all'),
-    })));
+    });
 
-    expect(navigateById).not.toHaveBeenCalled();
+    renderHook(() => useNavigation(params));
+
+    expect(params.openListAt).not.toHaveBeenCalled();
   });
 
   it('resets journal filters before navigating to an entry target', async () => {
@@ -306,14 +245,10 @@ describe('useEntryNavigation', () => {
     const setFilterEraId = createSetterSpy<number | null>();
     const setFilterPersonId = createSetterSpy<number | null>();
     const setCurrentDiaryId = createSetterSpy<number | null>();
-    const setPage = createSetterSpy<number>();
-    const navigateByDate = vi.fn().mockResolvedValue({ found: true, page: 5, entryId: 13 });
-    const { result } = renderHook(() => useNavigation(createParams({
+    const navigateByDate = vi.fn().mockResolvedValue({ found: true, entryId: 13 });
+    const params = createParams({
       currentDiaryId: 9,
-      entriesService: {
-        navigateByDate,
-        navigateById: vi.fn(),
-      } as unknown as UseEntryNavigationParams['entriesService'],
+      entriesService: { navigateByDate } as unknown as UseEntryNavigationParams['entriesService'],
       filterArchiveStatus: 'active',
       filterDateObj: new Date('2024-01-15'),
       filterFavorites: true,
@@ -323,7 +258,6 @@ describe('useEntryNavigation', () => {
       filterTags: ['work'],
       filterVisibility: 'private',
       navigate,
-      page: 2,
       search: 'focus',
       searchParams: new URLSearchParams('diary=9'),
       setCurrentDiaryId,
@@ -335,9 +269,9 @@ describe('useEntryNavigation', () => {
       setFilterPersonId,
       setFilterTags,
       setFilterVisibility,
-      setPage,
       setSearch,
-    })));
+    });
+    const { result } = renderHook(() => useNavigation(params));
 
     await act(async () => {
       await result.current.handleNavigateToEntry('2024-02-01', 2, null);
@@ -354,54 +288,28 @@ describe('useEntryNavigation', () => {
     expect(setFilterPersonId).toHaveBeenCalledWith(null);
     expect(setCurrentDiaryId).toHaveBeenCalledWith(null);
     expect(navigate).toHaveBeenCalledWith({ pathname: '/journal', search: '?diary=all' }, { replace: true });
-    expect(setPage).toHaveBeenCalledWith(1);
-    expect(setPage).toHaveBeenCalledWith(5);
-    expect(navigateByDate).toHaveBeenCalledWith('2024-02-01', 2, 10);
+    expect(navigateByDate).toHaveBeenCalledWith('2024-02-01', 2);
+    expect(params.openListAt).toHaveBeenCalledWith(13);
   });
 
-  it('clears source state after attempting to return to a source entry', async () => {
-    const navigateById = vi.fn().mockResolvedValue({ found: false });
-    const setPage = createSetterSpy<number>();
-    const setSourceEntry = vi.fn();
-    const setTargetEntryId = vi.fn();
-    const setActiveTargetId = vi.fn();
-    const { result } = renderHook(() => useNavigation(createParams({
-      entriesService: {
-        navigateByDate: vi.fn(),
-        navigateById,
-      } as unknown as UseEntryNavigationParams['entriesService'],
-      setActiveTargetId,
-      setPage,
-      setSourceEntry,
-      setTargetEntryId,
-      sourceEntry: { id: 21, date: '2024-01-10', index: 1 },
-    })));
+  it('opens the list back at the source entry', () => {
+    const params = createParams({ sourceEntry: { id: 21, date: '2024-01-10', index: 1 } });
+    const { result } = renderHook(() => useNavigation(params));
 
-    await act(async () => {
-      await result.current.handleBackToSource();
-    });
+    act(() => result.current.handleBackToSource());
 
-    expect(navigateById).toHaveBeenCalledWith(21, 10);
-    expect(setPage).not.toHaveBeenCalledWith(expect.anything());
-    expect(setTargetEntryId).not.toHaveBeenCalled();
-    expect(setSourceEntry).toHaveBeenCalledWith(null);
-    expect(setActiveTargetId).toHaveBeenCalledWith(null);
+    expect(params.openListAt).toHaveBeenCalledWith(21);
+    expect(params.setTargetEntryId).toHaveBeenCalledWith(21);
+    expect(params.setSourceEntry).toHaveBeenCalledWith(null);
+    expect(params.setActiveTargetId).toHaveBeenCalledWith(null);
   });
 
-  it('does nothing when there is no source entry to navigate back to', async () => {
-    const navigateById = vi.fn();
-    const { result } = renderHook(() => useNavigation(createParams({
-      entriesService: {
-        navigateByDate: vi.fn(),
-        navigateById,
-      } as unknown as UseEntryNavigationParams['entriesService'],
-      sourceEntry: null,
-    })));
+  it('does nothing when there is no source entry to navigate back to', () => {
+    const params = createParams({ sourceEntry: null });
+    const { result } = renderHook(() => useNavigation(params));
 
-    await act(async () => {
-      await result.current.handleBackToSource();
-    });
+    act(() => result.current.handleBackToSource());
 
-    expect(navigateById).not.toHaveBeenCalled();
+    expect(params.openListAt).not.toHaveBeenCalled();
   });
 });

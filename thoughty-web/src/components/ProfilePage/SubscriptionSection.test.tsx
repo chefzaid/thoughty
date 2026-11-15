@@ -15,7 +15,6 @@ function renderSubscriptionSection(config: ProfileConfig = {}) {
     <SubscriptionSection
       localConfig={{
         theme: 'dark',
-        entriesPerPage: '10',
         language: 'en',
         ...config,
       }}

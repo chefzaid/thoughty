@@ -110,9 +110,6 @@ export class UpdateConfigDto {
   @SettingChoice(['en', 'fr'], 'Interface language')
   language?: string;
 
-  @SettingText(3, 'Entries per page', SMALL_NUMBER)
-  entriesPerPage?: string;
-
   @SettingText(3, 'Maximum pinned entries', SMALL_NUMBER)
   maxPinnedEntries?: string;
 
@@ -195,7 +192,6 @@ export const USER_CONFIG_KEYS: ReadonlySet<string> = new Set<keyof UpdateConfigD
   'highContrast',
   'ttsVoiceUri',
   'language',
-  'entriesPerPage',
   'maxPinnedEntries',
   'defaultVisibility',
   'readDates',

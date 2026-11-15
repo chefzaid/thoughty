@@ -5,19 +5,14 @@ import {
   POSTGRES_SETUP_TIMEOUT_MS,
   type PostgresTestDatabase,
 } from '@/database/postgres-test-database.test-helpers';
-import { Entry, EntryRevision, User } from '@/database/entities';
-import { EntriesQueryService } from './entries-query.service';
-import { EntrySearchService } from './entry-search.service';
+import { Entry, User } from '@/database/entities';
 import type { GetEntriesQueryDto } from './dto';
-import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
-import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
-import { personDatesServiceOn } from '@/modules/people/person-dates.test-helpers';
+import { entryListOn } from './entry-list.test-helpers';
 
 describePostgres('PostgreSQL full-text entry search', () => {
   let database: PostgresTestDatabase;
   let dataSource: DataSource;
   let entries: Repository<Entry>;
-  let queries: EntriesQueryService;
   let userId: number;
   let otherUserId: number;
 
@@ -25,7 +20,6 @@ describePostgres('PostgreSQL full-text entry search', () => {
     database = await createPostgresTestDatabase();
     dataSource = database.dataSource;
     entries = dataSource.getRepository(Entry);
-    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries), timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });
 
@@ -49,7 +43,7 @@ describePostgres('PostgreSQL full-text entry search', () => {
     });
   };
   const search = async (text: string, extra: Partial<GetEntriesQueryDto> = {}) =>
-    (await queries.getEntries(userId, { search: text, page: 1, limit: 20, ...extra })).entries;
+    (await entryListOn(entries).getEntries(userId, { search: text, limit: 20, ...extra })).entries;
   const contents = async (text: string, extra: Partial<GetEntriesQueryDto> = {}) =>
     (await search(text, extra)).map((entry) => entry.content);
 
@@ -151,7 +145,7 @@ describePostgres('PostgreSQL full-text entry search', () => {
     expect(await contents('harbor')).toEqual(['Harbor walk at dusk.', 'Harbor walk at dawn.']);
     expect(await contents('harbor', { favorites: true, tags: 'sea' })).toEqual(['Harbor walk at dawn.']);
     expect(await contents('harbor', { archiveStatus: 'archived' })).toEqual(['Harbor walk at dusk.']);
-    expect((await queries.getEntries(userId, { search: 'harbor', page: 1, limit: 1 })).total).toBe(2);
+    expect((await entryListOn(entries).getEntries(userId, { search: 'harbor', limit: 1 })).total).toBe(2);
     expect(kept.searchVector).toBeUndefined();
   });
 

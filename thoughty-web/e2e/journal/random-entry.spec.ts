@@ -17,7 +17,6 @@ const ENTRIES: MockEntry[] = [
 
 const filterTools = (page: Page) => page.locator('.journal-filter-controls');
 const randomButton = (page: Page, name: string) => filterTools(page).getByRole('button', { name, exact: true });
-const pageInput = (page: Page) => page.getByLabel('Page', { exact: true });
 
 /** The mock API picks with `Math.random`; a value near 1 makes it take the last candidate of the list. */
 async function withLastPick(run: () => Promise<void>) {
@@ -38,32 +37,39 @@ async function pickRandom(page: Page, name: string): Promise<URLSearchParams> {
 }
 
 test.describe('Random entry', () => {
-  test('opens an entry picked among the current filters on its page, keeps the filters, and moves on to another one', async ({ page }) => {
-    await setupMockApp(page, { startAuthenticated: true, config: { entriesPerPage: 2 }, initialEntries: ENTRIES });
+  test('opens the list around an entry picked among the current filters, keeps the filters, and moves on to another one', async ({ page }) => {
+    // More favorites than a batch, the oldest of them out of the first batch
+    const older = Array.from({ length: 25 }, (_, day) => entry(800 + day, `2026-09-${String(28 - day).padStart(2, '0')}`, `Favorite September day ${28 - day}.`, { is_favorite: true }));
+    await setupMockApp(page, { startAuthenticated: true, initialEntries: [...ENTRIES, ...older] });
     await page.goto('/journal?diary=all');
     await page.getByTitle('Show favorites only').click();
     await expect(page.locator('#entry-703')).toBeVisible();
     await expect(page.locator('#entry-702')).toHaveCount(0);
+    await expect(page.locator('#entry-824')).toHaveCount(0);
+    const listRequests: URLSearchParams[] = [];
+    page.on('request', (request) => {
+      const url = new URL(request.url());
+      if (url.pathname === '/api/entries') listRequests.push(url.searchParams);
+    });
 
     await withLastPick(async () => {
       const first = await pickRandom(page, 'Random entry');
       expect(first.get('favorites')).toBe('true');
-      expect(first.get('limit')).toBe('2');
-      expect(first.has('page')).toBe(false);
-      expect(first.has('excludeId')).toBe(false);
+      expect(['limit', 'page', 'around', 'excludeId'].filter((name) => first.has(name))).toEqual([]);
 
-      // The last favorite is on the second page of the filtered list, and the filters stay
-      await expect(page.locator('#entry-705')).toHaveClass(/highlight-entry/);
-      await expect(pageInput(page)).toHaveValue('2');
-      await expect(filterTools(page).getByText('Showing a random entry from Oct 17, 2026.')).toBeAttached();
-      await expect(page.locator('#entry-704')).toHaveCount(0);
+      // The oldest favorite opens with the favorites around it, and the filters stay
+      await expect(page.locator('#entry-824')).toHaveClass(/highlight-entry/);
+      await expect(page.locator('#entry-824')).toBeInViewport();
+      expect(listRequests.at(-1)?.get('around')).toBe('824');
+      expect(listRequests.at(-1)?.get('favorites')).toBe('true');
+      await expect(filterTools(page).getByText('Showing a random entry from Sep 4, 2026.')).toBeAttached();
+      await expect(page.locator('#entry-702')).toHaveCount(0);
       await expect(page).toHaveURL(/\/journal\?diary=all$/);
 
       const second = await pickRandom(page, 'Another one');
-      expect(second.get('excludeId')).toBe('705');
+      expect(second.get('excludeId')).toBe('824');
       expect(second.get('favorites')).toBe('true');
-      await expect(page.locator('#entry-703')).toHaveClass(/highlight-entry/);
-      await expect(pageInput(page)).toHaveValue('1');
+      await expect(page.locator('#entry-823')).toHaveClass(/highlight-entry/);
       await expect(page.locator('#entry-702')).toHaveCount(0);
     });
 

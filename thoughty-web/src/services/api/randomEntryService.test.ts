@@ -5,25 +5,25 @@ import type { EntryListQuery } from './entryListQuery';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 const everything: EntryListQuery = {
-  page: 3, limit: 10, search: '', filterTags: [], filterDate: '', filterVisibility: '',
+  search: '', filterTags: [], filterDate: '', filterVisibility: '',
   favorites: false, archiveStatus: 'active', diaryId: null, entryIds: null,
 };
 
 describe('randomEntryService', () => {
-  it('asks with the list query and page size, without its page', async () => {
-    const picked = { id: 7, date: '2024-03-10', index: 1, page: 2 };
+  it('asks with the list query, without a batch', async () => {
+    const picked = { id: 7, date: '2024-03-10', index: 1 };
     const authFetch = vi.fn().mockResolvedValue(json(picked));
 
     await expect(createRandomEntryService(authFetch).pick(everything, null)).resolves.toEqual({ data: picked, error: null });
     const url = new URL(String(authFetch.mock.calls[0]?.[0]), 'https://thoughty.test');
     expect(url.pathname).toBe('/api/entries/random');
     expect(Object.fromEntries(url.searchParams)).toEqual({
-      limit: '10', search: '', tags: '', date: '', visibility: '', archiveStatus: 'active',
+      search: '', tags: '', date: '', visibility: '', archiveStatus: 'active',
     });
   });
 
   it('sends every filter set and the entry picked last', async () => {
-    const authFetch = vi.fn().mockResolvedValue(json({ id: 8, date: '2024-03-11', index: 2, page: 1 }));
+    const authFetch = vi.fn().mockResolvedValue(json({ id: 8, date: '2024-03-11', index: 2 }));
 
     await createRandomEntryService(authFetch).pick({
       ...everything, search: 'harbor', sort: 'date', filterTags: ['walks'], filterDate: '2024-03-11', filterVisibility: 'private',
@@ -32,7 +32,7 @@ describe('randomEntryService', () => {
 
     const url = new URL(String(authFetch.mock.calls[0]?.[0]), 'https://thoughty.test');
     expect(Object.fromEntries(url.searchParams)).toEqual({
-      limit: '10', search: 'harbor', sort: 'date', tags: 'walks', date: '2024-03-11', visibility: 'private',
+      search: 'harbor', sort: 'date', tags: 'walks', date: '2024-03-11', visibility: 'private',
       favorites: 'true', archiveStatus: 'active', mood: '4,5', diaryId: '2', eraId: '6', personId: '12', excludeId: '7',
     });
   });

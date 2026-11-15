@@ -24,7 +24,7 @@ const leave = () => {
 };
 
 describe("useEntryForm draft", () => {
-  const config = { defaultVisibility: "private" as const, entriesPerPage: 10 };
+  const config = { defaultVisibility: "private" as const };
 
   beforeEach(() => {
     vi.clearAllMocks();

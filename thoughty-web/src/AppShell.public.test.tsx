@@ -93,7 +93,11 @@ describe('AppShell public flows', () => {
   });
 
   it('loads the sign-up link route and opens the journal once the account is created', async () => {
-    const completeSignUp = vi.fn().mockResolvedValue({ success: true, isNewUser: true });
+    // Completing the sign-up signs the new writer in, as the auth context does, so the journal stays open
+    const completeSignUp = vi.fn(async () => {
+      setMockAuthState({ completeSignUp });
+      return { success: true, isNewUser: true };
+    });
     globalThis.history.replaceState({}, '', '/complete-sign-up?token=link-token');
     setMockAuthState({ user: null, isAuthenticated: false, completeSignUp });
 
@@ -104,6 +108,7 @@ describe('AppShell public flows', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Create my account' }));
     expect(completeSignUp).toHaveBeenCalledWith('link-token', 'Pass123!@', undefined);
     await waitFor(() => expect(globalThis.location.pathname).toBe('/journal'));
+    expect(await screen.findByRole('feed', { name: 'Journal entries' })).toBeInTheDocument();
   });
 
   it('loads the password reset link route, drops the token from the address and goes on to sign in', async () => {

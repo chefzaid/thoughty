@@ -4,7 +4,6 @@ import ThoughtOfTheDay from '../ThoughtOfTheDay/ThoughtOfTheDay';
 import EntryForm from '../EntryForm/EntryForm';
 import FilterControls from '../FilterControls/FilterControls';
 import EntriesList from '../EntriesList/EntriesList';
-import Pagination from '../Pagination/Pagination';
 import YearMonthNavigator from '../YearMonthNavigator/YearMonthNavigator';
 import BackToTopButton from '../BackToTopButton/BackToTopButton';
 import DuplicateReview from '../DuplicateReview/DuplicateReview';
@@ -18,6 +17,7 @@ import { resolveLanguage } from '../../utils/language';
 import { formatEntryDate } from '../../utils/entryDate';
 import { parseSavedSearchDate } from '../../utils/savedSearches';
 import { useJournalKeyboardShortcuts } from './useJournalKeyboardShortcuts';
+import JournalFeed, { type JournalFeedState } from './JournalFeed';
 import { useLifeEraList } from '../LifeEras/useLifeEras';
 import { MentionPeopleContext } from '../People/PeopleContext';
 import { usePeopleList } from '../People/usePeople';
@@ -47,8 +47,7 @@ type EntryFormProps = Omit<
   'theme' | 't' | 'fontColor' | 'lineSpacing' | 'letterSpacing' | 'fontFamily' | 'fontSize' | 'language'
 >;
 type FilterControlsProps = Omit<ComponentProps<typeof FilterControls>, 'theme' | 't' | 'onOpenHighlights' | 'actions' | 'eras' | 'onManageEras' | 'people' | 'onManagePeople'>;
-type EntriesListProps = Omit<ComponentProps<typeof EntriesList>, 'config' | 't' | 'searchTerm'>;
-type PaginationProps = Pick<ComponentProps<typeof Pagination>, 'page' | 'totalPages' | 'setPage' | 'inputPage' | 'setInputPage' | 'pageSize' | 'onPageSizeChange'>;
+type EntriesListProps = Omit<ComponentProps<typeof EntriesList>, 'config' | 't' | 'searchTerm' | 'total' | 'offset' | 'loadingMore'>;
 type YearMonthNavigatorProps = Pick<ComponentProps<typeof YearMonthNavigator>, 'availableYears' | 'availableMonths' | 'onNavigate'>;
 type DuplicateReviewProps = Omit<ComponentProps<typeof DuplicateReview>, 'theme' | 'language' | 't'>;
 type RandomEntryProps = Pick<ComponentProps<typeof RandomEntryButton>, 'query' | 'listEmpty' | 'onOpen'>;
@@ -59,7 +58,8 @@ interface JournalViewProps {
   entryForm: EntryFormProps;
   filters: FilterControlsProps;
   entriesList: EntriesListProps;
-  pagination: PaginationProps;
+  /** The infinite scroll: how many entries match, the batches before and after the ones shown, and loading them. */
+  feed: JournalFeedState & { offset: number };
   yearMonthNavigator: YearMonthNavigatorProps;
   duplicateReview: DuplicateReviewProps;
   randomEntry: RandomEntryProps;
@@ -82,7 +82,7 @@ function JournalView({
   entryForm,
   filters,
   entriesList,
-  pagination,
+  feed,
   yearMonthNavigator,
   duplicateReview,
   randomEntry,
@@ -133,12 +133,8 @@ function JournalView({
   useJournalKeyboardShortcuts({
     entryFormRef,
     searchRef,
-    page: pagination.page,
-    totalPages: pagination.totalPages,
-    setPage: pagination.setPage,
     closeHighlights,
     highlightsOpen: thoughtOfDay.isOpen,
-    pageKeysEnabled: !showCalendar,
   });
 
   const composerSeed = useComposerSeed({
@@ -167,7 +163,6 @@ function JournalView({
   /** A day of the calendar opens in the list as the date filter, keeping the other filters and the diary. */
   const openCalendarDay = (date: string) => {
     filters.setFilterDateObj(parseSavedSearchDate(date));
-    filters.setPage(1);
     layoutRoute.setLayout('list');
   };
   /** The reader reads the list's entries as they are filtered now, or a month of the calendar. */
@@ -176,10 +171,10 @@ function JournalView({
   /** An offered comfort read opens in the reader, which turns through the entries offered, archived or not. */
   const readComfortEntry = (entryId: number, offeredIds: readonly number[]) =>
     reader.open(new URLSearchParams({ ids: offeredIds.join(','), archiveStatus: 'all' }).toString(), entryId);
-  /** A random entry opens in the list, on its page among the same filters. */
-  const openRandomEntry = (entryId: number, page: number) => {
+  /** A random entry opens in the list, among the same filters. */
+  const openRandomEntry = (entryId: number) => {
     if (showCalendar) layoutRoute.setLayout('list');
-    randomEntry.onOpen(entryId, page);
+    randomEntry.onOpen(entryId);
   };
 
   return (
@@ -188,7 +183,7 @@ function JournalView({
       <h1 className="sr-only">{t('journal')}</h1>
       <DiaryTabs
         {...diaryTabs}
-        onDiaryChange={(id: number | null) => { diaryTabs.onDiaryChange(id); pagination.setPage(1); }}
+        onDiaryChange={diaryTabs.onDiaryChange}
         theme={config.theme}
         t={t}
       />
@@ -303,7 +298,7 @@ function JournalView({
       {selectedPerson && (
         <PersonFilterBanner
           person={selectedPerson}
-          onClear={() => { setFilterPersonId(null); filters.setPage(1); }}
+          onClear={() => setFilterPersonId(null)}
           onNotify={onNotify}
           language={language}
           theme={theme}
@@ -311,8 +306,24 @@ function JournalView({
         />
       )}
 
-      <div className="mb-4 flex justify-end">
-        <JournalLayoutSwitch layout={layoutRoute.layout} onChange={layoutRoute.setLayout} theme={theme} t={t} />
+      {/* The year and month jump sits above the list, which grows as it scrolls */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        {!showCalendar && (
+          <YearMonthNavigator
+            availableYears={yearMonthNavigator.availableYears}
+            availableMonths={yearMonthNavigator.availableMonths}
+            navYear={navYear}
+            setNavYear={setNavYear}
+            navMonth={navMonth}
+            setNavMonth={setNavMonth}
+            onNavigate={yearMonthNavigator.onNavigate}
+            config={config}
+            t={t}
+          />
+        )}
+        <div className="ml-auto">
+          <JournalLayoutSwitch layout={layoutRoute.layout} onChange={layoutRoute.setLayout} theme={theme} t={t} />
+        </div>
       </div>
 
       {showCalendar ? (
@@ -332,33 +343,27 @@ function JournalView({
         />
       ) : (
         <>
-          <EntriesList
-            {...entriesList}
-            onUseAsStartingPoint={composerSeed.startFromEntry}
-            onReply={composerSeed.replyToEntry}
-            config={config}
-            searchTerm={filters.searchMode === 'keyword' ? filters.search : undefined}
+          <JournalFeed
+            feed={feed}
+            entries={entriesList.entries}
+            reloading={entriesList.loading}
+            autoLoadNewer={entriesList.targetEntryId === null}
+            language={language}
+            theme={theme}
             t={t}
-          />
-
-          <Pagination
-            {...pagination}
-            pageEntryCount={entriesList.entries.length}
-            theme={config.theme}
-            t={t}
-          />
-
-          <YearMonthNavigator
-            availableYears={yearMonthNavigator.availableYears}
-            availableMonths={yearMonthNavigator.availableMonths}
-            navYear={navYear}
-            setNavYear={setNavYear}
-            navMonth={navMonth}
-            setNavMonth={setNavMonth}
-            onNavigate={yearMonthNavigator.onNavigate}
-            config={config}
-            t={t}
-          />
+          >
+            <EntriesList
+              {...entriesList}
+              total={feed.total}
+              offset={feed.offset}
+              loadingMore={feed.loadingOlder || feed.loadingNewer}
+              onUseAsStartingPoint={composerSeed.startFromEntry}
+              onReply={composerSeed.replyToEntry}
+              config={config}
+              searchTerm={filters.searchMode === 'keyword' ? filters.search : undefined}
+              t={t}
+            />
+          </JournalFeed>
 
           {entriesList.entries.length > 0 && <BackToTopButton theme={config.theme} t={t} />}
         </>

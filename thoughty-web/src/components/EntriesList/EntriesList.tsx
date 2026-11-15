@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState as useLocalState, type Dispatch, type KeyboardEvent, type PointerEvent, type SetStateAction } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState as useLocalState, type Dispatch, type KeyboardEvent, type PointerEvent, type SetStateAction } from 'react';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useSpeech, type SpeechEntry } from '../../hooks/useSpeech';
 import type { Attachment, Config, Diary, Entry, GroupedEntries, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
@@ -7,11 +7,12 @@ import EntryViewMode, { type EntryCardActions } from './EntryViewMode';
 import EntryDayHeading from './EntryDayHeading';
 import { resolveLanguage } from '../../utils/language';
 import { isManuallyOrdered } from '../../utils/entryTime';
-import { type BulkAction, type BulkActionOptions, BulkActionBar } from './BulkActionBar';
+import type { BulkAction, BulkActionOptions } from './BulkActionBar';
+import EntriesListToolbar from './EntriesListToolbar';
+import { formatEntryDay } from '../ShareLinks/shareLinkText';
 import { EditForm, EntryReorderControls } from './EntriesList.helpers';
 import {
     extractDate,
-    getBulkModeButtonClass,
     getEntryCardStyle,
     getEntryDragHighlightClass,
     getSelectedRingClass,
@@ -23,7 +24,14 @@ import {
 /** The card actions are handed to each entry card as they are. */
 interface EntriesListProps extends EntryCardActions {
     loading: boolean;
+    /** The entries loaded so far, a window of the entries the filters match. */
     entries: Entry[];
+    /** How many entries the filters match; the default is the entries loaded. */
+    total?: number;
+    /** How many entries come before the first one loaded, so each entry's place in the list is known. */
+    offset?: number;
+    /** Whether more entries are being loaded at either end of the list. */
+    loadingMore?: boolean;
     groupedEntries: GroupedEntries;
     /** Show entries in the order they came (best search match first), under their dates, instead of by day. */
     rankedOrder?: boolean;
@@ -85,6 +93,9 @@ interface EntriesListProps extends EntryCardActions {
 function EntriesList({
     loading,
     entries,
+    total = entries.length,
+    offset = 0,
+    loadingMore = false,
     groupedEntries,
     rankedOrder = false,
     config,
@@ -268,6 +279,12 @@ function EntriesList({
         ),
         [speechDates, groupedEntries],
     );
+    // Read when asked, so a batch loaded later neither draws every card again nor leaves one reading a stale list
+    const flatEntriesRef = useRef(flatEntries);
+    useEffect(() => {
+        flatEntriesRef.current = flatEntries;
+    }, [flatEntries]);
+    const listEntries = useCallback(() => flatEntriesRef.current, []);
     const showDiaryAccent = useMemo(() => spansSeveralDiaries(entries), [entries]);
 
     const showInitialLoading = loading && entries.length === 0;
@@ -284,8 +301,8 @@ function EntriesList({
     const isEditing = (entry: Entry) => editingEntry !== null && editingEntry.id === entry.id;
     const dragToReorderLabel = t('dragToReorder') === 'dragToReorder' ? 'Drag to reorder' : t('dragToReorder');
     const dropHereLabel = t('dropToReorder') === 'dropToReorder' ? 'Release to move here' : t('dropToReorder');
-    const allEntryIds = entries.map((entry) => entry.id);
-    const allSelected = bulkMode && selectedIds && allEntryIds.length > 0 && allEntryIds.every((id) => selectedIds.has(id));
+    const language = resolveLanguage(config.language);
+    let position = offset;
 
     return (
         <div className="space-y-4">
@@ -295,172 +312,159 @@ function EntriesList({
                 </div>
             )}
 
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    {bulkMode && onSelectAll && onClearSelection && selectedIds && (
-                        <label className={`flex items-center gap-2 text-sm cursor-pointer ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                            <input
-                                type="checkbox"
-                                checked={allSelected}
-                                onChange={() => allSelected ? onClearSelection() : onSelectAll(allEntryIds)}
-                                className="w-4 h-4 rounded accent-blue-500"
-                            />
-                            {t('selectAll')}
-                        </label>
-                    )}
-                </div>
-                {onToggleBulkMode && (
-                    <button type="button"
-                        onClick={onToggleBulkMode}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                            bulkMode
-                                ? 'bg-blue-500 text-white hover:bg-blue-600'
-                                : getBulkModeButtonClass(isDark)
-                        }`}
-                    >
-                        {bulkMode ? t('bulkModeExit') : t('bulkModeEnter')}
-                    </button>
-                )}
-            </div>
+            <EntriesListToolbar
+                loadedIds={entries.map((entry) => entry.id)}
+                total={total}
+                bulkMode={bulkMode}
+                selectedIds={selectedIds}
+                onSelectAll={onSelectAll}
+                onClearSelection={onClearSelection}
+                onBulkAction={onBulkAction}
+                onToggleBulkMode={onToggleBulkMode}
+                allTags={allTags}
+                tagMetadata={tagMetadata}
+                diaries={diaries}
+                isDark={isDark}
+                language={language}
+                t={t}
+            />
 
-            {bulkMode && onBulkAction && onClearSelection && selectedIds && (
-                <BulkActionBar
-                    selectedCount={selectedIds.size}
-                    allTags={allTags}
-                    tagMetadata={tagMetadata}
-                    diaries={diaries || []}
-                    isDark={isDark}
-                    language={resolveLanguage(config.language)}
-                    onBulkAction={onBulkAction}
-                    onClearSelection={onClearSelection}
-                    t={t}
-                />
-            )}
+            {/* A feed of entry articles; each day's heading opens its first entry's article */}
+            <p id="journal-feed-hint" className="sr-only">{t('journalFeedHint')}</p>
+            <div role="feed" aria-busy={isRefreshing || loadingMore} aria-label={t('journalFeedLabel')} aria-describedby="journal-feed-hint">
+                {/* One flat list of keyed articles, so batches added or let go of at either end leave the others in place */}
+                {displayGroups.flatMap((group, groupIndex) => group.entries.map((entry, entryIndex) => {
+                    const date = group.date ?? extractDate(entry.date);
+                    const isDraggable = group.date !== null && !bulkMode && !isEditing(entry) && !!onReorderEntries
+                        && isManuallyOrdered(entry) && group.entries.filter(isManuallyOrdered).length > 1;
+                    const isDraggedEntry = dragEntryId === entry.id && dragDate === date;
+                    const isDropTarget = dragOverId === entry.id && dragDate === date && dragEntryId !== entry.id;
+                    const dragHighlightClass = getEntryDragHighlightClass(isDark, isDraggedEntry, isDropTarget);
+                    position += 1;
+                    const day = formatEntryDay(extractDate(entry.date), language);
 
-            <div className="space-y-8">
-                {displayGroups.map((group) => (
-                    <div key={group.key} className="space-y-4">
-                        <EntryDayHeading
-                            label={group.label}
-                            dayEntries={!rankedOrder && group.date !== null ? groupedEntries[group.date] : undefined}
-                            config={config}
-                            t={t}
-                        />
-                        <div className="space-y-4">
-                            {group.entries.map((entry) => {
-                                const date = group.date ?? extractDate(entry.date);
-                                const isDraggable = group.date !== null && !bulkMode && !isEditing(entry) && !!onReorderEntries
-                                    && isManuallyOrdered(entry) && group.entries.filter(isManuallyOrdered).length > 1;
-                                const isDraggedEntry = dragEntryId === entry.id && dragDate === date;
-                                const isDropTarget = dragOverId === entry.id && dragDate === date && dragEntryId !== entry.id;
-                                const dragHighlightClass = getEntryDragHighlightClass(isDark, isDraggedEntry, isDropTarget);
-
-                                return (
-                                    <div
-                                        key={entry.id}
-                                        id={`entry-${entry.id}`}
-                                        className={`relative rounded-lg p-5 shadow-sm border transition-all flex gap-3 has-[[aria-expanded=true]]:z-30 ${
-                                            isDark ? 'bg-gray-800 border-gray-700 hover:border-gray-600' : 'bg-white border-gray-200 hover:border-gray-300'
-                                        } ${targetEntryId === entry.id || activeTargetId === entry.id ? 'highlight-entry' : ''} ${bulkMode && selectedIds?.has(entry.id) ? getSelectedRingClass(isDark) : ''}${dragHighlightClass}`}
-                                        data-archived={entry.is_archived ? 'true' : 'false'}
-                                        style={getEntryCardStyle(entry)}
-                                    >
-                                        <EntryReorderControls
-                                            isDraggable={isDraggable}
-                                            reserveSpace={!bulkMode && !!onReorderEntries}
-                                            isDraggedEntry={isDraggedEntry}
-                                            isDropTarget={isDropTarget}
-                                            isDark={isDark}
-                                            dragDateMatches={dragDate === date}
-                                            dragToReorderLabel={dragToReorderLabel}
-                                            dropHereLabel={dropHereLabel}
-                                            onHandlePointerDown={(event) => handleDragStart(event, entry.id, date)}
-                                            onHandleKeyDown={(event) => handleDropKeyDown(event, date, entry.id)}
-                                            onTargetPointerEnter={() => handleDragOver(entry.id)}
-                                            onTargetPointerUp={() => applyReorder(date, entry.id)}
+                    return (
+                        <article
+                            key={entry.id}
+                            data-entry-id={entry.id}
+                            tabIndex={-1}
+                            aria-posinset={position}
+                            aria-setsize={total}
+                            aria-label={entry.title ? `${entry.title}, ${day}` : day}
+                            className={`scroll-mt-4 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${entryIndex > 0 ? 'mt-4' : ''} ${entryIndex === 0 && groupIndex > 0 ? 'mt-8' : ''}`}
+                        >
+                            {entryIndex === 0 && (
+                                <div className="mb-4">
+                                    <EntryDayHeading
+                                        label={group.label}
+                                        dayEntries={!rankedOrder && group.date !== null ? groupedEntries[group.date] : undefined}
+                                        config={config}
+                                        t={t}
+                                    />
+                                </div>
+                            )}
+                            <div
+                                id={`entry-${entry.id}`}
+                                className={`relative rounded-lg p-5 shadow-sm border transition-all flex gap-3 has-[[aria-expanded=true]]:z-30 ${
+                                    isDark ? 'bg-gray-800 border-gray-700 hover:border-gray-600' : 'bg-white border-gray-200 hover:border-gray-300'
+                                } ${targetEntryId === entry.id || activeTargetId === entry.id ? 'highlight-entry' : ''} ${bulkMode && selectedIds?.has(entry.id) ? getSelectedRingClass(isDark) : ''}${dragHighlightClass}`}
+                                data-archived={entry.is_archived ? 'true' : 'false'}
+                                style={getEntryCardStyle(entry)}
+                            >
+                                <EntryReorderControls
+                                    isDraggable={isDraggable}
+                                    reserveSpace={!bulkMode && !!onReorderEntries}
+                                    isDraggedEntry={isDraggedEntry}
+                                    isDropTarget={isDropTarget}
+                                    isDark={isDark}
+                                    dragDateMatches={dragDate === date}
+                                    dragToReorderLabel={dragToReorderLabel}
+                                    dropHereLabel={dropHereLabel}
+                                    onHandlePointerDown={(event) => handleDragStart(event, entry.id, date)}
+                                    onHandleKeyDown={(event) => handleDropKeyDown(event, date, entry.id)}
+                                    onTargetPointerEnter={() => handleDragOver(entry.id)}
+                                    onTargetPointerUp={() => applyReorder(date, entry.id)}
+                                />
+                                {bulkMode && onToggleSelect && selectedIds && (
+                                    <div className="flex items-start pt-1">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedIds.has(entry.id)}
+                                            onChange={() => onToggleSelect(entry.id)}
+                                            className="w-4 h-4 rounded accent-blue-500 cursor-pointer"
                                         />
-                                        {bulkMode && onToggleSelect && selectedIds && (
-                                            <div className="flex items-start pt-1">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedIds.has(entry.id)}
-                                                    onChange={() => onToggleSelect(entry.id)}
-                                                    className="w-4 h-4 rounded accent-blue-500 cursor-pointer"
-                                                />
-                                            </div>
-                                        )}
-                                        <div className="relative z-20 flex-1 min-w-0">
-                                            {isEditing(entry) ? (
-                                                <EditForm
-                                                    config={config}
-                                                    entryId={entry.id}
-                                                    editText={editText}
-                                                    setEditText={setEditText}
-                                                    editTitle={editTitle}
-                                                    setEditTitle={setEditTitle}
-                                                    editTimeOfDay={editTimeOfDay}
-                                                    setEditTimeOfDay={setEditTimeOfDay}
-                                                    editMood={editMood}
-                                                    setEditMood={setEditMood}
-                                                    editFeelings={editFeelings}
-                                                    setEditFeelings={setEditFeelings}
-                                                    editDate={editDate}
-                                                    setEditDate={setEditDate}
-                                                    allTags={allTags}
-                                                    tagMetadata={tagMetadata}
-                                                    editTags={editTags}
-                                                    setEditTags={setEditTags}
-                                                    editVisibility={editVisibility}
-                                                    setEditVisibility={setEditVisibility}
-                                                    editFormat={editFormat}
-                                                    setEditFormat={setEditFormat}
-                                                    diaries={diaries}
-                                                    editDiaryId={editDiaryId}
-                                                    setEditDiaryId={setEditDiaryId}
-                                                    editPendingFiles={editPendingFiles}
-                                                    editExistingAttachments={editExistingAttachments}
-                                                    onAddEditFile={onAddEditFile}
-                                                    onRemoveEditPendingFile={onRemoveEditPendingFile}
-                                                    onRemoveEditAttachment={onRemoveEditAttachment}
-                                                    onSaveEdit={onSaveEdit}
-                                                    onCancelEdit={onCancelEdit}
-                                                    t={t}
-                                                />
-                                            ) : (
-                                                <EntryViewMode
-                                                    entry={entry}
-                                                    config={config}
-                                                    speaking={speaking}
-                                                    activeEntryId={activeEntryId}
-                                                    activeTargetId={activeTargetId}
-                                                    sourceEntry={sourceEntry}
-                                                    flatEntries={flatEntries}
-                                                    speakEntry={speakEntry}
-                                                    speakFromEntry={speakFromEntry}
-                                                    stop={stop}
-                                                    onToggleVisibility={onToggleVisibility}
-                                                    onToggleFavorite={onToggleFavorite}
-                                                    onToggleArchived={onToggleArchived}
-                                                    onTogglePinned={onTogglePinned}
-                                                    onEdit={onEdit}
-                                                    onDelete={onDelete}
-                                                    onNavigateToEntry={onNavigateToEntry}
-                                                    onBackToSource={onBackToSource}
-                                                    {...cardActions}
-                                                    diaries={diaries}
-                                                    searchTerm={searchTerm}
-                                                    showDiaryLabel={showDiaryAccent}
-                                                    tagMetadata={tagMetadata}
-                                                    t={t}
-                                                />
-                                            )}
-                                        </div>
                                     </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                ))}
+                                )}
+                                <div className="relative z-20 flex-1 min-w-0">
+                                    {isEditing(entry) ? (
+                                        <EditForm
+                                            config={config}
+                                            entryId={entry.id}
+                                            editText={editText}
+                                            setEditText={setEditText}
+                                            editTitle={editTitle}
+                                            setEditTitle={setEditTitle}
+                                            editTimeOfDay={editTimeOfDay}
+                                            setEditTimeOfDay={setEditTimeOfDay}
+                                            editMood={editMood}
+                                            setEditMood={setEditMood}
+                                            editFeelings={editFeelings}
+                                            setEditFeelings={setEditFeelings}
+                                            editDate={editDate}
+                                            setEditDate={setEditDate}
+                                            allTags={allTags}
+                                            tagMetadata={tagMetadata}
+                                            editTags={editTags}
+                                            setEditTags={setEditTags}
+                                            editVisibility={editVisibility}
+                                            setEditVisibility={setEditVisibility}
+                                            editFormat={editFormat}
+                                            setEditFormat={setEditFormat}
+                                            diaries={diaries}
+                                            editDiaryId={editDiaryId}
+                                            setEditDiaryId={setEditDiaryId}
+                                            editPendingFiles={editPendingFiles}
+                                            editExistingAttachments={editExistingAttachments}
+                                            onAddEditFile={onAddEditFile}
+                                            onRemoveEditPendingFile={onRemoveEditPendingFile}
+                                            onRemoveEditAttachment={onRemoveEditAttachment}
+                                            onSaveEdit={onSaveEdit}
+                                            onCancelEdit={onCancelEdit}
+                                            t={t}
+                                        />
+                                    ) : (
+                                        <EntryViewMode
+                                            entry={entry}
+                                            config={config}
+                                            speaking={speaking}
+                                            activeEntryId={activeEntryId}
+                                            activeTargetId={activeTargetId}
+                                            sourceEntry={sourceEntry}
+                                            listEntries={listEntries}
+                                            speakEntry={speakEntry}
+                                            speakFromEntry={speakFromEntry}
+                                            stop={stop}
+                                            onToggleVisibility={onToggleVisibility}
+                                            onToggleFavorite={onToggleFavorite}
+                                            onToggleArchived={onToggleArchived}
+                                            onTogglePinned={onTogglePinned}
+                                            onEdit={onEdit}
+                                            onDelete={onDelete}
+                                            onNavigateToEntry={onNavigateToEntry}
+                                            onBackToSource={onBackToSource}
+                                            {...cardActions}
+                                            diaries={diaries}
+                                            searchTerm={searchTerm}
+                                            showDiaryLabel={showDiaryAccent}
+                                            tagMetadata={tagMetadata}
+                                            t={t}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                        </article>
+                    );
+                }))}
             </div>
         </div>
     );

@@ -31,7 +31,7 @@ describe("inline images on save", () => {
     const attachments = await attachmentsServiceMock();
     const createEntry = vi.fn().mockResolvedValue({ success: true, entryId: 42 });
     await createEntriesServiceMock({ createEntry });
-    const { result } = renderHook(() => useEntryForm({ defaultVisibility: "private", entriesPerPage: 10 }, 1, vi.fn()));
+    const { result } = renderHook(() => useEntryForm({ defaultVisibility: "private" }, 1, vi.fn()));
 
     act(() => {
       result.current.setFormat("markdown");
@@ -52,7 +52,7 @@ describe("inline images on save", () => {
     const attachments = await attachmentsServiceMock();
     const createEntry = vi.fn().mockResolvedValue({ success: true, entryId: 42 });
     await createEntriesServiceMock({ createEntry });
-    const { result } = renderHook(() => useEntryForm({ defaultVisibility: "private", entriesPerPage: 10 }, 1, vi.fn()));
+    const { result } = renderHook(() => useEntryForm({ defaultVisibility: "private" }, 1, vi.fn()));
 
     act(() => {
       result.current.setNewEntryText("![x](attachment:pier.png)");

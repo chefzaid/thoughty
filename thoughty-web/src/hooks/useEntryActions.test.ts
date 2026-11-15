@@ -120,7 +120,7 @@ describe("useEntryActions", () => {
       });
       const { result } = renderHook(() =>
         useEntryForm(
-          { defaultVisibility: "private", entriesPerPage: 10 },
+          { defaultVisibility: "private" },
           1,
           mockOnSuccess,
         ),
@@ -143,7 +143,7 @@ describe("useEntryActions", () => {
       const createEntry = vi.fn().mockResolvedValue({ success: true, entryId: 42 });
       await createEntriesServiceMock({ createEntry });
       const { result } = renderHook(() =>
-        useEntryForm({ defaultVisibility: "private", entriesPerPage: 10 }, 1, mockOnSuccess),
+        useEntryForm({ defaultVisibility: "private" }, 1, mockOnSuccess),
       );
 
       expect(result.current.title).toBe("");
@@ -168,7 +168,7 @@ describe("useEntryActions", () => {
       const createEntry = vi.fn().mockResolvedValue({ success: true, entryId: 42 });
       await createEntriesServiceMock({ createEntry });
       const { result } = renderHook(() =>
-        useEntryForm({ defaultVisibility: "private", entriesPerPage: 10 }, 1, mockOnSuccess),
+        useEntryForm({ defaultVisibility: "private" }, 1, mockOnSuccess),
       );
 
       expect(result.current.mood).toBeNull();
@@ -193,7 +193,7 @@ describe("useEntryActions", () => {
       const createEntry = vi.fn().mockResolvedValueOnce({ success: true, entryId: 42 }).mockResolvedValueOnce({ success: false, error: "entrySaveFailed" });
       await createEntriesServiceMock({ createEntry });
       const { result } = renderHook(() =>
-        useEntryForm({ defaultVisibility: "private", entriesPerPage: 10 }, 1, mockOnSuccess),
+        useEntryForm({ defaultVisibility: "private" }, 1, mockOnSuccess),
       );
       expect(result.current.savedEntry).toBeNull();
 
@@ -223,7 +223,7 @@ describe("useEntryActions", () => {
       const createEntry = vi.fn().mockResolvedValue({ success: true, entryId: 42 });
       await createEntriesServiceMock({ createEntry });
       const { result } = renderHook(() =>
-        useEntryForm({ defaultVisibility: "private", entriesPerPage: 10 }, 1, mockOnSuccess),
+        useEntryForm({ defaultVisibility: "private" }, 1, mockOnSuccess),
       );
 
       act(() => {
@@ -258,7 +258,7 @@ describe("useEntryActions", () => {
 
       const { result } = renderHook(() =>
         useEntryForm(
-          { defaultVisibility: "private", entriesPerPage: 10 },
+          { defaultVisibility: "private" },
           1,
           mockOnSuccess,
         ),
@@ -296,7 +296,7 @@ describe("useEntryActions", () => {
       });
       const { result } = renderHook(() =>
         useEntryForm(
-          { defaultVisibility: "private", entriesPerPage: 10 },
+          { defaultVisibility: "private" },
           1,
           mockOnSuccess,
         ),

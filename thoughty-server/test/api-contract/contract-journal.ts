@@ -3,19 +3,18 @@ import { createEntry } from './contract-fixtures';
 import type { ContractContext } from './contract-suite';
 
 /**
- * The journal list's query as `useEntriesState` and `entryListParams` build it, with the filters at
- * their defaults: empty search, tags, date and visibility ("all" is sent as empty), active entries.
+ * The journal list's first batch as `useJournalList` and `entryBatchParams` ask for it, with the filters
+ * at their defaults: empty search, tags, date and visibility ("all" is sent as empty), active entries.
  */
 export function journalQuery(overrides: Record<string, string> = {}): URLSearchParams {
   const params = new URLSearchParams({
-    page: '1',
-    limit: '10',
     search: '',
     tags: '',
     date: '',
     visibility: '',
   });
   params.append('archiveStatus', 'active');
+  params.append('limit', '20');
   for (const [name, value] of Object.entries(overrides)) params.set(name, value);
   return params;
 }
@@ -30,7 +29,7 @@ export interface ListedEntry {
   tags: string[];
 }
 
-/** The ids of the journal page `query` lists for `user`. */
+/** The ids of the journal batch `query` lists for `user`. */
 export async function listJournalIds(
   context: ContractContext,
   user: ContractUser,

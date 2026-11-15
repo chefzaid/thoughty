@@ -9,7 +9,7 @@ import { SAVED_SEARCH_PARAM, personViewFilterState } from '../../utils/savedSear
 export type PersonFilterControls = Pick<ComponentProps<typeof FilterControls>,
   | 'filterPersonId' | 'setFilterPersonId' | 'setSearch' | 'setSearchMode' | 'setSearchSort' | 'setFilterTags'
   | 'setFilterDateObj' | 'setFilterVisibility' | 'setFilterFavorites' | 'setFilterArchiveStatus' | 'setFilterMood'
-  | 'setFilterEraId' | 'setPage'>;
+  | 'setFilterEraId'>;
 
 /**
  * Keeps the journal's person filter in its address (`?diary=all&person=12`), the address leading: a
@@ -55,7 +55,6 @@ export function usePersonFilterRoute(controls: PersonFilterControls): void {
         current.setFilterEraId(view.filterEraId);
       }
       current.setFilterPersonId(routePersonId);
-      current.setPage(1);
       return;
     }
 

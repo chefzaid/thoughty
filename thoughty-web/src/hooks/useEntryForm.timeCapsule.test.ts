@@ -9,7 +9,7 @@ vi.mock("../contexts/AuthContext", async () => (await import("./useEntryActions.
 vi.mock("../services/api", async () => (await import("./useEntryActions.test-helpers")).apiModuleMock());
 
 describe("useEntryForm time capsules", () => {
-  const config = { defaultVisibility: "private" as const, entriesPerPage: 10 };
+  const config = { defaultVisibility: "private" as const };
   const event = { preventDefault: vi.fn() };
   const nextYear = `${new Date().getFullYear() + 1}-06-01`;
 

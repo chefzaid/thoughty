@@ -8,7 +8,7 @@ import {
 import { Attachment, Diary, Entry, EntryRevision, MonthlyRecapEmail, OnThisDayEmail, Setting, User, YearReviewMood } from '@/database/entities';
 import type { RenderedEmail } from '@/modules/auth/services/email.service';
 import { ConfigService } from '@/modules/config';
-import { EntriesQueryService, EntrySearchService } from '@/modules/entries';
+import { EntriesQueryService } from '@/modules/entries';
 import { createEmailUnsubscribeToken } from '@/modules/opt-in-email/email-unsubscribe-token';
 import { EmailUnsubscribeService } from '@/modules/opt-in-email/email-unsubscribe.service';
 import { YearReviewService } from '@/modules/review';
@@ -38,7 +38,7 @@ describePostgres('PostgreSQL monthly recap email', () => {
     database = await createPostgresTestDatabase();
     dataSource = database.dataSource;
     const entries = dataSource.getRepository(Entry);
-    const queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries), timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
+    const queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
     const review = new YearReviewService(
       entries,
       dataSource.getRepository(Diary),

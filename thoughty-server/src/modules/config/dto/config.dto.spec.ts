@@ -32,7 +32,6 @@ describe('UpdateConfigDto', () => {
       highContrast: true,
       ttsVoiceUri: '',
       language: 'fr',
-      entriesPerPage: '25',
       maxPinnedEntries: 3,
       defaultVisibility: 'public',
       readDates: false,

@@ -23,14 +23,15 @@ describe('AppShell navigation flows', () => {
   beforeEach(resetAppTestHarness);
   afterEach(cleanupAppTestHarness);
 
-  it('navigates to a permalink entry from the URL', async () => {
+  it('opens the list around a permalink entry from the URL', async () => {
     globalThis.history.replaceState({}, '', '/journal?entry=2');
 
     renderAppShell();
 
     await waitFor(() => {
-      expect(mockFetch.mock.calls.some((call) => call[0] === '/api/entries/by-date?id=2&limit=20')).toBe(true);
+      expect(mockFetch.mock.calls.some((call) => String(call[0]).startsWith('/api/entries?') && String(call[0]).includes('around=2'))).toBe(true);
     });
+    expect(mockFetch.mock.calls.some((call) => String(call[0]).includes('/api/entries/by-date'))).toBe(false);
   });
 
   it('shows a toast instead of a browser alert when a permalink target is missing', async () => {
@@ -38,8 +39,8 @@ describe('AppShell navigation flows', () => {
 
     globalThis.history.replaceState({}, '', '/journal?entry=999');
     setDefaultMockFetch((url) => {
-      if (url.includes('/api/entries/by-date?id=999&limit=20')) {
-        return createJsonResponse({ found: false });
+      if (url.startsWith('/api/entries?') && url.includes('around=999')) {
+        return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({ statusCode: 404, code: 'ENTRY_NOT_FOUND' }) });
       }
 
       return undefined;
@@ -61,12 +62,8 @@ describe('AppShell navigation flows', () => {
 
     globalThis.history.replaceState({}, '', '/journal?entry=2');
     setDefaultMockFetch((url) => {
-      if (url.includes('/api/entries/by-date?id=2&limit=20')) {
-        return createJsonResponse({ found: true, page: 1, entryId: 2 });
-      }
-
-      if (url.includes('/api/entries/by-date?date=2024-01-16&index=1&limit=20')) {
-        return createJsonResponse({ found: true, page: 1, entryId: 3 });
+      if (url.includes('/api/entries/by-date?date=2024-01-16&index=1')) {
+        return createJsonResponse({ found: true, entryId: 3 });
       }
 
       if (url.includes('/api/entries?')) {
@@ -76,8 +73,9 @@ describe('AppShell navigation flows', () => {
             { id: 3, date: '2024-01-16', index: 1, content: 'Target entry', tags: ['work'] },
           ],
           total: 2,
-          page: 1,
-          totalPages: 1,
+          offset: 0,
+          nextCursor: null,
+          prevCursor: null,
           allTags: ['personal', 'work'],
         });
       }
@@ -94,7 +92,7 @@ describe('AppShell navigation flows', () => {
     await user.click(screen.getByRole('button', { name: '[[2024-01-16]]' }));
 
     await waitFor(() => {
-      expect(mockFetch.mock.calls.some((call) => call[0] === '/api/entries/by-date?date=2024-01-16&index=1&limit=20')).toBe(true);
+      expect(mockFetch.mock.calls.some((call) => call[0] === '/api/entries/by-date?date=2024-01-16&index=1')).toBe(true);
       expect(globalThis.location.search).not.toContain('entry=2');
       expect(document.getElementById('entry-3')).toHaveClass('highlight-entry');
     });

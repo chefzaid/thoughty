@@ -4,12 +4,40 @@ import {
   IsOptional,
   IsEnum,
   MaxLength,
+  Max,
   Min,
   Matches,
+  registerDecorator,
+  type ValidationArguments,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { StrictBoolean, StrictInt, WritersDay } from '@/common/validation';
+import { ENTRY_LIST_CURSOR_PATTERN } from '../entry-list-cursor';
+
+/** Entries in one batch of the journal list, at most. */
+export const ENTRY_LIST_MAX_LIMIT = 100;
+
+const LIST_POSITIONS = ['after', 'from', 'before', 'around'] as const;
+
+/** A batch starts from one place at most: after a cursor, before one, or around an entry. */
+function OnlyOneListPosition(): PropertyDecorator {
+  return (target, propertyName) => {
+    registerDecorator({
+      name: 'onlyOneListPosition',
+      target: target.constructor,
+      propertyName: propertyName as string,
+      options: { message: 'after, from, before and around cannot be combined' },
+      validator: {
+        validate(value: unknown, args: ValidationArguments) {
+          const query = args.object as Partial<Record<(typeof LIST_POSITIONS)[number], unknown>>;
+          return value === undefined
+            || LIST_POSITIONS.every((other) => other === propertyName || query[other] === undefined);
+        },
+      },
+    });
+  };
+}
 
 /** The journal filters shared by the entry list and the calendar month: search, tags, flags, mood, diary, life era and person. */
 export class EntryFilterQueryDto {
@@ -107,20 +135,61 @@ export class GetEntriesQueryDto extends EntryFilterQueryDto {
   @IsString()
   date?: string;
 
-  @ApiPropertyOptional({ default: 1 })
+  @ApiPropertyOptional({ default: 10, minimum: 1, maximum: ENTRY_LIST_MAX_LIMIT, description: 'Entries in the batch' })
   @IsOptional()
   @StrictInt()
   @Min(1)
-  page?: number = 1;
-
-  @ApiPropertyOptional({ default: 10 })
-  @IsOptional()
-  @StrictInt()
-  @Min(1)
+  @Max(ENTRY_LIST_MAX_LIMIT)
   limit?: number = 10;
+
+  @ApiPropertyOptional({
+    description:
+      'The `nextCursor` of the batch before: this batch starts right after its last entry, even when entries were '
+      + 'written or deleted meanwhile. Only one of `after`, `from`, `before` and `around`',
+    example: '1_2026-10-21__1_42',
+  })
+  @IsOptional()
+  @Matches(ENTRY_LIST_CURSOR_PATTERN, { message: 'after must be the nextCursor of a batch of entries' })
+  @OnlyOneListPosition()
+  after?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'The `prevCursor` of a batch: the batch starts at its first entry, included, to read that batch again '
+      + '(one opened `around` an entry, say) with the entries it holds now',
+    example: '1_2026-10-25_08:30_2_57',
+  })
+  @IsOptional()
+  @Matches(ENTRY_LIST_CURSOR_PATTERN, { message: 'from must be the prevCursor of a batch of entries' })
+  @OnlyOneListPosition()
+  from?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'The `prevCursor` of the batch after: this batch holds the entries right before its first entry, in list order',
+    example: '1_2026-10-25_08:30_2_57',
+  })
+  @IsOptional()
+  @Matches(ENTRY_LIST_CURSOR_PATTERN, { message: 'before must be the prevCursor of a batch of entries' })
+  @OnlyOneListPosition()
+  before?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'An entry ID: the batch holds that entry with the entries listed just before and after it (half the batch '
+      + 'each way, more of one when the other ends sooner), to open the list at an entry. 404 `ENTRY_NOT_FOUND` '
+      + 'when the filters leave it out',
+    example: 42,
+  })
+  @IsOptional()
+  @StrictInt()
+  @Min(1)
+  @OnlyOneListPosition()
+  around?: number;
 }
 
-export class GetFirstEntryQueryDto {
+/** A year or month to open the journal at, among the journal filters. */
+export class GetFirstEntryQueryDto extends EntryFilterQueryDto {
   @ApiPropertyOptional({ description: 'Year to find first entry' })
   @IsOptional()
   @StrictInt()
@@ -130,11 +199,6 @@ export class GetFirstEntryQueryDto {
   @IsOptional()
   @StrictInt()
   month?: number;
-
-  @ApiPropertyOptional({ default: 10 })
-  @IsOptional()
-  @StrictInt()
-  limit?: number = 10;
 }
 
 export class GetEntryByDateQueryDto {
@@ -152,11 +216,6 @@ export class GetEntryByDateQueryDto {
   @IsOptional()
   @StrictInt()
   id?: number;
-
-  @ApiPropertyOptional({ default: 10 })
-  @IsOptional()
-  @StrictInt()
-  limit?: number = 10;
 }
 
 export class GetHighlightsQueryDto {

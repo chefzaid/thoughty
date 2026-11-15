@@ -25,6 +25,7 @@ import { passwordResetTranslations, type PasswordResetTranslationKey } from "./t
 import { dictationTranslations, type DictationTranslationKey } from "./translations.dictation";
 import { readerTranslations, type ReaderTranslationKey } from "./translations.reader";
 import { privacyBlurTranslations, type PrivacyBlurTranslationKey } from "./translations.privacyBlur";
+import { journalFeedTranslations, type JournalFeedTranslationKey } from "./translations.journalFeed";
 import { navigationTranslations, type NavigationTranslationKey } from "./translations.navigation";
 import { quickCaptureTranslations, type QuickCaptureTranslationKey } from "./translations.quickCapture";
 import { quietModeTranslations, type QuietModeTranslationKey } from "./translations.quietMode";
@@ -97,6 +98,7 @@ export type TranslationKey =
   | DictationTranslationKey
   | ReaderTranslationKey
   | PrivacyBlurTranslationKey
+  | JournalFeedTranslationKey
   | NavigationTranslationKey
   | QuickCaptureTranslationKey
   | QuietModeTranslationKey
@@ -174,6 +176,7 @@ export const translations: Translations = {
     ...dictationTranslations.en,
     ...readerTranslations.en,
     ...privacyBlurTranslations.en,
+    ...journalFeedTranslations.en,
     ...navigationTranslations.en,
     ...quickCaptureTranslations.en,
     ...quietModeTranslations.en,
@@ -244,6 +247,7 @@ export const translations: Translations = {
     ...dictationTranslations.fr,
     ...readerTranslations.fr,
     ...privacyBlurTranslations.fr,
+    ...journalFeedTranslations.fr,
     ...navigationTranslations.fr,
     ...quickCaptureTranslations.fr,
     ...quietModeTranslations.fr,

@@ -7,7 +7,8 @@ import {
   fetchProfileStats,
   updateConfig,
   fetchEntries,
-  setPage,
+  openListAt,
+  setFilterDateObj,
   setTargetEntryId,
   setFilterTags,
   setTags,
@@ -48,10 +49,11 @@ describe('useAppShellModel', () => {
     const { result } = renderHook(() => useAppShellModel());
 
     // The list waits for the config, the route's diary and the permalink lookup
-    expect(mocks.useEntries).toHaveBeenCalledWith(true, expect.anything(), 9, expect.anything(), {
+    expect(mocks.useEntries).toHaveBeenCalledWith(true, 9, expect.anything(), {
       configLoaded: true,
       filtersReady: true,
       routeEntryId: 5,
+      onEntryMissing: expect.any(Function),
     });
     expect(mocks.useAppShellEffects).toHaveBeenCalledWith(expect.objectContaining({
       allTags: ['current', 'later'],
@@ -71,7 +73,7 @@ describe('useAppShellModel', () => {
       userName: 'Config Name',
       avatarUrl: 'config-avatar.png',
       isEmailVerified: true,
-      entryToast: expect.objectContaining({ visible: true }),
+      entryToast: expect.objectContaining({ visible: false }),
     });
     expect(result.current.authenticatedRoutesProps).toMatchObject({
       kind: 'routes',
@@ -87,7 +89,7 @@ describe('useAppShellModel', () => {
 
     renderHook(() => useAppShellModel());
 
-    expect(mocks.useEntries).toHaveBeenLastCalledWith(true, expect.anything(), null, expect.anything(), expect.objectContaining({
+    expect(mocks.useEntries).toHaveBeenLastCalledWith(true, null, expect.anything(), expect.objectContaining({
       filtersReady: false,
     }));
   });
@@ -101,8 +103,10 @@ describe('useAppShellModel', () => {
       await routesProps.handleNavigateToFirst(2024, 1);
     });
 
-    expect(navigateToFirst).toHaveBeenCalledWith(2024, 1, 25);
-    expect(setPage).toHaveBeenCalledWith(4);
+    // Among the list's filters, leaving the day out
+    expect(navigateToFirst).toHaveBeenCalledWith(2024, 1, expect.objectContaining({ search: 'focus', diaryId: 9, filterDate: '' }));
+    expect(setFilterDateObj).toHaveBeenCalledWith(null);
+    expect(openListAt).toHaveBeenCalledWith(77);
     expect(setTargetEntryId).toHaveBeenCalledWith(77);
 
     await expect(layoutProps.handleLoadAiChatHistory(5)).resolves.toEqual([

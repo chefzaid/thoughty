@@ -162,7 +162,6 @@ export interface MockAppState {
   config: {
     theme: "light" | "dark";
     language: "en" | "fr";
-    entriesPerPage: number;
     autoTagMaxTags?: string | number;
     name?: string;
     bio?: string;
@@ -412,7 +411,6 @@ export function createMockAppState(
     config: {
       theme: "dark",
       language: "en",
-      entriesPerPage: 20,
       autoTagMaxTags: "0",
       highContrast: false,
       readDates: true,

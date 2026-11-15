@@ -13,8 +13,6 @@ describe('entriesService', () => {
 
   describe('fetchEntries', () => {
     const defaultParams = {
-      page: 1,
-      limit: 10,
       search: '',
       filterTags: [],
       filterDate: '',
@@ -24,10 +22,13 @@ describe('entriesService', () => {
       diaryId: null,
     };
 
-    it('returns entries on successful fetch', async () => {
+    it('returns a batch of entries with its cursors on successful fetch', async () => {
       const mockResponse = {
         entries: [{ id: 1, content: 'Test entry' }],
-        totalPages: 5,
+        total: 45,
+        offset: 20,
+        nextCursor: '1_2024-01-10__1_1',
+        prevCursor: '1_2024-01-12__1_3',
         allTags: ['tag1', 'tag2'],
       };
       mockAuthFetch.mockResolvedValue({
@@ -35,19 +36,45 @@ describe('entriesService', () => {
         json: () => Promise.resolve(mockResponse),
       });
 
-      const result = await service.fetchEntries(defaultParams);
+      const result = await service.fetchEntries(defaultParams, 10);
 
       expect(result).toEqual(mockResponse);
       expect(mockAuthFetch).toHaveBeenCalledWith(expect.stringContaining('/api/entries?'));
+      expect(new URL(String(mockAuthFetch.mock.calls[0]?.[0]), 'https://x.test').searchParams.get('limit')).toBe('10');
+    });
+
+    it('asks for the batch after, before or from a cursor, or around an entry', async () => {
+      mockAuthFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ entries: [] }) });
+
+      await service.fetchEntries(defaultParams, 20, { after: '1_2024-01-10__1_1' });
+      await service.fetchEntries(defaultParams, 20, { before: '1_2024-01-12__1_3' });
+      await service.fetchEntries(defaultParams, 20, { from: '1_2024-01-12__1_3' });
+      await service.fetchEntries(defaultParams, 20, { around: 42 });
+
+      const queries = mockAuthFetch.mock.calls.map(([url]) => new URL(String(url), 'https://x.test').searchParams);
+      expect(queries.map((query) => [query.get('after'), query.get('before'), query.get('from'), query.get('around')])).toEqual([
+        ['1_2024-01-10__1_1', null, null, null],
+        [null, '1_2024-01-12__1_3', null, null],
+        [null, null, '1_2024-01-12__1_3', null],
+        [null, null, null, '42'],
+      ]);
+      expect(queries.every((query) => query.get('limit') === '20' && !query.has('page'))).toBe(true);
+    });
+
+    it('says when the filters leave out the entry to open around', async () => {
+      mockAuthFetch.mockResolvedValue({ ok: false, status: 404, json: () => Promise.resolve({ code: 'ENTRY_NOT_FOUND' }) });
+
+      await expect(service.fetchEntries(defaultParams, 20, { around: 42 })).resolves.toBe('notFound');
+      await expect(service.fetchEntries(defaultParams, 20, { after: '1_2024-01-10__1_1' })).resolves.toBeNull();
     });
 
     it('includes diaryId in params when provided', async () => {
       mockAuthFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ entries: [], totalPages: 1, allTags: [] }),
+        json: () => Promise.resolve({ entries: [], total: 0, offset: 0, nextCursor: null, prevCursor: null, allTags: [] }),
       });
 
-      await service.fetchEntries({ ...defaultParams, diaryId: 5 });
+      await service.fetchEntries({ ...defaultParams, diaryId: 5 }, 10);
 
       expect(mockAuthFetch).toHaveBeenCalledWith(expect.stringContaining('diaryId=5'));
     });
@@ -55,11 +82,11 @@ describe('entriesService', () => {
     it('sends the search order only with a search', async () => {
       mockAuthFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ entries: [], totalPages: 1, allTags: [] }),
+        json: () => Promise.resolve({ entries: [], total: 0, offset: 0, nextCursor: null, prevCursor: null, allTags: [] }),
       });
 
-      await service.fetchEntries({ ...defaultParams, search: '"morning run" -rain', sort: 'date' });
-      await service.fetchEntries({ ...defaultParams, search: ' ', sort: 'date' });
+      await service.fetchEntries({ ...defaultParams, search: '"morning run" -rain', sort: 'date' }, 10);
+      await service.fetchEntries({ ...defaultParams, search: ' ', sort: 'date' }, 10);
 
       const [withSearch, withoutSearch] = mockAuthFetch.mock.calls.map(([url]) => new URL(String(url), 'http://test').searchParams);
       expect(withSearch?.get('search')).toBe('"morning run" -rain');
@@ -70,11 +97,11 @@ describe('entriesService', () => {
     it('sends the mood filter only when one is chosen', async () => {
       mockAuthFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ entries: [], totalPages: 1, allTags: [] }),
+        json: () => Promise.resolve({ entries: [], total: 0, offset: 0, nextCursor: null, prevCursor: null, allTags: [] }),
       });
 
-      await service.fetchEntries({ ...defaultParams, mood: '4,5' });
-      await service.fetchEntries({ ...defaultParams, mood: '' });
+      await service.fetchEntries({ ...defaultParams, mood: '4,5' }, 10);
+      await service.fetchEntries({ ...defaultParams, mood: '' }, 10);
 
       expect(new URL(String(mockAuthFetch.mock.calls[0]?.[0]), 'https://x.test').searchParams.get('mood')).toBe('4,5');
       expect(String(mockAuthFetch.mock.calls[1]?.[0])).not.toContain('mood=');
@@ -83,11 +110,11 @@ describe('entriesService', () => {
     it('sends the life era filter only when one is chosen', async () => {
       mockAuthFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ entries: [], totalPages: 1, allTags: [] }),
+        json: () => Promise.resolve({ entries: [], total: 0, offset: 0, nextCursor: null, prevCursor: null, allTags: [] }),
       });
 
-      await service.fetchEntries({ ...defaultParams, eraId: 3 });
-      await service.fetchEntries({ ...defaultParams, eraId: null });
+      await service.fetchEntries({ ...defaultParams, eraId: 3 }, 10);
+      await service.fetchEntries({ ...defaultParams, eraId: null }, 10);
 
       expect(new URL(String(mockAuthFetch.mock.calls[0]?.[0]), 'https://x.test').searchParams.get('eraId')).toBe('3');
       expect(String(mockAuthFetch.mock.calls[1]?.[0])).not.toContain('eraId=');
@@ -96,11 +123,11 @@ describe('entriesService', () => {
     it('sends the person filter only when one is chosen', async () => {
       mockAuthFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ entries: [], totalPages: 1, allTags: [] }),
+        json: () => Promise.resolve({ entries: [], total: 0, offset: 0, nextCursor: null, prevCursor: null, allTags: [] }),
       });
 
-      await service.fetchEntries({ ...defaultParams, personId: 12 });
-      await service.fetchEntries({ ...defaultParams, personId: null });
+      await service.fetchEntries({ ...defaultParams, personId: 12 }, 10);
+      await service.fetchEntries({ ...defaultParams, personId: null }, 10);
 
       expect(new URL(String(mockAuthFetch.mock.calls[0]?.[0]), 'https://x.test').searchParams.get('personId')).toBe('12');
       expect(String(mockAuthFetch.mock.calls[1]?.[0])).not.toContain('personId=');
@@ -112,7 +139,7 @@ describe('entriesService', () => {
         json: () => Promise.resolve({ error: 'Unauthorized' }),
       });
 
-      const result = await service.fetchEntries(defaultParams);
+      const result = await service.fetchEntries(defaultParams, 10);
 
       expect(result).toBeNull();
     });
@@ -121,7 +148,7 @@ describe('entriesService', () => {
       mockAuthFetch.mockRejectedValue(new Error('Network error'));
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      const result = await service.fetchEntries(defaultParams);
+      const result = await service.fetchEntries(defaultParams, 10);
 
       expect(result).toBeNull();
       consoleSpy.mockRestore();
@@ -133,9 +160,9 @@ describe('entriesService', () => {
         json: () => Promise.resolve({}),
       });
 
-      const result = await service.fetchEntries(defaultParams);
+      const result = await service.fetchEntries(defaultParams, 10);
 
-      expect(result).toEqual({ entries: [], totalPages: 1, allTags: [] });
+      expect(result).toEqual({ entries: [], total: 0, offset: 0, nextCursor: null, prevCursor: null, allTags: [] });
     });
   });
 
@@ -187,16 +214,25 @@ describe('entriesService', () => {
   });
 
   describe('navigateToFirst', () => {
+    const firstFilters = {
+      search: '', filterTags: [] as string[], filterDate: '', filterVisibility: '', favorites: false,
+      archiveStatus: 'active' as const, diaryId: null,
+    };
+
     it('returns navigation data on successful request', async () => {
-      const mockResponse = { found: true, page: 3, entryId: 42 };
+      const mockResponse = { found: true, entryId: 42, years: [2024], months: ['2024-01'] };
       mockAuthFetch.mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(mockResponse),
       });
 
-      const result = await service.navigateToFirst(2024, 1, 10);
+      const result = await service.navigateToFirst(2024, 1, { ...firstFilters, diaryId: 3, favorites: true });
 
       expect(result).toEqual(mockResponse);
+      expect(mockAuthFetch).toHaveBeenCalledWith(expect.stringContaining('diaryId=3'));
+      expect(mockAuthFetch).toHaveBeenCalledWith(expect.stringContaining('favorites=true'));
+      expect(mockAuthFetch).toHaveBeenCalledWith(expect.not.stringContaining('limit='));
+      expect(mockAuthFetch).toHaveBeenCalledWith(expect.not.stringContaining('date='));
       expect(mockAuthFetch).toHaveBeenCalledWith(expect.stringContaining('/api/entries/first?'));
       expect(mockAuthFetch).toHaveBeenCalledWith(expect.stringContaining('year=2024'));
       expect(mockAuthFetch).toHaveBeenCalledWith(expect.stringContaining('month=1'));
@@ -208,7 +244,7 @@ describe('entriesService', () => {
         json: () => Promise.resolve({ found: true }),
       });
 
-      await service.navigateToFirst(2024, null, 10);
+      await service.navigateToFirst(2024, null, firstFilters);
 
       expect(mockAuthFetch).toHaveBeenCalledWith(expect.not.stringContaining('month='));
     });
@@ -217,7 +253,7 @@ describe('entriesService', () => {
       mockAuthFetch.mockRejectedValue(new Error('Network error'));
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      const result = await service.navigateToFirst(2024, 1, 10);
+      const result = await service.navigateToFirst(2024, 1, firstFilters);
 
       expect(result).toBeNull();
       consoleSpy.mockRestore();
@@ -226,13 +262,13 @@ describe('entriesService', () => {
 
   describe('navigateByDate', () => {
     it('returns navigation data on successful request', async () => {
-      const mockResponse = { found: true, page: 2, entryId: 15 };
+      const mockResponse = { found: true, entryId: 15 };
       mockAuthFetch.mockResolvedValue({
         ok: true,
         json: () => Promise.resolve(mockResponse),
       });
 
-      const result = await service.navigateByDate('2024-01-15', 0, 10);
+      const result = await service.navigateByDate('2024-01-15', 0);
 
       expect(result).toEqual(mockResponse);
       expect(mockAuthFetch).toHaveBeenCalledWith(expect.stringContaining('/api/entries/by-date?'));
@@ -243,32 +279,7 @@ describe('entriesService', () => {
       mockAuthFetch.mockRejectedValue(new Error('Network error'));
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      const result = await service.navigateByDate('2024-01-15', 0, 10);
-
-      expect(result).toBeNull();
-      consoleSpy.mockRestore();
-    });
-  });
-
-  describe('navigateById', () => {
-    it('returns navigation data on successful request', async () => {
-      const mockResponse = { found: true, page: 4, entryId: 100 };
-      mockAuthFetch.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(mockResponse),
-      });
-
-      const result = await service.navigateById(100, 10);
-
-      expect(result).toEqual(mockResponse);
-      expect(mockAuthFetch).toHaveBeenCalledWith(expect.stringContaining('id=100'));
-    });
-
-    it('returns null on error', async () => {
-      mockAuthFetch.mockRejectedValue(new Error('Network error'));
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-      const result = await service.navigateById(100, 10);
+      const result = await service.navigateByDate('2024-01-15', 0);
 
       expect(result).toBeNull();
       consoleSpy.mockRestore();
@@ -313,8 +324,6 @@ describe('entriesService', () => {
 
   describe('fetchEntries with favorites filter', () => {
     const baseParams = {
-      page: 1,
-      limit: 10,
       search: '',
       filterTags: [] as string[],
       filterDate: '',
@@ -327,10 +336,10 @@ describe('entriesService', () => {
     it('should include favorites param when true', async () => {
       mockAuthFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ entries: [], totalPages: 1, allTags: [] }),
+        json: () => Promise.resolve({ entries: [], total: 0, offset: 0, nextCursor: null, prevCursor: null, allTags: [] }),
       });
 
-      await service.fetchEntries({ ...baseParams, favorites: true });
+      await service.fetchEntries({ ...baseParams, favorites: true }, 10);
 
       expect(mockAuthFetch).toHaveBeenCalledWith(expect.stringContaining('favorites=true'));
     });
@@ -338,10 +347,10 @@ describe('entriesService', () => {
     it('should not include favorites param when false', async () => {
       mockAuthFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ entries: [], totalPages: 1, allTags: [] }),
+        json: () => Promise.resolve({ entries: [], total: 0, offset: 0, nextCursor: null, prevCursor: null, allTags: [] }),
       });
 
-      await service.fetchEntries({ ...baseParams, favorites: false });
+      await service.fetchEntries({ ...baseParams, favorites: false }, 10);
 
       expect(mockAuthFetch).not.toHaveBeenCalledWith(expect.stringContaining('favorites=true'));
     });

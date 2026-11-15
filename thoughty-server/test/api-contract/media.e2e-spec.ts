@@ -130,7 +130,7 @@ describeContract('media', (context) => {
 
     const listed = await call('GET /api/entries', {
       as: alice,
-      query: { page: '1', limit: '10', search: '', tags: '', date: '', visibility: '', archiveStatus: 'active' },
+      query: { limit: '20', search: '', tags: '', date: '', visibility: '', archiveStatus: 'active' },
       status: 200,
     });
     const entry = (listed.body as { entries: { id: number; attachments: Uploaded[] }[] }).entries.find((item) => item.id === entryId);

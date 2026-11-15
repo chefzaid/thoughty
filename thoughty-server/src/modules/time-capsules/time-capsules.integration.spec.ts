@@ -71,7 +71,7 @@ describePostgres('PostgreSQL time capsules: sealing and opening', () => {
 
     const capsule = await capsuleOf(entryId);
     expect(capsule).toMatchObject({ sealedContent: null, sealedTitle: null, sealedTags: [], openedAt: expect.any(Date) });
-    const found = await bed.journal.getEntries(writerId, { search: 'Rosalind', page: 1, limit: 10 });
+    const found = await bed.journal.getEntries(writerId, { search: 'Rosalind', limit: 10 });
     expect(found.entries).toEqual([expect.objectContaining({ id: entryId, title: 'A letter', tags: ['future-self'], sealed_until: null })]);
     expect((await bed.people.list(writerId)).people).toEqual([expect.objectContaining({ name: 'Rosalind', entryCount: 1 })]);
     await expect(bed.journal.update(writerId, entryId, { text: 'Edited after opening', tags: [], date: `${year - 1}-10-27` })).resolves.toMatchObject({ success: true });

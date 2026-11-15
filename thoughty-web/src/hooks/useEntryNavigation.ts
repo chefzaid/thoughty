@@ -1,20 +1,17 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import type { NavigateFunction } from 'react-router-dom';
 
 import type { Entry, SourceEntryInfo, ViewType } from '../types';
 import type { useEntries } from './useAppState';
 import { getPathForView } from '../types';
-import { useTransientMessage } from './useTransientMessage';
+import type { TransientMessage } from './useTransientMessage';
 import { buildEntryPermalink, ENTRY_PERMALINK_PARAM, toSearchString } from '../utils/appRouting';
 
 type EntriesState = ReturnType<typeof useEntries>;
 
 interface UseEntryNavigationParams {
-  /** Whether the profile config (and so the user's page size) has loaded; permalinks wait for it. */
-  configLoaded: boolean;
   currentDiaryId: number | null;
   currentView: ViewType | null;
-  entries: EntriesState['entries'];
   entriesService: EntriesState['entriesService'];
   filterArchiveStatus: EntriesState['filterArchiveStatus'];
   filterDateObj: EntriesState['filterDateObj'];
@@ -24,13 +21,13 @@ interface UseEntryNavigationParams {
   filterPersonId: EntriesState['filterPersonId'];
   filterTags: EntriesState['filterTags'];
   filterVisibility: EntriesState['filterVisibility'];
-  getLimit: EntriesState['getLimit'];
+  /** Says that the entry to open could not be found. */
+  entryToast: TransientMessage;
   /** The permalink that has landed; the entries list waits for the one in the route to land. */
   handledPermalinkEntryId: EntriesState['handledPermalinkEntryId'];
   isAuthenticated: boolean;
-  loading: EntriesState['loading'];
   navigate: NavigateFunction;
-  page: EntriesState['page'];
+  openListAt: EntriesState['openListAt'];
   routeEntryId: number | undefined;
   search: EntriesState['search'];
   searchParams: URLSearchParams;
@@ -45,7 +42,9 @@ interface UseEntryNavigationParams {
   setFilterTags: EntriesState['setFilterTags'];
   setFilterVisibility: EntriesState['setFilterVisibility'];
   setHandledPermalinkEntryId: EntriesState['setHandledPermalinkEntryId'];
-  setPage: EntriesState['setPage'];
+  /** Whether the list waits for the filters a jump resets; set while they change over. */
+  filtersResetting: EntriesState['filtersResetting'];
+  setFiltersResetting: EntriesState['setFiltersResetting'];
   setSearch: EntriesState['setSearch'];
   setSourceEntry: EntriesState['setSourceEntry'];
   setTargetEntryId: EntriesState['setTargetEntryId'];
@@ -63,10 +62,8 @@ async function copyTextToClipboard(text: string): Promise<boolean> {
 }
 
 export function useEntryNavigation({
-  configLoaded,
   currentDiaryId,
   currentView,
-  entries,
   entriesService,
   filterArchiveStatus,
   filterDateObj,
@@ -76,12 +73,11 @@ export function useEntryNavigation({
   filterPersonId,
   filterTags,
   filterVisibility,
-  getLimit,
+  entryToast,
   handledPermalinkEntryId,
   isAuthenticated,
-  loading,
   navigate,
-  page,
+  openListAt,
   routeEntryId,
   search,
   searchParams,
@@ -96,19 +92,15 @@ export function useEntryNavigation({
   setFilterTags,
   setFilterVisibility,
   setHandledPermalinkEntryId,
-  setPage,
+  filtersResetting,
+  setFiltersResetting,
   setSearch,
   setSourceEntry,
   setTargetEntryId,
   sourceEntry,
   t,
 }: Readonly<UseEntryNavigationParams>) {
-  const entryToast = useTransientMessage();
   const showEntryNotFoundToast = entryToast.show;
-  const [pendingEntryTarget, setPendingEntryTarget] = useState<{
-    date: string;
-    index: number;
-  } | null>(null);
 
   const needsJournalResetForPermalink = useCallback((): boolean => {
     if (search !== '') {
@@ -147,11 +139,7 @@ export function useEntryNavigation({
       return true;
     }
 
-    if (currentView === 'journal' && searchParams.get('diary') !== 'all') {
-      return true;
-    }
-
-    return page !== 1;
+    return currentView === 'journal' && searchParams.get('diary') !== 'all';
   }, [
     currentDiaryId,
     currentView,
@@ -163,7 +151,6 @@ export function useEntryNavigation({
     filterPersonId,
     filterTags,
     filterVisibility,
-    page,
     search,
     searchParams,
   ]);
@@ -172,6 +159,8 @@ export function useEntryNavigation({
     if (!needsJournalResetForPermalink()) {
       return;
     }
+    // The diary follows the address a render later, so the list waits for every filter to be reset
+    setFiltersResetting(true);
 
     if (search !== '') {
       setSearch('');
@@ -224,10 +213,6 @@ export function useEntryNavigation({
         }, { replace: true });
       }
     }
-
-    if (page !== 1) {
-      setPage(1);
-    }
   }, [
     currentDiaryId,
     currentView,
@@ -241,7 +226,6 @@ export function useEntryNavigation({
     filterVisibility,
     navigate,
     needsJournalResetForPermalink,
-    page,
     search,
     searchParams,
     setCurrentDiaryId,
@@ -253,9 +237,15 @@ export function useEntryNavigation({
     setFilterPersonId,
     setFilterTags,
     setFilterVisibility,
-    setPage,
+    setFiltersResetting,
     setSearch,
   ]);
+
+  useEffect(() => {
+    if (filtersResetting && !needsJournalResetForPermalink()) {
+      setFiltersResetting(false);
+    }
+  }, [filtersResetting, needsJournalResetForPermalink, setFiltersResetting]);
 
   const clearJournalPermalink = useCallback(() => {
     if (currentView === 'journal' && searchParams.has(ENTRY_PERMALINK_PARAM)) {
@@ -269,38 +259,37 @@ export function useEntryNavigation({
     }
   }, [currentView, navigate, searchParams, setHandledPermalinkEntryId]);
 
+  /** Opens the list around an entry and highlights it, keeping the filters as they are now. */
+  const openEntry = useCallback((entryId: number) => {
+    openListAt(entryId);
+    setTargetEntryId(entryId);
+    setActiveTargetId(entryId);
+  }, [openListAt, setActiveTargetId, setTargetEntryId]);
+
   const executeEntryNavigation = useCallback(async (
     date: string,
     index: number,
   ) => {
-    const data = await entriesService.navigateByDate(date, index, getLimit());
-    if (data?.found) {
-      setPage(data.page || 1);
-      setTargetEntryId(data.entryId || null);
-      setActiveTargetId(data.entryId || null);
+    const data = await entriesService.navigateByDate(date, index);
+    if (data?.found && data.entryId) {
+      openEntry(data.entryId);
     } else {
       showEntryNotFoundToast();
       setSourceEntry(null);
       setActiveTargetId(null);
-      setPendingEntryTarget(null);
     }
-  }, [entriesService, getLimit, setActiveTargetId, setPage, setSourceEntry, setTargetEntryId, showEntryNotFoundToast]);
+  }, [entriesService, openEntry, setActiveTargetId, setSourceEntry, showEntryNotFoundToast]);
 
-  const handleBackToSource = useCallback(async () => {
+  const handleBackToSource = useCallback(() => {
     if (!sourceEntry) {
       return;
     }
 
-    const data = await entriesService.navigateById(sourceEntry.id, getLimit());
-    if (data?.found) {
-      setPage(data.page || 1);
-      setTargetEntryId(data.entryId || null);
-    }
-
+    openListAt(sourceEntry.id);
+    setTargetEntryId(sourceEntry.id);
     setSourceEntry(null);
     setActiveTargetId(null);
-    setPendingEntryTarget(null);
-  }, [entriesService, getLimit, setActiveTargetId, setPage, setSourceEntry, setTargetEntryId, sourceEntry]);
+  }, [openListAt, setActiveTargetId, setSourceEntry, setTargetEntryId, sourceEntry]);
 
   const handleShareEntry = useCallback(async (entry: Entry): Promise<boolean> => {
     const url = buildEntryPermalink(entry.id);
@@ -344,8 +333,6 @@ export function useEntryNavigation({
       });
     }
 
-    setPendingEntryTarget({ date, index });
-
     if (needsJournalResetForPermalink()) {
       resetJournalFiltersForPermalink();
     }
@@ -354,35 +341,15 @@ export function useEntryNavigation({
   }, [clearJournalPermalink, executeEntryNavigation, needsJournalResetForPermalink, resetJournalFiltersForPermalink, setSourceEntry]);
 
   /**
-   * Shows an entry on a page of the list as it is filtered now (the random entry), leaving the filters,
-   * the diary and the search alone, unlike a permalink, which opens its entry among all entries.
+   * Opens the list around an entry as it is filtered now (the random entry), leaving the filters, the diary
+   * and the search alone, unlike a permalink, which opens its entry among all entries.
    */
-  const handleOpenEntryInList = useCallback((entryId: number, entryPage: number) => {
+  const handleOpenEntryInList = useCallback((entryId: number) => {
     clearJournalPermalink();
-    setPendingEntryTarget(null);
     setActiveTargetId(null);
-    setPage(entryPage);
+    openListAt(entryId);
     setTargetEntryId(entryId);
-  }, [clearJournalPermalink, setActiveTargetId, setPage, setTargetEntryId]);
-
-  useEffect(() => {
-    if (!pendingEntryTarget || loading || entries.length === 0) {
-      return;
-    }
-
-    const matchedEntry = entries.find((entry) => {
-      const entryDate = entry.date.includes('T') ? entry.date.split('T')[0] : entry.date;
-      return entryDate === pendingEntryTarget.date && (entry.index || 1) === pendingEntryTarget.index;
-    });
-
-    if (!matchedEntry) {
-      return;
-    }
-
-    setTargetEntryId(matchedEntry.id);
-    setActiveTargetId(matchedEntry.id);
-    setPendingEntryTarget(null);
-  }, [entries, loading, pendingEntryTarget, setActiveTargetId, setTargetEntryId]);
+  }, [clearJournalPermalink, openListAt, setActiveTargetId, setTargetEntryId]);
 
   useEffect(() => {
     if (routeEntryId === undefined) {
@@ -392,7 +359,7 @@ export function useEntryNavigation({
       return;
     }
 
-    // Once the permalink has landed, the page it moved to and later filter changes are left alone
+    // Once the permalink has landed, scrolling from it and later filter changes are left alone
     if (!isAuthenticated || handledPermalinkEntryId === routeEntryId) {
       return;
     }
@@ -402,41 +369,12 @@ export function useEntryNavigation({
       return;
     }
 
-    // The page an entry is on depends on the page size, so the lookup waits for the user's
-    // config instead of asking with the default size and asking again once it arrives.
-    if (!configLoaded) {
-      return;
-    }
-
-    let cancelled = false;
-
-    void (async () => {
-      const data = await entriesService.navigateById(routeEntryId, getLimit());
-      if (cancelled) {
-        return;
-      }
-
-      if (data?.found) {
-        const resolvedEntryId = data.entryId || routeEntryId;
-        setPage(data.page || 1);
-        setTargetEntryId(resolvedEntryId);
-        setActiveTargetId(resolvedEntryId);
-      } else {
-        setSourceEntry(null);
-        setActiveTargetId(null);
-        showEntryNotFoundToast();
-      }
-
-      setHandledPermalinkEntryId(routeEntryId);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [configLoaded, entriesService, getLimit, handledPermalinkEntryId, isAuthenticated, needsJournalResetForPermalink, resetJournalFiltersForPermalink, routeEntryId, setActiveTargetId, setHandledPermalinkEntryId, setPage, setSourceEntry, setTargetEntryId, showEntryNotFoundToast]);
+    // The list opens around the entry; one the API cannot find leaves the list at its start, with a toast
+    openEntry(routeEntryId);
+    setHandledPermalinkEntryId(routeEntryId);
+  }, [handledPermalinkEntryId, isAuthenticated, needsJournalResetForPermalink, openEntry, resetJournalFiltersForPermalink, routeEntryId, setHandledPermalinkEntryId]);
 
   return {
-    entryToast,
     handleBackToSource,
     handleNavigateToEntry,
     handleOpenEntryInList,

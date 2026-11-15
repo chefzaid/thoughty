@@ -27,8 +27,9 @@ describe('EntryListCacheService', () => {
       attachments: [],
     }],
     total: 1,
-    page: 1,
-    totalPages: 1,
+    offset: 0,
+    nextCursor: null,
+    prevCursor: null,
     allTags: ['focus'],
   };
 
@@ -74,12 +75,24 @@ describe('EntryListCacheService', () => {
     expect(load).toHaveBeenCalledTimes(1);
   });
 
-  it('returns cached entry lists with normalized tag and default pagination keys', async () => {
+  it('returns cached entry lists with normalized tag and default batch keys', async () => {
     const cache = cacheWith();
     await store(cache, 7, { tags: 'work, focus', visibility: 'public' });
 
-    expect(await cached(cache, 7, { tags: 'focus,work', visibility: 'public', page: 1, limit: 10 })).toEqual(response);
-    expect(await cached(cache, 8, { tags: 'focus,work', visibility: 'public', page: 1, limit: 10 })).toBeUndefined();
+    expect(await cached(cache, 7, { tags: 'focus,work', visibility: 'public', limit: 10 })).toEqual(response);
+    expect(await cached(cache, 8, { tags: 'focus,work', visibility: 'public', limit: 10 })).toBeUndefined();
+  });
+
+  it('keeps each batch apart: from the start, after or before a cursor, and around an entry', async () => {
+    const cache = cacheWith();
+    const batches: GetEntriesQueryDto[] = [{}, { after: '1_2024-01-15__1_4' }, { before: '1_2024-01-15__1_4' }, { around: 4 }];
+    for (const [place, query] of batches.entries()) {
+      await store(cache, 7, query, { ...response, offset: place });
+    }
+
+    for (const [place, query] of batches.entries()) {
+      expect(await cached(cache, 7, query)).toEqual({ ...response, offset: place });
+    }
   });
 
   it('hands out copies, so a caller changing one leaves the cache as it was', async () => {
@@ -96,15 +109,15 @@ describe('EntryListCacheService', () => {
     const cache = cacheWith();
     versions.set(7, '3');
     versions.set(8, '1');
-    await store(cache, 7, { page: 1 });
-    await store(cache, 7, { page: 2 }, { ...response, page: 2 });
-    await store(cache, 8, { page: 1 }, { ...response, total: 2 });
+    await store(cache, 7, {});
+    await store(cache, 7, { around: 2 }, { ...response, offset: 2 });
+    await store(cache, 8, {}, { ...response, total: 2 });
 
     versions.set(7, '4');
 
-    expect(await cached(cache, 7, { page: 1 })).toBeUndefined();
-    expect(await cached(cache, 7, { page: 2 })).toBeUndefined();
-    expect(await cached(cache, 8, { page: 1 })).toEqual({ ...response, total: 2 });
+    expect(await cached(cache, 7, {})).toBeUndefined();
+    expect(await cached(cache, 7, { around: 2 })).toBeUndefined();
+    expect(await cached(cache, 8, {})).toEqual({ ...response, total: 2 });
   });
 
   it('keeps a list read before the writer’s first change only until that change', async () => {
@@ -197,10 +210,10 @@ describe('EntryListCacheService', () => {
   it('prunes the oldest keys when the cache reaches its configured size', async () => {
     const cache = cacheWith({ ENTRIES_CACHE_TTL_SECONDS: '30', ENTRIES_CACHE_MAX_KEYS: '1' });
 
-    await store(cache, 7, { page: 1 });
-    await store(cache, 8, { page: 2 }, { ...response, page: 2 });
+    await store(cache, 7, {});
+    await store(cache, 8, { around: 2 }, { ...response, offset: 2 });
 
-    expect(await cached(cache, 8, { page: 2 })).toEqual({ ...response, page: 2 });
-    expect(await cached(cache, 7, { page: 1 })).toBeUndefined();
+    expect(await cached(cache, 8, { around: 2 })).toEqual({ ...response, offset: 2 });
+    expect(await cached(cache, 7, {})).toBeUndefined();
   });
 });

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EntriesService } from './entries.service';
 import { EntriesQueryService } from './entries-query.service';
+import { EntryListService } from './entry-list.service';
 import { EntryLookupService } from './entry-lookup.service';
 import { EntriesCommandService } from './entries-command.service';
 import { EntryListCacheService } from './entry-list-cache.service';
@@ -39,6 +40,7 @@ const savedEntry = (fields: Partial<Entry> = {}) =>
 describe('EntriesService', () => {
   let service: EntriesService;
   let entriesQueryService: Record<string, jest.Mock>;
+  let entryListService: { getEntries: jest.Mock };
   let entryLookupService: Record<string, jest.Mock>;
   let entriesCommandService: Record<string, jest.Mock>;
   let entryListCacheService: Record<string, jest.Mock>;
@@ -51,8 +53,8 @@ describe('EntriesService', () => {
   let entryOpenTasksService: Record<string, jest.Mock>;
 
   beforeEach(async () => {
+    entryListService = { getEntries: jest.fn() };
     entriesQueryService = {
-      getEntries: jest.fn(),
       getDates: jest.fn(),
       getHighlights: jest.fn(),
       getRevisions: jest.fn(),
@@ -116,6 +118,7 @@ describe('EntriesService', () => {
       providers: [
         EntriesService,
         { provide: EntriesQueryService, useValue: entriesQueryService },
+        { provide: EntryListService, useValue: entryListService },
         { provide: EntryLookupService, useValue: entryLookupService },
         { provide: EntriesCommandService, useValue: entriesCommandService },
         { provide: EntryListCacheService, useValue: entryListCacheService },
@@ -136,27 +139,27 @@ describe('EntriesService', () => {
     jest.clearAllMocks();
   });
 
-  it('reads the list through the cache, which loads it from EntriesQueryService when stale', async () => {
-    const expected = { entries: [], total: 0, page: 1, totalPages: 1, allTags: [] };
-    entriesQueryService.getEntries.mockResolvedValue(expected);
+  it('reads the list through the cache, which loads it from EntryListService when stale', async () => {
+    const expected = { entries: [], total: 0, offset: 0, nextCursor: null, prevCursor: null, allTags: [] };
+    entryListService.getEntries.mockResolvedValue(expected);
 
-    const result = await service.getEntries(1, { page: 1, limit: 10 });
+    const result = await service.getEntries(1, { after: '1_2024-01-15__1_4', limit: 10 });
 
-    expect(entryListCacheService.getOrLoad).toHaveBeenCalledWith(1, { page: 1, limit: 10 }, expect.any(Function));
-    expect(entriesQueryService.getEntries).toHaveBeenCalledWith(1, { page: 1, limit: 10 });
+    expect(entryListCacheService.getOrLoad).toHaveBeenCalledWith(1, { after: '1_2024-01-15__1_4', limit: 10 }, expect.any(Function));
+    expect(entryListService.getEntries).toHaveBeenCalledWith(1, { after: '1_2024-01-15__1_4', limit: 10 });
     expect(result).toBe(expected);
   });
 
   it('serves a cached list without querying the entries', async () => {
-    const expected = { entries: [], total: 0, page: 1, totalPages: 1, allTags: [] };
+    const expected = { entries: [], total: 0, offset: 0, nextCursor: null, prevCursor: null, allTags: [] };
     entryListCacheService.getOrLoad.mockResolvedValue(expected);
 
-    await expect(service.getEntries(1, { page: 1, limit: 10 })).resolves.toBe(expected);
-    expect(entriesQueryService.getEntries).not.toHaveBeenCalled();
+    await expect(service.getEntries(1, { limit: 10 })).resolves.toBe(expected);
+    expect(entryListService.getEntries).not.toHaveBeenCalled();
   });
 
   it('delegates the random entry to EntryRandomService without the list cache', async () => {
-    const expected = { id: 4, date: '2026-10-02', index: 1, page: 2 };
+    const expected = { id: 4, date: '2026-10-02', index: 1 };
     entryRandomService.pick.mockResolvedValue(expected);
 
     await expect(service.getRandomEntry(1, { tags: 'walks', excludeId: 3 })).resolves.toBe(expected);
@@ -204,12 +207,12 @@ describe('EntriesService', () => {
   });
 
   it('delegates getFirstEntry to EntryLookupService', async () => {
-    const expected = { page: 1, found: true, years: [2024], months: ['2024-01'] };
+    const expected = { found: true, entryId: 3, years: [2024], months: ['2024-01'] };
     entryLookupService.getFirstEntry.mockResolvedValue(expected);
 
-    const result = await service.getFirstEntry(1, { year: 2024, limit: 10 });
+    const result = await service.getFirstEntry(1, { year: 2024, diaryId: 2 });
 
-    expect(entryLookupService.getFirstEntry).toHaveBeenCalledWith(1, { year: 2024, limit: 10 });
+    expect(entryLookupService.getFirstEntry).toHaveBeenCalledWith(1, { year: 2024, diaryId: 2 });
     expect(result).toBe(expected);
   });
 
@@ -217,18 +220,18 @@ describe('EntriesService', () => {
     const expected = { found: true, entryId: 1 };
     entryLookupService.getEntryByDate.mockResolvedValue(expected);
 
-    const result = await service.getEntryByDate(1, { date: '2024-01-15', index: 1, limit: 10 });
+    const result = await service.getEntryByDate(1, { date: '2024-01-15', index: 1 });
 
-    expect(entryLookupService.getEntryByDate).toHaveBeenCalledWith(1, { date: '2024-01-15', index: 1, limit: 10 });
+    expect(entryLookupService.getEntryByDate).toHaveBeenCalledWith(1, { date: '2024-01-15', index: 1 });
     expect(result).toEqual(expected);
   });
 
   it('answers the entry it found in the API shape, not as the database entity', async () => {
-    entryLookupService.getEntryByDate.mockResolvedValue({ found: true, entry: savedEntry(), page: 2, entryId: 1 });
+    entryLookupService.getEntryByDate.mockResolvedValue({ found: true, entry: savedEntry(), entryId: 1 });
 
-    const result = await service.getEntryByDate(1, { date: '2024-01-16', index: 1, limit: 10 });
+    const result = await service.getEntryByDate(1, { date: '2024-01-16', index: 1 });
 
-    expect(result).toEqual({ found: true, page: 2, entryId: 1, entry: expect.objectContaining({ id: 1, diary_id: 2, is_favorite: false }) });
+    expect(result).toEqual({ found: true, entryId: 1, entry: expect.objectContaining({ id: 1, diary_id: 2, is_favorite: false }) });
     expect(result.entry).not.toHaveProperty('isFavorite');
   });
 

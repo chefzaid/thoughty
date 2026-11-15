@@ -104,13 +104,11 @@ describe('appShellProps', () => {
         filterTags: [],
         filterVisibility: 'all',
         groupedEntries: {},
-        inputPage: '1',
         listQuery: {
-          page: 1, limit: 10, search: '', filterTags: [], filterDate: '', filterVisibility: '',
+          search: '', filterTags: [], filterDate: '', filterVisibility: '',
           favorites: false, archiveStatus: 'active', diaryId: null, entryIds: null,
         },
         loading: false,
-        page: 1,
         rankedResults: true,
         reorderEntries: vi.fn().mockResolvedValue(undefined),
         runSemanticSearch: vi.fn().mockResolvedValue(undefined),
@@ -127,8 +125,6 @@ describe('appShellProps', () => {
         setFilterPersonId: vi.fn(),
         setFilterTags: vi.fn(),
         setFilterVisibility: vi.fn(),
-        setInputPage: vi.fn(),
-        setPage: vi.fn(),
         setSearch: vi.fn(),
         setSearchMode: vi.fn(),
         setSearchSort: vi.fn(),
@@ -140,7 +136,10 @@ describe('appShellProps', () => {
         unsealEntry: vi.fn().mockResolvedValue(undefined),
         setEntryTask: vi.fn(),
         toggleVisibility: vi.fn().mockResolvedValue(undefined),
-        totalPages: 4,
+        feed: {
+          total: 4, offset: 0, hasOlder: false, hasNewer: false, loadingOlder: false, loadingNewer: false, loadError: false,
+          loadOlder: vi.fn(), loadNewer: vi.fn(),
+        },
       },
       entryEditState: {
         addEditPendingFile: vi.fn(),
@@ -226,6 +225,6 @@ describe('appShellProps', () => {
     expect(props.journalRouteProps.entriesList.onCancelEdit).toBe(handleCancelEdit);
     expect(props.journalRouteProps.entriesList.rankedOrder).toBe(true);
     expect(props.journalRouteProps.filters.searchSort).toBe('date');
-    expect(props.journalRouteProps.randomEntry).toMatchObject({ listEmpty: true, query: { page: 1, limit: 10 } });
+    expect(props.journalRouteProps.randomEntry).toMatchObject({ listEmpty: true, query: { search: '', archiveStatus: 'active' } });
   });
 });

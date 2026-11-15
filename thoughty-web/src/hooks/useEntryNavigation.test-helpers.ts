@@ -6,13 +6,23 @@ import type { MoodFilter } from '../utils/entryMood';
 
 export type UseEntryNavigationParams = Omit<
   Parameters<typeof useEntryNavigation>[0],
-  'handledPermalinkEntryId' | 'setHandledPermalinkEntryId'
->;
+  'handledPermalinkEntryId' | 'setHandledPermalinkEntryId' | 'filtersResetting' | 'setFiltersResetting'
+> & { setFiltersResetting?: (resetting: boolean) => void };
 
-/** Keeps the landed permalink in state, as useEntries does for the app shell. */
-export function useNavigation(params: UseEntryNavigationParams) {
+/** Keeps the landed permalink and the reset in progress in state, as useEntries does for the app shell. */
+export function useNavigation({ setFiltersResetting: onResetting, ...params }: UseEntryNavigationParams) {
   const [handledPermalinkEntryId, setHandledPermalinkEntryId] = useState<number | null>(null);
-  return useEntryNavigation({ ...params, handledPermalinkEntryId, setHandledPermalinkEntryId });
+  const [filtersResetting, setFiltersResetting] = useState(false);
+  return useEntryNavigation({
+    ...params,
+    handledPermalinkEntryId,
+    setHandledPermalinkEntryId,
+    filtersResetting,
+    setFiltersResetting: (resetting: SetStateAction<boolean>) => {
+      onResetting?.(resetting as boolean);
+      setFiltersResetting(resetting);
+    },
+  });
 }
 
 export function createSetterSpy<T>() {
@@ -21,13 +31,10 @@ export function createSetterSpy<T>() {
 
 export function createParams(overrides: Partial<UseEntryNavigationParams> = {}): UseEntryNavigationParams {
   return {
-    configLoaded: true,
     currentDiaryId: null,
     currentView: 'journal',
-    entries: [],
     entriesService: {
-      navigateByDate: vi.fn().mockResolvedValue({ found: true, page: 1, entryId: 2 }),
-      navigateById: vi.fn().mockResolvedValue({ found: true, page: 1, entryId: 2 }),
+      navigateByDate: vi.fn().mockResolvedValue({ found: true, entryId: 2 }),
     } as unknown as UseEntryNavigationParams['entriesService'],
     filterArchiveStatus: 'all',
     filterDateObj: null,
@@ -37,11 +44,10 @@ export function createParams(overrides: Partial<UseEntryNavigationParams> = {}):
     filterPersonId: null,
     filterTags: [],
     filterVisibility: 'all',
-    getLimit: vi.fn(() => 10),
+    entryToast: { visible: false, showCount: 0, show: vi.fn(), hide: vi.fn() },
     isAuthenticated: true,
-    loading: false,
     navigate: vi.fn(),
-    page: 1,
+    openListAt: vi.fn(),
     routeEntryId: undefined,
     search: '',
     searchParams: new URLSearchParams('diary=all'),
@@ -55,7 +61,6 @@ export function createParams(overrides: Partial<UseEntryNavigationParams> = {}):
     setFilterPersonId: createSetterSpy<number | null>(),
     setFilterTags: createSetterSpy<string[]>(),
     setFilterVisibility: createSetterSpy<'all' | 'public' | 'private'>(),
-    setPage: createSetterSpy<number>(),
     setSearch: createSetterSpy<string>(),
     setSourceEntry: vi.fn(),
     setTargetEntryId: vi.fn(),

@@ -421,7 +421,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get all entries with optional filters and pagination */
+        /**
+         * A batch of the journal list, with its filters
+         * @description Reads the list a batch at a time for infinite scroll: from the start, `after` the `nextCursor` of the batch before, `before` the `prevCursor` of the batch after, or `around` an entry, to open the list at it.
+         */
         get: operations["EntriesController_getEntries"];
         put?: never;
         /** Create a new entry */
@@ -498,7 +501,7 @@ export interface paths {
         };
         /**
          * A random entry among the journal filters
-         * @description Picks one entry, every match equally likely, among those the journal list shows with the same filters, and gives the page of that list (at its page size and order) that shows it. Sealed time capsules and entries in the recycle bin are never picked; with `excludeId`, that entry comes back only when it is the only match.
+         * @description Picks one entry, every match equally likely, among those the journal list shows with the same filters; the journal then opens the list `around` it. Sealed time capsules and entries in the recycle bin are never picked; with `excludeId`, that entry comes back only when it is the only match.
          */
         get: operations["EntriesController_getRandomEntry"];
         put?: never;
@@ -556,7 +559,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get page number containing first entry for a year/month */
+        /** The first entry of a year or month among the journal filters, and the years and months with entries */
         get: operations["EntriesController_getFirstEntry"];
         put?: never;
         post?: never;
@@ -3018,9 +3021,10 @@ export interface components {
          *           ]
          *         }
          *       ],
-         *       "total": 1,
-         *       "page": 1,
-         *       "totalPages": 1,
+         *       "total": 340,
+         *       "offset": 40,
+         *       "nextCursor": "1_2026-10-21__1_42",
+         *       "prevCursor": "1_2026-10-25_08:30_2_57",
          *       "allTags": [
          *         "reflection"
          *       ]
@@ -3028,9 +3032,26 @@ export interface components {
          */
         EntriesListResponseDto: {
             entries: components["schemas"]["EntryResponseDto"][];
+            /**
+             * @description Entries the filters match, in every batch
+             * @example 340
+             */
             total: number;
-            page: number;
-            totalPages: number;
+            /**
+             * @description Entries listed before this batch, so its first entry is number `offset + 1`
+             * @example 40
+             */
+            offset: number;
+            /**
+             * @description Pass as `after` for the batch that follows; null when this batch ends the list
+             * @example 1_2026-10-21__1_42
+             */
+            nextCursor: string | null;
+            /**
+             * @description Pass as `before` for the batch that comes before; null when this batch starts the list
+             * @example 1_2026-10-25_08:30_2_57
+             */
+            prevCursor: string | null;
             allTags: string[];
         };
         /**
@@ -3191,8 +3212,7 @@ export interface components {
          * @example {
          *       "id": 42,
          *       "date": "2024-03-10",
-         *       "index": 1,
-         *       "page": 3
+         *       "index": 1
          *     }
          */
         RandomEntryResponseDto: {
@@ -3208,11 +3228,6 @@ export interface components {
              * @example 1
              */
             index: number;
-            /**
-             * @description The page of the filtered journal list, at the requested page size and order, that shows the entry
-             * @example 3
-             */
-            page: number;
         };
         /**
          * @example {
@@ -3343,7 +3358,6 @@ export interface components {
         };
         /**
          * @example {
-         *       "page": 1,
          *       "found": true,
          *       "entryId": 1,
          *       "years": [
@@ -3355,7 +3369,6 @@ export interface components {
          *     }
          */
         FirstEntryResponseDto: {
-            page: number;
             found: boolean;
             entryId?: number;
             years: number[];
@@ -3409,7 +3422,6 @@ export interface components {
          *           "swimming"
          *         ]
          *       },
-         *       "page": 1,
          *       "entryId": 1,
          *       "error": "example"
          *     }
@@ -3417,7 +3429,6 @@ export interface components {
         EntryLookupResponseDto: {
             found: boolean;
             entry?: components["schemas"]["EntryResponseDto"];
-            page?: number;
             entryId?: number;
             error?: string;
         };
@@ -4369,7 +4380,6 @@ export interface components {
          *       "subscriptionPlan": "free",
          *       "paymentMethodLabel": "example",
          *       "fontSize": "example",
-         *       "entriesPerPage": "example",
          *       "maxPinnedEntries": "example",
          *       "autoTagMaxTags": "reflection",
          *       "highContrast": "true",
@@ -4457,8 +4467,6 @@ export interface components {
             paymentMethodLabel?: string;
             /** @description Font size in pixels */
             fontSize?: string;
-            /** @description Entries per page */
-            entriesPerPage?: string;
             /** @description Maximum pinned entries */
             maxPinnedEntries?: string;
             /** @description Maximum tags suggested automatically (0 turns it off) */
@@ -4506,7 +4514,6 @@ export interface components {
          *       "highContrast": "true",
          *       "ttsVoiceUri": "https://thoughty.example.com/callback",
          *       "language": "en",
-         *       "entriesPerPage": "example",
          *       "maxPinnedEntries": "example",
          *       "defaultVisibility": "public",
          *       "readDates": "true",
@@ -4575,8 +4582,6 @@ export interface components {
              * @enum {string}
              */
             language?: "en" | "fr";
-            /** @description Entries per page */
-            entriesPerPage?: string | number;
             /** @description Maximum pinned entries */
             maxPinnedEntries?: string | number;
             /**
@@ -11275,8 +11280,16 @@ export interface operations {
                 sort?: "relevance" | "date";
                 /** @description Filter by date (YYYY-MM-DD) */
                 date?: string;
-                page?: number;
+                /** @description Entries in the batch */
                 limit?: number;
+                /** @description The `nextCursor` of the batch before: this batch starts right after its last entry, even when entries were written or deleted meanwhile. Only one of `after`, `from`, `before` and `around` */
+                after?: string;
+                /** @description The `prevCursor` of a batch: the batch starts at its first entry, included, to read that batch again (one opened `around` an entry, say) with the entries it holds now */
+                from?: string;
+                /** @description The `prevCursor` of the batch after: this batch holds the entries right before its first entry, in list order */
+                before?: string;
+                /** @description An entry ID: the batch holds that entry with the entries listed just before and after it (half the batch each way, more of one when the other ends sooner), to open the list at an entry. 404 `ENTRY_NOT_FOUND` when the filters leave it out */
+                around?: number;
             };
             header?: never;
             path?: never;
@@ -11284,7 +11297,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description List of entries */
+            /** @description A batch of entries */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11339,15 +11352,50 @@ export interface operations {
                      *           ]
                      *         }
                      *       ],
-                     *       "total": 1,
-                     *       "page": 1,
-                     *       "totalPages": 1,
+                     *       "total": 340,
+                     *       "offset": 40,
+                     *       "nextCursor": "1_2026-10-21__1_42",
+                     *       "prevCursor": "1_2026-10-25_08:30_2_57",
                      *       "allTags": [
                      *         "reflection"
                      *       ]
                      *     }
                      */
                     "application/json": components["schemas"]["EntriesListResponseDto"];
+                };
+            };
+            /** @description A filter or cursor is invalid, or `after`, `before` and `around` are combined */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "A filter or cursor is invalid, or `after`, `before` and `around` are combined",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description ENTRY_NOT_FOUND: the filters leave out the entry `around` names */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "ENTRY_NOT_FOUND: the filters leave out the entry `around` names",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -11614,7 +11662,6 @@ export interface operations {
                 sort?: "relevance" | "date";
                 /** @description Filter by date (YYYY-MM-DD) */
                 date?: string;
-                limit?: number;
                 /** @description The entry picked last time: another one is picked when the filters match any other, so asking again moves on */
                 excludeId?: number;
             };
@@ -11624,7 +11671,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The picked entry and its page */
+            /** @description The picked entry */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11634,8 +11681,7 @@ export interface operations {
                      * @example {
                      *       "id": 42,
                      *       "date": "2024-03-10",
-                     *       "index": 1,
-                     *       "page": 3
+                     *       "index": 1
                      *     }
                      */
                     "application/json": components["schemas"]["RandomEntryResponseDto"];
@@ -11866,11 +11912,29 @@ export interface operations {
     EntriesController_getFirstEntry: {
         parameters: {
             query?: {
+                /** @description Full-text search over content and tags, with English and French word forms and accents ignored. Supports "exact phrases" in quotes, a leading minus to exclude a word or phrase, and OR between alternatives; the last word also matches the longer words it starts. */
+                search?: string;
+                /** @description Comma-separated entry IDs to include, in relevance order */
+                ids?: string;
+                /** @description Comma-separated list of tags to filter by */
+                tags?: string;
+                visibility?: "public" | "private";
+                /** @description Filter by favorites only */
+                favorites?: boolean;
+                /** @description Filter by archive state */
+                archiveStatus?: "all" | "active" | "archived";
+                /** @description Filter by recorded mood: one or more levels from 1 (very low) to 5 (very good), comma-separated; "any" for entries with a mood, or "none" for entries without one */
+                mood?: string;
+                /** @description Diary ID */
+                diaryId?: number;
+                /** @description Life era ID: only entries dated within the era (from its start to its end, with no end while it is ongoing) */
+                eraId?: number;
+                /** @description Person ID: only entries that mention the person */
+                personId?: number;
                 /** @description Year to find first entry */
                 year?: number;
                 /** @description Month to find first entry */
                 month?: number;
-                limit?: number;
             };
             header?: never;
             path?: never;
@@ -11878,7 +11942,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Page info */
+            /** @description The entry to open the list around */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -11886,7 +11950,6 @@ export interface operations {
                 content: {
                     /**
                      * @example {
-                     *       "page": 1,
                      *       "found": true,
                      *       "entryId": 1,
                      *       "years": [
@@ -11911,7 +11974,6 @@ export interface operations {
                 index?: number;
                 /** @description Entry ID */
                 id?: number;
-                limit?: number;
             };
             header?: never;
             path?: never;
@@ -11973,7 +12035,6 @@ export interface operations {
                      *           "swimming"
                      *         ]
                      *       },
-                     *       "page": 1,
                      *       "entryId": 1,
                      *       "error": "example"
                      *     }
@@ -13362,7 +13423,6 @@ export interface operations {
                      *       "subscriptionPlan": "free",
                      *       "paymentMethodLabel": "example",
                      *       "fontSize": "example",
-                     *       "entriesPerPage": "example",
                      *       "maxPinnedEntries": "example",
                      *       "autoTagMaxTags": "reflection",
                      *       "highContrast": "true",
@@ -13403,7 +13463,6 @@ export interface operations {
                  *       "highContrast": "true",
                  *       "ttsVoiceUri": "https://thoughty.example.com/callback",
                  *       "language": "en",
-                 *       "entriesPerPage": "example",
                  *       "maxPinnedEntries": "example",
                  *       "defaultVisibility": "public",
                  *       "readDates": "true",

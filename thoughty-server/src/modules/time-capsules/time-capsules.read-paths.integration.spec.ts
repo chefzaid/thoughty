@@ -83,10 +83,10 @@ describePostgres('PostgreSQL time capsules: every entry read path', () => {
   it('shows no word of it on any documented entry read path, and every path is checked', async () => {
     const date = (await bed.entries.findOneByOrFail({ id: sealedId })).date;
     const readers: Record<string, Array<() => Promise<unknown>>> = {
-      '/api/entries': SECRETS.map((secret) => () => bed.journal.getEntries(writerId, { search: secret, page: 1, limit: 50 })).concat([
-        () => bed.journal.getEntries(writerId, { page: 1, limit: 50 }),
-        () => bed.journal.getEntries(writerId, { tags: 'lighthouse-keeper', page: 1, limit: 50 }),
-        () => bed.journal.getEntries(writerId, { mood: '5', page: 1, limit: 50 }),
+      '/api/entries': SECRETS.map((secret) => () => bed.journal.getEntries(writerId, { search: secret, limit: 50 })).concat([
+        () => bed.journal.getEntries(writerId, { limit: 50 }),
+        () => bed.journal.getEntries(writerId, { tags: 'lighthouse-keeper', limit: 50 }),
+        () => bed.journal.getEntries(writerId, { mood: '5', limit: 50 }),
       ]),
       '/api/entries/dates': [() => bed.journal.getDates(writerId)],
       '/api/entries/calendar': [() => bed.journal.getCalendarMonth(writerId, { month: date.slice(0, 7) })],
@@ -104,13 +104,13 @@ describePostgres('PostgreSQL time capsules: every entry read path', () => {
       '/api/entries/tags': [() => bed.journal.getTagUsage(writerId)],
       '/api/entries/{id}/backlinks': [() => bed.journal.getBacklinks(writerId, openId), () => bed.journal.getBacklinks(writerId, sealedId)],
       '/api/entries/{id}/history': [() => bed.journal.getRevisions(writerId, sealedId)],
-      '/api/entries/feed': [() => bed.feed.getFeed(writerId, { scope: 'all', page: 1, limit: 50 } as never)],
+      '/api/entries/feed': [() => bed.feed.getFeed(writerId, { scope: 'all', limit: 50 } as never)],
       '/api/entries/{entryId}/comments': [() => bed.comments.list(writerId, sealedId)],
     };
 
     expect(Object.keys(readers).sort()).toEqual(documentedEntryReadPaths());
     // The journal still lists it, as a placeholder that says when it opens
-    const listed = (await bed.journal.getEntries(writerId, { page: 1, limit: 50 })).entries.find((entry) => entry.id === sealedId);
+    const listed = (await bed.journal.getEntries(writerId, { limit: 50 })).entries.find((entry) => entry.id === sealedId);
     expect(listed).toMatchObject({ content: '', title: null, tags: [], sealed_until: expect.any(Date) });
     // A random pick never opens it, even when it is the one left after the entry picked last
     await expect(bed.journal.getRandomEntry(writerId, { excludeId: openId })).resolves.toMatchObject({ id: openId });

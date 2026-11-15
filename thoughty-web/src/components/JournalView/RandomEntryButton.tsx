@@ -9,12 +9,12 @@ import { formatEraDate } from '../../utils/lifeEras';
 import { tintedTextClass } from '../../utils/tintedText';
 
 interface RandomEntryButtonProps {
-  /** The journal list's query: the entry is picked among the same filters, at its page size and order. */
+  /** The journal list's query: the entry is picked among the same filters. */
   readonly query: EntryListQuery;
   /** Whether the filtered list has no entry, so there is nothing to pick from. */
   readonly listEmpty: boolean;
-  /** Shows the picked entry on its page of the list, keeping the filters. */
-  readonly onOpen: (entryId: number, page: number) => void;
+  /** Opens the list around the picked entry, keeping the filters. */
+  readonly onOpen: (entryId: number) => void;
   /** Shows a message in the app's notice toast. */
   readonly onNotify: (message: string) => void;
   readonly language: Language;
@@ -22,14 +22,9 @@ interface RandomEntryButtonProps {
   readonly t: TranslationFunction;
 }
 
-/** The filters a pick was made among: the list query without its page, which the pick itself moves. */
-function filtersKey({ page: _page, ...filters }: EntryListQuery): string {
-  return JSON.stringify(filters);
-}
-
 /**
- * "Random entry" in the journal filter tools: opens an entry picked at random among the current filters
- * on its page of the list. Asked again with the same filters, it reads "Another one" and does not land on
+ * "Random entry" in the journal filter tools: opens the list around an entry picked at random among the
+ * current filters. Asked again with the same filters, it reads "Another one" and does not land on
  * the entry it just showed.
  */
 function RandomEntryButton({ query, listEmpty, onOpen, onNotify, language, theme, t }: RandomEntryButtonProps) {
@@ -38,7 +33,7 @@ function RandomEntryButton({ query, listEmpty, onOpen, onNotify, language, theme
   const [busy, setBusy] = useState(false);
   const [lastPick, setLastPick] = useState<{ id: number; filters: string } | null>(null);
   const [announcement, setAnnouncement] = useState('');
-  const filters = useMemo(() => filtersKey(query), [query]);
+  const filters = useMemo(() => JSON.stringify(query), [query]);
   const lastId = lastPick?.filters === filters ? lastPick.id : null;
   const unavailable = listEmpty || busy;
 
@@ -53,7 +48,7 @@ function RandomEntryButton({ query, listEmpty, onOpen, onNotify, language, theme
     }
     setLastPick({ id: result.data.id, filters });
     setAnnouncement(t('randomEntryOpened', { date: formatEraDate(result.data.date, language) }));
-    onOpen(result.data.id, result.data.page);
+    onOpen(result.data.id);
   };
 
   const label = t(lastId === null ? 'randomEntry' : 'randomEntryAnother');

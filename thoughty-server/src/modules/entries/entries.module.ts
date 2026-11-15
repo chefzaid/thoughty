@@ -12,6 +12,7 @@ import { EntriesQueryService } from './entries-query.service';
 import { EntriesCommandService } from './entries-command.service';
 import { EntryLookupService } from './entry-lookup.service';
 import { EntryListCacheService } from './entry-list-cache.service';
+import { EntryListService } from './entry-list.service';
 import { EntrySearchService } from './entry-search.service';
 import { EntryCalendarService } from './entry-calendar.service';
 import { EntryRandomService } from './entry-random.service';
@@ -32,6 +33,7 @@ import { EntryInlineImagesService } from './entry-inline-images.service';
     EntryLookupService,
     EntriesCommandService,
     EntryListCacheService,
+    EntryListService,
     EntrySearchService,
     EntryCalendarService,
     EntryRandomService,

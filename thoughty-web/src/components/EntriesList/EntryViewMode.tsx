@@ -1,4 +1,4 @@
-import { useState as useLocalState } from 'react';
+import { memo, useState as useLocalState } from 'react';
 import ListenButton from '../ListenButton/ListenButton';
 import type { SpeechEntry } from '../../hooks/useSpeech';
 import type { RephraseMode, SummaryGuidance } from '../../services/api/aiService';
@@ -38,7 +38,8 @@ interface EntryViewModeProps {
     activeEntryId: number | null;
     activeTargetId: number | null;
     sourceEntry: SourceEntryInfo | null;
-    flatEntries: SpeechEntry[];
+    /** The entries shown, in reading order, read when listening from this one. */
+    listEntries: () => SpeechEntry[];
     speakEntry: (e: SpeechEntry) => void;
     speakFromEntry: (entries: SpeechEntry[], id: number) => void;
     stop: () => void;
@@ -84,8 +85,11 @@ export type EntryCardActions = Pick<EntryViewModeProps,
     | 'backlinksVersion' | 'onDeleteRevision' | 'onDiscuss' | 'onRephrase' | 'onSummarize' | 'onUseAsStartingPoint' | 'onReply'
     | 'onMoveToDiary'>;
 
-/** An entry card's content: a sealed time capsule shows only its placeholder, any other entry all of itself. */
-export default function EntryViewMode(props: Readonly<EntryViewModeProps>) {
+/**
+ * An entry card's content: a sealed time capsule shows only its placeholder, any other entry all of itself.
+ * A card draws again only when its own props change, so loading another batch of the list leaves it alone.
+ */
+function EntryViewMode(props: Readonly<EntryViewModeProps>) {
     const { entry, config, showDiaryLabel, onUnseal, onDelete, t } = props;
     return entry.sealed_until ? (
         <SealedEntryCard
@@ -113,7 +117,7 @@ function OpenEntryViewMode({
     activeEntryId,
     activeTargetId,
     sourceEntry,
-    flatEntries,
+    listEntries,
     speakEntry: speak,
     speakFromEntry: speakFrom,
     stop,
@@ -239,7 +243,7 @@ function OpenEntryViewMode({
                             content: entry.content,
                             date: extractDate(entry.date),
                         })}
-                        onListenFrom={() => speakFrom(flatEntries, entry.id)}
+                        onListenFrom={() => speakFrom(listEntries(), entry.id)}
                         onStop={stop}
                         theme={config.theme}
                         t={t}
@@ -389,3 +393,5 @@ function OpenEntryViewMode({
         </>
     );
 }
+
+export default memo(EntryViewMode);

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
-import { normalizeEntriesPerPage, type ArchiveStatusFilter, type Config, type Entry, type EntryBacklink, type EntrySearchSort, type GroupedEntries, type SourceEntryInfo } from '../types';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { type ArchiveStatusFilter, type Entry, type EntryBacklink, type EntrySearchSort, type GroupedEntries, type SourceEntryInfo } from '../types';
 import { useApiServices } from './useApiServices';
 import type { SemanticSearchResponse } from '../services/api/aiService';
 import { compareSameDayEntries, reassignSameDayIndexes } from '../utils/entryTime';
@@ -10,17 +10,16 @@ import type { Notifier } from './useAppNotice';
 import type { EntryListQuery } from '../services/api/entryListQuery';
 import { formatEntryDate } from '../utils/entryDate';
 import { PEOPLE_QUERY_KEY } from '../utils/mentions';
-import { scrollBehavior } from '../utils/motion';
+import { ENTRIES_QUERY_KEY, useJournalList } from './useJournalList';
+import { useScrollToTarget } from './useScrollToTarget';
 
 export type EntrySearchMode = 'keyword' | 'semantic';
 export type SemanticSearchStatus = 'idle' | 'loading' | 'complete' | 'error';
 
 const ENTRY_DATES_QUERY_KEY = ['app', 'entry-dates'] as const;
 const ENTRY_YEARS_MONTHS_QUERY_KEY = ['app', 'entry-years-months'] as const;
-const ENTRIES_QUERY_KEY = 'entries';
 /** Every query that reads journal entries, for screens that bring entries back from elsewhere. */
 export const JOURNAL_ENTRY_QUERY_KEYS = [['app', ENTRIES_QUERY_KEY], ENTRY_DATES_QUERY_KEY, ENTRY_YEARS_MONTHS_QUERY_KEY, PEOPLE_QUERY_KEY] as const;
-const EMPTY_ENTRIES: Entry[] = [];
 const EMPTY_STRINGS: string[] = [];
 const EMPTY_NUMBERS: number[] = [];
 
@@ -28,28 +27,26 @@ const normalizeEntryDate = (date: string): string =>
   date.includes('T') ? (date.split('T')[0] ?? date) : date;
 
 interface UseEntriesOptions {
-  /** Whether the profile config has arrived (or failed to), so the list asks with the user's page size. */
+  /** Whether the profile config has arrived (or failed to), so the list asks once with the user's settings. */
   configLoaded?: boolean;
   /** Whether the diary and route filters are settled, so the list does not ask for a diary it is about to leave. */
   filtersReady?: boolean;
-  /** The journal permalink being opened: the list waits until it knows the page that entry is on. */
+  /** The journal permalink being opened: the list waits until it opens around that entry. */
   routeEntryId?: number;
   /** The person the journal address names (null for none); undefined away from the journal. The list waits for it to apply. */
   routePersonId?: number | null;
+  /** Hears that the entry a jump opened the list at is not among the entries shown; the list starts at its top. */
+  onEntryMissing?: () => void;
 }
 
 export const useEntries = (
   isAuthenticated: boolean,
-  config: Config,
   currentDiaryId: number | null,
   { notify, t }: Notifier,
-  { configLoaded = true, filtersReady = true, routeEntryId, routePersonId }: UseEntriesOptions = {},
+  { configLoaded = true, filtersReady = true, routeEntryId, routePersonId, onEntryMissing }: UseEntriesOptions = {},
 ) => {
   const { entriesService, aiService } = useApiServices();
   const queryClient = useQueryClient();
-
-  const [page, setPage] = useState<number>(1);
-  const [inputPage, setInputPage] = useState<string>('1');
 
   const [search, setSearch] = useState<string>('');
   const [searchModeState, setSearchModeState] = useState<EntrySearchMode>('keyword');
@@ -75,12 +72,12 @@ export const useEntries = (
   const [handledPermalinkEntryId, setHandledPermalinkEntryId] = useState<number | null>(null);
 
   // The first list request waits for everything that decides it, so it is sent once instead of
-  // being sent with defaults and thrown away when the page size, diary or permalink page arrives.
+  // being sent with defaults and thrown away when the settings, the diary or the permalink arrive.
   const permalinkPending = routeEntryId !== undefined && handledPermalinkEntryId !== routeEntryId;
   const personPending = routePersonId !== undefined && routePersonId !== filterPersonId;
-  const listReady = configLoaded && filtersReady && !permalinkPending && !personPending;
-
-  const getLimit = useCallback(() => normalizeEntriesPerPage(config.entriesPerPage), [config.entriesPerPage]);
+  // A jump that shows every entry (a cross-reference) holds the list until its filters have all been reset
+  const [filtersResetting, setFiltersResetting] = useState(false);
+  const listReady = configLoaded && filtersReady && !permalinkPending && !personPending && !filtersResetting;
 
   const semanticEntryIds = useMemo(() => (
     searchModeState === 'semantic'
@@ -91,10 +88,8 @@ export const useEntries = (
   /** Keyword results are shown in the server's order (best match first) instead of grouped by day. */
   const rankedResults = effectiveKeywordSearch.trim() !== '' && searchSort === 'relevance';
 
-  /** The list's page and filters, as `GET /api/entries` reads them; the random entry picks among the same. */
+  /** The list's filters, as `GET /api/entries` reads them; the random entry picks among the same. */
   const listQuery = useMemo((): EntryListQuery => ({
-    page,
-    limit: getLimit(),
     search: effectiveKeywordSearch,
     // Sent only with a search, so changing it alone does not read the list again
     sort: effectiveKeywordSearch.trim() ? searchSort : undefined,
@@ -108,19 +103,16 @@ export const useEntries = (
     personId: filterPersonId,
     diaryId: currentDiaryId,
     entryIds: semanticEntryIds,
-  }), [currentDiaryId, effectiveKeywordSearch, filterArchiveStatus, filterDateObj, filterEraId, filterFavorites, filterMood, filterPersonId, filterTags, filterVisibility, getLimit, page, searchSort, semanticEntryIds]);
-  const entriesQueryKey = useMemo(() => ['app', ENTRIES_QUERY_KEY, listQuery] as const, [listQuery]);
+  }), [currentDiaryId, effectiveKeywordSearch, filterArchiveStatus, filterDateObj, filterEraId, filterFavorites, filterMood, filterPersonId, filterTags, filterVisibility, searchSort, semanticEntryIds]);
 
-  const entriesQuery = useQuery({
-    queryKey: entriesQueryKey,
-    queryFn: async (): Promise<{ entries: Entry[]; totalPages: number; allTags: string[] }> => {
-      const result = await entriesService.fetchEntries(listQuery);
-
-      return result ?? { entries: [], totalPages: 1, allTags: [] };
-    },
-    enabled: isAuthenticated && listReady,
-    placeholderData: keepPreviousData,
-  });
+  const onAnchorMissing = useCallback(() => {
+    setTargetEntryId(null);
+    setActiveTargetId(null);
+    setSourceEntry(null);
+    onEntryMissing?.();
+  }, [onEntryMissing]);
+  const list = useJournalList({ enabled: isAuthenticated && listReady, listQuery, onAnchorMissing });
+  const { entries, setEntries, refetch: refetchList } = list;
 
   const entryDatesQuery = useQuery({
     queryKey: ENTRY_DATES_QUERY_KEY,
@@ -140,34 +132,13 @@ export const useEntries = (
     enabled: isAuthenticated,
   });
 
-  const entries = entriesQuery.data?.entries ?? EMPTY_ENTRIES;
-  const totalPages = entriesQuery.data?.totalPages ?? 1;
-  const allTags = entriesQuery.data?.allTags ?? EMPTY_STRINGS;
   const entryDates = entryDatesQuery.data ?? EMPTY_STRINGS;
   const loading = !isAuthenticated
     || !listReady
-    || entriesQuery.isLoading
-    || entriesQuery.isFetching
+    || list.reloading
     || semanticSearchStatus === 'loading';
   const availableYears = yearsMonthsQuery.data?.years ?? EMPTY_NUMBERS;
   const availableMonths = yearsMonthsQuery.data?.months ?? EMPTY_STRINGS;
-
-  const setEntries = useCallback((nextEntries: Entry[] | ((previousEntries: Entry[]) => Entry[])) => {
-    queryClient.setQueryData<{ entries: Entry[]; totalPages: number; allTags: string[] }>(
-      entriesQueryKey,
-      (currentData) => {
-        const resolvedEntries = typeof nextEntries === 'function'
-          ? nextEntries(currentData?.entries ?? [])
-          : nextEntries;
-
-        return {
-          entries: resolvedEntries,
-          totalPages: currentData?.totalPages ?? 1,
-          allTags: currentData?.allTags ?? [],
-        };
-      },
-    );
-  }, [entriesQueryKey, queryClient]);
 
   const fetchEntryDates = useCallback(async () => {
     return entryDatesQuery.refetch();
@@ -176,15 +147,14 @@ export const useEntries = (
   const fetchEntries = useCallback(async () => {
     // A saved or edited entry can mention other people, so their counts are read again too
     void queryClient.invalidateQueries({ queryKey: PEOPLE_QUERY_KEY });
-    return entriesQuery.refetch();
-  }, [entriesQuery, queryClient]);
+    return refetchList();
+  }, [queryClient, refetchList]);
 
   const setSearchMode = useCallback((mode: EntrySearchMode) => {
     semanticRequestIdRef.current += 1;
     setSearchModeState(mode);
     setSemanticSearchResult(null);
     setSemanticSearchStatus('idle');
-    setPage(1);
   }, []);
 
   const runSemanticSearch = useCallback(async () => {
@@ -192,7 +162,6 @@ export const useEntries = (
     if (query.length < 2) {
       setSemanticSearchResult(null);
       setSemanticSearchStatus('idle');
-      setPage(1);
       return;
     }
 
@@ -203,7 +172,6 @@ export const useEntries = (
 
     setSemanticSearchResult(result);
     setSemanticSearchStatus(result ? 'complete' : 'error');
-    setPage(1);
   }, [aiService, currentDiaryId, search]);
 
   const refreshEntryQueries = useCallback(async () => {
@@ -378,32 +346,13 @@ export const useEntries = (
   }, [entries]);
 
   useEffect(() => {
-    setInputPage(page.toString());
-  }, [page]);
-
-  useEffect(() => {
     semanticRequestIdRef.current += 1;
     setSemanticSearchResult(null);
     setSemanticSearchStatus('idle');
   }, [currentDiaryId, search]);
 
-  useEffect(() => {
-    if (targetEntryId && !loading && entries.length > 0) {
-      const entryElement = document.getElementById(`entry-${targetEntryId}`);
-      if (entryElement) {
-        if (typeof entryElement.scrollIntoView === 'function') {
-          entryElement.scrollIntoView({ behavior: scrollBehavior(), block: 'center' });
-        }
-        const clearTargetTimeout = globalThis.setTimeout(() => {
-          setTargetEntryId(null);
-        }, 4000);
-
-        return () => {
-          globalThis.clearTimeout(clearTargetTimeout);
-        };
-      }
-    }
-  }, [targetEntryId, loading, entries]);
+  const clearTarget = useCallback(() => setTargetEntryId(null), []);
+  useScrollToTarget({ targetEntryId, jump: list.jump, loading, entries, clearTarget });
 
   return {
     entries,
@@ -411,13 +360,22 @@ export const useEntries = (
     setEntries,
     groupedEntries,
     loading,
-    allTags,
+    allTags: list.allTags,
     entryDates,
-    page,
-    setPage,
-    totalPages,
-    inputPage,
-    setInputPage,
+    /** The infinite scroll: the entries the filters match, the batches before and after, and loading them. */
+    feed: {
+      total: list.total,
+      offset: list.offset,
+      hasOlder: list.hasOlder,
+      hasNewer: list.hasNewer,
+      loadingOlder: list.loadingOlder,
+      loadingNewer: list.loadingNewer,
+      loadError: list.loadError,
+      loadOlder: list.loadOlder,
+      loadNewer: list.loadNewer,
+    },
+    /** Opens the list around an entry (null: at its start), under the filters set along with it. */
+    openListAt: list.openListAt,
     search,
     setSearch,
     searchMode: searchModeState,
@@ -454,10 +412,11 @@ export const useEntries = (
     setSourceEntry,
     handledPermalinkEntryId,
     setHandledPermalinkEntryId,
+    filtersResetting,
+    setFiltersResetting,
     fetchEntries,
     fetchEntryDates,
     refreshEntryQueries,
-    getLimit,
     entriesService,
     toggleVisibility,
     toggleFavorite,

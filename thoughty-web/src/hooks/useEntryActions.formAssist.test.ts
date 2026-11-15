@@ -40,7 +40,7 @@ describe("useEntryActions", () => {
 
       const { result } = renderHook(() =>
         useEntryForm(
-          { defaultVisibility: "private", entriesPerPage: 10 },
+          { defaultVisibility: "private" },
           1,
           mockOnSuccess,
         ),
@@ -83,7 +83,7 @@ describe("useEntryActions", () => {
 
       const { result } = renderHook(() =>
         useEntryForm(
-          { defaultVisibility: "private", entriesPerPage: 10 },
+          { defaultVisibility: "private" },
           1,
           mockOnSuccess,
         ),
@@ -126,7 +126,7 @@ describe("useEntryActions", () => {
 
       const { result } = renderHook(() =>
         useEntryForm(
-          { defaultVisibility: "private", entriesPerPage: 10 },
+          { defaultVisibility: "private" },
           1,
           mockOnSuccess,
         ),
@@ -178,7 +178,7 @@ describe("useEntryActions", () => {
 
       const { result } = renderHook(() =>
         useEntryForm(
-          { defaultVisibility: "private", entriesPerPage: 10 },
+          { defaultVisibility: "private" },
           1,
           mockOnSuccess,
         ),
@@ -225,7 +225,7 @@ describe("useEntryActions", () => {
 
       const { result } = renderHook(() =>
         useEntryForm(
-          { defaultVisibility: "private", entriesPerPage: 10 },
+          { defaultVisibility: "private" },
           1,
           mockOnSuccess,
         ),

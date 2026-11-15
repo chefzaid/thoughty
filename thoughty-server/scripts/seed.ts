@@ -85,7 +85,6 @@ const MAIN_USER: SeedUser = {
         gender: 'other',
         theme: 'dark',
         language: 'en',
-        entriesPerPage: '10',
         maxPinnedEntries: '3',
         defaultVisibility: 'private',
         readDates: 'true',

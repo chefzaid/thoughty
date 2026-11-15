@@ -6,73 +6,58 @@ import { Entry } from '@/database/entities';
 import { addSameDayOrder } from '@/common/utils';
 import { GetFirstEntryQueryDto, GetEntryByDateQueryDto, EntryBacklinksResponseDto } from './dto';
 import { entryContentReferencesTarget } from './entry-references.util';
+import { applyEntryListFilters, applyEntryMonthFilter } from './entry-list-filters';
+import { EntrySearchService } from './entry-search.service';
 
 /**
- * Finding one entry and its place in the journal: the first entry of a year or month, an entry by
- * its date and same-day index (or id) with the page that shows it, and the entries that refer to it.
+ * Finding one entry in the journal: the first entry of a year or month, an entry by its date and
+ * same-day index (or id), and the entries that refer to it. The list opens around the entry found.
  */
 @Injectable()
 export class EntryLookupService {
   constructor(
     @InjectRepository(Entry)
     private readonly entryRepository: Repository<Entry>,
+    private readonly entrySearch: EntrySearchService,
   ) {}
 
+  /**
+   * The first entry (oldest day first, then the day's order) of a year or month among the journal filters,
+   * which the journal opens the list around, and the years and months that hold any entry.
+   */
   async getFirstEntry(
     userId: number,
     query: GetFirstEntryQueryDto,
   ): Promise<{
-    page: number;
     found: boolean;
     entryId?: number;
     years: number[];
     months: string[];
   }> {
-    const { year, month, limit = 10 } = query;
+    const { year, month } = query;
 
-    const yearsResult = await this.entryRepository
-      .createQueryBuilder('e')
-      .select('DISTINCT EXTRACT(YEAR FROM e.date)', 'year')
-      .where('e.user_id = :userId', { userId })
-      .orderBy('year', 'DESC')
-      .getRawMany();
+    const [yearsResult, monthsResult] = await Promise.all([
+      this.entryRepository
+        .createQueryBuilder('e')
+        .select('DISTINCT EXTRACT(YEAR FROM e.date)', 'year')
+        .where('e.user_id = :userId', { userId })
+        .orderBy('year', 'DESC')
+        .getRawMany(),
+      this.entryRepository
+        .createQueryBuilder('e')
+        .select("DISTINCT TO_CHAR(e.date, 'YYYY-MM')", 'month')
+        .where('e.user_id = :userId', { userId })
+        .orderBy('month', 'DESC')
+        .getRawMany(),
+    ]);
     const years = yearsResult.map((result) => Number.parseInt(result.year, 10));
-
-    const monthsResult = await this.entryRepository
-      .createQueryBuilder('e')
-      .select("DISTINCT TO_CHAR(e.date, 'YYYY-MM')", 'month')
-      .where('e.user_id = :userId', { userId })
-      .orderBy('month', 'DESC')
-      .getRawMany();
     const months = monthsResult.map((result) => result.month);
 
     if (!year) {
-      return { page: 1, found: false, years, months };
+      return { found: false, years, months };
     }
 
-    let firstEntryQb = this.entryRepository
-      .createQueryBuilder('e')
-      .select('MIN(e.date)', 'first_date')
-      .where('e.user_id = :userId', { userId });
-
-    if (month) {
-      const monthStr = String(month).padStart(2, '0');
-      firstEntryQb = firstEntryQb.andWhere("TO_CHAR(e.date, 'YYYY-MM') = :dateFilter", {
-        dateFilter: `${year}-${monthStr}`,
-      });
-    } else {
-      firstEntryQb = firstEntryQb.andWhere('EXTRACT(YEAR FROM e.date) = :year', { year });
-    }
-
-    const firstEntryResult = await firstEntryQb.getRawOne();
-
-    if (!firstEntryResult?.first_date) {
-      return { page: 1, found: false, years, months };
-    }
-
-    const firstDate = firstEntryResult.first_date;
-
-    let firstEntryIdQb = addSameDayOrder(
+    const firstEntryQb = addSameDayOrder(
       this.entryRepository
         .createQueryBuilder('e')
         .select('e.id')
@@ -80,28 +65,16 @@ export class EntryLookupService {
         .orderBy('e.date', 'ASC'),
       'e',
     ).limit(1);
+    applyEntryListFilters(firstEntryQb, query, query.search ? await this.entrySearch.prepare(query.search) : null);
 
     if (month) {
-      const monthStr = String(month).padStart(2, '0');
-      firstEntryIdQb = firstEntryIdQb.andWhere("TO_CHAR(e.date, 'YYYY-MM') = :dateFilter", {
-        dateFilter: `${year}-${monthStr}`,
-      });
+      applyEntryMonthFilter(firstEntryQb, `${year}-${String(month).padStart(2, '0')}`);
     } else {
-      firstEntryIdQb = firstEntryIdQb.andWhere('EXTRACT(YEAR FROM e.date) = :year', { year });
+      firstEntryQb.andWhere('EXTRACT(YEAR FROM e.date) = :year', { year });
     }
 
-    const firstEntryIdResult = await firstEntryIdQb.getRawOne();
-    const firstEntryId = firstEntryIdResult?.e_id;
-
-    const countResult = await this.entryRepository
-      .createQueryBuilder('e')
-      .where('e.user_id = :userId', { userId })
-      .andWhere('e.date > :firstDate', { firstDate })
-      .getCount();
-
-    const page = Math.floor(countResult / limit) + 1;
-
-    return { page, found: true, entryId: firstEntryId, years, months };
+    const firstEntryId: number | undefined = (await firstEntryQb.getRawOne())?.e_id;
+    return firstEntryId ? { found: true, entryId: firstEntryId, years, months } : { found: false, years, months };
   }
 
   async getEntryByDate(
@@ -110,11 +83,10 @@ export class EntryLookupService {
   ): Promise<{
     found: boolean;
     entry?: Entry;
-    page?: number;
     entryId?: number;
     error?: string;
   }> {
-    const { date, index = 1, id, limit = 10 } = query;
+    const { date, index = 1, id } = query;
 
     let entry: Entry | null;
 
@@ -135,10 +107,7 @@ export class EntryLookupService {
       return { found: false, error: 'Entry not found' };
     }
 
-    const totalBefore = await this.countEntriesBefore(entry);
-    const page = Math.floor(totalBefore / limit) + 1;
-
-    return { found: true, entry, page, entryId: entry.id };
+    return { found: true, entry, entryId: entry.id };
   }
 
   async getBacklinks(userId: number, entryId: number): Promise<EntryBacklinksResponseDto> {
@@ -183,31 +152,6 @@ export class EntryLookupService {
           diary_color: entry.diary?.color ?? undefined,
         })),
     };
-  }
-
-  /** Entries listed before this one in the journal: pinned ones first, then newest day first, then the day's order. */
-  private countEntriesBefore(entry: Entry): Promise<number> {
-    const earlierInDay =
-      '(e.date > :date OR (e.date = :date AND ' +
-      "(e.time_of_day IS NOT NULL, COALESCE(e.time_of_day, TIME '00:00'), e.index) < " +
-      "(CAST(:hasTime AS boolean), COALESCE(CAST(:timeOfDay AS time), TIME '00:00'), CAST(:index AS integer))))";
-    const params = {
-      date: entry.date,
-      hasTime: entry.timeOfDay !== null && entry.timeOfDay !== undefined,
-      timeOfDay: entry.timeOfDay ?? null,
-      index: entry.index,
-    };
-    const qb = this.entryRepository
-      .createQueryBuilder('e')
-      .where('e.user_id = :userId', { userId: entry.userId });
-
-    if (entry.isPinned) {
-      qb.andWhere('e.is_pinned = true').andWhere(earlierInDay, params);
-    } else {
-      qb.andWhere(`(e.is_pinned = true OR (e.is_pinned = false AND ${earlierInDay}))`, params);
-    }
-
-    return qb.getCount();
   }
 
   private normalizeEntryDate(date: string | Date): string {
