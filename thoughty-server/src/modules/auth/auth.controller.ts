@@ -65,6 +65,9 @@ import { Public, CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { SuccessMessageResponseDto, SuccessResponseDto } from '@/common/dto';
 import { RATE_LIMITS, throttleDefault } from '@/common';
 
+const PROVIDER_SIGN_IN_RACE_NOTE =
+  'Racing sign-ins kept taking the new account\'s username (AUTH_USERNAME_TAKEN) or email (AUTH_EMAIL_TAKEN); trying again works';
+
 @ApiTags('Authentication')
 @ApiExtraModels(AuthResponseDto, TwoFactorChallengeResponseDto)
 @Controller('auth')
@@ -206,6 +209,8 @@ export class AuthController {
   })
   @ApiResponse({ status: 400, description: 'Missing required fields' })
   @ApiResponse({ status: 401, description: 'Invalid Google credential or unverified email' })
+  @ApiResponse({ status: 403, description: 'The account with this Google identity or email was deleted' })
+  @ApiResponse({ status: 409, description: PROVIDER_SIGN_IN_RACE_NOTE })
   @ApiResponse({ status: 503, description: 'Google sign-in is not configured on this server' })
   async oauth(
     @Body() dto: OAuthDto,
@@ -223,6 +228,8 @@ export class AuthController {
     type: AuthResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Missing or invalid Keycloak identity' })
+  @ApiResponse({ status: 403, description: 'The account with this Keycloak identity or email was deleted' })
+  @ApiResponse({ status: 409, description: PROVIDER_SIGN_IN_RACE_NOTE })
   async sso(
     @Res({ passthrough: true }) res: Response,
     @Headers('x-auth-request-access-token') accessToken?: string,

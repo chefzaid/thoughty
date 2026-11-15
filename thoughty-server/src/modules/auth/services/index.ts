@@ -7,3 +7,4 @@ export * from './email-verification.service';
 export * from './two-factor.service';
 export * from './email.service';
 export * from './sign-up.service';
+export * from './provider-account.service';

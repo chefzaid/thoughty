@@ -10342,6 +10342,40 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description The account with this Google identity or email was deleted */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 403,
+                     *       "message": "The account with this Google identity or email was deleted",
+                     *       "error": "Forbidden",
+                     *       "code": "FORBIDDEN"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Racing sign-ins kept taking the new account's username (AUTH_USERNAME_TAKEN) or email (AUTH_EMAIL_TAKEN); trying again works */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 409,
+                     *       "message": "Racing sign-ins kept taking the new account's username (AUTH_USERNAME_TAKEN) or email (AUTH_EMAIL_TAKEN); trying again works",
+                     *       "error": "Conflict",
+                     *       "code": "CONFLICT"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description Google sign-in is not configured on this server */
             503: {
                 headers: {
@@ -10407,6 +10441,40 @@ export interface operations {
                      *       "message": "Missing or invalid Keycloak identity",
                      *       "error": "Unauthorized",
                      *       "code": "UNAUTHORIZED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The account with this Keycloak identity or email was deleted */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 403,
+                     *       "message": "The account with this Keycloak identity or email was deleted",
+                     *       "error": "Forbidden",
+                     *       "code": "FORBIDDEN"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Racing sign-ins kept taking the new account's username (AUTH_USERNAME_TAKEN) or email (AUTH_EMAIL_TAKEN); trying again works */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 409,
+                     *       "message": "Racing sign-ins kept taking the new account's username (AUTH_USERNAME_TAKEN) or email (AUTH_EMAIL_TAKEN); trying again works",
+                     *       "error": "Conflict",
+                     *       "code": "CONFLICT"
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];

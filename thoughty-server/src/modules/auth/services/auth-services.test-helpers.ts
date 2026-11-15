@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { DataSource } from 'typeorm';
 import { User, RefreshToken, Diary } from '@/database/entities';
 import { AuthService } from './auth.service';
 import { AuthSessionService, hashRefreshToken } from './auth-session.service';
@@ -10,6 +11,7 @@ import { PasswordService } from './password.service';
 import { AccountService } from './account.service';
 import { EmailService } from './email.service';
 import { TwoFactorService } from './two-factor.service';
+import { ProviderAccountService } from './provider-account.service';
 
 /** The repository and collaborator mocks behind the auth services in their specs. */
 export interface AuthServiceMocks {
@@ -19,6 +21,9 @@ export interface AuthServiceMocks {
   jwtService: Record<string, jest.Mock>;
   emailService: Record<string, jest.Mock>;
   twoFactorService: Record<string, jest.Mock>;
+  /** The transaction's entity manager: saves reach the user or diary repository mock. */
+  manager: Record<string, jest.Mock>;
+  dataSource: { transaction: jest.Mock };
 }
 
 export interface AuthServices {
@@ -49,24 +54,48 @@ export const mockRefreshToken = {
 };
 
 export function createAuthServiceMocks(): AuthServiceMocks {
+  const userRepository: Record<string, jest.Mock> = {
+    findOne: jest.fn(),
+    save: jest.fn(),
+    exists: jest.fn().mockResolvedValue(false),
+    createQueryBuilder: jest.fn(() => ({
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn(),
+    })),
+  };
+  const diaryRepository: Record<string, jest.Mock> = { save: jest.fn() };
+  const deleteQuery = {
+    delete: jest.fn().mockReturnThis(),
+    from: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    execute: jest.fn().mockResolvedValue({ affected: 0 }),
+  };
+  const manager: Record<string, jest.Mock> = {
+    create: jest.fn((_entity: unknown, value: unknown) => value),
+    save: jest.fn((entity: unknown, value: unknown) =>
+      (entity === Diary ? diaryRepository : userRepository).save(value),
+    ),
+    delete: jest.fn().mockResolvedValue({ affected: 0 }),
+    createQueryBuilder: jest.fn(() => deleteQuery),
+  };
   return {
-    userRepository: {
-      findOne: jest.fn(),
-      save: jest.fn(),
-      createQueryBuilder: jest.fn(() => ({
-        where: jest.fn().mockReturnThis(),
-        getOne: jest.fn(),
-      })),
-    },
+    manager,
+    dataSource: { transaction: jest.fn((work: (m: unknown) => unknown) => work(manager)) },
+    userRepository,
+    diaryRepository,
+    ...createCollaboratorMocks(),
+  };
+}
+
+function createCollaboratorMocks() {
+  return {
     refreshTokenRepository: {
       find: jest.fn(),
       findOne: jest.fn(),
       save: jest.fn(),
       delete: jest.fn(),
       createQueryBuilder: jest.fn(),
-    },
-    diaryRepository: {
-      save: jest.fn(),
     },
     jwtService: {
       sign: jest.fn().mockReturnValue('mock_token'),
@@ -97,6 +126,8 @@ export async function createAuthServices(mocks: AuthServiceMocks): Promise<AuthS
       IdentityVerificationService,
       PasswordService,
       AccountService,
+      ProviderAccountService,
+      { provide: DataSource, useValue: mocks.dataSource },
       { provide: getRepositoryToken(User), useValue: mocks.userRepository },
       { provide: getRepositoryToken(RefreshToken), useValue: mocks.refreshTokenRepository },
       { provide: getRepositoryToken(Diary), useValue: mocks.diaryRepository },

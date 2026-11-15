@@ -2,14 +2,13 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { User, Diary } from '@/database/entities';
-import { getDefaultDiaryColor, sanitizeString } from '@/common/utils';
+import { sanitizeString } from '@/common/utils';
 import {
   RegisterDto,
   LoginDto,
@@ -21,6 +20,8 @@ import { assertHumanAuthAttempt } from './auth-bot-protection';
 import { TwoFactorService } from './two-factor.service';
 import { AuthSessionService, type IssuedSession } from './auth-session.service';
 import { IdentityVerificationService } from './identity-verification.service';
+import { ProviderAccountService } from './provider-account.service';
+import { defaultDiaryFor } from './default-diary';
 
 /**
  * A bcrypt hash (cost 12, like real password hashes) of a random throwaway password. It is
@@ -29,23 +30,11 @@ import { IdentityVerificationService } from './identity-verification.service';
  */
 const TIMING_EQUALIZER_HASH = '$2b$12$HlgReIVskPRRIFDGvS47oeqqKbNUqNQAzAUD8AR1l9NSG1SKXl7Mq';
 
-/** The private "Thoughts" diary every new account starts with. */
-export function defaultDiaryFor(userId: number): Partial<Diary> {
-  return {
-    userId,
-    name: 'Thoughts',
-    icon: '💭',
-    color: getDefaultDiaryColor(0),
-    isDefault: true,
-    visibility: 'private',
-  };
-}
-
 /**
  * Signing in: registration without email verification (only where no mail server is configured,
  * outside production; see `SignUpService`) and password login (with the two-factor step), and
- * Google and Keycloak sign-in, which link or create the account. Each ends in a new session from
- * `AuthSessionService`; a new account gets its default diary.
+ * Google and Keycloak sign-in, whose account `ProviderAccountService` finds, links or creates.
+ * Each ends in a new session from `AuthSessionService`; a new account gets its default diary.
  */
 @Injectable()
 export class AuthService {
@@ -57,6 +46,7 @@ export class AuthService {
     private readonly sessionService: AuthSessionService,
     private readonly identityVerification: IdentityVerificationService,
     private readonly twoFactorService: TwoFactorService,
+    private readonly providerAccounts: ProviderAccountService,
   ) {}
 
   async register(dto: RegisterDto): Promise<IssuedSession> {
@@ -137,86 +127,28 @@ export class AuthService {
   }
 
   async oauthLogin(dto: OAuthDto): Promise<IssuedSession> {
-    const identity = await this.identityVerification.verifyGoogleCredential(dto.credential);
-
-    let user = await this.userRepository.findOne({
-      where: { authProvider: 'google', providerId: identity.sub },
+    const { sub, email, name, picture } = await this.identityVerification.verifyGoogleCredential(
+      dto.credential,
+    );
+    const { user, isNewUser } = await this.providerAccounts.signIn({
+      provider: 'google',
+      subject: sub,
+      email,
+      suggestedUsername: name,
+      avatarUrl: picture,
     });
-
-    let isNewUser = false;
-
-    if (user) {
-      if (user.deletedAt) {
-        throw apiError(ForbiddenException, 'AUTH_ACCOUNT_DELETED');
-      }
-    } else {
-      // Google verified this address, so an account registered with it is linked
-      const existingUser = await this.userRepository.findOne({
-        where: { email: identity.email },
-      });
-
-      if (existingUser) {
-        if (existingUser.deletedAt) {
-          throw apiError(ForbiddenException, 'AUTH_ACCOUNT_DELETED');
-        }
-
-        existingUser.authProvider = 'google';
-        existingUser.providerId = identity.sub;
-        existingUser.avatarUrl = identity.picture || existingUser.avatarUrl;
-        existingUser.emailVerified = true;
-        user = await this.userRepository.save(existingUser);
-      } else {
-        // Create new user
-        isNewUser = true;
-        const emailName = identity.email.split('@')[0].substring(0, 50);
-        const username = sanitizeString((identity.name || '').trim()).substring(0, 50);
-        user = await this.userRepository.save({
-          username: username || emailName,
-          email: identity.email,
-          authProvider: 'google',
-          providerId: identity.sub,
-          avatarUrl: identity.picture,
-          emailVerified: true,
-        });
-
-        await this.createDefaultDiary(user.id);
-      }
-    }
-
     return this.sessionService.createSession(user, isNewUser);
   }
 
   async keycloakLogin(accessToken?: string): Promise<IssuedSession> {
     const { subject, email, preferredUsername } =
       await this.identityVerification.verifyKeycloakAccessToken(accessToken);
-
-    let user = await this.userRepository.findOne({
-      where: { authProvider: 'keycloak', providerId: subject },
+    const { user, isNewUser } = await this.providerAccounts.signIn({
+      provider: 'keycloak',
+      subject,
+      email,
+      suggestedUsername: preferredUsername,
     });
-    let isNewUser = false;
-
-    user ??= await this.userRepository.findOne({ where: { email } });
-    if (user?.deletedAt) {
-      throw apiError(ForbiddenException, 'AUTH_ACCOUNT_DELETED');
-    }
-
-    if (user) {
-      user.authProvider = 'keycloak';
-      user.providerId = subject;
-      user.emailVerified = true;
-      user = await this.userRepository.save(user);
-    } else {
-      isNewUser = true;
-      user = await this.userRepository.save({
-        username: preferredUsername.substring(0, 50),
-        email,
-        authProvider: 'keycloak',
-        providerId: subject,
-        emailVerified: true,
-      });
-      await this.createDefaultDiary(user.id);
-    }
-
     return this.sessionService.createSession(user, isNewUser);
   }
 

@@ -79,12 +79,19 @@ export interface ContractApi {
 
 /**
  * Makes `fetch` (OpenRouter, Google, cloud drives, the flag provider) fail as an unreachable
- * network does, so no spec ever calls the internet, and records what was tried. Returns the undo.
+ * network does, so no spec ever calls the internet, and records what was tried. A URL in
+ * `answers` gets its JSON instead, from no network either. Returns the undo.
  */
-function blockOutboundFetch(blockedRequests: string[]): () => void {
+function blockOutboundFetch(
+  blockedRequests: string[],
+  answers: Record<string, unknown> = {},
+): () => void {
   const original = globalThis.fetch;
   globalThis.fetch = (input: string | URL | Request) => {
     const url = input instanceof Request ? input.url : String(input);
+    if (Object.hasOwn(answers, url)) {
+      return Promise.resolve(Response.json(answers[url]));
+    }
     blockedRequests.push(url);
     return Promise.reject(
       new TypeError(`fetch failed: outbound request to ${url} blocked by the contract specs`),
@@ -117,6 +124,11 @@ export interface ContractApiOptions {
    * when it closes: a suite that mocks a service (such as the SMTP transport) switches it on here.
    */
   env?: Record<string, string>;
+  /**
+   * Outside URLs answered with this JSON instead of failing, such as the signing keys of a fake
+   * Google or Keycloak, so a suite can sign in with tokens it signed itself.
+   */
+  outboundJson?: Record<string, unknown>;
 }
 
 /** Sets the given environment variables and returns how to put back what they were. */
@@ -135,7 +147,7 @@ export async function startContractApi(options: ContractApiOptions = {}): Promis
   const database = await createPostgresTestDatabase();
   const storage = new FakeObjectStorage();
   const blockedRequests: string[] = [];
-  const restoreFetch = blockOutboundFetch(blockedRequests);
+  const restoreFetch = blockOutboundFetch(blockedRequests, options.outboundJson);
   let restoreEnv = () => {};
   try {
     pointAtDatabase(database.url);

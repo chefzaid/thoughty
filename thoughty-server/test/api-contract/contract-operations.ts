@@ -13,8 +13,6 @@ export const CONTRACT_SUITES = {
     'POST /api/auth/two-factor/setup',
     'POST /api/auth/two-factor/enable',
     'POST /api/auth/two-factor/disable',
-    'POST /api/auth/oauth',
-    'GET /api/auth/sso',
     'POST /api/auth/refresh',
     'POST /api/auth/logout',
     'GET /api/auth/sessions',
@@ -27,6 +25,7 @@ export const CONTRACT_SUITES = {
     'POST /api/auth/delete-account',
   ],
   'sign-up': ['POST /api/auth/register', 'POST /api/auth/register/complete'],
+  'provider-sign-in': ['POST /api/auth/oauth', 'GET /api/auth/sso'],
   'password-reset': ['POST /api/auth/forgot-password', 'POST /api/auth/reset-password'],
   entries: [
     'GET /api/entries',

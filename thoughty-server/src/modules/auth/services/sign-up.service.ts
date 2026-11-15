@@ -15,9 +15,11 @@ import { apiError } from '@/common/errors';
 import { Diary, SignUpRequest, User } from '@/database/entities';
 import { CompleteSignUpDto, RegisterDto, SignUpStartedResponseDto } from '../dto';
 import { assertHumanAuthAttempt } from './auth-bot-protection';
-import { AuthService, defaultDiaryFor } from './auth.service';
+import { AuthService } from './auth.service';
 import { AuthSessionService, type IssuedSession } from './auth-session.service';
+import { defaultDiaryFor } from './default-diary';
 import { EmailService, describeEmailFailure } from './email.service';
+import { freeUsername, takenConflict, uniqueViolationOf } from './free-username';
 
 /** How long a sign-up link works. */
 export const SIGN_UP_LINK_TTL_MS = 24 * 60 * 60 * 1000;
@@ -25,9 +27,6 @@ export const SIGN_UP_LINK_TTL_MS = 24 * 60 * 60 * 1000;
 export const SIGN_UP_EMAIL_INTERVAL_MS = 60 * 1000;
 /** The most sign-up emails one address gets until its request expires. */
 export const SIGN_UP_EMAILS_PER_ADDRESS = 5;
-/** Tries at finding a free username from the address before asking the writer for one. */
-const USERNAME_ATTEMPTS = 5;
-const UNIQUE_VIOLATION = '23505';
 
 const SIGN_UP_STARTED: SignUpStartedResponseDto = {
   verificationRequired: true,
@@ -107,7 +106,7 @@ export class SignUpService {
     if (chosen && (await this.userRepository.exists({ where: { username: chosen } }))) {
       throw apiError(ConflictException, 'AUTH_USERNAME_TAKEN');
     }
-    const username = chosen ?? (await this.freeUsernameFor(request.email));
+    const username = chosen ?? (await freeUsername(this.userRepository, request.email.split('@')[0]));
 
     const user = await this.createAccount(request, username);
     return this.sessionService.createSession(user, true);
@@ -173,19 +172,6 @@ export class SignUpService {
     });
   }
 
-  /** The part of the address before the `@`, or that with a number when it is taken. */
-  private async freeUsernameFor(email: string): Promise<string> {
-    const base = email.split('@')[0].substring(0, 50);
-    for (let attempt = 0; attempt < USERNAME_ATTEMPTS; attempt += 1) {
-      const candidate =
-        attempt === 0 ? base : `${base.substring(0, 43)}-${crypto.randomInt(100000, 1000000)}`;
-      if (!(await this.userRepository.exists({ where: { username: candidate } }))) {
-        return candidate;
-      }
-    }
-    throw apiError(ConflictException, 'AUTH_USERNAME_TAKEN');
-  }
-
   /**
    * Deletes the request and creates the verified account with its default diary in one
    * transaction. Claiming the request first keeps the link single-use when two requests race; a
@@ -214,14 +200,8 @@ export class SignUpService {
         return user;
       });
     } catch (error) {
-      const { code, constraint } = error as { code?: string; constraint?: string };
-      if (code === UNIQUE_VIOLATION) {
-        throw apiError(
-          ConflictException,
-          constraint?.includes('username') ? 'AUTH_USERNAME_TAKEN' : 'AUTH_EMAIL_TAKEN',
-        );
-      }
-      throw error;
+      const constraint = uniqueViolationOf(error);
+      throw constraint === undefined ? error : takenConflict(constraint);
     }
   }
 }

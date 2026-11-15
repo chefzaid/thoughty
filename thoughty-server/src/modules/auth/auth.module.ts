@@ -14,6 +14,7 @@ import {
   EmailVerificationService,
   IdentityVerificationService,
   PasswordService,
+  ProviderAccountService,
   SignUpService,
   TwoFactorService,
 } from './services';
@@ -45,6 +46,7 @@ import { getSigningSecret } from './auth-secrets';
     AuthSessionService,
     IdentityVerificationService,
     PasswordService,
+    ProviderAccountService,
     AccountService,
     EmailService,
     EmailVerificationService,

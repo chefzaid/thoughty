@@ -87,7 +87,7 @@ describe('AuthService Google and Keycloak sign-in', () => {
     });
 
     it('logs in the user linked to the verified Google subject', async () => {
-      userRepository.findOne.mockResolvedValue({ ...mockUser, authProvider: 'google' });
+      userRepository.findOne.mockResolvedValue({ ...mockUser, authProvider: 'google', emailVerified: true });
 
       const result = await oauth(googleCredential());
 
@@ -99,7 +99,7 @@ describe('AuthService Google and Keycloak sign-in', () => {
     });
 
     it('accepts the bare accounts.google.com issuer', async () => {
-      userRepository.findOne.mockResolvedValue({ ...mockUser, authProvider: 'google' });
+      userRepository.findOne.mockResolvedValue({ ...mockUser, authProvider: 'google', emailVerified: true });
 
       await expect(
         oauth(googleCredential({}, { issuer: 'accounts.google.com' })),
@@ -112,8 +112,8 @@ describe('AuthService Google and Keycloak sign-in', () => {
       await expect(oauth(googleCredential())).rejects.toThrow(ForbiddenException);
     });
 
-    it('links a verified Google identity to the account with that email', async () => {
-      const existingUser = { ...mockUser };
+    it('links a verified Google identity to the verified account with that email', async () => {
+      const existingUser = { ...mockUser, emailVerified: true };
       userRepository.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(existingUser);
       userRepository.save.mockImplementation((user: any) => Promise.resolve(user));
 
@@ -128,9 +128,22 @@ describe('AuthService Google and Keycloak sign-in', () => {
           providerId: 'google-sub-123',
           avatarUrl: 'https://lh3.googleusercontent.com/avatar',
           emailVerified: true,
+          passwordHash: 'hashed_password',
         }),
       );
       expect(result.user.emailVerified).toBe(true);
+    });
+
+    it('takes over an unverified account with that email for the Google user, dropping its password', async () => {
+      userRepository.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({ ...mockUser });
+      userRepository.save.mockImplementation((user: any) => Promise.resolve(user));
+
+      const result = await oauth(googleCredential());
+
+      expect(userRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ providerId: 'google-sub-123', emailVerified: true, passwordHash: null }),
+      );
+      expect(result.user).toMatchObject({ id: mockUser.id, authProvider: 'google', emailVerified: true });
     });
 
     it('creates a new user from the verified claims only', async () => {
@@ -232,7 +245,7 @@ describe('AuthService Google and Keycloak sign-in', () => {
 
     it('verifies and links a Keycloak identity before creating a local session', async () => {
       mockVerifiedIdentity();
-      userRepository.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({ ...mockUser });
+      userRepository.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({ ...mockUser, emailVerified: true });
       userRepository.save.mockImplementation((user: any) => Promise.resolve(user));
       refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
 
