@@ -4,8 +4,15 @@ import { fulfillApiError, fulfillJson, type RouteContext } from "./mockApp.route
 /** The token of the link the mock "emails" on every forgot-password request. */
 export const MOCK_RESET_TOKEN = "reset-token";
 
-/** The API's password rule (`ResetPasswordDto`). */
+/** The API's password rule (`@StrongPassword()`), for every password a writer chooses. */
 const STRONG_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
+
+/** Answers as the API does when a chosen password breaks its rule; `true` when it did. */
+export async function refuseWeakPassword(route: RouteContext["route"], password: string | undefined): Promise<boolean> {
+  if (STRONG_PASSWORD.test(password ?? "")) return false;
+  await fulfillApiError(route, 400, "AUTH_WEAK_PASSWORD", "Password must be at least 8 characters");
+  return true;
+}
 
 /** Password reset state for the mock API, as `forgot-password`, `reset-password` and sign-in see it. */
 export interface MockPasswordResetState {
@@ -16,6 +23,8 @@ export interface MockPasswordResetState {
   linkUsed: boolean;
   /** The password set from a link; once set, signing in with another one is refused. */
   newPassword: string | null;
+  /** The latest change of password from the profile. */
+  lastChangePayload: { currentPassword?: string; newPassword?: string } | null;
 }
 
 const resetStates = new WeakMap<MockAppState, MockPasswordResetState>();
@@ -23,13 +32,13 @@ const resetStates = new WeakMap<MockAppState, MockPasswordResetState>();
 export function passwordResetState(state: MockAppState): MockPasswordResetState {
   let reset = resetStates.get(state);
   if (!reset) {
-    reset = { forgotEmails: [], lastResetPayload: null, linkUsed: false, newPassword: null };
+    reset = { forgotEmails: [], lastResetPayload: null, linkUsed: false, newPassword: null, lastChangePayload: null };
     resetStates.set(state, reset);
   }
   return reset;
 }
 
-/** Forgot and reset password, and a sign-in that checks the password a reset set. */
+/** Forgot, reset and change password, and a sign-in that checks the password a reset set. */
 export async function handlePasswordResetRoutes({ route, request, pathname, state }: RouteContext): Promise<boolean> {
   const reset = passwordResetState(state);
 
@@ -48,15 +57,20 @@ export async function handlePasswordResetRoutes({ route, request, pathname, stat
       await fulfillApiError(route, 400, "AUTH_INVALID_RESET_TOKEN", "Invalid or expired reset token");
       return true;
     }
-    if (!STRONG_PASSWORD.test(payload.newPassword ?? "")) {
-      await fulfillApiError(route, 400, "VALIDATION_FAILED", "Password must contain at least one uppercase letter");
-      return true;
-    }
+    if (await refuseWeakPassword(route, payload.newPassword)) return true;
     reset.linkUsed = true;
     reset.newPassword = payload.newPassword ?? null;
     // Every session of the account is revoked
     state.authenticated = false;
     await fulfillJson(route, { success: true, message: "Password reset successfully" });
+    return true;
+  }
+
+  if (pathname === "/api/auth/change-password") {
+    const payload = request.postDataJSON() as NonNullable<MockPasswordResetState["lastChangePayload"]>;
+    reset.lastChangePayload = payload;
+    if (await refuseWeakPassword(route, payload.newPassword)) return true;
+    await fulfillJson(route, { success: true, message: "Password changed successfully" });
     return true;
   }
 

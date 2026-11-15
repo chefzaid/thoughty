@@ -41,7 +41,7 @@ export class SignUpController {
     description: `No mail server, outside production only: registered and signed in. ${REFRESH_COOKIE_NOTE}`,
     type: AuthResponseDto,
   })
-  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 400, description: 'Validation error; a password too weak is `AUTH_WEAK_PASSWORD`' })
   @ApiResponse({ status: 409, description: 'Email or username taken (only when signed in at once)' })
   @ApiResponse({
     status: 503,

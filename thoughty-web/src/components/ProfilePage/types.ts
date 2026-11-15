@@ -1,6 +1,7 @@
 import type { FontFamilyPreference, LetterSpacingPreference, LineSpacingPreference, TranslationFunction } from '../../types';
 import type { User } from '../../contexts/authTypes';
 import { formatEntryDate } from '../../utils/entryDate';
+import { validateNewPassword } from '../AuthPage/types';
 
 export type { TranslationFunction };
 
@@ -89,9 +90,8 @@ export const validatePasswordChange = ({
   t: TranslationFunction;
 }): string => {
   if (!currentPassword || !newPassword) return t('currentAndNewPasswordRequired');
-  if (newPassword.length < 6) return t('passwordMinLength');
-  if (newPassword !== confirmNewPassword) return t('passwordsDoNotMatch');
-  return '';
+  // The rule and the confirmation, as sign-up, the reset page and the API check a new password
+  return validateNewPassword({ password: newPassword, confirmPassword: confirmNewPassword, t });
 };
 
 export const validateDeleteAccount = ({

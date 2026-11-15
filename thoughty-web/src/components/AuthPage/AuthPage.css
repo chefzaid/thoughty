@@ -456,3 +456,16 @@
         font-size: 1.75rem;
     }
 }
+
+/* The rule a field's value must follow (the password one), under the field */
+.auth-field-hint {
+    margin: 0.5rem 0 0;
+    color: #cbd5e1;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.auth-page.light .auth-field-hint {
+    color: #334155;
+}

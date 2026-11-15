@@ -1,4 +1,5 @@
 import type { components } from '../generated/openapi';
+import { PASSWORD_SYMBOLS } from './passwordRule';
 import type { Language } from './translations';
 
 /** The stable `code` the API sends with each error (docs/architecture.md, "API error codes"). */
@@ -43,6 +44,7 @@ export const apiErrorsTranslations: Record<Language, Record<ApiErrorTranslationK
     apiError_AUTH_PASSWORD_REQUIRED: 'Enter your password to delete your account.',
     apiError_AUTH_PASSWORD_NOT_SET: 'This account has no password to change, as it signs in with another provider.',
     apiError_AUTH_CURRENT_PASSWORD_INCORRECT: 'Your current password is incorrect.',
+    apiError_AUTH_WEAK_PASSWORD: `This password is too weak. Use at least 8 characters, with an uppercase letter, a lowercase letter, a number and one of these symbols: ${PASSWORD_SYMBOLS}`,
     apiError_AUTH_INVALID_RESET_TOKEN: 'This password reset link is invalid, has expired, or was already used.',
     apiError_AUTH_INVALID_VERIFICATION_TOKEN: 'This verification link is invalid or has expired.',
     apiError_AUTH_INVALID_SIGN_UP_TOKEN: 'This sign-up link is invalid, has expired, or was already used.',
@@ -185,6 +187,7 @@ export const apiErrorsTranslations: Record<Language, Record<ApiErrorTranslationK
     apiError_AUTH_PASSWORD_REQUIRED: 'Saisissez votre mot de passe pour supprimer votre compte.',
     apiError_AUTH_PASSWORD_NOT_SET: 'Ce compte n’a pas de mot de passe à modifier, car il se connecte avec un autre fournisseur.',
     apiError_AUTH_CURRENT_PASSWORD_INCORRECT: 'Votre mot de passe actuel est incorrect.',
+    apiError_AUTH_WEAK_PASSWORD: `Ce mot de passe est trop faible. Utilisez au moins 8 caractères, dont une majuscule, une minuscule, un chiffre et l’un de ces symboles : ${PASSWORD_SYMBOLS}`,
     apiError_AUTH_INVALID_RESET_TOKEN: 'Ce lien de réinitialisation est invalide, a expiré ou a déjà été utilisé.',
     apiError_AUTH_INVALID_VERIFICATION_TOKEN: 'Ce lien de vérification est invalide ou a expiré.',
     apiError_AUTH_INVALID_SIGN_UP_TOKEN: 'Ce lien d’inscription est invalide, a expiré ou a déjà été utilisé.',

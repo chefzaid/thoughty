@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../contexts/AuthContext';
+import { useLinkToken } from '../../hooks/useLinkToken';
 import type { TranslationFunction } from '../AuthPage/types';
 import '../AuthPage/AuthPage.css';
 import './VerifyEmailPage.css';
@@ -14,13 +15,29 @@ interface VerifyEmailPageProps {
 
 type VerificationState = 'verifying' | 'success' | 'error' | 'missing';
 
+/** What the page's history entry keeps once the link verified the address, so a reload still says so. */
+interface VerifiedEntryState {
+  emailVerified?: boolean;
+}
+
+/**
+ * The page the emailed verification link opens. The link's token is taken from the address and
+ * removed from it (and from the history entry) at once, so it is not left in the address bar, the
+ * history or a later referrer; a verification that went through is kept in the history entry's
+ * state instead, so reloading the page still shows it.
+ */
 function VerifyEmailPage({ t, theme, onContinue }: VerifyEmailPageProps) {
   const { verifyEmail } = useAuth();
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get('token')?.trim() ?? '';
-  const attemptedTokenRef = useRef<string | null>(null);
+  const token = useLinkToken();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [verifiedBefore] = useState(() => (location.state as VerifiedEntryState | null)?.emailVerified === true);
+  const attemptedRef = useRef(false);
   const mountedRef = useRef(true);
-  const [status, setStatus] = useState<VerificationState>(token ? 'verifying' : 'missing');
+  const [status, setStatus] = useState<VerificationState>(() => {
+    if (verifiedBefore) return 'success';
+    return token ? 'verifying' : 'missing';
+  });
 
   useEffect(() => {
     mountedRef.current = true;
@@ -37,16 +54,20 @@ function VerifyEmailPage({ t, theme, onContinue }: VerifyEmailPageProps) {
 
     setStatus('verifying');
     const result = await verifyEmail(token);
-    if (mountedRef.current) {
-      setStatus(result.success ? 'success' : 'error');
+    if (!mountedRef.current) return;
+    setStatus(result.success ? 'success' : 'error');
+    if (result.success) {
+      const verified: VerifiedEntryState = { emailVerified: true };
+      // The same address (its token already gone), now carrying the outcome
+      void navigate({ search: globalThis.location.search }, { replace: true, state: verified });
     }
-  }, [token, verifyEmail]);
+  }, [token, verifyEmail, navigate]);
 
   useEffect(() => {
-    if (attemptedTokenRef.current === token) return;
-    attemptedTokenRef.current = token;
+    if (attemptedRef.current || verifiedBefore) return;
+    attemptedRef.current = true;
     void runVerification();
-  }, [runVerification, token]);
+  }, [runVerification, verifiedBefore]);
 
   const messages = {
     verifying: 'verifyingEmail', success: 'emailVerificationSuccess',

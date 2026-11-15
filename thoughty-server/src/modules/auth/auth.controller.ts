@@ -360,6 +360,7 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Change user password' })
   @ApiResponse({ status: 200, description: 'Password changed successfully', type: SuccessMessageResponseDto })
+  @ApiResponse({ status: 400, description: 'New password too weak (`AUTH_WEAK_PASSWORD`), or no password set (`AUTH_PASSWORD_NOT_SET`)' })
   @ApiResponse({ status: 401, description: 'Unauthorized or incorrect current password' })
   async changePassword(
     @CurrentUser() user: AuthenticatedUser,
@@ -386,7 +387,10 @@ export class AuthController {
   @Throttle(throttleDefault(RATE_LIMITS.passwordRecovery))
   @ApiOperation({ summary: 'Reset password with token' })
   @ApiResponse({ status: 200, description: 'Password reset successfully', type: SuccessMessageResponseDto })
-  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid or expired token (`AUTH_INVALID_RESET_TOKEN`), or new password too weak (`AUTH_WEAK_PASSWORD`)',
+  })
   async resetPassword(
     @Body() dto: ResetPasswordDto,
   ): Promise<SuccessMessageResponseDto> {

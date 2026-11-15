@@ -1,5 +1,6 @@
 import type { MockAppState } from "./mockApp.shared";
 import { fulfillApiError, fulfillJson, type RouteContext } from "./mockApp.route-utils";
+import { refuseWeakPassword } from "./mockApp.password-reset";
 
 /** The token of the link the mock "emails" on every verify-first sign-up. */
 export const MOCK_SIGN_UP_TOKEN = "sign-up-token";
@@ -50,8 +51,9 @@ export async function handleSignUpRoutes({ route, request, pathname, state }: Ro
 
   if (pathname === "/api/auth/register") {
     const payload = request.postDataJSON() as SignUpPayload;
-    signUp.lastRegisterPayload = payload;
     signUp.registerCount += 1;
+    if (await refuseWeakPassword(route, payload.password)) return true;
+    signUp.lastRegisterPayload = payload;
     if (signUp.instant) {
       signIn(state, payload.email || "new@example.com", payload.username || "NewUser", false);
       await fulfillJson(route, { accessToken: "test-access-token", user: state.user }, { status: 201 });

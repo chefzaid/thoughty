@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState, type SubmitEvent } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useRef, useState, type SubmitEvent } from 'react';
 
 import { useAuth } from '../../contexts/AuthContext';
+import { useLinkToken } from '../../hooks/useLinkToken';
 import AuthStatusMessages from '../AuthPage/AuthStatusMessages';
 import ForgotPasswordForm from '../AuthPage/ForgotPasswordForm';
 import PasswordVisibilityToggle from '../AuthPage/PasswordVisibilityToggle';
@@ -34,8 +34,7 @@ const INVALID_LINK = 'apiError_AUTH_INVALID_RESET_TOKEN';
  */
 function ResetPasswordPage({ t, theme, onSignIn }: ResetPasswordPageProps) {
   const { resetPassword, forgotPassword, isAuthenticated, logout } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [token] = useState(() => searchParams.get('token')?.trim() ?? '');
+  const token = useLinkToken();
   const [step, setStep] = useState<Step>(token ? 'password' : 'newLink');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -48,12 +47,6 @@ function ResetPasswordPage({ t, theme, onSignIn }: ResetPasswordPageProps) {
   const isDark = theme !== 'light';
   const fieldClass = isDark ? 'dark' : 'light';
   const passwordType = showPassword ? 'text' : 'password';
-
-  useEffect(() => {
-    if (searchParams.has('token')) {
-      setSearchParams({}, { replace: true });
-    }
-  }, [searchParams, setSearchParams]);
 
   const goTo = (next: Step): void => {
     setStep(next);

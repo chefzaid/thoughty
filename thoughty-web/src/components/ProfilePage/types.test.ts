@@ -103,8 +103,8 @@ describe('ProfilePage types utilities', () => {
     it('returns error when current password is empty', () => {
       const result = validatePasswordChange({
         currentPassword: '',
-        newPassword: 'newpass123',
-        confirmNewPassword: 'newpass123',
+        newPassword: 'Newpass123!',
+        confirmNewPassword: 'Newpass123!',
         t,
       });
       expect(result).toBe('currentAndNewPasswordRequired');
@@ -120,20 +120,30 @@ describe('ProfilePage types utilities', () => {
       expect(result).toBe('currentAndNewPasswordRequired');
     });
 
-    it('returns error when new password is too short', () => {
+    it.each(['Short1!', 'newpass123', 'Newpass123-_'])('refuses %s as the API does, with its rule', (newPassword) => {
       const result = validatePasswordChange({
         currentPassword: 'current',
-        newPassword: '12345',
-        confirmNewPassword: '12345',
+        newPassword,
+        confirmNewPassword: newPassword,
         t,
       });
-      expect(result).toBe('passwordMinLength');
+      expect(result).toBe('passwordTooWeak');
+    });
+
+    it('asks for the confirmation when it is empty', () => {
+      const result = validatePasswordChange({
+        currentPassword: 'current',
+        newPassword: 'Newpass123!',
+        confirmNewPassword: '',
+        t,
+      });
+      expect(result).toBe('confirmPasswordPlaceholder');
     });
 
     it('returns error when passwords do not match', () => {
       const result = validatePasswordChange({
         currentPassword: 'current',
-        newPassword: 'newpass123',
+        newPassword: 'Newpass123!',
         confirmNewPassword: 'different',
         t,
       });
@@ -143,8 +153,8 @@ describe('ProfilePage types utilities', () => {
     it('returns empty string when validation passes', () => {
       const result = validatePasswordChange({
         currentPassword: 'current',
-        newPassword: 'newpass123',
-        confirmNewPassword: 'newpass123',
+        newPassword: 'Newpass123!',
+        confirmNewPassword: 'Newpass123!',
         t,
       });
       expect(result).toBe('');

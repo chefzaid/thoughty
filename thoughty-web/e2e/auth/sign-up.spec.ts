@@ -41,16 +41,21 @@ test.describe('Verify-first sign-up', () => {
     await expect.poll(() => state.signUp.registerCount).toBe(2);
     expect(state.signUp.lastRegisterPayload).toMatchObject({ email: 'newwriter@example.com', username: 'NewWriter', password: 'Writer123!' });
 
-    // The emailed link
+    // The emailed link: its token leaves the address and the history entry at once. (The requests the
+    // page makes while it loads are sent without a referrer by the production NGINX, which the Vite
+    // server here does not mirror: securityHeaders.test.js checks that header.)
     await page.goto(`/complete-sign-up?token=${MOCK_SIGN_UP_TOKEN}`);
     await expect(page.getByRole('heading', { name: 'Finish creating your account' })).toBeVisible();
+    await expect(page).toHaveURL(/\/complete-sign-up$/);
     await expectNoAccessibilityViolations(page);
     await page.getByRole('textbox', { name: 'Password' }).fill('Wrong123!');
     await page.getByRole('button', { name: 'Create my account' }).click();
     await expect(page.getByText('Incorrect password.')).toBeVisible();
 
     await page.getByRole('textbox', { name: 'Password' }).fill('Writer123!');
+    const completeRequest = page.waitForRequest('**/api/auth/register/complete');
     await page.getByRole('button', { name: 'Create my account' }).click();
+    expect((await completeRequest).headers()['referer'] ?? '').not.toContain(MOCK_SIGN_UP_TOKEN);
     await expect(page.getByText('That username is already taken. Choose another one to finish.')).toBeVisible();
     await page.getByRole('textbox', { name: 'Username' }).fill('NewWriter2');
     await page.getByRole('button', { name: 'Create my account' }).click();
@@ -83,6 +88,16 @@ test.describe('Verify-first sign-up', () => {
     await expectNoAccessibilityViolations(page);
     await page.getByRole('button', { name: 'Sign up again' }).click();
     await expect(page).toHaveURL(/\/register$/);
+  });
+
+  test('asks to open the link again once a reload has taken its token', async ({ page }) => {
+    await setupMockApp(page);
+    await page.goto(`/complete-sign-up?token=${MOCK_SIGN_UP_TOKEN}`);
+    await expect(page).toHaveURL(/\/complete-sign-up$/);
+
+    await page.reload();
+    await expect(page.getByText('This sign-up link is incomplete. Open the link from your email again.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Sign up again' })).toBeVisible();
   });
 
   test('explains a link that lost its token', async ({ page }) => {

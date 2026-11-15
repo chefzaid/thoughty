@@ -29,7 +29,6 @@ export type AuthTranslationKey =
   | "dontHaveAccount"
   | "alreadyHaveAccount"
   | "invalidEmail"
-  | "passwordMinLength"
   | "passwordsDoNotMatch"
   | "authFailed"
   | "googleSignInFailed"
@@ -78,7 +77,6 @@ export const authTranslations: Record<Language, Record<AuthTranslationKey, strin
     dontHaveAccount: "Don't have an account?",
     alreadyHaveAccount: "Already have an account?",
     invalidEmail: "Please enter a valid email address",
-    passwordMinLength: "Password must be at least 6 characters",
     passwordsDoNotMatch: "Passwords do not match",
     authFailed: "Authentication failed. Please try again.",
     googleSignInFailed: "Google sign-in failed. Please try again.",
@@ -129,7 +127,6 @@ export const authTranslations: Record<Language, Record<AuthTranslationKey, strin
     dontHaveAccount: "Vous n'avez pas de compte ?",
     alreadyHaveAccount: "Vous avez déjà un compte ?",
     invalidEmail: "Veuillez entrer une adresse email valide",
-    passwordMinLength: "Le mot de passe doit contenir au moins 6 caractères",
     passwordsDoNotMatch: "Les mots de passe ne correspondent pas",
     authFailed: "Échec de l'authentification. Veuillez réessayer.",
     googleSignInFailed: "Échec de la connexion Google. Veuillez réessayer.",

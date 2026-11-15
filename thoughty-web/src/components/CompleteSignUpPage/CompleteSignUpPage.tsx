@@ -1,7 +1,7 @@
 import { useState, type SubmitEvent } from 'react';
-import { useSearchParams } from 'react-router-dom';
 
 import { useAuth } from '../../contexts/AuthContext';
+import { useLinkToken } from '../../hooks/useLinkToken';
 import AuthStatusMessages from '../AuthPage/AuthStatusMessages';
 import type { TranslationFunction } from '../AuthPage/types';
 import '../AuthPage/AuthPage.css';
@@ -23,12 +23,13 @@ const USERNAME_TAKEN = 'apiError_AUTH_USERNAME_TAKEN';
 /**
  * The page the emailed sign-up link opens. It creates the account once the writer enters the
  * password they chose on the sign-up form, so a link sent to an address someone else signed up
- * with is of no use to them. A username taken since is asked for here.
+ * with is of no use to them. A username taken since is asked for here. The link's token is taken
+ * from the address and removed from it (and from the history entry) at once, so it is not left in
+ * the address bar, the history or a later referrer; a reload then asks to open the link again.
  */
 function CompleteSignUpPage({ t, theme, onComplete, onSignUp, onSignIn }: CompleteSignUpPageProps) {
   const { completeSignUp } = useAuth();
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get('token')?.trim() ?? '';
+  const token = useLinkToken();
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [needsUsername, setNeedsUsername] = useState(false);

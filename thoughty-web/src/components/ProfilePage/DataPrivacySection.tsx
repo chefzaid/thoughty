@@ -1,5 +1,6 @@
 import { useId, useState, type ComponentProps } from 'react';
 import type { TranslationFunction } from './types';
+import { PASSWORD_SYMBOLS } from '../AuthPage/types';
 import './DataPrivacySection.css';
 import ActiveSessionsSection from './ActiveSessionsSection';
 import TwoFactorSection from './TwoFactorSection';
@@ -15,6 +16,9 @@ interface PasswordFieldProps {
   isVisible: boolean;
   setVisible: (value: boolean) => void;
   t: TranslationFunction;
+  /** The rule the value must follow, under the field. */
+  hint?: string;
+  autoComplete: 'current-password' | 'new-password';
 }
 
 interface PasswordSectionProps {
@@ -55,12 +59,14 @@ interface DeleteAccountSectionProps {
   t: TranslationFunction;
 }
 
-function PasswordField({ label, value, setValue, placeholder, isDark, isVisible, setVisible, t }: Readonly<PasswordFieldProps>) {
+function PasswordField({ label, value, setValue, placeholder, isDark, isVisible, setVisible, t, hint, autoComplete }: Readonly<PasswordFieldProps>) {
   const id = useId();
+  const hintId = `${id}-hint`;
   return (
     <div className="setting-row">
       <div className="setting-info">
         <label className="setting-label" htmlFor={id}>{label}</label>
+        {hint && <span id={hintId} className="setting-description">{hint}</span>}
       </div>
       <div className="api-key-input-container">
         <input
@@ -70,6 +76,8 @@ function PasswordField({ label, value, setValue, placeholder, isDark, isVisible,
           onChange={(e) => setValue?.(e.target.value)}
           placeholder={placeholder}
           className={`setting-input ${isDark ? 'dark' : 'light'}`}
+          autoComplete={autoComplete}
+          aria-describedby={hint ? hintId : undefined}
         />
         <button type="button" className="api-key-toggle" onClick={() => setVisible(!isVisible)} aria-label={isVisible ? t('hidePassword') : t('showPassword')}>
           {isVisible ? (
@@ -121,6 +129,7 @@ function PasswordSection({
           value={currentPassword}
           setValue={setCurrentPassword}
           placeholder={t('enterCurrentPassword')}
+          autoComplete="current-password"
           isDark={isDark}
           isVisible={showCurrentPassword}
           setVisible={setShowCurrentPassword}
@@ -131,6 +140,8 @@ function PasswordSection({
           value={newPassword}
           setValue={setNewPassword}
           placeholder={t('enterNewPassword')}
+          hint={t('passwordRequirements', { symbols: PASSWORD_SYMBOLS })}
+          autoComplete="new-password"
           isDark={isDark}
           isVisible={showNewPassword}
           setVisible={setShowNewPassword}
@@ -141,6 +152,7 @@ function PasswordSection({
           value={confirmNewPassword}
           setValue={setConfirmNewPassword}
           placeholder={t('confirmNewPasswordPlaceholder')}
+          autoComplete="new-password"
           isDark={isDark}
           isVisible={showConfirmPassword}
           setVisible={setShowConfirmPassword}

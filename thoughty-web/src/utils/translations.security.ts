@@ -131,7 +131,7 @@ export const securityTranslations: Record<Language, Record<SecurityTranslationKe
     emailVerificationSuccess: "Your email is verified.",
     emailVerificationInvalid:
       "This verification link is invalid or has expired.",
-    emailVerificationMissingToken: "This verification link is incomplete.",
+    emailVerificationMissingToken: "This verification link is incomplete. Open the link from your email again.",
     resendVerification: "Resend verification email",
     resendingVerification: "Sending...",
     verificationEmailSent: "Verification email sent.",
@@ -206,7 +206,7 @@ export const securityTranslations: Record<Language, Record<SecurityTranslationKe
     emailVerificationSuccess: "Votre email est vérifié.",
     emailVerificationInvalid:
       "Ce lien de vérification n'est pas valide ou a expiré.",
-    emailVerificationMissingToken: "Ce lien de vérification est incomplet.",
+    emailVerificationMissingToken: "Ce lien de vérification est incomplet. Ouvrez à nouveau le lien reçu par e-mail.",
     resendVerification: "Renvoyer l'email de vérification",
     resendingVerification: "Envoi...",
     verificationEmailSent: "Email de vérification envoyé.",

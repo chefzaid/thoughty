@@ -180,14 +180,14 @@ describe('AuthPage', () => {
 
         fireEvent.change(screen.getByLabelText('username'), { target: { value: 'testuser' } });
         fireEvent.change(screen.getByLabelText('email'), { target: { value: 'user@test.com' } });
-        fireEvent.change(screen.getByLabelText('password'), { target: { value: 'password123' } });
-        fireEvent.change(screen.getByLabelText('confirmPassword'), { target: { value: 'password123' } });
+        fireEvent.change(screen.getByLabelText('password'), { target: { value: 'Password123!' } });
+        fireEvent.change(screen.getByLabelText('confirmPassword'), { target: { value: 'Password123!' } });
         // Submit button changes text when in register mode
         const submitBtn = screen.getByRole('button', { name: 'signUp' });
         fireEvent.click(submitBtn);
 
         await waitFor(() => {
-            expect(mockRegister).toHaveBeenCalledWith('user@test.com', 'password123', 'testuser', '');
+            expect(mockRegister).toHaveBeenCalledWith('user@test.com', 'Password123!', 'testuser', '');
             expect(onAuthSuccess).toHaveBeenCalled();
         });
     });
@@ -324,14 +324,14 @@ describe('AuthPage', () => {
         fireEvent.click(screen.getByText('alreadyHaveAccount'));
     });
 
-    it('validates password length on login', async () => {
-        mockLogin.mockResolvedValue({ success: false, error: 'passwordMinLength' });
+    it('shows the refusal of a sign-in', async () => {
+        mockLogin.mockResolvedValue({ success: false, error: 'apiError_AUTH_INVALID_CREDENTIALS' });
         render(<AuthPage t={mockT} theme="dark" />);
         fireEvent.change(screen.getByLabelText('emailOrUsername'), { target: { value: 'user@test.com' } });
         fireEvent.change(screen.getByLabelText('password'), { target: { value: '123' } });
         fireEvent.click(screen.getByRole('button', { name: 'signIn' }));
         await waitFor(() => {
-            expect(screen.getByText('passwordMinLength')).toBeInTheDocument();
+            expect(screen.getByText('apiError_AUTH_INVALID_CREDENTIALS')).toBeInTheDocument();
         });
     });
 
@@ -341,8 +341,8 @@ describe('AuthPage', () => {
         fireEvent.click(screen.getByRole('button', { name: 'signUp' }));
         fireEvent.change(screen.getByLabelText('username'), { target: { value: 'testuser' } });
         fireEvent.change(screen.getByLabelText('email'), { target: { value: 'user@test.com' } });
-        fireEvent.change(screen.getByLabelText('password'), { target: { value: 'password123' } });
-        fireEvent.change(screen.getByLabelText('confirmPassword'), { target: { value: 'different123' } });
+        fireEvent.change(screen.getByLabelText('password'), { target: { value: 'Password123!' } });
+        fireEvent.change(screen.getByLabelText('confirmPassword'), { target: { value: 'Different123!' } });
         const signUpBtns = screen.getAllByRole('button', { name: 'signUp' });
         fireEvent.click(signUpBtns[0]!);
         await waitFor(() => {
@@ -356,8 +356,8 @@ describe('AuthPage', () => {
         fireEvent.click(screen.getByRole('button', { name: 'signUp' }));
         // Enter valid-looking email that will be checked by client-side regex
         fireEvent.change(screen.getByLabelText('email'), { target: { value: 'test@example.com' } });
-        fireEvent.change(screen.getByLabelText('password'), { target: { value: 'password123' } });
-        fireEvent.change(screen.getByLabelText('confirmPassword'), { target: { value: 'password123' } });
+        fireEvent.change(screen.getByLabelText('password'), { target: { value: 'Password123!' } });
+        fireEvent.change(screen.getByLabelText('confirmPassword'), { target: { value: 'Password123!' } });
         // Just verify the form is in registration mode
         expect(screen.getByText('createAccount')).toBeInTheDocument();
     });

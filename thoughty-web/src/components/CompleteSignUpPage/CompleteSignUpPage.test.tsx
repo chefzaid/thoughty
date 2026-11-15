@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -40,6 +40,19 @@ describe('CompleteSignUpPage', () => {
 
     expect(completeSignUp).toHaveBeenCalledWith('link-token', 'Pass123!@', undefined);
     expect(onComplete).toHaveBeenCalled();
+  });
+
+  it('takes the token out of the address and its history entry at once, and still sends it', async () => {
+    completeSignUp.mockResolvedValue({ success: true });
+    const lengthBefore = globalThis.history.length;
+    renderPage('/complete-sign-up?token=secret-token');
+
+    expect(globalThis.location.pathname).toBe('/complete-sign-up');
+    expect(globalThis.location.search).toBe('');
+    expect(globalThis.history.length).toBe(lengthBefore);
+    await userEvent.type(screen.getByLabelText('password'), 'Pass123!@');
+    await userEvent.click(screen.getByRole('button', { name: 'completeSignUpSubmit' }));
+    expect(completeSignUp).toHaveBeenCalledWith('secret-token', 'Pass123!@', undefined);
   });
 
   it('asks for the password before sending anything', async () => {
@@ -105,6 +118,20 @@ describe('CompleteSignUpPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'completeSignUpSubmit' }));
     expect(await screen.findByText('completeSignUpFailed')).toBeInTheDocument();
     expect(screen.getByLabelText('password')).toBeInTheDocument();
+  });
+
+  it('asks to open the link again after a reload, since the address no longer has its token', () => {
+    renderPage('/complete-sign-up?token=secret-token');
+    cleanup();
+
+    render(
+      <BrowserRouter>
+        <CompleteSignUpPage t={t} onComplete={vi.fn()} onSignUp={vi.fn()} onSignIn={vi.fn()} />
+      </BrowserRouter>,
+    );
+
+    expect(screen.getByText('completeSignUpMissingToken')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'signUpAgain' })).toBeInTheDocument();
   });
 
   it('explains a link without its token', () => {

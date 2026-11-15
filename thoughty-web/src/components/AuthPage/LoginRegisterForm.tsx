@@ -1,5 +1,5 @@
 import PasswordVisibilityToggle from './PasswordVisibilityToggle';
-import type { TranslationFunction } from './types';
+import { PASSWORD_SYMBOLS, type TranslationFunction } from './types';
 
 interface LoginRegisterFormProps {
   isLogin: boolean;
@@ -98,10 +98,17 @@ function LoginRegisterForm({
             onChange={(e) => setPassword(e.target.value)}
             placeholder={t('enterPassword')}
             className={isDark ? 'dark' : 'light'}
+            autoComplete={isLogin ? 'current-password' : 'new-password'}
+            aria-describedby={isLogin ? undefined : 'password-requirements'}
             required
           />
           <PasswordVisibilityToggle shown={showPassword} onToggle={() => setShowPassword(!showPassword)} t={t} />
         </div>
+        {!isLogin && (
+          <p id="password-requirements" className="auth-field-hint">
+            {t('passwordRequirements', { symbols: PASSWORD_SYMBOLS })}
+          </p>
+        )}
         {isLogin && (
           <button type="button" className="forgot-password-link" onClick={handleForgotPassword}>
             {t('forgotPassword')}
@@ -119,6 +126,7 @@ function LoginRegisterForm({
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder={t('confirmPasswordPlaceholder')}
             className={isDark ? 'dark' : 'light'}
+            autoComplete="new-password"
             required
           />
         </div>

@@ -8,6 +8,7 @@ import {
   MaxLength,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { STRONG_PASSWORD_DESCRIPTION, StrongPassword } from './strong-password.decorator';
 
 export class RegisterDto {
   @ApiProperty({ example: 'user@example.com' })
@@ -15,13 +16,8 @@ export class RegisterDto {
   @MaxLength(255)
   email: string;
 
-  @ApiProperty({ example: 'Password123!' })
-  @IsString()
-  @MinLength(8, { message: 'Password must be at least 8 characters' })
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/, {
-    message:
-      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
-  })
+  @ApiProperty({ example: 'Password123!', description: STRONG_PASSWORD_DESCRIPTION })
+  @StrongPassword()
   password: string;
 
   @ApiPropertyOptional({ example: 'johndoe' })
@@ -83,13 +79,8 @@ export class ChangePasswordDto {
   @IsString()
   currentPassword: string;
 
-  @ApiProperty()
-  @IsString()
-  @MinLength(8)
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/, {
-    message:
-      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
-  })
+  @ApiProperty({ description: STRONG_PASSWORD_DESCRIPTION })
+  @StrongPassword()
   newPassword: string;
 }
 
@@ -104,13 +95,8 @@ export class ResetPasswordDto {
   @IsString()
   token: string;
 
-  @ApiProperty()
-  @IsString()
-  @MinLength(8)
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/, {
-    message:
-      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
-  })
+  @ApiProperty({ description: STRONG_PASSWORD_DESCRIPTION })
+  @StrongPassword()
   newPassword: string;
 }
 

@@ -3,19 +3,22 @@ import { act, render, screen, fireEvent, waitFor } from '@testing-library/react'
 import AuthPage from './AuthPage';
 import { useAuth } from '../../contexts/AuthContext';
 import { SIGN_UP_RESEND_SECONDS } from './SignUpEmailSent';
+import { PASSWORD_SYMBOLS } from './types';
 
 vi.mock('../../contexts/AuthContext', () => ({ useAuth: vi.fn() }));
 
 const t = (key: string, params?: Record<string, string | number>): string =>
     params ? `${key} ${JSON.stringify(params)}` : key;
 
-function fillSignUp() {
+function fillSignUp(password = 'Pass123!@', confirmPassword = password) {
     fireEvent.change(screen.getByLabelText('username'), { target: { value: 'newbie' } });
     fireEvent.change(screen.getByLabelText('email'), { target: { value: 'new@example.com' } });
-    fireEvent.change(screen.getByLabelText('password'), { target: { value: 'Pass123!@' } });
-    fireEvent.change(screen.getByLabelText('confirmPassword'), { target: { value: 'Pass123!@' } });
+    fireEvent.change(screen.getByLabelText('password'), { target: { value: password } });
+    fireEvent.change(screen.getByLabelText('confirmPassword'), { target: { value: confirmPassword } });
     fireEvent.click(screen.getByRole('button', { name: 'signUp' }));
 }
+
+const RULE = JSON.stringify({ symbols: PASSWORD_SYMBOLS });
 
 describe('AuthPage verify-first sign-up', () => {
     let register: ReturnType<typeof vi.fn>;
@@ -50,6 +53,45 @@ describe('AuthPage verify-first sign-up', () => {
         expect(screen.getByText('signUpCheckEmailPassword')).toBeInTheDocument();
         expect(screen.queryByRole('button', { name: /continueWithGoogle/ })).not.toBeInTheDocument();
         expect(screen.queryByLabelText('password')).not.toBeInTheDocument();
+    });
+
+    it('states the password rule under the field, for sign-up only', () => {
+        const { rerender } = render(<AuthPage t={t} theme="dark" mode="register" />);
+        expect(screen.getByLabelText('password')).toHaveAccessibleDescription(`passwordRequirements ${RULE}`);
+        expect(screen.getByLabelText('password')).toHaveAttribute('autocomplete', 'new-password');
+
+        rerender(<AuthPage t={t} theme="dark" mode="login" />);
+        expect(screen.queryByText(`passwordRequirements ${RULE}`)).not.toBeInTheDocument();
+        expect(screen.getByLabelText('password')).not.toHaveAccessibleDescription();
+        expect(screen.getByLabelText('password')).toHaveAttribute('autocomplete', 'current-password');
+    });
+
+    it.each(['password123', 'Password123', 'Pass12!', 'Password123-_'])('refuses %s before sending it, with the rule', (password) => {
+        render(<AuthPage t={t} theme="dark" mode="register" />);
+        fillSignUp(password);
+
+        expect(screen.getByText(`passwordTooWeak ${RULE}`)).toBeInTheDocument();
+        expect(register).not.toHaveBeenCalled();
+    });
+
+    it('asks for the confirmation, then for one that matches', () => {
+        render(<AuthPage t={t} theme="dark" mode="register" />);
+        // The required field stops the browser; a submit without it is refused here too
+        screen.getByLabelText('confirmPassword').removeAttribute('required');
+        fillSignUp('Pass123!@', '');
+        expect(screen.getByText('confirmPasswordPlaceholder', { selector: '.auth-error' })).toBeInTheDocument();
+
+        fillSignUp('Pass123!@', 'Pass123!#');
+        expect(screen.getByText('passwordsDoNotMatch')).toBeInTheDocument();
+        expect(register).not.toHaveBeenCalled();
+    });
+
+    it('shows the API refusing a weak password in its own words', async () => {
+        register.mockResolvedValue({ success: false, error: 'apiError_AUTH_WEAK_PASSWORD' });
+        render(<AuthPage t={t} theme="dark" mode="register" />);
+        fillSignUp();
+
+        expect(await screen.findByText('apiError_AUTH_WEAK_PASSWORD')).toBeInTheDocument();
     });
 
     it('lets the writer ask for the email again once a minute has passed', async () => {

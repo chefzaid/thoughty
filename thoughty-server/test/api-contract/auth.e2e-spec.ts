@@ -48,6 +48,13 @@ describeContract('auth', (context) => {
       status: 409,
       code: 'AUTH_EMAIL_TAKEN',
     });
+    // A password that breaks only the rule says so, for the form to tell what to change
+    const weak = await call('POST /api/auth/register', {
+      json: { email: 'weak_auth@example.com', password: 'password123', username: 'weak_auth', website: '' },
+      status: 400,
+      code: 'AUTH_WEAK_PASSWORD',
+    });
+    expect(weak.body).toMatchObject({ message: expect.stringContaining('at least 8 characters') });
   });
 
   it('reads the signed-in writer and refuses a missing or forged token', async () => {
@@ -165,6 +172,12 @@ describeContract('auth', (context) => {
       json: { currentPassword: 'Wrong1234!', newPassword: CONTRACT_PASSWORD },
       status: 401,
       code: 'AUTH_CURRENT_PASSWORD_INCORRECT',
+    });
+    await call('POST /api/auth/change-password', {
+      as: alice,
+      json: { currentPassword: CONTRACT_PASSWORD, newPassword: 'changed1234' },
+      status: 400,
+      code: 'AUTH_WEAK_PASSWORD',
     });
     await call('POST /api/auth/change-password', {
       as: alice,

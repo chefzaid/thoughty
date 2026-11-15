@@ -11,8 +11,8 @@ test.describe('Authentication onboarding', () => {
 
     await page.locator('#username').fill('NewWriter');
     await page.locator('#email').fill('newwriter@example.com');
-    await page.locator('#password').fill('password123');
-    await page.locator('#confirmPassword').fill('password123');
+    await page.locator('#password').fill('Writer123!');
+    await page.locator('#confirmPassword').fill('Writer123!');
     await page.getByRole('button', { name: 'Sign Up' }).click();
 
     await expect.poll(() => state.signUp.lastRegisterPayload?.username).toBe('NewWriter');
@@ -33,14 +33,36 @@ test.describe('Authentication onboarding', () => {
     await expect(page).toHaveURL(/\/journal$/);
   });
 
-  test('verifies an email from the public link', async ({ page }) => {
+  test('verifies an email from the public link, which leaves the address at once and stays verified on a reload', async ({ page }) => {
     const { state } = await setupMockApp(page);
 
+    // The requests the page makes while it loads are sent without a referrer by the production
+    // NGINX, which the Vite server here does not mirror: securityHeaders.test.js checks that header
+    const verifyRequest = page.waitForRequest('**/api/auth/verify-email');
     await page.goto('/verify-email?token=email-token');
+    expect((await verifyRequest).headers()['referer'] ?? '').not.toContain('email-token');
 
     await expect(page.getByRole('heading', { name: 'Verify your email' })).toBeVisible();
     await expect(page.getByText('Your email is verified.')).toBeVisible();
+    await expect(page).toHaveURL(/\/verify-email$/);
     await expect.poll(() => state.lastVerificationToken).toBe('email-token');
+
+    state.lastVerificationToken = null;
+    await page.reload();
+    await expect(page.getByText('Your email is verified.')).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    expect(state.lastVerificationToken).toBeNull();
+  });
+
+  test('asks to open a verification link again once a reload has taken its token', async ({ page }) => {
+    await setupMockApp(page);
+
+    await page.goto('/verify-email?token=expired-token');
+    await expect(page.getByRole('alert')).toHaveText('This verification link is invalid or has expired.');
+    await expect(page).toHaveURL(/\/verify-email$/);
+
+    await page.reload();
+    await expect(page.getByRole('alert')).toHaveText('This verification link is incomplete. Open the link from your email again.');
   });
 
   test('resends verification from an unverified local profile', async ({ page }) => {

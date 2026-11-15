@@ -1,6 +1,7 @@
 // AuthPage types and utilities
 
 import type { TranslationFunction } from '../../types';
+import { PASSWORD_SYMBOLS, isStrongPassword } from '../../utils/passwordRule';
 
 export type { TranslationFunction };
 
@@ -27,14 +28,7 @@ export const validateForgotPassword = ({ email, t }: { email: string; t: Transla
   return '';
 };
 
-/**
- * The API's password rule (`RegisterDto`, `ResetPasswordDto` in thoughty-server): at least 8
- * characters, with a lowercase and an uppercase letter, a digit and one of `PASSWORD_SYMBOLS`.
- */
-const STRONG_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
-export const PASSWORD_SYMBOLS = '! @ # $ % ^ & * ( ) , . ? " : { } | < >';
-
-export const isStrongPassword = (password: string): boolean => STRONG_PASSWORD.test(password);
+export { PASSWORD_SYMBOLS, isStrongPassword };
 
 /** A new password and its confirmation, checked as the API will check them. */
 export const validateNewPassword = ({
@@ -76,12 +70,11 @@ export const validateRegister = ({
     [!username, t('enterUsername')],
     [!email, t('enterEmail')],
     [Boolean(email) && !isValidEmail(email), t('invalidEmail')],
-    [!password, t('enterPassword')],
-    [!confirmPassword, t('confirmPasswordPlaceholder')],
-    [Boolean(password) && Boolean(confirmPassword) && password !== confirmPassword, t('passwordsDoNotMatch')]
+    [!password, t('enterPassword')]
   ];
   const failedCheck = checks.find(([condition]) => condition);
-  return failedCheck ? failedCheck[1] : '';
+  // The password and its confirmation, as the reset page and the API check a new one
+  return failedCheck ? failedCheck[1] : validateNewPassword({ password, confirmPassword, t });
 };
 
 export interface ValidateAuthFormParams {

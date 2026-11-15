@@ -45,6 +45,8 @@ export const API_ERROR_MESSAGES = {
   AUTH_PASSWORD_REQUIRED: 'Password is required to delete account',
   AUTH_PASSWORD_NOT_SET: 'Cannot change password for OAuth accounts without existing password',
   AUTH_CURRENT_PASSWORD_INCORRECT: 'Current password is incorrect',
+  AUTH_WEAK_PASSWORD:
+    'Password must be at least 8 characters, with an uppercase and a lowercase letter, a number and one of !@#$%^&*(),.?":{}|<>',
   AUTH_INVALID_RESET_TOKEN: 'Invalid or expired reset token',
   AUTH_INVALID_VERIFICATION_TOKEN: 'Invalid or expired verification token',
   AUTH_INVALID_SIGN_UP_TOKEN: 'Invalid, expired, or already used sign-up link',
