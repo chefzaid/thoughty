@@ -12,6 +12,7 @@ import {
   useImportBodyParser,
   useTrustProxy,
 } from './common';
+import { SHARED_ROUTES_PATH, sharedResponseHeaders } from './modules/share-links/shared-response-headers.middleware';
 
 export interface ConfiguredApp {
   payloadLimits: RequestPayloadLimits;
@@ -19,10 +20,10 @@ export interface ConfiguredApp {
 }
 
 /**
- * Everything the API puts around its modules: proxy trust, security headers, body parsers,
- * compression, CORS, the `/api` prefix, the global validation pipe and the Swagger UI. `main.ts`
- * and the real-API contract specs (`test/api-contract`) both call it, so the specs run the API
- * exactly as it is deployed. The app must be created with `bodyParser: false`.
+ * Everything the API puts around its modules: proxy trust, security headers (a private share link's
+ * included), body parsers, compression, CORS, the `/api` prefix, the global validation pipe and the
+ * Swagger UI. `main.ts` and the real-API contract specs (`test/api-contract`) both call it, so the
+ * specs run the API exactly as it is deployed. The app must be created with `bodyParser: false`.
  */
 export function configureApp(app: NestExpressApplication): ConfiguredApp {
   const payloadLimits = getRequestPayloadLimits();
@@ -33,6 +34,8 @@ export function configureApp(app: NestExpressApplication): ConfiguredApp {
   // Security middleware
   app.use(attachCspNonce);
   app.use(helmet(buildHelmetOptions(process.env.NODE_ENV === 'production')));
+  // A private share link's headers, set before any guard, pipe or filter can answer (after helmet's)
+  app.use(SHARED_ROUTES_PATH, sharedResponseHeaders);
   useImportBodyParser(app, payloadLimits.importJson);
   app.useBodyParser('json', { limit: payloadLimits.json });
   app.useBodyParser('urlencoded', { extended: true, limit: payloadLimits.urlencoded });

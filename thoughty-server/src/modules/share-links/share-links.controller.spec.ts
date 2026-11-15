@@ -1,10 +1,8 @@
 import { PassThrough } from 'node:stream';
-import { lastValueFrom, of } from 'rxjs';
 import { NotFoundException } from '@nestjs/common';
 import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { ShareLinksController } from './share-links.controller';
 import { SharedContentController } from './shared-content.controller';
-import { SHARED_RESPONSE_HEADERS, SharedResponseHeadersInterceptor } from './shared-response-headers.interceptor';
 
 function fakeResponse() {
   const headers: Record<string, string> = {};
@@ -82,17 +80,5 @@ describe('SharedContentController', () => {
 
     attachments.openFile.mockRejectedValueOnce(new Error('gone'));
     await expectApiError(controller.poster('tok', 32, fakeResponse() as never), NotFoundException, 'SHARE_LINK_NOT_FOUND');
-  });
-});
-
-describe('SharedResponseHeadersInterceptor', () => {
-  it('marks every shared answer uncached, unindexed, without referrer and same-origin only', async () => {
-    const res = fakeResponse();
-    const context = { switchToHttp: () => ({ getResponse: () => res }) };
-
-    await expect(lastValueFrom(new SharedResponseHeadersInterceptor().intercept(context as never, { handle: () => of('body') }))).resolves.toBe('body');
-    expect(res.headers).toEqual(SHARED_RESPONSE_HEADERS);
-    expect(SHARED_RESPONSE_HEADERS).toEqual(expect.objectContaining({ 'Referrer-Policy': 'no-referrer', 'Cache-Control': 'no-store' }));
-    expect(SHARED_RESPONSE_HEADERS['X-Robots-Tag']).toContain('noindex');
   });
 });

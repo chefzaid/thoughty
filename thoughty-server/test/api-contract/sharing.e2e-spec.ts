@@ -1,3 +1,6 @@
+import request from 'supertest';
+import { RATE_LIMITS } from '../../src/common/rate-limit.constants';
+import { SHARED_RESPONSE_HEADERS } from '../../src/modules/share-links/shared-response-headers.middleware';
 import { describeContract } from './contract-suite';
 import { createEntry, defaultDiaryId, PNG_PIXEL, todayIso } from './contract-fixtures';
 import { jpegOf, VIDEO_HEADS } from '../../src/modules/attachments/video-fixtures.test-helpers';
@@ -6,6 +9,10 @@ import type { ContractUser } from './contract-client';
 const MP4_CLIP = Buffer.concat([VIDEO_HEADS.mp4, Buffer.from('moov and mdat of a very short clip')]);
 const POSTER = jpegOf(320, 180);
 const inDays = (days: number) => new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+const SHARED_HEADERS = Object.fromEntries(Object.entries(SHARED_RESPONSE_HEADERS).map(([name, value]) => [name.toLowerCase(), value]));
+/** The four headers every `/api/shared/…` answer must carry, as one answer has them. */
+const sharedHeadersOf = (headers: Record<string, string>) =>
+  Object.fromEntries(Object.keys(SHARED_HEADERS).map((name) => [name, headers[name]]));
 
 interface CreatedLink {
   id: number;
@@ -64,9 +71,7 @@ describeContract('sharing', (context) => {
 
     // No access token: the reader only has the link
     const opened = await call('GET /api/shared/{token}', { params: { token: link.token }, status: 200 });
-    expect(opened.headers['cache-control']).toBe('no-store');
-    expect(opened.headers['referrer-policy']).toBe('no-referrer');
-    expect(opened.headers['x-robots-tag']).toContain('noindex');
+    expect(sharedHeadersOf(opened.headers as Record<string, string>)).toEqual(SHARED_HEADERS);
     expect(opened.body).toEqual({
       kind: 'entry',
       expiresAt: expect.any(String),
@@ -86,14 +91,19 @@ describeContract('sharing', (context) => {
       params: { token: link.token, attachmentId: pictureId }, status: 200, contentType: /^image\/png/, binary: true,
     });
     expect(Buffer.compare(picture.body as Buffer, PNG_PIXEL)).toBe(0);
-    expect(picture.headers['cross-origin-resource-policy']).toBe('same-origin');
+    expect(sharedHeadersOf(picture.headers as Record<string, string>)).toEqual(SHARED_HEADERS);
     const part = await call('GET /api/shared/{token}/attachments/{attachmentId}', {
       params: { token: link.token, attachmentId: videoId }, headers: { Range: 'bytes=4-11' }, status: 206, contentType: /^video\/mp4/, binary: true,
     });
     expect((part.body as Buffer).toString('latin1')).toBe('ftypisom');
-    await call('GET /api/shared/{token}/attachments/{attachmentId}/poster', {
+    const past = await call('GET /api/shared/{token}/attachments/{attachmentId}', {
+      params: { token: link.token, attachmentId: videoId }, headers: { Range: `bytes=${MP4_CLIP.length}-` }, status: 416, code: 'ATTACHMENT_RANGE_NOT_SATISFIABLE',
+    });
+    const poster = await call('GET /api/shared/{token}/attachments/{attachmentId}/poster', {
       params: { token: link.token, attachmentId: videoId }, status: 200, contentType: /^image\/jpeg/,
     });
+    // The streamed files, a range and its refusal included, carry the same headers as the entry
+    for (const answer of [part, past, poster]) expect(sharedHeadersOf(answer.headers as Record<string, string>)).toEqual(SHARED_HEADERS);
     // Another entry's file, even the writer's own, is not part of the link
     await call('GET /api/shared/{token}/attachments/{attachmentId}', {
       params: { token: link.token, attachmentId: otherPictureId }, status: 404, code: 'SHARE_LINK_NOT_FOUND',
@@ -158,11 +168,43 @@ describeContract('sharing', (context) => {
     expect(file.headers['content-disposition']).toMatch(/^attachment; /);
     expect(file.headers['content-security-policy']).toBe("default-src 'none'; sandbox");
     expect(file.text).toContain('A chapter of summer');
+    expect(sharedHeadersOf(file.headers as Record<string, string>)).toEqual(SHARED_HEADERS);
 
     // Its one view is used: the link stops, and its listing says so
     await call('GET /api/shared/{token}/file', { params: { token: link.token }, status: 404, code: 'SHARE_LINK_NOT_FOUND' });
     await expectUnavailable(link.token);
     const listed = await call('GET /api/share-links', { as: alice, query: { kind: 'bookVersion', targetId: String(version.id) }, status: 200 });
     expect(listed.body).toMatchObject({ links: [{ id: link.id, viewCount: 1, maxViews: 1 }] });
+  });
+
+  // Last, as it uses up this client's reads of a link: the throttler keeps counting until the suite ends
+  it('gives every shared answer its private link headers, refusals by a guard, a pipe or the router included', async () => {
+    const { alice } = context;
+    const entryId = await createEntry(context, alice, { text: 'Read until the limit' });
+    const link = (await call('POST /api/share-links', { as: alice, json: { kind: 'entry', targetId: entryId, expiresAt: inDays(1) }, status: 201 })).body as CreatedLink;
+    const answers = [
+      await call('GET /api/shared/{token}', { params: { token: link.token }, status: 200 }),
+      await call('GET /api/shared/{token}', { params: { token: 'A'.repeat(43) }, status: 404, code: 'SHARE_LINK_NOT_FOUND' }),
+      await call('GET /api/shared/{token}/attachments/{attachmentId}', { params: { token: link.token, attachmentId: 'one' }, status: 400, code: 'VALIDATION_FAILED' }),
+      await request(context.api.http).get(`/api/shared/${link.token}/no/such/file`).expect(404),
+    ];
+    process.env.FEATURE_FLAGS = 'publicSharing=false';
+    try {
+      answers.push(await call('GET /api/shared/{token}', { params: { token: link.token }, status: 503, code: 'FEATURE_DISABLED' }));
+    } finally {
+      delete process.env.FEATURE_FLAGS;
+    }
+    let reads = 0;
+    let read = await request(context.api.http).get(`/api/shared/${link.token}`);
+    while (read.status === 200 && reads <= RATE_LIMITS.sharedLinkRead.limit) {
+      reads += 1;
+      read = await request(context.api.http).get(`/api/shared/${link.token}`);
+    }
+    expect(read.status).toBe(429);
+    answers.push(await call('GET /api/shared/{token}', { params: { token: link.token }, status: 429, code: 'RATE_LIMITED' }));
+
+    for (const answer of answers) {
+      expect(sharedHeadersOf(answer.headers as Record<string, string>)).toEqual(SHARED_HEADERS);
+    }
   });
 });

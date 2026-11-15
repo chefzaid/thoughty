@@ -1,4 +1,4 @@
-import { Controller, Get, Headers, NotFoundException, Param, ParseIntPipe, Res, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Headers, NotFoundException, Param, ParseIntPipe, Res } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
@@ -8,7 +8,6 @@ import { RATE_LIMITS, throttleDefault } from '@/common/rate-limit.constants';
 import { AttachmentsService, contentDisposition, sendAttachmentFile } from '@/modules/attachments';
 import { SharedContentResponseDto } from './dto';
 import { SharedContentService } from './shared-content.service';
-import { SharedResponseHeadersInterceptor } from './shared-response-headers.interceptor';
 import { RequireFeature } from '@/common/feature-flags';
 
 const TOKEN_PARAM = { name: 'token', type: String, description: 'The link’s token, as in `/s/<token>`' } as const;
@@ -16,11 +15,11 @@ const NOT_AVAILABLE = 'No such link, or it expired, ran out of views, was revoke
 
 /**
  * A private share link as its reader opens it, without signing in. Every refusal is the same 404, so
- * the answers never tell whether a token ever existed.
+ * the answers never tell whether a token ever existed. Every answer here, whatever produced it, carries
+ * the headers of `sharedResponseHeaders`, which `configureApp` mounts on the whole `/api/shared` path.
  */
 @ApiTags('Shared links')
 @Public()
-@UseInterceptors(SharedResponseHeadersInterceptor)
 @RequireFeature('publicSharing')
 @Controller('shared')
 export class SharedContentController {
