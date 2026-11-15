@@ -74,6 +74,12 @@ describeContract('auth', (context) => {
       code: 'AUTH_REFRESH_TOKEN_EXPIRED',
     });
     await call('POST /api/auth/refresh', { status: 401, code: 'AUTH_REFRESH_TOKEN_MISSING' });
+    // A valid refresh token sent in the body is ignored: refresh reads only the cookie.
+    await call('POST /api/auth/refresh', {
+      json: { refreshToken: rotated.slice(rotated.indexOf('=') + 1) },
+      status: 401,
+      code: 'AUTH_REFRESH_TOKEN_MISSING',
+    });
     bob.refreshCookie = rotated;
     bob.accessToken = (refreshed.body as { accessToken: string }).accessToken;
   });

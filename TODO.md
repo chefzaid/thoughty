@@ -291,7 +291,7 @@ Parts of tasks that cannot advance without the owner's decision or information. 
 - [x] Strict Content Security Policy and HSTS on the web app
 - [x] Deleted accounts erased with all their data and files after 30 days
 - [x] Every AI prompt treats journal text as untrusted data
-- [ ] Remove the body refresh-token upgrade path once tokens issued before the cookie change have expired (7 days after the release that added it)
+- [x] Body refresh-token upgrade path removed (pre-cookie tokens expired: 7-day lifetime, cookie flow in every release since 1.13.37 on 2026-11-01): refresh reads only the httpOnly cookie, and the web only deletes tokens an older version left in `localStorage`
 - [ ] Registration still reveals whether an email or username is taken; move to a verify-first sign-up to close it
 - [ ] Production alerts: add the `thoughty-alerts` rules to the platform's Prometheus, which has no Prometheus Operator to load the PrometheusRule component
 

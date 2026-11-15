@@ -73,20 +73,6 @@ export class OAuthDto {
   credential: string;
 }
 
-export class RefreshTokenDto {
-  @ApiPropertyOptional({
-    deprecated: true,
-    description:
-      'Transitional: a refresh token an older web client kept in browser storage, accepted only ' +
-      'when no refresh token cookie is present and exchanged once for the cookie. Current ' +
-      'clients send no body; the httpOnly refresh token cookie is used.',
-  })
-  @IsOptional()
-  @IsString()
-  @MaxLength(2048)
-  refreshToken?: string;
-}
-
 export class AccessTokenResponseDto {
   @ApiProperty({ description: 'Short-lived access token; keep it in memory only' })
   accessToken: string;

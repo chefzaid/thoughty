@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { act, render, waitFor } from '@testing-library/react';
-import { exchangeKeycloakSession, takeLegacyRefreshToken, useAuth } from './AuthContext';
+import { exchangeKeycloakSession, useAuth } from './AuthContext';
 import { callsTo, json, locationRestorers, renderAuth, renderSignedOut, routeFetch, stubLocationAssign } from './AuthContext.test-helpers';
 
 describe('AuthContext', () => {
@@ -56,26 +56,26 @@ describe('AuthContext', () => {
         expect(localStorage.length).toBe(0);
     });
 
-    it('removes tokens an older version left in localStorage, exchanging the refresh token once', async () => {
+    it('deletes tokens an older version left in localStorage without ever sending them', async () => {
         localStorage.setItem('accessToken', 'legacy-access');
         localStorage.setItem('refreshToken', 'legacy-refresh');
         localStorage.setItem('theme', 'dark');
         const fetchMock = routeFetch({
             '/api/auth/refresh': [json({ accessToken: 'fresh-access' })],
-            '/api/auth/me': [json({ id: 1, email: 'legacy@example.com' })],
+            '/api/auth/me': [json({ id: 1, email: 'cookie@example.com' })],
         });
 
         const auth = renderAuth();
 
-        await waitFor(() => expect(auth.current().user?.email).toBe('legacy@example.com'));
+        await waitFor(() => expect(auth.current().user?.email).toBe('cookie@example.com'));
         expect(localStorage.getItem('accessToken')).toBeNull();
         expect(localStorage.getItem('refreshToken')).toBeNull();
         expect(localStorage.getItem('theme')).toBe('dark');
         expect(callsTo(fetchMock, '/api/auth/refresh')).toEqual([[
             '/api/auth/refresh',
-            expect.objectContaining({ body: JSON.stringify({ refreshToken: 'legacy-refresh' }) }),
+            { method: 'POST', credentials: 'same-origin' },
         ]]);
-        expect(takeLegacyRefreshToken()).toBeNull();
+        expect(JSON.stringify(fetchMock.mock.calls)).not.toContain('legacy-');
     });
 
     it('exchanges a production Keycloak session when there is no refresh cookie', async () => {

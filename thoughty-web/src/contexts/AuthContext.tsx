@@ -12,7 +12,7 @@ import { useAuthSession } from './useAuthSession';
 import { useSignInActions } from './useSignInActions';
 
 export type { User } from './authTypes';
-export { exchangeKeycloakSession, takeLegacyRefreshToken } from './useAuthSession';
+export { exchangeKeycloakSession } from './useAuthSession';
 
 interface AuthContextValue {
   user: User | null;

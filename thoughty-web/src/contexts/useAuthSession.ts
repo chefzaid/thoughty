@@ -13,18 +13,16 @@ const LEGACY_TOKEN_KEYS = ['accessToken', 'refreshToken'] as const;
 const REFRESH_LOCK_NAME = 'thoughty.auth-refresh';
 
 /**
- * Removes tokens an older version left in localStorage, returning the refresh token so it can be
- * exchanged once for the httpOnly cookie and the session survives the upgrade.
+ * Deletes tokens an older version left in localStorage. They are never sent anywhere: refresh
+ * reads only the httpOnly cookie, so a leftover refresh token is just a secret to erase.
  */
-export function takeLegacyRefreshToken(): string | null {
+export function removeLegacyStoredTokens(): void {
   try {
-    const refreshToken = localStorage.getItem('refreshToken');
     for (const key of LEGACY_TOKEN_KEYS) {
       localStorage.removeItem(key);
     }
-    return refreshToken;
   } catch {
-    return null;
+    // Storage is blocked (site data disabled): the page can neither read nor delete it.
   }
 }
 
@@ -81,18 +79,12 @@ export function useAuthSession() {
 
   // Exchange the refresh token cookie for a new access token (and a rotated cookie). Concurrent
   // callers share one request, since a refresh token works only once.
-  const refreshAccessToken = useCallback((legacyRefreshToken?: string | null): Promise<string | null> => {
+  const refreshAccessToken = useCallback((): Promise<string | null> => {
     refreshInFlightRef.current ??= withRefreshLock(async () => {
       try {
         const response = await fetch(`${API_BASE}/refresh`, {
           method: 'POST',
           credentials: 'same-origin',
-          ...(legacyRefreshToken
-            ? {
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ refreshToken: legacyRefreshToken }),
-            }
-            : {}),
         });
 
         if (!response.ok) {
@@ -159,7 +151,8 @@ export function useAuthSession() {
       setLoading(false);
     };
     const checkAuth = async () => {
-      const accessToken = await refreshAccessToken(takeLegacyRefreshToken());
+      removeLegacyStoredTokens();
+      const accessToken = await refreshAccessToken();
       if (!accessToken) {
         await restoreSsoSession();
         return;

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { takeLegacyRefreshToken, useAuthSession } from './useAuthSession';
+import { removeLegacyStoredTokens, useAuthSession } from './useAuthSession';
 
 const json = (body: unknown, status = 200) => ({
     ok: status >= 200 && status < 300,
@@ -39,12 +39,12 @@ describe('useAuthSession', () => {
         vi.restoreAllMocks();
     });
 
-    it('returns no legacy token when localStorage cannot be read', () => {
-        vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+    it('tolerates a localStorage the browser blocks when deleting old tokens', () => {
+        vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
             throw new Error('blocked');
         });
 
-        expect(takeLegacyRefreshToken()).toBeNull();
+        expect(() => removeLegacyStoredTokens()).not.toThrow();
     });
 
     it('treats a refresh answer without an access token as signed out', async () => {

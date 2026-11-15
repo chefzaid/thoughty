@@ -294,29 +294,20 @@ describe('AuthController', () => {
       const result = await controller.refresh(
         requestWithCookie(`theme=dark; ${COOKIE}=old_rt`),
         res,
-        {},
       );
       expect(sessionService.refreshToken).toHaveBeenCalledWith('old_rt');
       expect(result).toEqual({ accessToken: 'new_token' });
       expect(res.cookie).toHaveBeenCalledWith(COOKIE, 'new_rt', expect.any(Object));
     });
 
-    it('prefers the cookie over a legacy body token', async () => {
-      sessionService.refreshToken!.mockResolvedValue({ accessToken: 'a', refreshToken: 'b' });
-
-      await controller.refresh(requestWithCookie(`${COOKIE}=cookie_rt`), mockResponse(), {
-        refreshToken: 'body_rt',
-      });
-      expect(sessionService.refreshToken).toHaveBeenCalledWith('cookie_rt');
-    });
-
-    it('exchanges a legacy body token for the cookie when no cookie is present', async () => {
-      sessionService.refreshToken!.mockResolvedValue({ accessToken: 'a', refreshToken: 'b' });
+    it('reads the refresh token only from the cookie, never from the request body', async () => {
+      sessionService.refreshToken!.mockRejectedValue(new UnauthorizedException());
+      const req = { ...requestWithCookie(), body: { refreshToken: 'body_rt' } } as Request;
       const res = mockResponse();
 
-      await controller.refresh(requestWithCookie(), res, { refreshToken: 'legacy_rt' });
-      expect(sessionService.refreshToken).toHaveBeenCalledWith('legacy_rt');
-      expect(res.cookie).toHaveBeenCalledWith(COOKIE, 'b', expect.any(Object));
+      await expect(controller.refresh(req, res)).rejects.toBeInstanceOf(UnauthorizedException);
+      expect(sessionService.refreshToken).toHaveBeenCalledWith(undefined);
+      expect(res.cookie).not.toHaveBeenCalled();
     });
 
     it('clears the cookie when the refresh token is rejected', async () => {
@@ -324,7 +315,7 @@ describe('AuthController', () => {
       const res = mockResponse();
 
       await expect(
-        controller.refresh(requestWithCookie(`${COOKIE}=reused`), res, {}),
+        controller.refresh(requestWithCookie(`${COOKIE}=reused`), res),
       ).rejects.toBeInstanceOf(UnauthorizedException);
       expect(res.clearCookie).toHaveBeenCalledWith(COOKIE, COOKIE_OPTIONS);
       expect(res.cookie).not.toHaveBeenCalled();
@@ -334,7 +325,7 @@ describe('AuthController', () => {
       sessionService.refreshToken!.mockRejectedValue(new Error('database unavailable'));
       const res = mockResponse();
 
-      await expect(controller.refresh(requestWithCookie(`${COOKIE}=rt`), res, {})).rejects.toThrow(
+      await expect(controller.refresh(requestWithCookie(`${COOKIE}=rt`), res)).rejects.toThrow(
         'database unavailable',
       );
       expect(res.clearCookie).not.toHaveBeenCalled();

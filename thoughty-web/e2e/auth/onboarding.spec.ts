@@ -51,4 +51,26 @@ test.describe('Authentication onboarding', () => {
     await expect(page.getByText('Verification email sent.')).toBeVisible();
     await expect.poll(() => state.verificationResendCount).toBe(1);
   });
+
+  test('restores the session from the cookie alone and deletes tokens an older version stored', async ({ page }) => {
+    await setupMockApp(page, { startAuthenticated: true });
+    await page.goto('/journal');
+    await expect(page.getByPlaceholder("What's on your mind?")).toBeVisible();
+    await page.evaluate(() => {
+      localStorage.setItem('accessToken', 'stale-access');
+      localStorage.setItem('refreshToken', 'stale-refresh');
+    });
+    const refreshBodies: Array<string | null> = [];
+    page.on('request', (request) => {
+      if (new URL(request.url()).pathname === '/api/auth/refresh') refreshBodies.push(request.postData());
+    });
+
+    await page.reload();
+
+    await expect(page.getByPlaceholder("What's on your mind?")).toBeVisible();
+    expect(await page.evaluate(() => [localStorage.getItem('accessToken'), localStorage.getItem('refreshToken')]))
+      .toEqual([null, null]);
+    expect(refreshBodies.length).toBeGreaterThan(0);
+    expect(refreshBodies.every((body) => !body)).toBe(true);
+  });
 });

@@ -20,7 +20,6 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
-  ApiBody,
   ApiCookieAuth,
   ApiExtraModels,
   getSchemaPath,
@@ -38,7 +37,6 @@ import {
   RegisterDto,
   LoginDto,
   OAuthDto,
-  RefreshTokenDto,
   ChangePasswordDto,
   ForgotPasswordDto,
   ResetPasswordDto,
@@ -277,16 +275,14 @@ export class AuthController {
     description: `New access token. ${REFRESH_COOKIE_NOTE}`,
     type: AccessTokenResponseDto,
   })
-  @ApiBody({ type: RefreshTokenDto, required: false })
   @ApiResponse({ status: 401, description: 'Missing, invalid, expired, or reused refresh token' })
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-    @Body() dto: RefreshTokenDto,
   ): Promise<AccessTokenResponseDto> {
     try {
       const { accessToken, refreshToken } = await this.sessionService.refreshToken(
-        readRefreshTokenCookie(req) ?? dto?.refreshToken,
+        readRefreshTokenCookie(req),
       );
       setRefreshTokenCookie(res, refreshToken);
       return { accessToken };

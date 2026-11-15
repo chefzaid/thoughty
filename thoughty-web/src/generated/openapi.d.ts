@@ -2642,18 +2642,6 @@ export interface components {
         };
         /**
          * @example {
-         *       "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
-         *     }
-         */
-        RefreshTokenDto: {
-            /**
-             * @deprecated
-             * @description Transitional: a refresh token an older web client kept in browser storage, accepted only when no refresh token cookie is present and exchanged once for the cookie. Current clients send no body; the httpOnly refresh token cookie is used.
-             */
-            refreshToken?: string;
-        };
-        /**
-         * @example {
          *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
          *     }
          */
@@ -10289,16 +10277,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
-            content: {
-                /**
-                 * @example {
-                 *       "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
-                 *     }
-                 */
-                "application/json": components["schemas"]["RefreshTokenDto"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description New access token. Sets the httpOnly `thoughty_refresh_token` refresh token cookie (path /api/auth). */
             200: {

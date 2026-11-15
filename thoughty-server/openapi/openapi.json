@@ -618,19 +618,6 @@
         "description": "Each refresh token works once: it is replaced by a new one in the cookie, and reusing the old one fails.",
         "operationId": "AuthController_refresh",
         "parameters": [],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RefreshTokenDto"
-              },
-              "example": {
-                "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "New access token. Sets the httpOnly `thoughty_refresh_token` refresh token cookie (path /api/auth).",
@@ -13420,19 +13407,6 @@
         "example": {
           "provider": "google",
           "credential": "example"
-        }
-      },
-      "RefreshTokenDto": {
-        "type": "object",
-        "properties": {
-          "refreshToken": {
-            "type": "string",
-            "deprecated": true,
-            "description": "Transitional: a refresh token an older web client kept in browser storage, accepted only when no refresh token cookie is present and exchanged once for the cookie. Current clients send no body; the httpOnly refresh token cookie is used."
-          }
-        },
-        "example": {
-          "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
         }
       },
       "AccessTokenResponseDto": {
