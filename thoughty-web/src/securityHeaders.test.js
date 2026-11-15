@@ -41,13 +41,13 @@ describe('web security headers', () => {
     }
   });
 
-  it('keeps a private share link out of the access log, referrers and search engines', () => {
+  it('keeps a private share link and the password reset page out of the access log, referrers and search engines', () => {
     const config = read('nginx.conf');
     const snippet = read('nginx-security-headers.conf');
 
-    expect(config).toMatch(/map \$request_uri \$thoughty_share_link \{[^}]*~\^\/s\/\s+1;[^}]*~\^\/api\/shared\/\s+1;/);
-    expect(config).toMatch(/map \$thoughty_share_link \$referrer_policy \{\s*1\s+"no-referrer";\s*default\s+"strict-origin-when-cross-origin";/);
-    expect(config).toMatch(/map \$thoughty_share_link \$robots_tag \{\s*1\s+"noindex, nofollow, noarchive";\s*default\s+"";/);
+    expect(config).toMatch(/map \$request_uri \$thoughty_secret_link \{[^}]*~\^\/s\/\s+1;[^}]*~\^\/api\/shared\/\s+1;[^}]*~\^\/reset-password\s+1;/);
+    expect(config).toMatch(/map \$thoughty_secret_link \$referrer_policy \{\s*1\s+"no-referrer";\s*default\s+"strict-origin-when-cross-origin";/);
+    expect(config).toMatch(/map \$thoughty_secret_link \$robots_tag \{\s*1\s+"noindex, nofollow, noarchive";\s*default\s+"";/);
     expect(config).toContain('access_log /var/log/nginx/access.log main if=$thoughty_access_log;');
     expect(snippet).toContain('add_header Referrer-Policy $referrer_policy always;');
     expect(snippet).toContain('add_header X-Robots-Tag $robots_tag always;');

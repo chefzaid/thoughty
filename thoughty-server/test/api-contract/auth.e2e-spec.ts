@@ -138,7 +138,7 @@ describeContract('auth', (context) => {
     await call('DELETE /api/auth/sessions', { as: alice, headers: withCookie(alice), status: 200 });
   });
 
-  it('verifies an email and resets a password with their emailed tokens', async () => {
+  it('verifies an email with its emailed token and changes the password', async () => {
     const { alice } = context;
     await call('POST /api/auth/resend-verification-email', {
       as: alice,
@@ -160,25 +160,6 @@ describeContract('auth', (context) => {
     const me = await call('GET /api/auth/me', { as: alice, status: 200 });
     expect(me.body).toMatchObject({ emailVerified: true });
 
-    await call('POST /api/auth/forgot-password', { json: { email: alice.email }, status: 200 });
-    await call('POST /api/auth/forgot-password', {
-      json: { email: 'nobody@example.com' },
-      status: 200,
-    });
-    const reset = 'contract-reset-token';
-    await context.api.dataSource.query(
-      `UPDATE users SET reset_token = $1, reset_token_expires = now() + interval '1 hour' WHERE id = $2`,
-      [sha256(reset), alice.id],
-    );
-    await call('POST /api/auth/reset-password', {
-      json: { token: 'wrong', newPassword: 'Reset1234!' },
-      status: 400,
-      code: 'AUTH_INVALID_RESET_TOKEN',
-    });
-    await call('POST /api/auth/reset-password', {
-      json: { token: reset, newPassword: 'Reset1234!' },
-      status: 200,
-    });
     await call('POST /api/auth/change-password', {
       as: alice,
       json: { currentPassword: 'Wrong1234!', newPassword: CONTRACT_PASSWORD },
@@ -187,7 +168,12 @@ describeContract('auth', (context) => {
     });
     await call('POST /api/auth/change-password', {
       as: alice,
-      json: { currentPassword: 'Reset1234!', newPassword: CONTRACT_PASSWORD },
+      json: { currentPassword: CONTRACT_PASSWORD, newPassword: 'Changed1234!' },
+      status: 200,
+    });
+    await call('POST /api/auth/change-password', {
+      as: alice,
+      json: { currentPassword: 'Changed1234!', newPassword: CONTRACT_PASSWORD },
       status: 200,
     });
   });

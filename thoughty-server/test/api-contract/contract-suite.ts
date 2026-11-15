@@ -5,6 +5,7 @@ import {
 import { startContractApi, type ContractApi, type ContractApiOptions } from './contract-app';
 import { ContractClient, type ContractUser } from './contract-client';
 import { CONTRACT_SUITES, type ContractSuiteName } from './contract-operations';
+import { linkToken, mailTo } from './contract-mail';
 
 export const CONTRACT_PASSWORD = 'Contract1234!';
 
@@ -46,6 +47,43 @@ export async function registerWriter(
     password: CONTRACT_PASSWORD,
     accessToken: body.accessToken,
     refreshCookie: readRefreshCookie(response.headers['set-cookie']),
+  };
+}
+
+/** What registration answers wherever the server can send email. */
+export const SIGN_UP_STARTED = {
+  verificationRequired: true,
+  message: 'Check your email to finish creating your account.',
+};
+
+/**
+ * Signs a writer up the way production does: the form, then the emailed link. For a suite with
+ * a mail server (`contract-mail.ts`).
+ */
+export async function signUpWithEmail(
+  client: ContractClient,
+  username: string,
+): Promise<ContractUser> {
+  const email = `${username}@example.com`;
+  const started = await client.call('POST /api/auth/register', {
+    json: { email, password: CONTRACT_PASSWORD, username, website: '' },
+    status: 202,
+  });
+  expect(started.body).toEqual(SIGN_UP_STARTED);
+  expect(started.headers['set-cookie']).toBeUndefined();
+  const token = linkToken((await mailTo(email)).text, '/complete-sign-up');
+  const completed = await client.call('POST /api/auth/register/complete', {
+    json: { token, password: CONTRACT_PASSWORD },
+    status: 201,
+  });
+  const body = completed.body as { user: { id: number }; accessToken: string };
+  return {
+    id: body.user.id,
+    username,
+    email,
+    password: CONTRACT_PASSWORD,
+    accessToken: body.accessToken,
+    refreshCookie: readRefreshCookie(completed.headers['set-cookie']),
   };
 }
 

@@ -34,6 +34,7 @@ import {
   type AuthenticatedRoutesProps,
   type BlogPageProps,
   type CompleteSignUpPageProps,
+  type ResetPasswordPageProps,
   type ContactPageProps,
   type FeedbackPageProps,
   type IntroPageProps,
@@ -57,6 +58,7 @@ interface AppShellModel {
   legalPageProps: Omit<LegalPageProps, 'page'>;
   verifyEmailPageProps: VerifyEmailPageProps;
   completeSignUpPageProps: CompleteSignUpPageProps;
+  resetPasswordPageProps: ResetPasswordPageProps;
   unsubscribePageProps: UnsubscribePageProps;
   authenticatedLayoutProps: AuthenticatedLayoutProps;
   authenticatedRoutesProps: AuthenticatedRoutesProps;
@@ -342,6 +344,7 @@ export function useAppShellModel(): AppShellModel {
     authPageProps,
     verifyEmailPageProps,
     completeSignUpPageProps,
+    resetPasswordPageProps,
     unsubscribePageProps,
   } = buildPublicShellProps({
     configTheme: config.theme,
@@ -417,6 +420,7 @@ export function useAppShellModel(): AppShellModel {
     legalPageProps,
     verifyEmailPageProps,
     completeSignUpPageProps,
+    resetPasswordPageProps,
     unsubscribePageProps,
     authenticatedLayoutProps,
     authenticatedRoutesProps,

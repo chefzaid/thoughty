@@ -17,6 +17,7 @@ export {
   type AuthPageProps,
   type BlogPageProps,
   type CompleteSignUpPageProps,
+  type ResetPasswordPageProps,
   type ContactPageProps,
   type FeedbackPageProps,
   type IntroPageProps,

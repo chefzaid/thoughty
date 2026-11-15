@@ -27,6 +27,32 @@ export const validateForgotPassword = ({ email, t }: { email: string; t: Transla
   return '';
 };
 
+/**
+ * The API's password rule (`RegisterDto`, `ResetPasswordDto` in thoughty-server): at least 8
+ * characters, with a lowercase and an uppercase letter, a digit and one of `PASSWORD_SYMBOLS`.
+ */
+const STRONG_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
+export const PASSWORD_SYMBOLS = '! @ # $ % ^ & * ( ) , . ? " : { } | < >';
+
+export const isStrongPassword = (password: string): boolean => STRONG_PASSWORD.test(password);
+
+/** A new password and its confirmation, checked as the API will check them. */
+export const validateNewPassword = ({
+  password,
+  confirmPassword,
+  t
+}: {
+  password: string;
+  confirmPassword: string;
+  t: TranslationFunction;
+}): string => {
+  if (!password) return t('enterNewPassword');
+  if (!isStrongPassword(password)) return t('passwordTooWeak', { symbols: PASSWORD_SYMBOLS });
+  if (!confirmPassword) return t('confirmPasswordPlaceholder');
+  if (password !== confirmPassword) return t('passwordsDoNotMatch');
+  return '';
+};
+
 export const validateLogin = ({ identifier, password, t }: { identifier: string; password: string; t: TranslationFunction }): string => {
   if (!identifier) return t('enterEmailOrUsername');
   if (!password) return t('enterPassword');

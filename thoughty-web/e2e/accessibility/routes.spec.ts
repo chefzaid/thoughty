@@ -16,6 +16,7 @@ const PUBLIC_ROUTES: Record<string, RouteContent> = {
   '/login': (page) => [page.getByRole('textbox', { name: 'Email or Username' }), page.getByRole('button', { name: 'Sign In', exact: true })],
   '/register': (page) => [page.getByRole('textbox', { name: 'Confirm Password' })],
   '/complete-sign-up?token=sign-up-token': (page) => [page.getByRole('button', { name: 'Create my account' })],
+  '/reset-password?token=reset-token': (page) => [page.getByRole('button', { name: 'Save the new password' })],
   '/verify-email?token=valid-token': (page) => [page.getByRole('status').filter({ hasText: 'Your email is verified.' })],
   '/about': (page) => [page.getByRole('heading', { name: 'Small, product-led, and close to the writing.' })],
   '/privacy': (page) => [page.getByRole('heading', { name: 'Security and providers' })],

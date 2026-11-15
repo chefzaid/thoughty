@@ -21,6 +21,7 @@ import { personDatesTranslations, type PersonDatesTranslationKey } from "./trans
 import { focusModeTranslations, type FocusModeTranslationKey } from "./translations.focusMode";
 import { composerDraftTranslations, type ComposerDraftTranslationKey } from "./translations.composerDraft";
 import { signUpTranslations, type SignUpTranslationKey } from "./translations.signUp";
+import { passwordResetTranslations, type PasswordResetTranslationKey } from "./translations.passwordReset";
 import { dictationTranslations, type DictationTranslationKey } from "./translations.dictation";
 import { readerTranslations, type ReaderTranslationKey } from "./translations.reader";
 import { privacyBlurTranslations, type PrivacyBlurTranslationKey } from "./translations.privacyBlur";
@@ -92,6 +93,7 @@ export type TranslationKey =
   | FocusModeTranslationKey
   | ComposerDraftTranslationKey
   | SignUpTranslationKey
+  | PasswordResetTranslationKey
   | DictationTranslationKey
   | ReaderTranslationKey
   | PrivacyBlurTranslationKey
@@ -168,6 +170,7 @@ export const translations: Translations = {
     ...focusModeTranslations.en,
     ...composerDraftTranslations.en,
     ...signUpTranslations.en,
+    ...passwordResetTranslations.en,
     ...dictationTranslations.en,
     ...readerTranslations.en,
     ...privacyBlurTranslations.en,
@@ -237,6 +240,7 @@ export const translations: Translations = {
     ...focusModeTranslations.fr,
     ...composerDraftTranslations.fr,
     ...signUpTranslations.fr,
+    ...passwordResetTranslations.fr,
     ...dictationTranslations.fr,
     ...readerTranslations.fr,
     ...privacyBlurTranslations.fr,

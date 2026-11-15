@@ -70,13 +70,13 @@ export function useAccountActions({ authFetch, clearSession, setError, setUser }
       });
 
       if (!response.ok) {
-        throw new Error(await readApiErrorMessage(response, 'Failed to reset password'));
+        throw new Error(await readApiErrorMessage(response, 'resetPasswordFailed'));
       }
 
       const data = await safeJsonParse<SuccessMessageResponse>(response);
       return { success: true, message: data?.message };
     } catch (err) {
-      return authFailure(err, 'Failed to reset password', setError);
+      return authFailure(err, 'resetPasswordFailed', setError);
     }
   }, [setError]);
 

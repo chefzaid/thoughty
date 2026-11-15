@@ -151,7 +151,7 @@ describe('useAccountActions', () => {
     });
 
     it.each([
-        ['resetPassword', (actions: ReturnType<typeof renderAccount>['current']) => actions.resetPassword('token', 'new-password'), 'Failed to reset password'],
+        ['resetPassword', (actions: ReturnType<typeof renderAccount>['current']) => actions.resetPassword('token', 'new-password'), 'resetPasswordFailed'],
         ['verifyEmail', (actions: ReturnType<typeof renderAccount>['current']) => actions.verifyEmail('token'), 'Email verification failed'],
     ])('%s reports the fallback when the API refuses without a message', async (_name, call, fallback) => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 400, json: async () => ({}), text: async () => '' }));
@@ -168,7 +168,7 @@ describe('useAccountActions', () => {
     });
 
     it.each([
-        ['resetPassword', (actions: ReturnType<typeof renderAccount>['current']) => actions.resetPassword('token', 'new-password'), 'Failed to reset password'],
+        ['resetPassword', (actions: ReturnType<typeof renderAccount>['current']) => actions.resetPassword('token', 'new-password'), 'resetPasswordFailed'],
         ['verifyEmail', (actions: ReturnType<typeof renderAccount>['current']) => actions.verifyEmail('token'), 'Email verification failed'],
     ])('%s falls back to its message when the request fails without an Error', async (_name, call, fallback) => {
         vi.stubGlobal('fetch', vi.fn().mockRejectedValue('offline'));

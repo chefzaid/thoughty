@@ -4,6 +4,7 @@ import type AboutPage from '../components/AboutPage/AboutPage';
 import type AuthPage from '../components/AuthPage/AuthPage';
 import type BlogPage from '../components/BlogPage/BlogPage';
 import type CompleteSignUpPage from '../components/CompleteSignUpPage/CompleteSignUpPage';
+import type ResetPasswordPage from '../components/ResetPasswordPage/ResetPasswordPage';
 import type ContactPage from '../components/ContactPage/ContactPage';
 import type FeedbackPage from '../components/FeedbackPage/FeedbackPage';
 import type IntroPage from '../components/IntroPage/IntroPage';
@@ -21,6 +22,7 @@ export type AuthPageProps = ComponentProps<typeof AuthPage>;
 export type LegalPageProps = ComponentProps<typeof LegalPage>;
 export type VerifyEmailPageProps = ComponentProps<typeof VerifyEmailPage>;
 export type CompleteSignUpPageProps = ComponentProps<typeof CompleteSignUpPage>;
+export type ResetPasswordPageProps = ComponentProps<typeof ResetPasswordPage>;
 export type UnsubscribePageProps = ComponentProps<typeof UnsubscribePage>;
 
 type AppShellRoutingState = ReturnType<typeof import('../hooks/useAppShellRouting').useAppShellRouting>;
@@ -110,6 +112,12 @@ export function buildPublicShellProps({
     onSignIn: () => routingState.handlePublicViewChange('login'),
   };
 
+  const resetPasswordPageProps: ResetPasswordPageProps = {
+    t,
+    theme,
+    onSignIn: () => routingState.handlePublicViewChange('login'),
+  };
+
   const unsubscribePageProps: UnsubscribePageProps = {
     t,
     theme,
@@ -126,6 +134,7 @@ export function buildPublicShellProps({
     authPageProps,
     verifyEmailPageProps,
     completeSignUpPageProps,
+    resetPasswordPageProps,
     unsubscribePageProps,
   };
 }

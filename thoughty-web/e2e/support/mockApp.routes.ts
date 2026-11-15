@@ -31,6 +31,7 @@ import { refuseInvalidJsonBody, refuseInvalidQueryParameters, refuseMislabelledU
 import { checkWritersDaySent } from "./mockApp.writers-day";
 import { handleFeatureFlagRoutes } from "./mockApp.feature-flags";
 import { handleSignUpRoutes } from "./mockApp.sign-up";
+import { handlePasswordResetRoutes } from "./mockApp.password-reset";
 
 async function handleAuthRoutes({
   route,
@@ -330,7 +331,7 @@ export async function registerMockAppRoutes(page: Page, state: MockAppState) {
       return;
     }
     checkWritersDaySent(context);
-    if (await handleSignUpRoutes(context)) {
+    if (await handleSignUpRoutes(context) || await handlePasswordResetRoutes(context)) {
       return;
     }
     if (await handleAuthRoutes(context)) {

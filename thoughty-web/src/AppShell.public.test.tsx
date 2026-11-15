@@ -106,6 +106,23 @@ describe('AppShell public flows', () => {
     await waitFor(() => expect(globalThis.location.pathname).toBe('/journal'));
   });
 
+  it('loads the password reset link route, drops the token from the address and goes on to sign in', async () => {
+    const resetPassword = vi.fn().mockResolvedValue({ success: true });
+    globalThis.history.replaceState({}, '', '/reset-password?token=reset-token');
+    setMockAuthState({ user: null, isAuthenticated: false, resetPassword });
+
+    renderAppShell();
+
+    expect(await screen.findByRole('heading', { name: 'Choose a new password' })).toBeInTheDocument();
+    expect(globalThis.location.search).toBe('');
+    await userEvent.type(screen.getByLabelText('New Password'), 'NewPass1!');
+    await userEvent.type(screen.getByLabelText('Confirm Password'), 'NewPass1!');
+    await userEvent.click(screen.getByRole('button', { name: 'Save the new password' }));
+    expect(resetPassword).toHaveBeenCalledWith('reset-token', 'NewPass1!');
+    await userEvent.click(await screen.findByRole('button', { name: 'Sign In' }));
+    await waitFor(() => expect(globalThis.location.pathname).toBe('/login'));
+  });
+
   it('loads the public unsubscribe route and turns the email off without signing in', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ success: true, kind: 'on-this-day' }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
