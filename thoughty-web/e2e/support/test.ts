@@ -3,10 +3,13 @@ import { takeContractViolations } from './mockApp.contract';
 
 export * from '@playwright/test';
 
-/** Any `/api` call, on any origin: the app only talks to its own, and nothing else should get one. */
-function isApiUrl(url: URL): boolean {
-  return url.pathname === '/api' || url.pathname.startsWith('/api/');
-}
+/**
+ * Any `/api` call, on any origin: the app only talks to its own, and nothing else should get one.
+ * A regular expression, not a function: Playwright cannot match a function in the browser, so it
+ * would hand every request (each of the dev server's ~590 modules) to the test worker to run it on,
+ * and continue the ones it declines from there, which slows each page's load under parallel workers.
+ */
+const API_URL = /^[a-z][a-z\d+.-]*:\/\/[^/?#]*\/api(?:[/?#]|$)/;
 
 /**
  * Stops every page of the context before it closes. Chromium releases a request still waiting on a
@@ -28,7 +31,7 @@ async function leaveApp(context: BrowserContext) {
  */
 export const test = base.extend({
   context: async ({ context }, use) => {
-    await context.route(isApiUrl, (route) =>
+    await context.route(API_URL, (route) =>
       route.fulfill({
         status: 503,
         json: { message: `No e2e mock answers ${route.request().method()} ${new URL(route.request().url()).pathname}` },
