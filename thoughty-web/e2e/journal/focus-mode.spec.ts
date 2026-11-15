@@ -20,13 +20,50 @@ const caretDistanceFromMiddle = (page: Page) => page.getByRole('textbox', { name
   return Math.abs(lastLineMiddle - area.scrollTop - area.clientHeight / 2) / lineHeight;
 });
 
-/** How far the top of the people list is below the bottom of the caret line (the last line), in pixels. */
-const listGapBelowCaretLine = (page: Page) => page.getByRole('textbox', { name: 'Entry text' }).evaluate((area: HTMLTextAreaElement) => {
-  const style = getComputedStyle(area);
-  const lastLineBottom = area.scrollHeight - Number.parseFloat(style.paddingBottom) - area.scrollTop;
-  const list = document.querySelector('[role="listbox"]');
-  return list ? list.getBoundingClientRect().top - area.getBoundingClientRect().top - lastLineBottom : Number.NaN;
+/**
+ * How far the top of the people list is below the bottom of the caret line (the last line), in pixels:
+ * now, or (`whileScrolling`) in every task between frames, so as each frame was painted, from now
+ * until the text has scrolled and stood still for 300 ms (at most 5 s).
+ */
+const measureListGaps = (area: HTMLTextAreaElement, whileScrolling: boolean) => new Promise<{ gaps: number[]; scrollSteps: number }>((resolve) => {
+  const gap = () => {
+    const style = getComputedStyle(area);
+    const lastLineBottom = area.scrollHeight - Number.parseFloat(style.paddingBottom) - area.scrollTop;
+    const list = document.querySelector('[role="listbox"]');
+    return list ? list.getBoundingClientRect().top - area.getBoundingClientRect().top - lastLineBottom : Number.NaN;
+  };
+  if (!whileScrolling) {
+    resolve({ gaps: [gap()], scrollSteps: 0 });
+    return;
+  }
+  const gaps: number[] = [];
+  const start = performance.now();
+  let scrollSteps = 0;
+  let lastTop = area.scrollTop;
+  let movedAt = Number.NaN;
+  const channel = new MessageChannel();
+  channel.port1.onmessage = () => {
+    const now = performance.now();
+    if (area.scrollTop !== lastTop) {
+      lastTop = area.scrollTop;
+      scrollSteps += 1;
+      movedAt = now;
+    }
+    const current = gap();
+    if (gaps.at(-1) !== current) gaps.push(current);
+    if (now - movedAt > 300 || now - start > 5000) {
+      channel.port1.close();
+      resolve({ gaps, scrollSteps });
+    } else {
+      setTimeout(() => channel.port2.postMessage(null), 0);
+    }
+  };
+  channel.port2.postMessage(null);
 });
+
+const listGapBelowCaretLine = async (page: Page) => (
+  await page.getByRole('textbox', { name: 'Entry text' }).evaluate(measureListGaps, false)
+).gaps[0];
 
 const mentioningEntries = [
   { id: 811, date: '2024-05-02', index: 1, content: 'Coffee with @Marie', tags: ['life'], visibility: 'private' as const, diaryId: 1 },
@@ -129,7 +166,7 @@ test.describe('Focus mode', () => {
     await expect(page.locator('[id^="entry-"]').filter({ hasText: 'Dinner with' }).getByRole('link', { name: '@Paul' })).toBeVisible();
   });
 
-  test('keeps the people list under the caret line as smooth typewriter scrolling settles, and picks with the pointer', async ({ page }) => {
+  test('keeps the people list under the caret line in every frame of smooth typewriter scrolling, and picks with the pointer', async ({ page }) => {
     await setupMockApp(page, { startAuthenticated: true, initialEntries: mentioningEntries, config: { theme: 'light' } });
     await page.goto('/journal');
     await expect(page.locator('#entry-811')).toBeVisible();
@@ -143,9 +180,30 @@ test.describe('Focus mode', () => {
 
     const suggestions = dialog.getByRole('listbox', { name: 'People to mention' });
     await expect(suggestions.getByRole('option')).toHaveCount(2);
+    // Once the scroll settles, the list sits just under the caret line
+    const listSettlesUnderCaretLine = () => expect(async () => {
+      const gap = await listGapBelowCaretLine(page);
+      expect(gap).toBeGreaterThanOrEqual(0);
+      expect(gap).toBeLessThan(12);
+    }).toPass();
     await expect.poll(() => caretDistanceFromMiddle(page)).toBeLessThan(1.5);
-    await expect.poll(() => listGapBelowCaretLine(page)).toBeGreaterThanOrEqual(0);
-    expect(await listGapBelowCaretLine(page)).toBeLessThan(12);
+    await listSettlesUnderCaretLine();
+
+    // The writer scrolls the text up; the list goes with its line
+    await text.evaluate((area) => {
+      area.scrollTop -= 200;
+    });
+    await listSettlesUnderCaretLine();
+
+    // Typing scrolls the caret line smoothly back to the middle, and every frame shows the list under it
+    const watching = text.evaluate(measureListGaps, true);
+    await page.keyboard.type('i');
+    const { gaps, scrollSteps } = await watching;
+    // Smooth: the text moved over several frames (fewer when the machine is busy and drops some)
+    expect(scrollSteps).toBeGreaterThan(1);
+    expect(gaps.filter((gap) => !(gap >= 0 && gap < 12))).toEqual([]);
+    await expect.poll(() => caretDistanceFromMiddle(page)).toBeLessThan(1.5);
+    await listSettlesUnderCaretLine();
 
     await suggestions.getByRole('option', { name: /^Marie@marie/ }).click();
     await expect(text).toHaveValue(/line 40 with @Marie $/);

@@ -15,6 +15,7 @@ import { pluralPhrase } from '../../utils/pluralPhrase';
 import MentionSuggestions from '../People/MentionSuggestions';
 import { useMentionAutocomplete } from '../People/useMentionAutocomplete';
 import { belowCaretLine, centerCaretLine } from './typewriter';
+import { useScrolledFrames } from './useScrolledFrames';
 import { isPrivacyBlurShortcut } from '../PrivacyBlur/privacyBlur';
 import { isFocusModeShortcut } from './focusModeShortcut';
 import { MAX_WORD_GOAL, parseWordGoal, readSavedGoal, saveGoal, wordsPhrase } from './focusModeSession';
@@ -109,7 +110,7 @@ export default function FocusMode({
         keepCaretCentered(true);
     }, [keepCaretCentered, text]);
 
-    // The people list follows the caret's line, also while typewriter scrolling moves it
+    // The people list follows the caret's line, in the same frame as typewriter scrolling moves it
     const placeSuggestions = useCallback(() => {
         if (textareaRef.current) {
             setSuggestionsPlacement(belowCaretLine(textareaRef.current));
@@ -119,6 +120,7 @@ export default function FocusMode({
     useLayoutEffect(() => {
         if (suggestionsOpen) placeSuggestions();
     }, [placeSuggestions, suggestionsOpen, text]);
+    useScrolledFrames(textareaRef, suggestionsOpen, placeSuggestions);
 
     useEffect(() => {
         const previousOverflow = document.body.style.overflow;
@@ -213,7 +215,6 @@ export default function FocusMode({
                         mentions.fieldProps.onSelect(event);
                         keepCaretCentered(true);
                     }}
-                    onScroll={suggestionsOpen ? placeSuggestions : undefined}
                     spellCheck
                     style={{
                         ...entryTextStyle({ fontColor, lineSpacing, letterSpacing }, theme),

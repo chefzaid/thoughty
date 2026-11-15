@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState, type ComponentProps } from 'react';
 import { getTranslation } from '../../utils/translations';
@@ -213,15 +213,16 @@ describe('FocusMode @ suggestions', () => {
         expect(onClose).toHaveBeenCalledTimes(1);
     });
 
-    it('moves the list with the caret line as typewriter scrolling scrolls the text', async () => {
+    it('moves the list with the caret line in the frame typewriter scrolling scrolls the text', async () => {
         const user = userEvent.setup();
         const text = renderWithPeople();
 
         await user.type(text, ' @ma');
         const list = screen.getByRole('listbox', { name: 'People to mention' });
         const top = Number.parseFloat(list.style.top);
+        // A smooth scroll moves the text before the frame's scroll event says so
         text.scrollTop = 120;
-        fireEvent.scroll(text);
+        await act(() => new Promise((resolve) => requestAnimationFrame(resolve)));
         expect(Number.parseFloat(list.style.top)).toBe(top - 120);
     });
 });
