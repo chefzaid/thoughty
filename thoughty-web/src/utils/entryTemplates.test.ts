@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createEntryTemplate,
+  describeDiaryTemplate,
+  diaryDefaultTemplate,
   getEntryTemplates,
   parseCustomEntryTemplates,
   serializeCustomEntryTemplates,
@@ -107,5 +109,33 @@ describe('entryTemplates', () => {
       format: 'plain',
       builtIn: false,
     });
+  });
+
+  it('finds the template of the diary picked, or of the default diary while every diary is shown', () => {
+    const templates = getEntryTemplates(JSON.stringify([
+      { id: 'custom-1', name: 'Walk', content: 'Where:', tags: [], visibility: 'private', format: 'plain' },
+    ]));
+    const diaries = [
+      { id: 1, isDefault: true, defaultTemplateId: 'builtin-gratitude' },
+      { id: 2, isDefault: false, defaultTemplateId: 'custom-1' },
+      { id: 3, isDefault: false, defaultTemplateId: 'custom-deleted' },
+      { id: 4, isDefault: false, defaultTemplateId: null },
+    ];
+
+    expect(diaryDefaultTemplate(diaries, 2, templates)?.name).toBe('Walk');
+    expect(diaryDefaultTemplate(diaries, null, templates)?.id).toBe('builtin-gratitude');
+    expect(diaryDefaultTemplate(diaries, 3, templates)).toBeNull();
+    expect(diaryDefaultTemplate(diaries, 4, templates)).toBeNull();
+    expect(diaryDefaultTemplate(diaries, 99, templates)).toBeNull();
+    expect(diaryDefaultTemplate([], null, templates)).toBeNull();
+  });
+
+  it('describes a diary’s template, a deleted one, and none', () => {
+    const t = (key: string, params?: Record<string, string | number>) => `${key}${params ? `:${params.name}` : ''}`;
+    const templates = getEntryTemplates();
+
+    expect(describeDiaryTemplate('builtin-gratitude', templates, t)).toBe('diaryDefaultTemplateSummary:Gratitude journal');
+    expect(describeDiaryTemplate('custom-gone', templates, t)).toBe('diaryDefaultTemplateSummary:diaryDefaultTemplateMissing');
+    expect(describeDiaryTemplate(null, templates, t)).toBeNull();
   });
 });

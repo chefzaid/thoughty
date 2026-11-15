@@ -112,7 +112,7 @@ export function useAppShellModel(): AppShellModel {
     // and so do the backlinks, which the new entry's links (a reply's, say) add to
     refreshBacklinks();
     void refreshEntryQueries();
-  });
+  }, diariesState.diaries);
 
   // Every view measured from the entries (list, calendar, writing streak, backlinks) reads them again
   const refreshEntryViews = useCallback(() => {

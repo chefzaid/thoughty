@@ -175,6 +175,10 @@ A writer's diaries have distinct names, compared ignoring case and surrounding s
 
 Migration `1787011200000-diary-unique-names` resolved the duplicates databases held before the index existed: per writer and name, the oldest diary (by `created_at`, then id) kept its name, and each later one became `Name (2)`, `Name (3)`… with the first number no diary of that writer used, shortened by whole characters to fit the 100-character column. Their entries, settings and books were untouched. Rolling back drops the index and keeps the new names.
 
+## Diary Default Templates
+
+`diaries.default_template_id` (migration `1787961600000-diary-default-templates`) names the entry template the composer starts from in that diary, or is null. Templates are not database rows: the built-in ones live in the web app (`builtin-gratitude`, …) and the writer's own in the `entryTemplates` setting (`custom-<timestamp>`), so the column holds only the ID, which `chk_diaries_default_template_id` and `DIARY_TEMPLATE_ID_PATTERN` keep to 1 to 100 letters, digits, `_` and `-` (`400 VALIDATION_FAILED` otherwise). An ID that no longer resolves, a custom template deleted since, is ignored by the composer and kept until the writer picks another. On `PUT /api/diaries/:id`, leaving `defaultTemplateId` out keeps it and `null` removes it; it goes with the diary and is part of the data download.
+
 ## Diary Writing Goals
 
 A diary can carry one optional writing goal in `goal_type` (`entries_per_week` or `words_per_day`) and `goal_target`. The `chk_diaries_goal` constraint keeps them set together or both null, with 1 to 50 entries a week or 10 to 10,000 words a day; `DIARY_GOAL_LIMITS` and the `IsDiaryGoalTarget` validator hold the same bounds for the API, which answers `400 VALIDATION_FAILED` outside them. On `PUT /api/diaries/:id`, leaving `goalType` out keeps the goal and `null` removes it.

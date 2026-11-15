@@ -9,6 +9,11 @@ import { DiaryEntryTransferService } from './diary-entry-transfer.service';
 
 type DiaryGoalFields = Pick<Diary, 'goalType' | 'goalTarget'>;
 
+/** The default template to store, or undefined to keep the current one. */
+function defaultTemplateField(dto: CreateDiaryDto | UpdateDiaryDto): Pick<Diary, 'defaultTemplateId'> | undefined {
+  return dto.defaultTemplateId === undefined ? undefined : { defaultTemplateId: dto.defaultTemplateId };
+}
+
 /** The validated goal fields to store, or undefined to keep the current goal. */
 function goalFields(dto: CreateDiaryDto | UpdateDiaryDto): DiaryGoalFields | undefined {
   if (dto.goalType === undefined) return undefined;
@@ -68,6 +73,7 @@ export class DiariesService {
         isDefault: false,
         position: count,
         ...(goalFields(dto) ?? { goalType: null, goalTarget: null }),
+        ...(defaultTemplateField(dto) ?? { defaultTemplateId: null }),
       }),
     );
   }
@@ -99,7 +105,7 @@ export class DiariesService {
     diary.icon = sanitizedIcon;
     diary.color = dto.color === undefined ? diary.color : requestedColor ?? diary.color;
     diary.visibility = visibility as 'public' | 'private';
-    Object.assign(diary, goalFields(dto));
+    Object.assign(diary, goalFields(dto), defaultTemplateField(dto));
 
     return withUniqueName(() => this.diaryRepository.save(diary));
   }

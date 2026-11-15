@@ -38,9 +38,11 @@ interface HarnessProps {
     /** Renders a second field in place of the first once the form is filled, as the Markdown editor does. */
     readonly swapFieldOnFill?: boolean;
     readonly language?: string;
+    /** The diary template the form holds untouched. */
+    readonly diaryTemplateName?: string;
 }
 
-function Harness({ initialText = '', defaultVisibility, swapFieldOnFill = false, language }: HarnessProps) {
+function Harness({ initialText = '', defaultVisibility, swapFieldOnFill = false, language, diaryTemplateName }: HarnessProps) {
     const formRef = useRef<HTMLDivElement>(null);
     const [newEntryText, setNewEntryText] = useState(initialText);
     const [title, setTitle] = useState(initialText ? 'Old title' : '');
@@ -60,7 +62,7 @@ function Harness({ initialText = '', defaultVisibility, swapFieldOnFill = false,
                 if (swapFieldOnFill) globalThis.setTimeout(() => setSwapped(true), 0);
             },
             title, setTitle, timeOfDay, setTimeOfDay, mood, setMood, feelings, setFeelings,
-            tags, setTags, timeCapsule, setTimeCapsule, setVisibility, setFormat, setSelectedDate,
+            tags, setTags, timeCapsule, setTimeCapsule, setVisibility, setFormat, setSelectedDate, diaryTemplateName,
         },
         defaultVisibility,
         formRef,
@@ -140,6 +142,15 @@ describe('useComposerSeed', () => {
         expect(screen.getByLabelText('Writing')).toHaveValue('Packing\n- [ ] Socks Bag\n- [ ] Charger');
         expect(screen.getByLabelText('Writing')).toHaveFocus();
         expect(state()).toMatchObject({ title: '', tags: ['travel'], visibility: 'public' });
+    });
+
+    it('replaces a diary template the writer has not touched without asking', async () => {
+        const user = userEvent.setup();
+        render(<Harness initialText="Today I am grateful for:" diaryTemplateName="Gratitude journal" />);
+
+        await user.click(screen.getByRole('button', { name: 'Start' }));
+        expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+        expect(screen.getByLabelText('Writing')).toHaveValue('Packing\n- [ ] Socks Bag\n- [ ] Charger');
     });
 
     it('starts private without a default visibility and does nothing for a sealed time capsule', async () => {

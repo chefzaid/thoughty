@@ -109,7 +109,16 @@ describe('DiariesService', () => {
         position: 0,
         goalType: null,
         goalTarget: null,
+        defaultTemplateId: null,
       });
+    });
+
+    it('creates a diary with a default template', async () => {
+      diaryRepository.save.mockResolvedValue(mockDiary);
+
+      await service.create(1, { name: 'Gratitude', defaultTemplateId: 'builtin-gratitude' });
+
+      expect(diaryRepository.save).toHaveBeenCalledWith(expect.objectContaining({ defaultTemplateId: 'builtin-gratitude' }));
     });
 
     it('creates a diary with a writing goal', async () => {
@@ -237,6 +246,21 @@ describe('DiariesService', () => {
 
       await service.update(1, 1, { name: 'Renamed', goalType: null });
       expect(diaryRepository.save).toHaveBeenLastCalledWith(expect.objectContaining({ goalType: null, goalTarget: null }));
+    });
+
+    it('sets, keeps and clears the default template', async () => {
+      const diary = { ...mockDiary, defaultTemplateId: null };
+      diaryRepository.findOne.mockResolvedValue(diary);
+      diaryRepository.save.mockImplementation(async (saved: unknown) => saved);
+
+      await service.update(1, 1, { name: 'Diary', defaultTemplateId: 'custom-1767225600000' });
+      expect(diaryRepository.save).toHaveBeenLastCalledWith(expect.objectContaining({ defaultTemplateId: 'custom-1767225600000' }));
+
+      await service.update(1, 1, { name: 'Renamed' });
+      expect(diaryRepository.save).toHaveBeenLastCalledWith(expect.objectContaining({ name: 'Renamed', defaultTemplateId: 'custom-1767225600000' }));
+
+      await service.update(1, 1, { name: 'Renamed', defaultTemplateId: null });
+      expect(diaryRepository.save).toHaveBeenLastCalledWith(expect.objectContaining({ defaultTemplateId: null }));
     });
 
     it('should throw NotFoundException for non-existent diary', async () => {

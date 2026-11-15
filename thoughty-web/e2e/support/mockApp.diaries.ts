@@ -14,6 +14,7 @@ export function mockDiary(fields: Partial<MockDiary> & Pick<MockDiary, 'id' | 'n
     position: fields.id - 1,
     goalType: null,
     goalTarget: null,
+    defaultTemplateId: null,
     createdAt: '2026-01-01T00:00:00.000Z',
     ...fields,
   };

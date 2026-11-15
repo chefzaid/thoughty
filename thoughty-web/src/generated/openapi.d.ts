@@ -5094,6 +5094,7 @@ export interface components {
          *       "position": 1,
          *       "goalType": "entries_per_week",
          *       "goalTarget": 3,
+         *       "defaultTemplateId": "builtin-gratitude",
          *       "createdAt": "2026-06-24T10:00:00.000Z"
          *     }
          */
@@ -5118,6 +5119,11 @@ export interface components {
             goalType: "entries_per_week" | "words_per_day" | null;
             /** @example 3 */
             goalTarget: number | null;
+            /**
+             * @description Entry template the composer starts from in this diary; an ID that no longer resolves is ignored
+             * @example builtin-gratitude
+             */
+            defaultTemplateId: string | null;
             /** Format: date-time */
             createdAt: string;
         };
@@ -5125,6 +5131,7 @@ export interface components {
          * @example {
          *       "goalType": "entries_per_week",
          *       "goalTarget": 3,
+         *       "defaultTemplateId": "builtin-gratitude",
          *       "name": "Daily Journal",
          *       "icon": "📓",
          *       "visibility": "private",
@@ -5143,6 +5150,11 @@ export interface components {
              * @example 3
              */
             goalTarget?: number | null;
+            /**
+             * @description Entry template the composer starts from in this diary (built-in or custom ID); null removes it, left out keeps it on update
+             * @example builtin-gratitude
+             */
+            defaultTemplateId?: string | null;
             /** @description Diary name */
             name: string;
             /**
@@ -5165,6 +5177,7 @@ export interface components {
          * @example {
          *       "goalType": "entries_per_week",
          *       "goalTarget": 3,
+         *       "defaultTemplateId": "builtin-gratitude",
          *       "name": "Daily Journal",
          *       "icon": "journal",
          *       "visibility": "public",
@@ -5183,6 +5196,11 @@ export interface components {
              * @example 3
              */
             goalTarget?: number | null;
+            /**
+             * @description Entry template the composer starts from in this diary (built-in or custom ID); null removes it, left out keeps it on update
+             * @example builtin-gratitude
+             */
+            defaultTemplateId?: string | null;
             /** @description Diary name */
             name: string;
             /** @description Diary icon */
@@ -14280,6 +14298,7 @@ export interface operations {
                      *         "position": 1,
                      *         "goalType": "entries_per_week",
                      *         "goalTarget": 3,
+                     *         "defaultTemplateId": "builtin-gratitude",
                      *         "createdAt": "2026-06-24T10:00:00.000Z"
                      *       }
                      *     ]
@@ -14302,6 +14321,7 @@ export interface operations {
                  * @example {
                  *       "goalType": "entries_per_week",
                  *       "goalTarget": 3,
+                 *       "defaultTemplateId": "builtin-gratitude",
                  *       "name": "Daily Journal",
                  *       "icon": "📓",
                  *       "visibility": "private",
@@ -14330,6 +14350,7 @@ export interface operations {
                      *       "position": 1,
                      *       "goalType": "entries_per_week",
                      *       "goalTarget": 3,
+                     *       "defaultTemplateId": "builtin-gratitude",
                      *       "createdAt": "2026-06-24T10:00:00.000Z"
                      *     }
                      */
@@ -14387,6 +14408,7 @@ export interface operations {
                  * @example {
                  *       "goalType": "entries_per_week",
                  *       "goalTarget": 3,
+                 *       "defaultTemplateId": "builtin-gratitude",
                  *       "name": "Daily Journal",
                  *       "icon": "journal",
                  *       "visibility": "public",
@@ -14415,6 +14437,7 @@ export interface operations {
                      *       "position": 1,
                      *       "goalType": "entries_per_week",
                      *       "goalTarget": 3,
+                     *       "defaultTemplateId": "builtin-gratitude",
                      *       "createdAt": "2026-06-24T10:00:00.000Z"
                      *     }
                      */
@@ -14547,6 +14570,7 @@ export interface operations {
                      *       "position": 1,
                      *       "goalType": "entries_per_week",
                      *       "goalTarget": 3,
+                     *       "defaultTemplateId": "builtin-gratitude",
                      *       "createdAt": "2026-06-24T10:00:00.000Z"
                      *     }
                      */

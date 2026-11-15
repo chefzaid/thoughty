@@ -6,7 +6,13 @@ export type EntryTemplatesTranslationKey =
   | 'templateNameLabel'
   | 'templateNameRequired'
   | 'templateSaveFailed'
-  | 'templateSaving';
+  | 'templateSaving'
+  | 'diaryDefaultTemplate'
+  | 'diaryDefaultTemplateNone'
+  | 'diaryDefaultTemplateMissing'
+  | 'diaryDefaultTemplateHint'
+  | 'diaryDefaultTemplateSummary'
+  | 'diaryTemplateStarted';
 
 export const entryTemplatesTranslations: Record<Language, Record<EntryTemplatesTranslationKey, string>> = {
   en: {
@@ -16,6 +22,12 @@ export const entryTemplatesTranslations: Record<Language, Record<EntryTemplatesT
     templateNameRequired: 'Enter a name for the template.',
     templateSaveFailed: 'The template could not be saved. Try again.',
     templateSaving: 'Saving...',
+    diaryDefaultTemplate: 'Default template',
+    diaryDefaultTemplateNone: 'No template',
+    diaryDefaultTemplateMissing: 'Deleted template',
+    diaryDefaultTemplateHint: 'A new entry in this diary starts from this template when the composer is empty.',
+    diaryDefaultTemplateSummary: 'Template: {name}',
+    diaryTemplateStarted: "Started from this diary's template, {name}.",
   },
   fr: {
     templateNameDialogTitle: 'Enregistrer comme modèle',
@@ -24,5 +36,11 @@ export const entryTemplatesTranslations: Record<Language, Record<EntryTemplatesT
     templateNameRequired: 'Saisissez un nom pour le modèle.',
     templateSaveFailed: "Le modèle n'a pas pu être enregistré. Réessayez.",
     templateSaving: 'Enregistrement...',
+    diaryDefaultTemplate: 'Modèle par défaut',
+    diaryDefaultTemplateNone: 'Aucun modèle',
+    diaryDefaultTemplateMissing: 'Modèle supprimé',
+    diaryDefaultTemplateHint: "Une nouvelle entrée de ce journal part de ce modèle quand l'éditeur est vide.",
+    diaryDefaultTemplateSummary: 'Modèle : {name}',
+    diaryTemplateStarted: 'Commencé à partir du modèle de ce journal, {name}.',
   },
 };

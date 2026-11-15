@@ -70,6 +70,7 @@ describe('DiaryManager', () => {
                 visibility: 'private',
                 goalType: null,
                 goalTarget: null,
+                defaultTemplateId: null,
             });
         });
     });

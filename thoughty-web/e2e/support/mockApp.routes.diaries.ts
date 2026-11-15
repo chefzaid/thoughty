@@ -35,6 +35,7 @@ export async function handleDiaryRoutes({ route, request, pathname, state }: Rou
         position: state.diaries.length,
         goalType: payload.goalType ?? null,
         goalTarget: payload.goalTarget ?? null,
+        defaultTemplateId: payload.defaultTemplateId ?? null,
       });
       state.diaries.push(newDiary);
       await fulfillJson(route, newDiary, { status: 201 });
@@ -82,6 +83,7 @@ export async function handleDiaryRoutes({ route, request, pathname, state }: Rou
       color: payload.color ?? diary.color,
       visibility: payload.visibility ?? diary.visibility,
       ...(payload.goalType === undefined ? {} : { goalType: payload.goalType, goalTarget: payload.goalTarget ?? null }),
+      ...(payload.defaultTemplateId === undefined ? {} : { defaultTemplateId: payload.defaultTemplateId }),
     };
     state.diaries = state.diaries.map((candidate) => (candidate.id === diary.id ? updated : candidate));
     await fulfillJson(route, updated);

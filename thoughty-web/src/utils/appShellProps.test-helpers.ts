@@ -176,6 +176,7 @@ export function createRoutesParams(
     entryFormState: {
       addPendingFile: vi.fn(),
       draft: composerDraftSyncMock(),
+      diaryTemplateName: null,
       feelings: [],
       fixingWriting: false,
       formError: '',

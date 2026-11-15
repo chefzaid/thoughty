@@ -94,6 +94,8 @@ interface EntryFormProps {
     readonly onDeleteTemplate?: (templateId: string) => Promise<boolean>;
     /** The draft saved as the writer types, which continues on their other devices. */
     readonly draft?: ComposerDraftSync;
+    /** The name of the diary's default template while the composer holds it untouched. */
+    readonly diaryTemplateName?: string | null;
 }
 
 function entryFormClasses({ theme, format, visibility }: Pick<EntryFormProps, 'theme' | 'format' | 'visibility'>) {
@@ -173,6 +175,7 @@ function EntryForm({
     onSaveTemplate,
     onDeleteTemplate,
     draft,
+    diaryTemplateName = null,
 }: EntryFormProps) {
     const writingArea = useAutoGrowTextarea(newEntryText);
     const inlineImages = useInlineImageInsert({
@@ -234,6 +237,11 @@ function EntryForm({
                     theme={theme}
                     t={t}
                 />
+                {diaryTemplateName && (
+                    <p className={`text-xs ${theme === 'light' ? 'text-gray-600' : 'text-gray-400'}`}>
+                        {t('diaryTemplateStarted', { name: diaryTemplateName })}
+                    </p>
+                )}
                 {setTitle && (
                     <div>
                         <label htmlFor="composer-title" className="sr-only">{t('entryTitleLabel')}</label>

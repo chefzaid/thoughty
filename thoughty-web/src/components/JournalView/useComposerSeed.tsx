@@ -8,7 +8,8 @@ import { entryReplyDraft } from '../EntriesList/entryReply';
 
 type ComposerState = Pick<ComponentProps<typeof EntryForm>,
   'newEntryText' | 'setNewEntryText' | 'title' | 'setTitle' | 'timeOfDay' | 'setTimeOfDay' | 'mood' | 'setMood'
-  | 'feelings' | 'setFeelings' | 'tags' | 'setTags' | 'timeCapsule' | 'setTimeCapsule' | 'setVisibility' | 'setFormat'>
+  | 'feelings' | 'setFeelings' | 'tags' | 'setTags' | 'timeCapsule' | 'setTimeCapsule' | 'setVisibility' | 'setFormat'
+  | 'diaryTemplateName'>
   & Partial<Pick<ComponentProps<typeof EntryForm>, 'setSelectedDate'>>;
 
 interface ComposerSeedOptions {
@@ -88,7 +89,9 @@ export function useComposerSeed({ composer, defaultVisibility, formRef, language
     if (!seed) {
       return;
     }
-    if (hasComposerDraft(latest.current.composer)) {
+    // A diary's template the writer has not touched is no draft of theirs to warn about
+    const { composer } = latest.current;
+    if (!composer.diaryTemplateName && hasComposerDraft(composer)) {
       setPendingSeed(seed);
     } else {
       applySeed(seed);

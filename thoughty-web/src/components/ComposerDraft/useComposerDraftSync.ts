@@ -26,6 +26,8 @@ export type ComposerDraftStatus = 'idle' | 'saving' | 'saved' | 'offline' | 'loc
 
 export interface ComposerDraftSync {
   status: ComposerDraftStatus;
+  /** Set once this device's copy and the server's draft are known and the composer starts from them. */
+  ready: boolean;
   offer: ComposerDraftOffer | null;
   /** Puts the draft saved elsewhere in the composer. */
   takeSavedDraft: () => void;
@@ -47,7 +49,12 @@ export interface ComposerDraftSync {
  * on; when another device got there first the writer chooses which text to keep. The page asks before it
  * closes on text the server does not have yet.
  */
-export function useComposerDraftSync(fields: ComposerDraftFields, apply: (fields: ComposerDraftFields) => void): ComposerDraftSync {
+export function useComposerDraftSync(
+  fields: ComposerDraftFields,
+  apply: (fields: ComposerDraftFields) => void,
+  /** Set while the composer holds a diary's default template as it came: that is no draft to keep. */
+  untouchedTemplate = false,
+): ComposerDraftSync {
   const userId = useAuth().user?.id ?? null;
   const service = useAuthenticatedService(createComposerDraftService);
   const [status, setStatus] = useState<ComposerDraftStatus>('idle');
@@ -55,8 +62,13 @@ export function useComposerDraftSync(fields: ComposerDraftFields, apply: (fields
   const [ready, setReady] = useState(false);
   const key = draftKey(fields);
 
-  const latest = useRef({ fields, key, service, apply });
-  latest.current = { fields, key, service, apply };
+  const latest = useRef({ fields, key, service, apply, untouchedTemplate });
+  latest.current = { fields, key, service, apply, untouchedTemplate };
+  /** Whether the composer holds nothing of the writer's own: no text and no title, or an untouched template. */
+  const holdsNoDraft = useCallback(
+    (current: ComposerDraftFields) => isEmptyDraft(current) || latest.current.untouchedTemplate,
+    [],
+  );
   const offerRef = useRef(offer);
   const baseRevision = useRef<number | null>(null);
   const syncedKey = useRef(EMPTY_DRAFT_KEY);
@@ -76,12 +88,12 @@ export function useComposerDraftSync(fields: ComposerDraftFields, apply: (fields
 
   const keepLocal = useCallback((current: ComposerDraftFields, currentKey: string) => {
     if (userId === null) return;
-    if (isEmptyDraft(current)) {
+    if (holdsNoDraft(current)) {
       removeLocalComposerDraft(userId);
       return;
     }
     writeLocalComposerDraft(userId, { fields: current, baseRevision: baseRevision.current, synced: currentKey === syncedKey.current });
-  }, [userId]);
+  }, [holdsNoDraft, userId]);
 
   const reloadOffer = useCallback(async () => {
     const outcome = await latest.current.service.load();
@@ -100,7 +112,7 @@ export function useComposerDraftSync(fields: ComposerDraftFields, apply: (fields
       queued.current = true;
       return;
     }
-    if (isEmptyDraft(current) && baseRevision.current === null) {
+    if (holdsNoDraft(current) && baseRevision.current === null) {
       // Nothing was saved from here: an emptied composer has nothing to discard
       syncedKey.current = currentKey;
       setStatus('idle');
@@ -119,7 +131,7 @@ export function useComposerDraftSync(fields: ComposerDraftFields, apply: (fields
       }
     }, DRAFT_MIN_SAVE_INTERVAL_MS);
     setStatus('saving');
-    const outcome = isEmptyDraft(current)
+    const outcome = holdsNoDraft(current)
       ? await drafts.discard(baseRevision.current)
       : await drafts.save(current, baseRevision.current);
     inFlight.current = false;
@@ -146,7 +158,7 @@ export function useComposerDraftSync(fields: ComposerDraftFields, apply: (fields
       setStatus('local');
       timer.current = setTimeout(() => void sync(), DRAFT_RETRY_MS);
     }
-  }, [keepLocal, reloadOffer, userId]);
+  }, [holdsNoDraft, keepLocal, reloadOffer, userId]);
   const syncRef = useRef(sync);
   syncRef.current = sync;
 
@@ -216,8 +228,8 @@ export function useComposerDraftSync(fields: ComposerDraftFields, apply: (fields
   }, []);
 
   useLeaveWarning(useCallback(
-    () => !isEmptyDraft(latest.current.fields) && (inFlight.current || latest.current.key !== syncedKey.current),
-    [],
+    () => !holdsNoDraft(latest.current.fields) && (inFlight.current || latest.current.key !== syncedKey.current),
+    [holdsNoDraft],
   ));
 
   const takeSavedDraft = useCallback(() => {
@@ -280,5 +292,5 @@ export function useComposerDraftSync(fields: ComposerDraftFields, apply: (fields
     if (published !== null) void latest.current.service.discard(published);
   }, [forgetDraft]);
 
-  return { status, offer, takeSavedDraft, keepThisDraft, discardSavedDraft, clearThisDraft, flush, onPublished };
+  return { status, ready, offer, takeSavedDraft, keepThisDraft, discardSavedDraft, clearThisDraft, flush, onPublished };
 }

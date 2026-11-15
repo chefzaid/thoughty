@@ -7,7 +7,10 @@ import { StrictInt, toStrictInt } from '@/common/validation';
 
 const DIARY_COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
 
-/** The optional writing goal, sent when creating or updating a diary. */
+/** A template ID as the web app makes them (`builtin-gratitude`, `custom-1767225600000`); the `chk_diaries_default_template_id` constraint holds the same rule. */
+export const DIARY_TEMPLATE_ID_PATTERN = /^[A-Za-z0-9_-]{1,100}$/;
+
+/** The optional writing goal and default template, sent when creating or updating a diary. */
 class DiaryGoalFieldsDto {
   @ApiPropertyOptional({
     enum: DIARY_GOAL_TYPES,
@@ -28,6 +31,19 @@ class DiaryGoalFieldsDto {
   @Transform(toStrictInt)
   @IsDiaryGoalTarget()
   goalTarget?: number | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    maxLength: 100,
+    pattern: DIARY_TEMPLATE_ID_PATTERN.source,
+    example: 'builtin-gratitude',
+    description: 'Entry template the composer starts from in this diary (built-in or custom ID); null removes it, left out keeps it on update',
+  })
+  @IsOptional()
+  @IsString()
+  @Matches(DIARY_TEMPLATE_ID_PATTERN)
+  defaultTemplateId?: string | null;
 }
 
 export class CreateDiaryDto extends DiaryGoalFieldsDto {
@@ -108,6 +124,9 @@ export class DiaryResponseDto {
 
   @ApiProperty({ type: Number, nullable: true, example: 3 })
   goalTarget: number | null;
+
+  @ApiProperty({ type: String, nullable: true, example: 'builtin-gratitude', description: 'Entry template the composer starts from in this diary; an ID that no longer resolves is ignored' })
+  defaultTemplateId: string | null;
 
   @ApiProperty()
   createdAt: Date;

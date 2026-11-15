@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
-import type { Attachment, Config } from '../types';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import type { Attachment, Config, Diary } from '../types';
 import { getAutoTagLimit } from '../utils/autoTagLimit';
 import { formatEntryDate } from '../utils/entryDate';
 import { cleanEntryTitle } from '../utils/entryTime';
-import { isValidTimeCapsuleDate, type TimeCapsuleDraft } from '../utils/timeCapsule';
+import { defaultTimeCapsule, isValidTimeCapsuleDate, type TimeCapsuleDraft } from '../utils/timeCapsule';
 import { browserTimeZone } from '../utils/timeZone';
 import { storePlacedFiles } from '../utils/inlineImages';
 import { useApiServices } from './useApiServices';
@@ -12,11 +12,17 @@ import type { SavedEntry } from '../components/ComfortReads/comfortReadsState';
 import { useFeatureFlag } from '../components/FeatureFlags/featureFlags';
 import { useComposerDraftSync } from '../components/ComposerDraft/useComposerDraftSync';
 import type { ComposerDraftFields } from '../services/api/composerDraftService';
+import { draftKey, isEmptyDraft } from '../components/ComposerDraft/composerDraftPlan';
+import { diaryDefaultTemplate, getEntryTemplates, type EntryTemplate } from '../utils/entryTemplates';
+import { useDiaryTemplatePrefill } from '../components/EntryForm/useDiaryTemplatePrefill';
+
+const NO_DIARIES: readonly Diary[] = [];
 
 export const useEntryForm = (
   config: Config,
   currentDiaryId: number | null,
   onSuccess: () => void,
+  diaries: readonly Diary[] = NO_DIARIES,
 ) => {
   const { entriesService, attachmentsService, aiService } = useApiServices();
 
@@ -54,11 +60,35 @@ export const useEntryForm = (
     setMood(fields.mood);
     setFeelings(fields.feelings);
   }, []);
-  const draft = useComposerDraftSync(
-    { text: newEntryText, title: title === '' ? null : title, tags, format, mood, feelings },
-    applyDraft,
-  );
+  const draftFields: ComposerDraftFields = { text: newEntryText, title: title === '' ? null : title, tags, format, mood, feelings };
+  // The fields the diary's default template left in the composer, and how many entries were saved since it opened
+  const [templateFill, setTemplateFill] = useState<{ name: string; fields: ComposerDraftFields } | null>(null);
+  const [savedCount, setSavedCount] = useState(0);
+  const untouchedTemplate = templateFill !== null && draftKey(templateFill.fields) === draftKey(draftFields);
+  const draft = useComposerDraftSync(draftFields, applyDraft, untouchedTemplate);
   const { onPublished: onDraftPublished } = draft;
+
+  const templates = useMemo(() => getEntryTemplates(config.entryTemplates), [config.entryTemplates]);
+  const defaultTemplate = diaryDefaultTemplate(diaries, currentDiaryId, templates);
+  const fillFromTemplate = useCallback((template: EntryTemplate | null) => {
+    setNewEntryText(template?.content ?? '');
+    setTags(template ? [...template.tags] : []);
+    setFormat(template?.format ?? 'plain');
+    setVisibility(template?.visibility ?? (config.defaultVisibility || 'private'));
+    setTimeCapsule(template?.sealYears ? defaultTimeCapsule(new Date(), template.sealYears) : null);
+    setTemplateFill(template && {
+      name: template.name,
+      fields: { text: template.content, title: null, tags: [...template.tags], format: template.format, mood, feelings },
+    });
+  }, [config.defaultVisibility, feelings, mood]);
+  useDiaryTemplatePrefill({
+    template: defaultTemplate,
+    scope: `${currentDiaryId ?? 'all'}:${savedCount}`,
+    enabled: draft.ready && draft.offer === null,
+    empty: isEmptyDraft(draftFields),
+    untouched: untouchedTemplate,
+    fill: fillFromTemplate,
+  });
 
   const resetEntryForm = useCallback(() => {
     setNewEntryText('');
@@ -72,6 +102,7 @@ export const useEntryForm = (
     setVisibility(config.defaultVisibility || 'private');
     setPendingFiles([]);
     setUploadedAttachments([]);
+    setSavedCount((count) => count + 1);
   }, [config.defaultVisibility]);
 
   const validateEntryForm = useCallback(() => {
@@ -213,5 +244,7 @@ export const useEntryForm = (
     removePendingFile,
     removeUploadedAttachment,
     draft,
+    /** The name of the diary template the composer holds untouched, which another start replaces without asking. */
+    diaryTemplateName: untouchedTemplate ? templateFill.name : null,
   };
 };

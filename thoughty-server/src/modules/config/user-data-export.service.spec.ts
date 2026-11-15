@@ -127,7 +127,7 @@ describe('UserDataExportService', () => {
         isDefault: true,
         position: 0,
         goalType: 'entries_per_week',
-        goalTarget: 3,
+        goalTarget: 3, defaultTemplateId: 'builtin-gratitude',
         createdAt: new Date('2024-01-01'),
       },
     ]);
@@ -203,7 +203,7 @@ describe('UserDataExportService', () => {
     );
     expect(result.diaries).toHaveLength(1);
     expect(result.diaries).toEqual(
-      expect.arrayContaining([expect.objectContaining({ color: '#E76F51', goalType: 'entries_per_week', goalTarget: 3 })]),
+      expect.arrayContaining([expect.objectContaining({ color: '#E76F51', goalType: 'entries_per_week', goalTarget: 3, defaultTemplateId: 'builtin-gratitude' })]),
     );
     expect(entryRepository.find).toHaveBeenCalledWith(expect.objectContaining({ where: { userId: 1 }, withDeleted: true }));
     expect(result.entries).toEqual([

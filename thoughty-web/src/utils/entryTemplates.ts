@@ -1,4 +1,4 @@
-import type { Config } from '../types';
+import type { Config, Diary } from '../types';
 
 export interface EntryTemplate {
   id: string;
@@ -202,4 +202,30 @@ export function createEntryTemplate(draft: EntryTemplateDraft): EntryTemplate {
     format: draft.format,
     builtIn: false,
   };
+}
+
+/**
+ * The template a new entry in the diary starts from: the diary picked, or the default diary when the
+ * journal shows every diary (where a new entry goes). Null when the diary names none, or a custom
+ * template deleted since.
+ */
+export function diaryDefaultTemplate(
+  diaries: readonly Pick<Diary, 'id' | 'isDefault' | 'defaultTemplateId'>[],
+  diaryId: number | null,
+  templates: readonly EntryTemplate[],
+): EntryTemplate | null {
+  const diary = diaries.find((candidate) => (diaryId === null ? candidate.isDefault : candidate.id === diaryId));
+  const templateId = diary?.defaultTemplateId;
+  return templateId ? templates.find((template) => template.id === templateId) ?? null : null;
+}
+
+/** What a diary card says of its default template, or null when it has none. */
+export function describeDiaryTemplate(
+  templateId: string | null,
+  templates: readonly EntryTemplate[],
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string | null {
+  if (!templateId) return null;
+  const template = templates.find((candidate) => candidate.id === templateId);
+  return t('diaryDefaultTemplateSummary', { name: template?.name ?? t('diaryDefaultTemplateMissing') });
 }

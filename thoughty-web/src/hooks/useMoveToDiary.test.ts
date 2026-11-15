@@ -11,7 +11,7 @@ vi.mock('../services/api', async () => (await import('./useEntryActions.test-hel
 
 const diary = (id: number, name: string, isDefault = false): Diary => ({
   id, userId: 1, name, icon: '📓', color: null, visibility: 'private', isDefault, position: id,
-  goalType: null, goalTarget: null, createdAt: '2026-01-01T00:00:00.000Z',
+  goalType: null, goalTarget: null, defaultTemplateId: null, createdAt: '2026-01-01T00:00:00.000Z',
 });
 const diaries = [diary(1, 'Work', true), diary(2, 'Travel')];
 const entry = { id: 7, content: 'Packing list', tags: ['trip'], date: '2026-10-02', visibility: 'public' as const, diary_id: 1 };

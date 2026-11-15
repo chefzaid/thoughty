@@ -53,6 +53,14 @@ export class Diary {
   @Column({ name: 'goal_target', type: 'integer', nullable: true })
   goalTarget: number | null;
 
+  /**
+   * The entry template the composer starts from in this diary: a built-in ID (`builtin-…`) or one of
+   * the writer's custom templates (`custom-…`, kept in the `entryTemplates` setting). An ID that no
+   * longer resolves is ignored by the composer.
+   */
+  @Column({ name: 'default_template_id', type: 'varchar', length: 100, nullable: true })
+  defaultTemplateId: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

@@ -156,6 +156,7 @@ export class UserDataExportService {
         position: diary.position,
         goalType: diary.goalType,
         goalTarget: diary.goalTarget,
+        defaultTemplateId: diary.defaultTemplateId,
         createdAt: diary.createdAt,
       })),
       entries: entries.map((entry) => ({

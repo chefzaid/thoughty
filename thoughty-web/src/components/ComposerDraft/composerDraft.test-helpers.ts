@@ -4,6 +4,7 @@ import type { ComposerDraftSync } from './useComposerDraftSync';
 /** A composer draft with nothing to offer and nothing to save, for specs of the screens around it. */
 export const composerDraftSyncMock = (overrides: Partial<ComposerDraftSync> = {}): ComposerDraftSync => ({
   status: 'idle',
+  ready: true,
   offer: null,
   takeSavedDraft: vi.fn(),
   keepThisDraft: vi.fn(),

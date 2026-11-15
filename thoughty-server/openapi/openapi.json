@@ -5522,6 +5522,7 @@
                     "position": 1,
                     "goalType": "entries_per_week",
                     "goalTarget": 3,
+                    "defaultTemplateId": "builtin-gratitude",
                     "createdAt": "2026-06-24T10:00:00.000Z"
                   }
                 ]
@@ -5552,6 +5553,7 @@
               "example": {
                 "goalType": "entries_per_week",
                 "goalTarget": 3,
+                "defaultTemplateId": "builtin-gratitude",
                 "name": "Daily Journal",
                 "icon": "📓",
                 "visibility": "private",
@@ -5579,6 +5581,7 @@
                   "position": 1,
                   "goalType": "entries_per_week",
                   "goalTarget": 3,
+                  "defaultTemplateId": "builtin-gratitude",
                   "createdAt": "2026-06-24T10:00:00.000Z"
                 }
               }
@@ -5651,6 +5654,7 @@
               "example": {
                 "goalType": "entries_per_week",
                 "goalTarget": 3,
+                "defaultTemplateId": "builtin-gratitude",
                 "name": "Daily Journal",
                 "icon": "journal",
                 "visibility": "public",
@@ -5678,6 +5682,7 @@
                   "position": 1,
                   "goalType": "entries_per_week",
                   "goalTarget": 3,
+                  "defaultTemplateId": "builtin-gratitude",
                   "createdAt": "2026-06-24T10:00:00.000Z"
                 }
               }
@@ -5828,6 +5833,7 @@
                   "position": 1,
                   "goalType": "entries_per_week",
                   "goalTarget": 3,
+                  "defaultTemplateId": "builtin-gratitude",
                   "createdAt": "2026-06-24T10:00:00.000Z"
                 }
               }
@@ -18438,6 +18444,12 @@
             "nullable": true,
             "example": 3
           },
+          "defaultTemplateId": {
+            "type": "string",
+            "nullable": true,
+            "example": "builtin-gratitude",
+            "description": "Entry template the composer starts from in this diary; an ID that no longer resolves is ignored"
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -18454,6 +18466,7 @@
           "position",
           "goalType",
           "goalTarget",
+          "defaultTemplateId",
           "createdAt"
         ],
         "example": {
@@ -18467,6 +18480,7 @@
           "position": 1,
           "goalType": "entries_per_week",
           "goalTarget": 3,
+          "defaultTemplateId": "builtin-gratitude",
           "createdAt": "2026-06-24T10:00:00.000Z"
         }
       },
@@ -18488,6 +18502,14 @@
             "nullable": true,
             "example": 3,
             "description": "Entries a week (1-50) or words a day (10-10000); required with a goal type"
+          },
+          "defaultTemplateId": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]{1,100}$",
+            "example": "builtin-gratitude",
+            "description": "Entry template the composer starts from in this diary (built-in or custom ID); null removes it, left out keeps it on update"
           },
           "name": {
             "type": "string",
@@ -18518,6 +18540,7 @@
         "example": {
           "goalType": "entries_per_week",
           "goalTarget": 3,
+          "defaultTemplateId": "builtin-gratitude",
           "name": "Daily Journal",
           "icon": "📓",
           "visibility": "private",
@@ -18542,6 +18565,14 @@
             "nullable": true,
             "example": 3,
             "description": "Entries a week (1-50) or words a day (10-10000); required with a goal type"
+          },
+          "defaultTemplateId": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 100,
+            "pattern": "^[A-Za-z0-9_-]{1,100}$",
+            "example": "builtin-gratitude",
+            "description": "Entry template the composer starts from in this diary (built-in or custom ID); null removes it, left out keeps it on update"
           },
           "name": {
             "type": "string",
@@ -18570,6 +18601,7 @@
         "example": {
           "goalType": "entries_per_week",
           "goalTarget": 3,
+          "defaultTemplateId": "builtin-gratitude",
           "name": "Daily Journal",
           "icon": "journal",
           "visibility": "public",

@@ -30,7 +30,7 @@ test.describe('Diary management', () => {
     await page.locator('.diary-card.editing input.diary-name-input').fill('Dream Log');
     await page.locator('.diary-card.editing .edit-form').getByRole('button', { name: 'Save' }).click();
 
-    await expect(page.getByText('Dream Log')).toBeVisible();
+    await expect(page.locator('.diary-name').getByText('Dream Log', { exact: true })).toBeVisible();
     expect(state.diaries.some((diary) => diary.name === 'Dream Log')).toBe(true);
 
     await page.getByLabel('Dream Log Drag to reorder').press('ArrowUp');

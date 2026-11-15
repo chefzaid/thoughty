@@ -44,6 +44,18 @@ describe('EntryForm templates', () => {
         },
     ];
 
+    it.each([
+        ['en', "Started from this diary's template, Gratitude journal."],
+        ['fr', 'Commencé à partir du modèle de ce journal, Gratitude journal.'],
+    ] as const)('says in %s which diary template the composer started from, while it is untouched', (language, note) => {
+        const t = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);
+        const { rerender } = render(<EntryForm {...defaultProps} t={t} diaryTemplateName="Gratitude journal" />);
+        expect(screen.getByText(note)).toBeInTheDocument();
+
+        rerender(<EntryForm {...defaultProps} t={t} diaryTemplateName={null} />);
+        expect(screen.queryByText(note)).not.toBeInTheDocument();
+    });
+
     it('applies a selected template to the draft', async () => {
         const setNewEntryText = vi.fn();
         const setTags = vi.fn();

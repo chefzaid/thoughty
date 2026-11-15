@@ -121,6 +121,44 @@ describeContract('organize', (context) => {
     await call('DELETE /api/diaries/{id}', { as: alice, params: { id: travel.id }, status: 200 });
   });
 
+  it('keeps a default template on a diary, until it is changed or cleared', async () => {
+    const { alice } = context;
+    const form = { name: 'Gratitude', icon: '🙏', visibility: 'private', goalType: null, goalTarget: null };
+    const created = await call('POST /api/diaries', {
+      as: alice,
+      json: { ...form, defaultTemplateId: 'builtin-gratitude' },
+      status: 201,
+    });
+    const diary = created.body as { id: number; defaultTemplateId: string | null };
+    expect(diary.defaultTemplateId).toBe('builtin-gratitude');
+
+    // Left out, the template is kept; a custom template's ID replaces it; null clears it
+    const kept = await call('PUT /api/diaries/{id}', { as: alice, params: { id: diary.id }, json: form, status: 200 });
+    expect(kept.body).toMatchObject({ defaultTemplateId: 'builtin-gratitude' });
+    const custom = await call('PUT /api/diaries/{id}', {
+      as: alice,
+      params: { id: diary.id },
+      json: { ...form, defaultTemplateId: 'custom-1767225600000' },
+      status: 200,
+    });
+    expect(custom.body).toMatchObject({ defaultTemplateId: 'custom-1767225600000' });
+    await call('PUT /api/diaries/{id}', {
+      as: alice,
+      params: { id: diary.id },
+      json: { ...form, defaultTemplateId: 'not a template' },
+      status: 400,
+      code: 'VALIDATION_FAILED',
+    });
+    const cleared = await call('PUT /api/diaries/{id}', {
+      as: alice,
+      params: { id: diary.id },
+      json: { ...form, defaultTemplateId: null },
+      status: 200,
+    });
+    expect(cleared.body).toMatchObject({ defaultTemplateId: null });
+    await call('DELETE /api/diaries/{id}', { as: alice, params: { id: diary.id }, status: 200 });
+  });
+
   it('refuses a second diary of the same name, ignoring case and spaces, as the diary form sends it', async () => {
     const { alice, bob } = context;
     const form = (name: string) => ({ name, icon: '📓', visibility: 'private', goalType: null, goalTarget: null });

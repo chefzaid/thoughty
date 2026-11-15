@@ -11,6 +11,7 @@ export function makeDiary(overrides: Partial<Diary> & Pick<Diary, 'id' | 'name'>
     position: overrides.id,
     goalType: null,
     goalTarget: null,
+    defaultTemplateId: null,
     createdAt: '2026-01-01T00:00:00.000Z',
     ...overrides,
   };

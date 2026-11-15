@@ -5,6 +5,8 @@ import PageHeader from '../PageHeader/PageHeader';
 import DiaryGoalField from './DiaryGoalField';
 import DiaryIconPicker from './DiaryIconPicker';
 import DiaryColorField from './DiaryColorField';
+import DiaryTemplateField from './DiaryTemplateField';
+import { describeDiaryTemplate, type EntryTemplate } from '../../utils/entryTemplates';
 import type { Diary as ApiDiary, DiaryFormData } from '../../types';
 import { DEFAULT_DIARY_COLORS, normalizeDiaryColor, resolveDiaryColor, withAlpha } from '../../utils/diaryColors';
 import { describeDiaryGoal, diaryGoalDraft, NO_DIARY_GOAL, readDiaryGoal } from '../../utils/diaryGoals';
@@ -12,7 +14,7 @@ import { resolveLanguage } from '../../utils/language';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 
 /** The diary fields Manage Diaries reads. */
-type Diary = Pick<ApiDiary, 'id' | 'name' | 'icon' | 'color' | 'visibility' | 'isDefault' | 'goalType' | 'goalTarget'>;
+type Diary = Pick<ApiDiary, 'id' | 'name' | 'icon' | 'color' | 'visibility' | 'isDefault' | 'goalType' | 'goalTarget' | 'defaultTemplateId'>;
 
 const DEFAULT_NEW_DIARY_COLOR = DEFAULT_DIARY_COLORS[0] ?? '#E76F51';
 
@@ -24,12 +26,14 @@ interface DiaryManagerProps {
     readonly onSetDefault: (id: number) => Promise<void>;
     readonly onReorderDiaries: (orderedIds: number[]) => Promise<void>;
     readonly onBack: () => void;
+    /** The templates a diary can start its entries from: the built-in ones, then the writer's own. */
+    readonly entryTemplates?: readonly EntryTemplate[];
     readonly theme?: 'light' | 'dark';
     readonly language?: string;
     readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, onSetDefault, onReorderDiaries, onBack, theme, language, t }: DiaryManagerProps) {
+function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, onSetDefault, onReorderDiaries, onBack, entryTemplates = [], theme, language, t }: DiaryManagerProps) {
     const [newDiaryName, setNewDiaryName] = useState<string>('');
     const [newDiaryIcon, setNewDiaryIcon] = useState<string>('📓');
     const [newDiaryColor, setNewDiaryColor] = useState<string>(DEFAULT_NEW_DIARY_COLOR);
@@ -38,12 +42,14 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
     const publicSharing = useFeatureFlag('publicSharing');
     const visibilityHint = (current: 'public' | 'private') => (!publicSharing && current === 'private' ? t('featureOffPublicVisibility') : t('visibilityOverrideHint'));
     const [newDiaryGoal, setNewDiaryGoal] = useState(NO_DIARY_GOAL);
+    const [newDiaryTemplate, setNewDiaryTemplate] = useState('');
     const [editingDiary, setEditingDiary] = useState<Diary | null>(null);
     const [editName, setEditName] = useState<string>('');
     const [editIcon, setEditIcon] = useState<string>('');
     const [editColor, setEditColor] = useState<string>(DEFAULT_NEW_DIARY_COLOR);
     const [editVisibility, setEditVisibility] = useState<'public' | 'private'>('private');
     const [editGoal, setEditGoal] = useState(NO_DIARY_GOAL);
+    const [editTemplate, setEditTemplate] = useState('');
     /** A translation key, or a message the API sent, which `t` passes through. */
     const [error, setError] = useState<string>('');
     const [showIconPicker, setShowIconPicker] = useState<'new' | number | null>(null);
@@ -83,12 +89,14 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                 color: normalizeDiaryColor(newDiaryColor) ?? DEFAULT_NEW_DIARY_COLOR,
                 visibility: newDiaryVisibility,
                 ...goal.fields,
+                defaultTemplateId: newDiaryTemplate || null,
             });
             setNewDiaryName('');
             setNewDiaryIcon('📓');
             setNewDiaryColor(DEFAULT_NEW_DIARY_COLOR);
             setNewDiaryVisibility('private');
             setNewDiaryGoal(NO_DIARY_GOAL);
+            setNewDiaryTemplate('');
         } catch (err) {
             setError((err as Error).message || 'diaryCreateFailed');
         }
@@ -101,6 +109,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
         setEditColor(resolveDiaryColor(diary));
         setEditVisibility(diary.visibility);
         setEditGoal(diaryGoalDraft(diary.goalType, diary.goalTarget));
+        setEditTemplate(diary.defaultTemplateId ?? '');
     };
 
     const handleSaveEdit = async (): Promise<void> => {
@@ -118,6 +127,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                 color: normalizeDiaryColor(editColor) ?? resolveDiaryColor(editingDiary),
                 visibility: editVisibility,
                 ...goal.fields,
+                defaultTemplateId: editTemplate || null,
             });
             setEditingDiary(null);
         } catch (err) {
@@ -257,6 +267,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                             </div>
                         </div>
                         <DiaryGoalField goal={newDiaryGoal} onChange={setNewDiaryGoal} t={t} />
+                        <DiaryTemplateField templateId={newDiaryTemplate} templates={entryTemplates} onChange={setNewDiaryTemplate} t={t} />
                         <button type="submit" className="create-btn">
                             {t('createDiary')}
                         </button>
@@ -322,6 +333,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                                 </div>
                                             </div>
                                             <DiaryGoalField goal={editGoal} onChange={setEditGoal} t={t} />
+                                            <DiaryTemplateField templateId={editTemplate} templates={entryTemplates} onChange={setEditTemplate} t={t} />
                                         </div>
                                         <div className="edit-actions">
                                             <button type="button" onClick={handleSaveEdit} className="save-btn">{t('save')}</button>
@@ -361,6 +373,9 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                                     <span className="diary-goal-summary">
                                                         {t('diaryGoalSummary', { goal: describeDiaryGoal(t, uiLanguage, diary.goalType, diary.goalTarget) })}
                                                     </span>
+                                                )}
+                                                {diary.defaultTemplateId && (
+                                                    <span className="diary-goal-summary">{describeDiaryTemplate(diary.defaultTemplateId, entryTemplates, t)}</span>
                                                 )}
                                             </div>
                                             {diary.isDefault && (
