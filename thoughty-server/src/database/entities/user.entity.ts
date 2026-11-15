@@ -5,21 +5,31 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { Diary } from './diary.entity';
 import { Entry } from './entry.entity';
 import { RefreshToken } from './refresh-token.entity';
 import { Setting } from './setting.entity';
 
+/** Usernames are unique ignoring case (`lower(username)`), as sign-in matches them. */
+export const USERNAME_UNIQUE_INDEX = 'uq_users_username_lower';
+
 @Entity('users')
+// A unique expression index TypeORM cannot describe; migration 1788134400000 builds it.
+@Index(USERNAME_UNIQUE_INDEX, { synchronize: false })
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  /** New names are cut to 50 characters (`AuthService`); the column keeps up to 100, as older accounts may. */
+  /**
+   * New names are cut to 50 characters (`USERNAME_MAX_LENGTH`); the column keeps up to 100, as older
+   * accounts may. Unique ignoring case (`USERNAME_UNIQUE_INDEX`).
+   */
   @Column({ length: 100 })
   username: string;
 
+  /** Stored in lower case (`chk_users_email_lowercase`), so the unique key ignores case too. */
   @Column({ length: 255, unique: true })
   email: string;
 

@@ -12,14 +12,14 @@ import * as bcrypt from 'bcryptjs';
 import * as crypto from 'node:crypto';
 import { DataSource, MoreThan, Repository } from 'typeorm';
 import { apiError } from '@/common/errors';
-import { Diary, SignUpRequest, User } from '@/database/entities';
+import { SignUpRequest, User } from '@/database/entities';
 import { CompleteSignUpDto, RegisterDto, SignUpStartedResponseDto } from '../dto';
 import { assertHumanAuthAttempt } from './auth-bot-protection';
 import { AuthService } from './auth.service';
 import { AuthSessionService, type IssuedSession } from './auth-session.service';
-import { defaultDiaryFor } from './default-diary';
+import { saveNewAccount } from './default-diary';
 import { EmailService, describeEmailFailure } from './email.service';
-import { freeUsername, takenConflict, uniqueViolationOf } from './free-username';
+import { freeUsername, takenConflict, uniqueViolationOf, usernameTaken } from './free-username';
 
 /** How long a sign-up link works. */
 export const SIGN_UP_LINK_TTL_MS = 24 * 60 * 60 * 1000;
@@ -103,7 +103,7 @@ export class SignUpService {
     }
 
     const chosen = dto.username ?? request.username;
-    if (chosen && (await this.userRepository.exists({ where: { username: chosen } }))) {
+    if (chosen && (await usernameTaken(this.userRepository, chosen))) {
       throw apiError(ConflictException, 'AUTH_USERNAME_TAKEN');
     }
     const username = chosen ?? (await freeUsername(this.userRepository, request.email.split('@')[0]));
@@ -187,17 +187,13 @@ export class SignUpService {
         if (!claimed.affected) {
           throw apiError(BadRequestException, 'AUTH_INVALID_SIGN_UP_TOKEN');
         }
-        const user = await manager.save(
-          manager.create(User, {
-            username,
-            email: request.email,
-            passwordHash: request.passwordHash,
-            authProvider: 'local',
-            emailVerified: true,
-          }),
-        );
-        await manager.save(manager.create(Diary, defaultDiaryFor(user.id)));
-        return user;
+        return saveNewAccount(manager, {
+          username,
+          email: request.email,
+          passwordHash: request.passwordHash,
+          authProvider: 'local',
+          emailVerified: true,
+        });
       });
     } catch (error) {
       const constraint = uniqueViolationOf(error);

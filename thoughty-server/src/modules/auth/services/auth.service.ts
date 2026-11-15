@@ -5,9 +5,9 @@ import {
 } from '@nestjs/common';
 import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { User, Diary } from '@/database/entities';
+import { User } from '@/database/entities';
 import { sanitizeString } from '@/common/utils';
 import {
   RegisterDto,
@@ -21,7 +21,14 @@ import { TwoFactorService } from './two-factor.service';
 import { AuthSessionService, type IssuedSession } from './auth-session.service';
 import { IdentityVerificationService } from './identity-verification.service';
 import { ProviderAccountService } from './provider-account.service';
-import { defaultDiaryFor } from './default-diary';
+import { saveNewAccount } from './default-diary';
+import {
+  freeUsername,
+  takenConflict,
+  uniqueViolationOf,
+  usernameTaken,
+  USERNAME_MAX_LENGTH,
+} from './free-username';
 
 /**
  * A bcrypt hash (cost 12, like real password hashes) of a random throwaway password. It is
@@ -41,8 +48,7 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(Diary)
-    private readonly diaryRepository: Repository<Diary>,
+    private readonly dataSource: DataSource,
     private readonly sessionService: AuthSessionService,
     private readonly identityVerification: IdentityVerificationService,
     private readonly twoFactorService: TwoFactorService,
@@ -52,59 +58,44 @@ export class AuthService {
   async register(dto: RegisterDto): Promise<IssuedSession> {
     assertHumanAuthAttempt(dto.website);
 
-    const sanitizedUsername = dto.username
-      ? sanitizeString(dto.username.trim()).substring(0, 50)
-      : null;
+    const email = dto.email.toLowerCase();
+    const chosen = dto.username
+      ? sanitizeString(dto.username.trim()).substring(0, USERNAME_MAX_LENGTH)
+      : '';
 
-    // Generate username from email if not provided
-    const username = sanitizedUsername || dto.email.split('@')[0].substring(0, 50);
-
-    // Check if email exists
-    const existingUser = await this.userRepository.findOne({
-      where: { email: dto.email.toLowerCase() },
-    });
-
-    if (existingUser) {
+    if (await this.userRepository.exists({ where: { email } })) {
       throw apiError(ConflictException, 'AUTH_EMAIL_TAKEN');
     }
-
-    // Check if username exists
-    const existingUsername = await this.userRepository.findOne({
-      where: { username },
-    });
-
-    if (existingUsername) {
+    if (chosen && (await usernameTaken(this.userRepository, chosen))) {
       throw apiError(ConflictException, 'AUTH_USERNAME_TAKEN');
     }
-
-    // Hash password
+    // Without a chosen name, the part of the address before the `@`, numbered when it is taken
+    const username = chosen || (await freeUsername(this.userRepository, email.split('@')[0]));
     const passwordHash = await bcrypt.hash(dto.password, 12);
 
-    // Create user
-    const user = await this.userRepository.save({
+    const user = await this.createAccount({
       username,
-      email: dto.email.toLowerCase(),
+      email,
       passwordHash,
       authProvider: 'local',
       emailVerified: false,
     });
-
-    await this.createDefaultDiary(user.id);
-
     return this.sessionService.createSession(user);
   }
 
   async login(dto: LoginDto): Promise<IssuedSession | TwoFactorChallengeResponseDto> {
     assertHumanAuthAttempt(dto.website);
 
-    const identifier = sanitizeString(dto.identifier.trim()).toLowerCase();
+    const identifier = sanitizeString(dto.identifier.trim());
 
-    // Find user by email or username
+    // Addresses and usernames are each unique ignoring case; should one account's username be
+    // another's address, the address wins
     const user = await this.userRepository
       .createQueryBuilder('user')
-      .where('LOWER(user.email) = :identifier OR LOWER(user.username) = :identifier', {
+      .where('LOWER(user.email) = LOWER(:identifier) OR LOWER(user.username) = LOWER(:identifier)', {
         identifier,
       })
+      .orderBy('CASE WHEN LOWER(user.email) = LOWER(:identifier) THEN 0 ELSE 1 END')
       .getOne();
 
     // Unknown, deleted, and password-less accounts are rejected exactly like a wrong password,
@@ -152,7 +143,16 @@ export class AuthService {
     return this.sessionService.createSession(user, isNewUser);
   }
 
-  private async createDefaultDiary(userId: number): Promise<void> {
-    await this.diaryRepository.save(defaultDiaryFor(userId));
+  /**
+   * The checks above are only hints: a racing registration can take the address or username
+   * before the insert, which then answers `409` like the checks instead of a `500`.
+   */
+  private async createAccount(fields: Partial<User>): Promise<User> {
+    try {
+      return await this.dataSource.transaction((manager) => saveNewAccount(manager, fields));
+    } catch (error) {
+      const constraint = uniqueViolationOf(error);
+      throw constraint === undefined ? error : takenConflict(constraint);
+    }
   }
 }

@@ -25,6 +25,8 @@ export const CONTRACT_SUITES = {
     'POST /api/auth/delete-account',
   ],
   'sign-up': ['POST /api/auth/register', 'POST /api/auth/register/complete'],
+  // Registration without a mail server (racing sign-ups, case-insensitive names); its routes are listed above
+  registration: [],
   'provider-sign-in': ['POST /api/auth/oauth', 'GET /api/auth/sso'],
   'password-reset': ['POST /api/auth/forgot-password', 'POST /api/auth/reset-password'],
   entries: [

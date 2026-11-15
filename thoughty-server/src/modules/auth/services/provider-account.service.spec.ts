@@ -3,6 +3,7 @@ import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { Diary, RefreshToken, SignUpRequest, User } from '@/database/entities';
 import { ProviderAccountService, type ProviderIdentity } from './provider-account.service';
 import { uniqueViolationOf } from './free-username';
+import { usernameLookup } from './auth-services.test-helpers';
 
 const GOOGLE: ProviderIdentity = {
   provider: 'google',
@@ -177,7 +178,7 @@ describe('ProviderAccountService', () => {
     const { user } = await service.signIn(GOOGLE);
 
     expect(user.username).toMatch(/^Jane Doe-\d{6}$/);
-    expect(users.exists).toHaveBeenNthCalledWith(1, { where: { username: 'Jane Doe' } });
+    expect(usernameLookup(users.exists.mock.calls[0])).toEqual({ type: 'raw', username: 'Jane Doe' });
   });
 
   it.each([

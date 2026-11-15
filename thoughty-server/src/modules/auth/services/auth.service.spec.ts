@@ -1,8 +1,7 @@
-import { UnauthorizedException, ConflictException } from '@nestjs/common';
+import { UnauthorizedException } from '@nestjs/common';
 import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import * as bcrypt from 'bcryptjs';
 import { AuthService } from './auth.service';
-import { hashRefreshToken } from './auth-session.service';
 import {
   createAuthServiceMocks,
   createAuthServices,
@@ -20,12 +19,11 @@ describe('AuthService', () => {
   let service: AuthService;
   let userRepository: any;
   let refreshTokenRepository: any;
-  let diaryRepository: any;
   let twoFactorService: any;
 
   beforeEach(async () => {
     const mocks = createAuthServiceMocks();
-    ({ userRepository, refreshTokenRepository, diaryRepository, twoFactorService } = mocks);
+    ({ userRepository, refreshTokenRepository, twoFactorService } = mocks);
     ({ auth: service } = await createAuthServices(mocks));
   });
 
@@ -34,74 +32,11 @@ describe('AuthService', () => {
     jest.restoreAllMocks();
   });
 
-  describe('register', () => {
-    it('should register a new user successfully', async () => {
-      userRepository.findOne.mockResolvedValue(null);
-      userRepository.save.mockResolvedValue({ ...mockUser, id: 1 });
-      diaryRepository.save.mockResolvedValue({ id: 1 });
-      refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
-
-      const result = await service.register({
-        email: 'test@example.com',
-        password: 'password123',
-        username: 'testuser',
-      });
-
-      expect(result).toHaveProperty('accessToken');
-      expect(result).toHaveProperty('refreshToken');
-      expect(refreshTokenRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: 1, tokenHash: hashRefreshToken(result.refreshToken) }),
-      );
-      expect(refreshTokenRepository.save.mock.calls[0][0]).not.toHaveProperty('token');
-      expect('user' in result).toBe(true);
-      if ('user' in result) {
-        expect(result.user.email).toBe('test@example.com');
-        expect(result.user.emailVerified).toBe(false);
-      }
-      expect(diaryRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          name: 'Thoughts',
-          icon: '💭',
-          color: '#E76F51',
-          isDefault: true,
-        }),
-      );
-    });
-
-    it('should throw ConflictException if email already exists', async () => {
-      userRepository.findOne.mockResolvedValue(mockUser);
-
-      await expect(
-        service.register({
-          email: 'test@example.com',
-          password: 'password123',
-        }),
-      ).rejects.toThrow(ConflictException);
-    });
-
-    it('should generate username from email if not provided', async () => {
-      userRepository.findOne.mockResolvedValue(null);
-      userRepository.save.mockImplementation((user: any) => Promise.resolve({ ...user, id: 1 }));
-      diaryRepository.save.mockResolvedValue({ id: 1 });
-      refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
-
-      await service.register({
-        email: 'newuser@example.com',
-        password: 'password123',
-      });
-
-      expect(userRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          username: 'newuser',
-        }),
-      );
-    });
-  });
-
   describe('login', () => {
     it('should login successfully with valid credentials', async () => {
       const mockQueryBuilder = {
         where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
         getOne: jest.fn().mockResolvedValue(mockUser),
       };
       userRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
@@ -126,6 +61,7 @@ describe('AuthService', () => {
       const protectedUser = { ...mockUser, twoFactorEnabled: true };
       userRepository.createQueryBuilder.mockReturnValue({
         where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
         getOne: jest.fn().mockResolvedValue(protectedUser),
       });
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
@@ -171,6 +107,7 @@ describe('AuthService', () => {
     const loginFailure = async (user: unknown, passwordMatches: boolean) => {
       userRepository.createQueryBuilder.mockReturnValue({
         where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
         getOne: jest.fn().mockResolvedValue(user),
       });
       (bcrypt.compare as jest.Mock).mockResolvedValue(passwordMatches);
@@ -219,6 +156,7 @@ describe('AuthService', () => {
     it('should throw UnauthorizedException for wrong password', async () => {
       const mockQueryBuilder = {
         where: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
         getOne: jest.fn().mockResolvedValue(mockUser),
       };
       userRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);

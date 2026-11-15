@@ -2,7 +2,7 @@ import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { DataSource } from 'typeorm';
+import { DataSource, type FindOperator } from 'typeorm';
 import { User, RefreshToken, Diary } from '@/database/entities';
 import { AuthService } from './auth.service';
 import { AuthSessionService, hashRefreshToken } from './auth-session.service';
@@ -34,6 +34,15 @@ export interface AuthServices {
   account: AccountService;
 }
 
+/**
+ * The operator type and name of a `users.exists({ where: { username } })` call (`usernameTaken`),
+ * which matches the name ignoring case.
+ */
+export function usernameLookup(call: unknown[] | undefined): { type: string; username: unknown } {
+  const operator = (call?.[0] as { where: { username: FindOperator<string> } }).where.username;
+  return { type: operator.type, username: operator.objectLiteralParameters?.username };
+}
+
 export const mockUser = {
   id: 1,
   email: 'test@example.com',
@@ -60,6 +69,7 @@ export function createAuthServiceMocks(): AuthServiceMocks {
     exists: jest.fn().mockResolvedValue(false),
     createQueryBuilder: jest.fn(() => ({
       where: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
       getOne: jest.fn(),
     })),
   };

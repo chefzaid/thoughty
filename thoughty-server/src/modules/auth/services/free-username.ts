@@ -1,6 +1,6 @@
 import { ConflictException } from '@nestjs/common';
 import * as crypto from 'node:crypto';
-import type { Repository } from 'typeorm';
+import { Raw, type FindOperator, type Repository } from 'typeorm';
 import { apiError } from '@/common/errors';
 import type { User } from '@/database/entities';
 
@@ -11,8 +11,21 @@ const USERNAME_ATTEMPTS = 5;
 const UNIQUE_VIOLATION = '23505';
 
 /**
- * `base` (cut to 50 characters), or, when another account has it, `base` with a random six-digit
- * number. Only a hint: a racing request can still take the name before it is saved, so the insert
+ * Matches the usernames equal to `username` ignoring case, as the unique index
+ * `uq_users_username_lower` compares them (PostgreSQL's `lower()` on both sides).
+ */
+export function sameUsername(username: string): FindOperator<string> {
+  return Raw((column) => `LOWER(${column}) = LOWER(:username)`, { username });
+}
+
+/** Whether an account (deleted ones included, as they keep their names) has `username`, in any case. */
+export function usernameTaken(users: Repository<User>, username: string): Promise<boolean> {
+  return users.exists({ where: { username: sameUsername(username) } });
+}
+
+/**
+ * `base` (cut to 50 characters), or, when another account has it in any case, `base` with a random
+ * six-digit number. Only a hint: a racing request can still take the name before it is saved, so the insert
  * that follows must handle a unique violation (`uniqueViolationOf`).
  */
 export async function freeUsername(users: Repository<User>, base: string): Promise<string> {
@@ -20,7 +33,7 @@ export async function freeUsername(users: Repository<User>, base: string): Promi
   for (let attempt = 0; attempt < USERNAME_ATTEMPTS; attempt += 1) {
     const candidate =
       attempt === 0 ? name : `${name.substring(0, 43)}-${crypto.randomInt(100000, 1000000)}`;
-    if (!(await users.exists({ where: { username: candidate } }))) {
+    if (!(await usernameTaken(users, candidate))) {
       return candidate;
     }
   }

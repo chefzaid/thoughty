@@ -81,7 +81,8 @@ export async function handleSignUpRoutes({ route, request, pathname, state }: Ro
       return true;
     }
     const username = payload.username ?? registered.username ?? "new";
-    if (signUp.takenUsernames.includes(username)) {
+    // Usernames are unique ignoring case, as on the API
+    if (signUp.takenUsernames.some((taken) => taken.toLowerCase() === username.toLowerCase())) {
       await fulfillApiError(route, 409, "AUTH_USERNAME_TAKEN", "Username already taken");
       return true;
     }

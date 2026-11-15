@@ -3,8 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { apiError } from '@/common/errors';
 import { sanitizeString } from '@/common/utils';
-import { Diary, RefreshToken, Setting, SignUpRequest, User } from '@/database/entities';
-import { defaultDiaryFor } from './default-diary';
+import { RefreshToken, Setting, SignUpRequest, User } from '@/database/entities';
+import { saveNewAccount } from './default-diary';
 import { freeUsername, takenConflict, uniqueViolationOf, USERNAME_MAX_LENGTH } from './free-username';
 
 export type SignInProvider = 'google' | 'keycloak';
@@ -138,20 +138,15 @@ export class ProviderAccountService {
     const suggested = sanitizeString((identity.suggestedUsername ?? '').trim());
     const base = suggested.substring(0, USERNAME_MAX_LENGTH) || identity.email.split('@')[0];
     const username = await freeUsername(this.userRepository, base);
-    return this.dataSource.transaction(async (manager) => {
-      const user = await manager.save(
-        User,
-        manager.create(User, {
-          username,
-          email: identity.email,
-          authProvider: identity.provider,
-          providerId: identity.subject,
-          avatarUrl: identity.avatarUrl ?? null,
-          emailVerified: true,
-        }),
-      );
-      await manager.save(Diary, manager.create(Diary, defaultDiaryFor(user.id)));
-      return user;
-    });
+    return this.dataSource.transaction((manager) =>
+      saveNewAccount(manager, {
+        username,
+        email: identity.email,
+        authProvider: identity.provider,
+        providerId: identity.subject,
+        avatarUrl: identity.avatarUrl ?? null,
+        emailVerified: true,
+      }),
+    );
   }
 }

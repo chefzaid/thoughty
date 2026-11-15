@@ -26,7 +26,7 @@ describe('AuthService bot protection', () => {
       }),
     ).rejects.toThrow(BadRequestException);
 
-    expect(userRepository.findOne).not.toHaveBeenCalled();
+    expect(userRepository.exists).not.toHaveBeenCalled();
     expect(userRepository.save).not.toHaveBeenCalled();
   });
 

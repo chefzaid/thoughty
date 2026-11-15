@@ -61,6 +61,21 @@ kubectl exec deployment/thoughty-server -n thoughty -- sh -c \
   '. /vault/secrets/database && . /vault/secrets/app && node dist/scripts/migrate.js'
 ```
 
+### Renamed Usernames
+
+Migration `1788134400000-case-insensitive-usernames` makes usernames unique ignoring case. Accounts whose usernames differed only in case were renamed, all but one per name, to `<username>-<id>` ([Data model](data-model.md#usernames-and-addresses)); they still sign in by email. List them, with their addresses, to tell them their new name:
+
+```sql
+SELECT r.user_id, r.previous_username, r.username, u.email, r.renamed_at
+  FROM username_renames r JOIN users u ON u.id = r.user_id
+ WHERE u.deleted_at IS NULL
+ ORDER BY r.renamed_at, r.user_id;
+```
+
+### Accounts Sharing an Address
+
+The same migration lower-cases every account's email. If two accounts have addresses that differ only in case, it stops with `N e-mail address(es) belong to more than one account when compared ignoring case` and changes nothing (the whole pending batch rolls back). No rule can pick the owner, so decide per address before deploying again: find them with `SELECT lower(email), array_agg(id ORDER BY id) FROM users GROUP BY lower(email) HAVING count(*) > 1`, then keep the address on the account its owner uses (usually the verified one, or the one signed in to last) and give the other an address its owner confirms, or, when it is an abandoned duplicate, soft-delete it and move its address aside so the worker purges it (`UPDATE users SET deleted_at = now(), deletion_reason = 'Duplicate address', email = 'duplicate-' || id || '@invalid' WHERE id = …`, after exporting anything worth keeping). Then run the migration again.
+
 ## Canary Rollouts
 
 Read the [canary limits](./deployment.md#canary-infrak8soverlaysswirl-cloud-canary) first.

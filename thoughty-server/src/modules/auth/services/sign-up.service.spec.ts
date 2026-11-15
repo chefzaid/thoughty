@@ -7,13 +7,14 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { createHash } from 'node:crypto';
-import { SignUpRequest } from '@/database/entities';
+import { Diary, SignUpRequest, User } from '@/database/entities';
 import {
   SIGN_UP_EMAIL_INTERVAL_MS,
   SIGN_UP_EMAILS_PER_ADDRESS,
   SIGN_UP_LINK_TTL_MS,
   SignUpService,
 } from './sign-up.service';
+import { usernameLookup } from './auth-services.test-helpers';
 
 jest.mock('bcryptjs', () => ({ hash: jest.fn(), compare: jest.fn() }));
 
@@ -53,7 +54,7 @@ describe('SignUpService', () => {
     manager = {
       delete: jest.fn().mockResolvedValue({ affected: 1 }),
       create: jest.fn((_entity: unknown, fields: object) => ({ ...fields })),
-      save: jest.fn(async (row: object) => ({ id: 7, ...row })),
+      save: jest.fn(async (_entity: unknown, row: object) => ({ id: 7, ...row })),
     };
     dataSource = { transaction: jest.fn(async (work: (m: typeof manager) => unknown) => work(manager)) };
     authService = { register: jest.fn() };
@@ -246,14 +247,14 @@ describe('SignUpService', () => {
       expect(requests.findOne.mock.calls[0][0].where.tokenHash).toBe(sha256('link-token'));
       expect(bcrypt.compare).toHaveBeenCalledWith('Pass123!@', 'stored-hash');
       expect(manager.delete).toHaveBeenCalledWith(SignUpRequest, { id: 5, tokenHash: pending.tokenHash });
-      expect(manager.save).toHaveBeenNthCalledWith(1, {
+      expect(manager.save).toHaveBeenNthCalledWith(1, User, {
         username: 'newbie',
         email: 'new@example.com',
         passwordHash: 'stored-hash',
         authProvider: 'local',
         emailVerified: true,
       });
-      expect(manager.save).toHaveBeenNthCalledWith(2, expect.objectContaining({ userId: 7, name: 'Thoughts', isDefault: true }));
+      expect(manager.save).toHaveBeenNthCalledWith(2, Diary, expect.objectContaining({ userId: 7, name: 'Thoughts', isDefault: true }));
       expect(sessions.createSession).toHaveBeenCalledWith(expect.objectContaining({ id: 7 }), true);
     });
 
@@ -296,14 +297,14 @@ describe('SignUpService', () => {
       await expect(createService().complete({ token: 'link-token', password: 'Pass123!@' })).rejects.toMatchObject({
         response: { code: 'AUTH_USERNAME_TAKEN' },
       });
-      expect(users.exists).toHaveBeenLastCalledWith({ where: { username: 'newbie' } });
+      expect(usernameLookup(users.exists.mock.calls.at(-1))).toEqual({ type: 'raw', username: 'newbie' });
       expect(dataSource.transaction).not.toHaveBeenCalled();
     });
 
     it('uses the username sent with the link over the one asked for at sign-up', async () => {
       await createService().complete({ token: 'link-token', password: 'Pass123!@', username: 'other' });
 
-      expect(manager.save.mock.calls[0][0]).toMatchObject({ username: 'other' });
+      expect(manager.save.mock.calls[0][1]).toMatchObject({ username: 'other' });
     });
 
     it('takes the part of the address before the @ when no username was asked for', async () => {
@@ -311,7 +312,7 @@ describe('SignUpService', () => {
 
       await createService().complete({ token: 'link-token', password: 'Pass123!@' });
 
-      expect(manager.save.mock.calls[0][0]).toMatchObject({ username: 'new' });
+      expect(manager.save.mock.calls[0][1]).toMatchObject({ username: 'new' });
     });
 
     it('adds a number to that name when it is taken', async () => {
@@ -320,7 +321,7 @@ describe('SignUpService', () => {
 
       await createService().complete({ token: 'link-token', password: 'Pass123!@' });
 
-      expect(manager.save.mock.calls[0][0].username).toMatch(/^new-\d{6}$/);
+      expect(manager.save.mock.calls[0][1].username).toMatch(/^new-\d{6}$/);
     });
 
     it('asks for a username when no free one is found from the address', async () => {

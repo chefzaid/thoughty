@@ -20,7 +20,8 @@ async function fillSignUpForm(page: Page) {
 
 test.describe('Verify-first sign-up', () => {
   test('emails a link instead of signing in, then creates the account from it with the chosen password', async ({ page }) => {
-    const { state } = await setupMockApp(page, { signUp: { takenUsernames: ['NewWriter'] } });
+    // Taken in another case: usernames are unique ignoring case
+    const { state } = await setupMockApp(page, { signUp: { takenUsernames: ['newwriter'] } });
     await page.clock.install();
     await page.goto('/register');
     await fillSignUpForm(page);
