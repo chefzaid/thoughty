@@ -39,6 +39,7 @@ import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { CloudFileInfoDto, CloudSyncService } from '@/modules/cloud-sync';
 import { MAX_BOOK_COVER_IMAGE_SIZE } from './book-cover.util';
 import { MULTIPART_FIELD_LIMITS } from '@/common/multipart-limits';
+import { RequireFeature } from '@/common/feature-flags';
 
 const BOOK_COVER_UPLOAD_OPTIONS = {
   storage: memoryStorage(),
@@ -48,6 +49,7 @@ const BOOK_COVER_UPLOAD_OPTIONS = {
 @ApiTags('Books')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@RequireFeature('bookConverter')
 @Controller('books')
 export class BooksController {
   constructor(

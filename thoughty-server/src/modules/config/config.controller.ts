@@ -51,7 +51,13 @@ export class ConfigController {
   }
 
   @Get('feature-flags')
-  @ApiOperation({ summary: 'Get runtime feature flags for the current environment' })
+  @ApiOperation({
+    summary: 'Get runtime feature flags for the current environment',
+    description:
+      'Each feature is on unless its flag is false; a flag missing from the answer is on. While a flag is ' +
+      'off, the routes of its feature answer 503 with the code FEATURE_DISABLED. A change at the flag ' +
+      'provider shows here within FEATURE_FLAG_CACHE_TTL_MS (60 seconds by default).',
+  })
   @ApiResponse({ status: 200, description: 'Feature flag key/value map', schema: FEATURE_FLAGS_SCHEMA })
   async getFeatureFlags(): Promise<Record<string, boolean>> {
     return this.featureFlagsService.getFeatureFlags();

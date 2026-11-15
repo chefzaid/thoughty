@@ -25,6 +25,7 @@ import { privacyBlurTranslations, type PrivacyBlurTranslationKey } from "./trans
 import { navigationTranslations, type NavigationTranslationKey } from "./translations.navigation";
 import { quickCaptureTranslations, type QuickCaptureTranslationKey } from "./translations.quickCapture";
 import { quietModeTranslations, type QuietModeTranslationKey } from "./translations.quietMode";
+import { featureFlagsTranslations, type FeatureFlagsTranslationKey } from "./translations.featureFlags";
 import { entryTemplatesTranslations, type EntryTemplatesTranslationKey } from "./translations.entryTemplates";
 import { markdownToolbarTranslations, type MarkdownToolbarTranslationKey } from "./translations.markdownToolbar";
 import { landingTranslations, type LandingTranslationKey } from "./translations.landing";
@@ -93,6 +94,7 @@ export type TranslationKey =
   | NavigationTranslationKey
   | QuickCaptureTranslationKey
   | QuietModeTranslationKey
+  | FeatureFlagsTranslationKey
   | EntryTemplatesTranslationKey
   | MarkdownToolbarTranslationKey
   | LandingTranslationKey
@@ -166,6 +168,7 @@ export const translations: Translations = {
     ...navigationTranslations.en,
     ...quickCaptureTranslations.en,
     ...quietModeTranslations.en,
+    ...featureFlagsTranslations.en,
     ...entryTemplatesTranslations.en,
     ...markdownToolbarTranslations.en,
     ...landingTranslations.en,
@@ -232,6 +235,7 @@ export const translations: Translations = {
     ...navigationTranslations.fr,
     ...quickCaptureTranslations.fr,
     ...quietModeTranslations.fr,
+    ...featureFlagsTranslations.fr,
     ...entryTemplatesTranslations.fr,
     ...markdownToolbarTranslations.fr,
     ...landingTranslations.fr,

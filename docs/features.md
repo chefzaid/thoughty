@@ -191,6 +191,17 @@ All AI features are optional and run through OpenRouter. A deployment can provid
 - Destructive actions ask for confirmation, and long operations show progress.
 - Every visitor, signed in or not, lands on the presentation page at `/`. It presents the journal, the guided memoir, books, the look back (stats, moods, year in review), privacy and AI, imports, and the other features in English and French, with **Start your journal**, **Sign Up**, and **Sign In** when signed out and **Open your journal** when signed in. About, Blog, Privacy, Terms, Contact, and Feedback pages are public too and share its colors. The Contact page has the How to guides and FAQ; it has no message form until an address receives its messages (see TODO.md › Needs Input), and says so instead of taking a message it would lose, pointing to the community board on the Feedback page.
 
+## Features Switched Off for Now
+
+The operator can switch off AI, the book converter, cloud sync, or public sharing for everyone without an update ([Operations](./operations.md#feature-flags)). A switched-off feature leaves the app where it would be offered, with a short note in English or French where a writer would look for it (the profile's AI and cloud sections, Import/Export's book and cloud sync sections, the feed page, the private link dialog), and nothing stored is changed: AI settings and keys, saved books, cloud connections and schedules, private links and public entries all come back as they were.
+
+- **AI off.** No Auto Tag, Rephrase, Get Inspired, summary, chat, meaning search, duplicate review, journal retag, writing tendencies, transcription or AI mood reading; entries save with the tags they were given (one is then needed, since none is added), and a book is made without AI narrative or chapter framing. Transcripts and mood arcs already made stay.
+- **Book converter off.** The book section of Import/Export says it is off, and **Make a book** leaves the journal's bulk actions, the person view and the memoir.
+- **Cloud sync off.** The cloud sections say it is off; scheduled syncs wait and run once it is back.
+- **Public sharing off.** The feed leaves the menu and its page says sharing is paused; no private link is made (the dialog still lists and revokes the ones made), and their readers see "Sharing is paused"; new entries are saved private, a private entry cannot be made public (alone, in bulk or in its editor), a diary's default cannot become public, and the year in review offers no public summary. Entries already public stay public, can still be edited or made private, and reappear in the feed once sharing is back.
+
+While the app reads which features are on, and if it cannot, everything stays on, so nothing flickers off; the server refuses a switched-off feature on its own anyway.
+
 ## Future Direction: Life ERP
 
 Thoughty may grow into a personal ERP, the Aeons epic, while keeping its privacy and entry-centered design. Each writer defines their own areas of life, the metrics to rate or measure in each (daily to yearly), logs of events and items (trips, books, purchases, workouts) and calculations over them, with scores, correlations and dashboards next to the journal. Health, social life, finances and assets build on the same pieces, and what already exists (entries, templates, tags, moods, people, life eras, tasks, Stats) feeds it instead of being rebuilt. The backlog is in [TODO.md](../TODO.md#aeons---life-erp).

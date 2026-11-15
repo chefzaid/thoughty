@@ -37,7 +37,7 @@ flowchart TD
 
 ## Backend Architecture
 
-`AppModule` registers the global JWT and throttling guards, so every request is authenticated (unless its route is marked public), throttled, and DTO-validated before a feature module runs a user-scoped query. Validation is one global `ValidationPipe` (`src/common/validation`) that whitelists DTO properties and converts nothing implicitly; every boolean and every number, in a query string, a multipart form or a JSON body, is read from the raw value by `@StrictBoolean()` and `@StrictInt()`, since implicit conversion would turn `"false"` into `true` and `""` into `0` ([Request validation](./development.md#request-validation)). The feature modules live in `thoughty-server/src/modules`:
+`AppModule` registers the global JWT, throttling and feature flag guards, so every request is authenticated (unless its route is marked public), throttled, refused while its feature is switched off ([Feature flags](#feature-flags)), and DTO-validated before a feature module runs a user-scoped query. Validation is one global `ValidationPipe` (`src/common/validation`) that whitelists DTO properties and converts nothing implicitly; every boolean and every number, in a query string, a multipart form or a JSON body, is read from the raw value by `@StrictBoolean()` and `@StrictInt()`, since implicit conversion would turn `"false"` into `true` and `""` into `0` ([Request validation](./development.md#request-validation)). The feature modules live in `thoughty-server/src/modules`:
 
 | Module | Responsibility |
 |---|---|
@@ -56,7 +56,7 @@ flowchart TD
 | `io` | import and export formats, TXT format settings, Day One, Journey, daily-notes (Obsidian, Logseq) and Google Keep (Takeout) imports parsed in the browser ([ADR 0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md)), the streamed Markdown folder export |
 | `books` | book composition, covers, previews, saved versions; `BookEntrySourceService` selects entries from the journal, a saved search (through `saved-searches` and the entry list filters of `entries`) or hand-picked IDs |
 | `cloud-sync` | provider connections, file browsing, schedules, queued jobs |
-| `config` | user preferences and profile, encrypted settings, data export, the feature-flag endpoint (no feature reads flags yet) |
+| `config` | user preferences and profile, encrypted settings, data export, the feature-flag endpoint (`GET /api/config/feature-flags`; the flags themselves are `src/common/feature-flags`) |
 | `feature-requests` | community idea board and votes |
 | `social` | public feed, follows, comments, likes, leaderboard, achievements (karma and badges) |
 | `account-purge` | permanent deletion of deleted accounts after the grace period |
@@ -78,13 +78,30 @@ Modules that outgrow one service split it by responsibility, and source files st
 
 | Service | Interval | Work |
 |---|---|---|
-| `CloudSyncWorkerService` | jobs every 5 s, schedules every 60 s | turns due sync schedules (stored in `settings`) into `cloud_sync_jobs` rows, claims them with `FOR UPDATE SKIP LOCKED`, runs the sync, retries, and recovers stale jobs |
+| `CloudSyncWorkerService` | jobs every 5 s, schedules every 60 s | turns due sync schedules (stored in `settings`) into `cloud_sync_jobs` rows, claims them with `FOR UPDATE SKIP LOCKED`, runs the sync, retries, and recovers stale jobs; nothing while the `cloudSync` flag is off, so due schedules and queued jobs wait |
 | `MemoirDeliveryWorkerService` | every 60 s | moves due `memoir_programs` to their next question (a question set aside with **Not this week** whose day has come in the writer's zone first) and sends the weekly email |
 | `OnThisDayDeliveryWorkerService` | every 60 s | (both email loops extend `OptInEmailWorkerService` and `OptInEmailDeliveryService`) claims due `on_this_day_emails` rows (`next_send_at <= now`, partial index on enabled rows) in batches of 50 with `FOR UPDATE SKIP LOCKED`, moves each to the next local day (`nextDailySend`, DST-aware through `zonedTimeToUtc`: a skipped hour lands after the jump, a repeated one on its first occurrence, in every zone), and, when the writer has past-year entries for the local day (`EntriesQueryService.findOnThisDay`, the Highlights query) and a verified address on a live account, writes `last_sent_on` in the same transaction and sends the email after the commit, so overlapping runs or a moved hour never send a day twice |
 | `MonthlyRecapDeliveryWorkerService` | every 60 s | the same claim on `monthly_recap_emails`, moving each row to the 1st of the next local month (`nextMonthlySend`, DST-aware); when the month just ended has entries or a memory from an earlier year, and the writer has not had an email this local month, it writes `last_sent_on` and sends the recap after the commit |
 | `TimeCapsuleDeliveryWorkerService` | every 60 s | (extends `OptInEmailWorkerService`) claims due `time_capsules` (`open_at <= now`, still sealed, entry outside the recycle bin, live account; partial index `idx_time_capsules_due`) with `FOR UPDATE SKIP LOCKED`, opens each in the same transaction (`TimeCapsuleService.openCapsule`), and after the commit emails each once to a verified address with the shared email layout, without an unsubscribe link |
 | `RecycleBinPurgeWorkerService` | hourly | hard-deletes entries in the recycle bin for over 30 days and removes their files |
 | `AccountPurgeWorkerService` | hourly | permanently deletes accounts deleted more than `ACCOUNT_PURGE_AFTER_DAYS` (default 30) ago: their stored files, then the user row and everything that cascades from it |
+
+### Feature Flags
+
+Four runtime flags switch a feature off without a redeploy ([ADR 0017](./adr/0017-feature-flags-and-entitlements.md)). `FeatureFlagsService` (`src/common/feature-flags`, one instance per process through the global `FeatureFlagsModule`) starts from the defaults (every flag on), applies `FEATURE_FLAGS` (`ai=false,cloudSync=false`, read on every call), then the provider at `FEATURE_FLAG_PROVIDER_URL` when one is set: its answer is kept for `FEATURE_FLAG_CACHE_TTL_MS` (60 s by default), asked once at a time, with a 3 s timeout; when the provider fails, the flags it last gave stay (the defaults before any) and it is asked again after the same delay. A flag the answer leaves out is on.
+
+Routes take `@RequireFeature(flag)`, on a controller or a handler; the global `FeatureFlagGuard`, registered after the JWT and throttling guards (so a stranger still gets `401`), refuses them with `503 FEATURE_DISABLED`, and the decorator documents that answer. Services that act outside a guarded route call `isEnabled` or `assertEnabled` themselves.
+
+| Flag | Refused while off | Kept working | Elsewhere |
+|---|---|---|---|
+| `ai` | every `/api/ai` route but reading and removing the personal key (`GET`/`DELETE /api/ai/credentials`), audio transcription, the year's AI mood reading (`POST /api/review/mood`), writing tendencies (`POST /api/stats/personality-analysis`) | the stored key, models and transcripts; the saved mood arc | auto-tagging on save adds no tag; a book's AI narrative or chapter framing answers `FEATURE_DISABLED` (a plain book still works) |
+| `bookConverter` | every `/api/books` route | saved versions and their private links (governed by `publicSharing`) | |
+| `cloudSync` | every `/api/cloud-sync` route but `POST /disconnect` | connections, schedules, queued jobs | the worker neither turns due schedules into jobs nor runs queued ones; they run once the flag is back |
+| `publicSharing` | the feed, comments, likes, follows and leaderboard; making a private link (`POST /api/share-links`); the reader's side of every link (`/api/shared/…`) | listing and revoking one's own links; achievements | nothing becomes public (below) |
+
+While `publicSharing` is off nothing becomes public: a new public entry, a private entry changed to public (`PUT /api/entries/:id`, `PATCH …/visibility`) and making entries public in bulk answer `503 FEATURE_DISABLED` (`entries/entry-publishing.ts`), and an import saves every entry private. An entry already public keeps its stored visibility, can be edited as it is or made private, and is simply shown to no one while the flag is off; links keep their expiry and views, and both come back as they were once the flag is on. Diary and settings defaults stay as saved.
+
+The web loads the flags once for the signed-in app (`FeatureFlagsProvider`, mounted in `App.tsx`: TanStack Query, `staleTime` one minute, again when the window regains focus), and `useFeatureFlag(name)` reads them anywhere below it. While they load, when the request fails, or outside the provider (unit tests), every flag reads as on (`FEATURE_FLAG_DEFAULTS`, the API's documented default), so a feature never flashes off; a failed refetch keeps the flags last read. A switched-off feature is hidden where it would be offered, with `FeatureOffNote` (or `FeatureOffSection` in the profile) saying it is off for now and that nothing was lost: AI buttons and panels, the meaning search (a meaning search goes back to words), the book route of Import/Export and the memoir's, person's and bulk **Make a book**, the cloud sync sections (no cloud request is sent), the feed (its navigation item and page), making a private link (the dialog still lists and revokes links), and every choice that would make an entry or a diary default public (new entries are saved private). The reader's page of a link says "Sharing is paused" for `FEATURE_DISABLED`, the same for every token. Hiding is only for the writer: the API enforces each flag itself.
 
 ## Frontend Architecture
 
@@ -145,6 +162,7 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 |  | `SERVICE_UNAVAILABLE` | Service unavailable |
 |  | `BAD_GATEWAY` | Bad gateway |
 |  | `INTERNAL_ERROR` | Internal server error |
+| Feature flags | `FEATURE_DISABLED` | This feature is turned off for now (`503`, while its [flag](#feature-flags) is off) |
 | Sign-in, registration and sessions | `AUTH_INVALID_CREDENTIALS` | Invalid email or password |
 |  | `AUTH_ACCOUNT_DELETED` | This account has been deleted. Please contact support if you believe this is a mistake. |
 |  | `AUTH_EMAIL_TAKEN` | Email already registered |

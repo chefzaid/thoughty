@@ -126,10 +126,14 @@ describe('configService', () => {
       expect(mockAuthFetch).toHaveBeenCalledWith('/api/config/feature-flags');
     });
 
-    it('returns an empty object when feature flag fetch fails', async () => {
+    it('returns null when the flags cannot be read, so the app keeps the flags it has', async () => {
       mockAuthFetch.mockResolvedValue({ ok: false });
+      await expect(service.fetchFeatureFlags()).resolves.toBeNull();
 
-      await expect(service.fetchFeatureFlags()).resolves.toEqual({});
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockAuthFetch.mockRejectedValue(new Error('offline'));
+      await expect(service.fetchFeatureFlags()).resolves.toBeNull();
+      consoleSpy.mockRestore();
     });
   });
 

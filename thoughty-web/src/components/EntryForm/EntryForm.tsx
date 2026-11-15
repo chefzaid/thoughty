@@ -28,6 +28,7 @@ import { resolveLanguage } from '../../utils/language';
 import TimeCapsuleField from './TimeCapsuleField';
 import { defaultTimeCapsule, type TimeCapsuleDraft } from '../../utils/timeCapsule';
 import { useInlineImageInsert } from '../InlineImages/useInlineImageInsert';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import { useDictationField } from '../Dictation/useDictationField';
 
 const LazyMDEditor = lazy(() => import('../MarkdownEditor/MarkdownEditor'));
@@ -109,6 +110,16 @@ function entryFormClasses({ theme, format, visibility }: Pick<EntryFormProps, 't
     return { inputClass, containerClass, markdownToggleClass };
 }
 
+/** Why the visibility button is as it is: locked by a time capsule or by public sharing being off, or what it does. */
+function visibilityButtonTitle(
+    { timeCapsule, publicSharing, visibility }: { timeCapsule: TimeCapsuleDraft | null; publicSharing: boolean; visibility: EntryFormProps['visibility'] },
+    t: EntryFormProps['t'],
+): string {
+    if (timeCapsule) return t('timeCapsuleVisibilityLocked');
+    if (!publicSharing) return t('featureOffPublicVisibility');
+    return visibility === 'public' ? t('publicTooltip') : t('privateTooltip');
+}
+
 function EntryForm({
     newEntryText,
     setNewEntryText,
@@ -171,6 +182,9 @@ function EntryForm({
     const titleTextStyle = entryTextStyle({ fontColor, lineSpacing, letterSpacing }, theme, { title: true });
 
     const { inputClass, containerClass, markdownToggleClass } = entryFormClasses({ theme, format, visibility });
+    const publicSharing = useFeatureFlag('publicSharing');
+    const aiOn = useFeatureFlag('ai');
+    const visibilityTitle = visibilityButtonTitle({ timeCapsule, publicSharing, visibility }, t);
 
     const applyTemplate = (template: EntryTemplate): void => {
         setNewEntryText(template.content);
@@ -331,7 +345,7 @@ function EntryForm({
                             theme={theme}
                         />
                     </div>
-                    {onSuggestTags && (
+                    {aiOn && onSuggestTags && (
                         <button
                             type="button"
                             onClick={() => {
@@ -345,7 +359,7 @@ function EntryForm({
                             <span>{suggestingTags ? t('suggestingTags') : t('suggestTags')}</span>
                         </button>
                     )}
-                    {onFixWriting && (
+                    {aiOn && onFixWriting && (
                         <button
                             type="button"
                             onClick={() => {
@@ -368,7 +382,7 @@ function EntryForm({
                             t={t}
                         />
                     )}
-                    {onGetInspiration && (
+                    {aiOn && onGetInspiration && (
                         <GetInspiredMenu
                             onGenerate={onGetInspiration}
                             onSelect={(question) => setNewEntryText((current) => appendPrompt(current, question))}
@@ -413,9 +427,9 @@ function EntryForm({
                     <button
                         type="button"
                         onClick={() => setVisibility(v => v === 'private' ? 'public' : 'private')}
-                        disabled={timeCapsule !== null}
+                        disabled={timeCapsule !== null || !publicSharing}
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all disabled:cursor-not-allowed disabled:opacity-60 ${getVisibilityButtonClass(visibility ?? 'private', theme)}`}
-                        title={timeCapsule ? t('timeCapsuleVisibilityLocked') : (visibility === 'public' ? t('publicTooltip') : t('privateTooltip'))}
+                        title={visibilityTitle}
                     >
                         <VisibilityIcon visibility={visibility ?? 'private'} className="w-5 h-5" />
                     </button>

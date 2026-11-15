@@ -28,6 +28,7 @@ import { handleAttachmentRoutes } from "./mockApp.routes.attachments";
 import { handleShareLinkRoutes } from "./mockApp.routes.share-links";
 import { refuseInvalidJsonBody, refuseInvalidQueryParameters, refuseMislabelledUpload } from "./mockApp.routes.multipart";
 import { checkWritersDaySent } from "./mockApp.writers-day";
+import { handleFeatureFlagRoutes } from "./mockApp.feature-flags";
 
 async function handleAuthRoutes({
   route,
@@ -351,6 +352,9 @@ export async function registerMockAppRoutes(page: Page, state: MockAppState) {
     }
     checkWritersDaySent(context);
     if (await handleAuthRoutes(context)) {
+      return;
+    }
+    if (await handleFeatureFlagRoutes(context)) {
       return;
     }
     if (await handleConfigRoutes(context)) {

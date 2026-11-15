@@ -19,15 +19,19 @@ const COMPACT_FIELDS: ReadonlyArray<{ key: 'datePrefix' | 'dateSuffix' | 'tagOpe
 export function RouteActions({
     activeSection,
     onSelectSection,
+    showBook = true,
     t,
 }: Readonly<{
     activeSection: ImportExportSection;
     onSelectSection: (section: ImportExportSection) => void;
+    /** False while the book converter is switched off. */
+    showBook?: boolean;
     t: TranslationFunction;
 }>) {
+    const sections: readonly ImportExportSection[] = showBook ? ['export', 'import', 'book'] : ['export', 'import'];
     return (
         <nav className="io-route-actions" aria-label={t('importExport')}>
-            {(['export', 'import', 'book'] as const).map((section) => (
+            {sections.map((section) => (
                 <button
                     key={section}
                     type="button"

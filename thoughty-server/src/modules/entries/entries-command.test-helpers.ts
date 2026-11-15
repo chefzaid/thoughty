@@ -1,3 +1,5 @@
+import type { FeatureFlag } from '@/common/feature-flags';
+import { featureFlagsWith } from '@/common/feature-flags/feature-flags.test-helpers';
 import { EntriesCommandService } from './entries-command.service';
 
 /** The `EntriesCommandService` under test and the collaborator mocks behind it. */
@@ -15,9 +17,9 @@ export interface EntriesCommandTestBed {
 
 /**
  * A fresh `EntriesCommandService` over repository mocks. Tagging keeps no tags and the pinned
- * entry limit is 3 until a spec changes them.
+ * entry limit is 3 until a spec changes them. Every feature flag is on except those given as false.
  */
-export function createEntriesCommandTestBed(): EntriesCommandTestBed {
+export function createEntriesCommandTestBed(flags: Partial<Record<FeatureFlag, boolean>> = {}): EntriesCommandTestBed {
   const entryRepository = {
     count: jest.fn(),
     createQueryBuilder: jest.fn(),
@@ -71,6 +73,7 @@ export function createEntriesCommandTestBed(): EntriesCommandTestBed {
     entryMentions as never,
     timeCapsules as never,
     inlineImages as never,
+    featureFlagsWith(flags),
   );
 
   return { service, entryRepository, revisionRepository, diaryRepository, entryTaggingService, configService, entryMentions, timeCapsules, inlineImages };

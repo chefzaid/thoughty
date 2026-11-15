@@ -5,6 +5,8 @@ import type { TranslationFunction } from '../../types';
 import { tintedTextClass } from '../../utils/tintedText';
 import type { Language } from '../../utils/translations';
 import ShareLinkForm from './ShareLinkForm';
+import FeatureOffNote from '../FeatureFlags/FeatureOffNote';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import { formatShareDate, shareLinkName, shareLinkViews } from './shareLinkText';
 import { useShareLinks } from './useShareLinks';
 
@@ -22,10 +24,12 @@ export interface ShareLinkDialogProps {
 
 /**
  * Makes and manages the private share links of one entry or book version in a modal dialog: a new
- * link's address is shown once, to copy, and each unexpired link can be revoked.
+ * link's address is shown once, to copy, and each unexpired link can be revoked. While public sharing is
+ * switched off no link is made, and the links already made can still be revoked.
  */
 export default function ShareLinkDialog({ isOpen, target, subject, isDark, language, service, onClose, t }: ShareLinkDialogProps) {
     const state = useShareLinks(service, target, isOpen);
+    const publicSharing = useFeatureFlag('publicSharing');
     const [copied, setCopied] = useState<'idle' | 'copied' | 'failed'>('idle');
     const dialogRef = useRef<HTMLDivElement>(null);
     const firstFieldRef = useRef<HTMLSelectElement>(null);
@@ -115,14 +119,18 @@ export default function ShareLinkDialog({ isOpen, target, subject, isDark, langu
                             {copied === 'failed' && <p role="alert" className={`text-sm ${tintedTextClass('red', isDark ? 'dark' : 'light')}`}>{t('shareLinkCopyFailed')}</p>}
                         </div>
                     )}
-                    <ShareLinkForm
-                        forEntry={forEntry}
-                        creating={state.creating}
-                        fieldClass={fieldClass}
-                        firstFieldRef={firstFieldRef}
-                        onCreate={state.create}
-                        t={t}
-                    />
+                    {publicSharing ? (
+                        <ShareLinkForm
+                            forEntry={forEntry}
+                            creating={state.creating}
+                            fieldClass={fieldClass}
+                            firstFieldRef={firstFieldRef}
+                            onCreate={state.create}
+                            t={t}
+                        />
+                    ) : (
+                        <FeatureOffNote message="featureOffPublicSharing" theme={isDark ? 'dark' : 'light'} t={t} />
+                    )}
                     {state.error && (
                         <p role="alert" className={`text-sm ${tintedTextClass('red', isDark ? 'dark' : 'light')}`}>{t(state.error)}</p>
                     )}

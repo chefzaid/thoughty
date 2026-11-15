@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { TranslationFunction } from '../../types';
 import type { CloudFileInfo, CloudProviderType } from '../../services/api/cloudSyncService';
 import { downloadBlob } from '../../utils/downloadFile';
@@ -7,6 +7,7 @@ import { readApiErrorMessage } from '../../services/api/base';
 import type { BookStart } from '../../utils/appRouting';
 import { appendBookSourceParams, bookVersionsQuery, describeBookStart, initialBookOptions, isBookSourceReady } from './bookSource';
 import { useBookSourceData } from './useBookSourceData';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import { isCachedPdfFor, pdfSettings, readBookFile, type CachedBookPdf, type GeneratedBookFile } from './bookFile';
 import {
     type BookOptions,
@@ -40,7 +41,13 @@ export function useImportExportBook({
     showMessage,
     t,
 }: UseImportExportBookProps) {
-    const [options, setOptions] = useState<BookOptions>(() => initialBookOptions(initialStart, t));
+    const [chosenOptions, setOptions] = useState<BookOptions>(() => initialBookOptions(initialStart, t));
+    // While AI is switched off the book is plain: no AI narrative and no AI chapter framing
+    const aiOn = useFeatureFlag('ai');
+    const options = useMemo(
+        () => (aiOn ? chosenOptions : { ...chosenOptions, narrative: false, chapterFraming: false }),
+        [aiOn, chosenOptions],
+    );
     const sourceData = useBookSourceData({ authFetch, options });
     const sourceReady = isBookSourceReady(options);
     const versionsQuery = bookVersionsQuery(options, diaryId);

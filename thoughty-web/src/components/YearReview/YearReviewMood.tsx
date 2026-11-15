@@ -4,6 +4,7 @@ import { monthName } from '../../utils/calendarNames';
 import { feelingLabel, moodLabelKey, nearestMoodLevel } from '../../utils/entryMood';
 import type { Language } from '../../utils/translations';
 import { countPhrase } from './yearReviewFormat';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import './YearReviewMood.css';
 
 const WIDTH = 720;
@@ -111,6 +112,7 @@ function RecordedMoodArc({ recorded, language, t }: Readonly<{ recorded: Recorde
  * otherwise AI reads it from a sample of entries, only when the writer asks.
  */
 function YearReviewMood({ mood, recordedMood = null, aiAvailable, reading, failed, onRead, language, t }: YearReviewMoodProps) {
+  const aiOn = useFeatureFlag('ai');
   if (recordedMood) {
     return (
       <section className="review-card review-mood" aria-labelledby="review-mood-heading">
@@ -145,7 +147,7 @@ function YearReviewMood({ mood, recordedMood = null, aiAvailable, reading, faile
         <p className="review-note">{t('reviewMoodIntro')}</p>
       )}
 
-      {aiAvailable ? (
+      {aiAvailable && aiOn ? (
         <>
           <p className="review-note review-privacy review-print-hidden">{t('reviewMoodPrivacy')}</p>
           <div className="review-actions review-print-hidden">
@@ -155,7 +157,7 @@ function YearReviewMood({ mood, recordedMood = null, aiAvailable, reading, faile
           </div>
         </>
       ) : (
-        <p className="review-note review-print-hidden">{t('reviewMoodUnavailable')}</p>
+        <p className="review-note review-print-hidden">{t(aiOn ? 'reviewMoodUnavailable' : 'featureOffAi')}</p>
       )}
       {failed && <p className="review-error" role="alert">{t('reviewMoodError')}</p>}
       <p className="review-note review-print-hidden">{t('reviewMoodRecordHint')}</p>

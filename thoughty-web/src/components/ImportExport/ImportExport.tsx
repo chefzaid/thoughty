@@ -7,6 +7,8 @@ import { DangerZoneSection, ExportSection, FormatSection, ImportSection, RouteAc
 import { ImportExportBookPanel } from './ImportExportBookPanel';
 import { AppImportPanel } from './appImport/AppImportPanel';
 import { useImportExportCloud } from './useImportExportCloud';
+import FeatureOffNote from '../FeatureFlags/FeatureOffNote';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import AutoDismiss from '../AutoDismiss/AutoDismiss';
 import PageHeader from '../PageHeader/PageHeader';
 import { useTransientMessage } from '../../hooks/useTransientMessage';
@@ -145,7 +147,10 @@ function ImportExport({
         }
     }
 
-    const cloud = useImportExportCloud({ diaryId, showMessage, previewImportContent, t });
+    // A switched-off feature's part of the page says so instead of asking the API for it
+    const cloudSyncOn = useFeatureFlag('cloudSync');
+    const bookConverterOn = useFeatureFlag('bookConverter');
+    const cloud = useImportExportCloud({ diaryId, showMessage, previewImportContent, t, enabled: cloudSyncOn });
 
     async function saveFormatSettings(): Promise<void> {
         try {
@@ -299,6 +304,7 @@ function ImportExport({
 
             <RouteActions
                 activeSection={activeSection}
+                showBook={bookConverterOn}
                 onSelectSection={(section) => {
                     setActiveSection(section);
                     emitRouteState({ section });
@@ -346,12 +352,12 @@ function ImportExport({
                             t={t}
                         />
                     )}
-                    cloudImportContent={<CloudImportSection {...cloud.importProps} t={t} />}
+                    cloudImportContent={cloudSyncOn ? <CloudImportSection {...cloud.importProps} t={t} /> : null}
                     t={t}
                 />
             </div>
 
-            <ImportExportBookPanel
+            {bookConverterOn ? <ImportExportBookPanel
                 activeSection={activeSection}
                 sectionRef={bookSectionRef}
                 diaryName={diaryName}
@@ -363,9 +369,19 @@ function ImportExport({
                 language={language}
                 showMessage={showMessage}
                 t={t}
-            />
+            /> : (
+                <section ref={bookSectionRef} className={`io-section ${activeSection === 'book' ? 'is-route-target' : ''}`} id="book-section">
+                    <h2>{t('book')}</h2>
+                    <FeatureOffNote message="featureOffBookConverter" theme={isLight ? 'light' : 'dark'} t={t} />
+                </section>
+            )}
 
-            <CloudSyncSection {...cloud.syncProps} t={t} />
+            {cloudSyncOn ? <CloudSyncSection {...cloud.syncProps} t={t} /> : (
+                <section className="io-section cloud-sync-section">
+                    <h2>{t('cloudSync')}</h2>
+                    <FeatureOffNote message="featureOffCloudSync" theme={isLight ? 'light' : 'dark'} t={t} />
+                </section>
+            )}
 
             <FormatSection formatConfig={formatConfig} onInputChange={handleInputChange} onSave={saveFormatSettings} t={t} />
 

@@ -16,6 +16,8 @@ export const API_ERROR_MESSAGES = {
   SERVICE_UNAVAILABLE: 'Service unavailable',
   BAD_GATEWAY: 'Bad gateway',
   INTERNAL_ERROR: 'Internal server error',
+  // A feature switched off by its runtime flag (`ai`, `bookConverter`, `cloudSync`, `publicSharing`); 503.
+  FEATURE_DISABLED: 'This feature is turned off for now',
 
   // Sign-in, registration and sessions.
   AUTH_INVALID_CREDENTIALS: 'Invalid email or password',

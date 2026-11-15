@@ -33,6 +33,7 @@ import { useEntryReaderRoute } from '../EntryReader/useEntryReaderRoute';
 import { readerScopeFromList, readerScopeOfMonth } from '../../services/api/entryReaderService';
 import ComfortReadsCard from '../ComfortReads/ComfortReadsCard';
 import type { SavedEntry } from '../ComfortReads/comfortReadsState';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 
 type DiaryTabsProps = Pick<ComponentProps<typeof DiaryTabs>, 'diaries' | 'currentDiaryId' | 'onDiaryChange' | 'onManageDiaries'>;
 interface ThoughtOfDayProps {
@@ -104,6 +105,8 @@ function JournalView({
   const reader = useEntryReaderRoute();
   const showCalendar = layoutRoute.layout === 'calendar';
   const language = resolveLanguage(config.language);
+  // Looking for duplicates is AI, so it is left out while AI is switched off
+  const aiOn = useFeatureFlag('ai');
   const theme = config.theme ?? 'dark';
   const { list: eraList, eras } = useLifeEraList();
   const selectedEra = eras.find((era) => era.id === filters.filterEraId) ?? null;
@@ -272,12 +275,14 @@ function JournalView({
                 t={t}
                 notify={onNotify}
               />
-              <DuplicateReview
-                {...duplicateReview}
-                theme={config.theme}
-                language={language}
-                t={t}
-              />
+              {aiOn && (
+                <DuplicateReview
+                  {...duplicateReview}
+                  theme={config.theme}
+                  language={language}
+                  t={t}
+                />
+              )}
               <button
                 type="button"
                 onClick={onOpenRecycleBin}

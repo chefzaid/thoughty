@@ -6,6 +6,7 @@ import type { MockLifeEra } from "./mockApp.routes.life-eras";
 import { createMockOptInEmail, type MockOptInEmail } from "./mockApp.routes.opt-in-emails";
 import { addMockMentionedPeople, type MockPerson } from "./mockApp.routes.people";
 import type { MockDiary } from "./mockApp.diaries";
+import type { MockFeatureFlags } from "./mockApp.feature-flags";
 import type { components } from "../../src/generated/openapi";
 import {
   DEFAULT_CLOUD_FILES,
@@ -148,6 +149,8 @@ export interface SetupMockAppOptions {
   monthlyRecapEmail?: Partial<MockOptInEmail>;
   /** The people the writer mentions; by default those the initial entries mention. */
   people?: MockPerson[];
+  /** Runtime feature flags to switch off, such as `{ ai: false }`; every feature is on by default. */
+  featureFlags?: MockFeatureFlags;
 }
 
 export interface MockAppState {
@@ -181,6 +184,9 @@ export interface MockAppState {
     promptCardsDrawn?: string;
   };
   diaries: MockDiary[];
+  featureFlags: MockFeatureFlags;
+  /** Requests refused with 503 FEATURE_DISABLED, which a spec expects the web app not to send. */
+  featureDisabledRequests: string[];
   entries: MockEntry[];
   trash: MockTrashedEntry[];
   revisions: Record<number, MockEntryRevision[]>;
@@ -414,6 +420,8 @@ export function createMockAppState(
     },
     // Copied, so diaries a test creates never leak into the next test's defaults
     diaries: (options.diaries || DEFAULT_DIARIES).map((diary) => ({ ...diary })),
+    featureFlags: { ...options.featureFlags },
+    featureDisabledRequests: [],
     entries: sortEntries(options.initialEntries || []),
     trash: (options.initialTrash || []).map((entry) => ({ ...entry })),
     revisions: options.initialRevisions || {},

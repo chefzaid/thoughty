@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 import "react-datepicker/dist/react-datepicker.css";
 
 import AppShell from './AppShell';
+import { FeatureFlagsProvider } from './components/FeatureFlags/FeatureFlagsProvider';
 
 const appQueryClient = new QueryClient({
   defaultOptions: {
@@ -16,9 +17,11 @@ const appQueryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={appQueryClient}>
-      <BrowserRouter>
-        <AppShell />
-      </BrowserRouter>
+      <FeatureFlagsProvider>
+        <BrowserRouter>
+          <AppShell />
+        </BrowserRouter>
+      </FeatureFlagsProvider>
     </QueryClientProvider>
   );
 }

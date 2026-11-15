@@ -26,6 +26,7 @@ import { AttachmentsService } from '@/modules/attachments';
 import { BookEntrySourceService } from './book-entry-source.service';
 import { LifeErasService } from '@/modules/life-eras';
 import { ConfigService } from '@/modules/config';
+import { FeatureFlagsService } from '@/common/feature-flags';
 
 export type BookFormat = 'pdf' | 'epub' | 'html' | 'md';
 
@@ -67,6 +68,7 @@ export class BooksService {
     private readonly attachmentsService: AttachmentsService,
     private readonly lifeEras: LifeErasService,
     private readonly configService: ConfigService,
+    private readonly featureFlags: FeatureFlagsService,
   ) {}
 
   private async resolveAuthor(userId: number, provided?: string): Promise<string | undefined> {
@@ -145,6 +147,7 @@ export class BooksService {
     book: Book,
     mode: BookWeavingMode,
   ): Promise<void> {
+    await this.featureFlags.assertEnabled('ai');
     if (!(await this.aiBookComposer.isConfigured(userId))) {
       throw apiError(BadRequestException, 'BOOK_AI_NARRATIVE_KEY_REQUIRED');
     }
@@ -160,6 +163,7 @@ export class BooksService {
   }
 
   private async composeChapterFraming(userId: number, book: Book): Promise<void> {
+    await this.featureFlags.assertEnabled('ai');
     if (!(await this.aiBookComposer.isConfigured(userId))) {
       throw apiError(BadRequestException, 'BOOK_AI_FRAMING_KEY_REQUIRED');
     }

@@ -1,12 +1,22 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { apiError } from '../errors/api-error';
 
-export const DEFAULT_FEATURE_FLAGS: Record<string, boolean> = {
+/**
+ * The features a flag can switch off without a redeploy, each on unless the provider or `FEATURE_FLAGS`
+ * says otherwise. docs/architecture.md, "Feature flags", lists what each one covers.
+ */
+export const DEFAULT_FEATURE_FLAGS = {
   ai: true,
   bookConverter: true,
   cloudSync: true,
   publicSharing: true,
-};
+} as const satisfies Record<string, boolean>;
+
+export type FeatureFlag = keyof typeof DEFAULT_FEATURE_FLAGS;
+
+/** How long a provider request may take before the last known flags (or the defaults) are used. */
+export const FEATURE_FLAG_PROVIDER_TIMEOUT_MS = 3_000;
 
 interface FeatureFlagProviderResponse {
   flags?: Record<string, unknown>;
@@ -60,10 +70,18 @@ function parseInlineFlags(value?: string): Record<string, boolean> {
   })));
 }
 
+/**
+ * The runtime feature flags: the defaults, overridden by `FEATURE_FLAGS` (read on every call), overridden
+ * by the provider at `FEATURE_FLAG_PROVIDER_URL` when one is set. The provider's answer is kept for
+ * `FEATURE_FLAG_CACHE_TTL_MS` (60 s by default), so a change there applies within that time on every
+ * API pod and worker. When the provider fails, the last flags it gave are kept (the defaults before any),
+ * and it is asked again after the same delay rather than on every request.
+ */
 @Injectable()
 export class FeatureFlagsService {
   private readonly logger = new Logger(FeatureFlagsService.name);
   private cache: CachedFlags | null = null;
+  private pending: Promise<Record<string, boolean>> | null = null;
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -83,6 +101,7 @@ export class FeatureFlagsService {
     const token = this.configService.get<string>('FEATURE_FLAG_PROVIDER_TOKEN');
     const response = await fetch(providerUrl, {
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      signal: AbortSignal.timeout(FEATURE_FLAG_PROVIDER_TIMEOUT_MS),
     });
 
     if (!response.ok) {
@@ -97,6 +116,21 @@ export class FeatureFlagsService {
     return normalizeFlags(rawFlags as Record<string, unknown>);
   }
 
+  /** The provider's flags, asked once at a time and kept for the cache TTL, also after a failure. */
+  private async loadProviderFlags(providerUrl: string): Promise<Record<string, boolean>> {
+    try {
+      const flags = await this.fetchProviderFlags(providerUrl);
+      this.cache = { flags, expiresAt: Date.now() + this.getCacheTtlMs() };
+    } catch (error) {
+      this.logger.warn('Feature flag provider unavailable', {
+        errorName: error instanceof Error ? error.name : 'UnknownError',
+        errorMessage: error instanceof Error ? error.message : 'Unknown feature flag provider error',
+      });
+      this.cache = { flags: this.cache?.flags ?? {}, expiresAt: Date.now() + this.getCacheTtlMs() };
+    }
+    return this.cache.flags;
+  }
+
   async getFeatureFlags(): Promise<Record<string, boolean>> {
     const fallbackFlags = this.getFallbackFlags();
     const providerUrl = this.configService.get<string>('FEATURE_FLAG_PROVIDER_URL')?.trim();
@@ -109,19 +143,21 @@ export class FeatureFlagsService {
       return { ...fallbackFlags, ...this.cache.flags };
     }
 
-    try {
-      const providerFlags = await this.fetchProviderFlags(providerUrl);
-      this.cache = {
-        flags: providerFlags,
-        expiresAt: Date.now() + this.getCacheTtlMs(),
-      };
-      return { ...fallbackFlags, ...providerFlags };
-    } catch (error) {
-      this.logger.warn('Feature flag provider unavailable', {
-        errorName: error instanceof Error ? error.name : 'UnknownError',
-        errorMessage: error instanceof Error ? error.message : 'Unknown feature flag provider error',
-      });
-      return this.cache ? { ...fallbackFlags, ...this.cache.flags } : fallbackFlags;
+    this.pending ??= this.loadProviderFlags(providerUrl).finally(() => {
+      this.pending = null;
+    });
+    return { ...fallbackFlags, ...(await this.pending) };
+  }
+
+  /** Whether a feature is on right now. */
+  async isEnabled(flag: FeatureFlag): Promise<boolean> {
+    return (await this.getFeatureFlags())[flag] !== false;
+  }
+
+  /** Refuses with `503 FEATURE_DISABLED` while the feature is switched off. */
+  async assertEnabled(flag: FeatureFlag): Promise<void> {
+    if (!(await this.isEnabled(flag))) {
+      throw apiError(ServiceUnavailableException, 'FEATURE_DISABLED', `The ${flag} feature is turned off for now`);
     }
   }
 }

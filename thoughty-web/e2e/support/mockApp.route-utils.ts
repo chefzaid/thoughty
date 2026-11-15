@@ -32,6 +32,15 @@ export function fulfillJson(
   });
 }
 
+/**
+ * Answers as the proxy in front of the API does while the API is down: a 503 with an empty JSON body and no
+ * `code`. It is not an answer of the API, so it is not checked against the contract (a route that documents a
+ * 503 of its own, such as FEATURE_DISABLED, would otherwise ask for the API's error body).
+ */
+export function fulfillApiUnreachable(route: Route) {
+  return route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+}
+
 /** Answers like the API's errors: Nest's body plus the stable `code` the web app translates (docs/architecture.md). */
 export function fulfillApiError(route: Route, statusCode: number, code: string, message: string) {
   return fulfillJson(route, { statusCode, message, error: STATUS_CODES[statusCode] ?? 'Error', code }, { status: statusCode });

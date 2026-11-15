@@ -9,6 +9,7 @@ import { AttachmentsService, contentDisposition, sendAttachmentFile } from '@/mo
 import { SharedContentResponseDto } from './dto';
 import { SharedContentService } from './shared-content.service';
 import { SharedResponseHeadersInterceptor } from './shared-response-headers.interceptor';
+import { RequireFeature } from '@/common/feature-flags';
 
 const TOKEN_PARAM = { name: 'token', type: String, description: 'The link’s token, as in `/s/<token>`' } as const;
 const NOT_AVAILABLE = 'No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed';
@@ -20,6 +21,7 @@ const NOT_AVAILABLE = 'No such link, or it expired, ran out of views, was revoke
 @ApiTags('Shared links')
 @Public()
 @UseInterceptors(SharedResponseHeadersInterceptor)
+@RequireFeature('publicSharing')
 @Controller('shared')
 export class SharedContentController {
   constructor(

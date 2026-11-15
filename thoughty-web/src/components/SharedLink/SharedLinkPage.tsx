@@ -66,6 +66,12 @@ export default function SharedLinkPage({ token, language = readerLanguage(), the
                         <p className={mutedClass}>{t('sharedUnavailableText')}</p>
                     </section>
                 )}
+                {state.status === 'paused' && (
+                    <section className="space-y-2">
+                        <h1 className="text-2xl font-semibold">{t('sharedPausedTitle')}</h1>
+                        <p className={mutedClass}>{t('sharedPausedText')}</p>
+                    </section>
+                )}
                 {state.status === 'failed' && (
                     <section className="space-y-3" role="alert">
                         <h1 className="text-2xl font-semibold">{t('sharedFailedTitle')}</h1>

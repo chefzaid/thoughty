@@ -7,6 +7,8 @@ import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
 import { noTimeCapsules } from '@/modules/time-capsules/time-capsules.test-helpers';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 import { ConfigService } from '@/modules/config';
+import { FeatureFlagsService } from '@/common/feature-flags';
+import { featureFlagsWith } from '@/common/feature-flags/feature-flags.test-helpers';
 
 export const mockEntry = {
   id: 1,
@@ -31,7 +33,7 @@ export const mockDiary = {
  * A fresh `IoService` over repository mocks, returned with them. The entry repository hands out one shared query
  * builder that returns `mockEntry` until a spec changes it.
  */
-export async function createIoServiceTestBed() {
+export async function createIoServiceTestBed(flags: Parameters<typeof featureFlagsWith>[0] = {}) {
   const mockQueryBuilder = {
     where: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
@@ -83,6 +85,7 @@ export async function createIoServiceTestBed() {
       noTimeCapsules(),
       { provide: AttachmentsService, useValue: attachmentsService },
       { provide: ConfigService, useValue: configService },
+      { provide: FeatureFlagsService, useValue: featureFlagsWith(flags) },
     ],
   }).compile();
 

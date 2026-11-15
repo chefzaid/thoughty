@@ -19,6 +19,7 @@ import { resolveLanguage } from '../../utils/language';
 import { useInlineImageInsert } from '../InlineImages/useInlineImageInsert';
 import { useDictationField } from '../Dictation/useDictationField';
 import EntryDiaryField from './EntryDiaryField';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 
 const LazyMDEditor = lazy(() => import('../MarkdownEditor/MarkdownEditor'));
 
@@ -207,6 +208,7 @@ export function EditForm({
     t,
 }: Readonly<EditFormProps>) {
     const isDark = config.theme !== 'light';
+    const publicSharing = useFeatureFlag('publicSharing');
     const writingTextStyle = entryTextStyle(config, config.theme);
     const titleTextStyle = entryTextStyle(config, config.theme, { title: true });
     const inputClass = isDark
@@ -387,8 +389,10 @@ export function EditForm({
                 <button
                     type="button"
                     onClick={() => setEditVisibility((v) => v === 'private' ? 'public' : 'private')}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${getVisibilityButtonClass(editVisibility, config.theme)}`}
-                    title={editVisibility === 'public' ? t('public') : t('private')}
+                    // While public sharing is off the editor can make an entry private, not public
+                    disabled={!publicSharing && editVisibility === 'private'}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all disabled:cursor-not-allowed disabled:opacity-60 ${getVisibilityButtonClass(editVisibility, config.theme)}`}
+                    title={!publicSharing && editVisibility === 'private' ? t('featureOffPublicVisibility') : t(editVisibility)}
                 >
                     <VisibilityIcon visibility={editVisibility} />
                 </button>

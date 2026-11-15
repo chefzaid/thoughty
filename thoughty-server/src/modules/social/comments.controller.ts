@@ -9,9 +9,11 @@ import {
   EntryCommentsResponseDto,
 } from './dto';
 import { CommentsService } from './comments.service';
+import { RequireFeature } from '@/common/feature-flags';
 
 @ApiTags('Social')
 @ApiBearerAuth()
+@RequireFeature('publicSharing')
 @Controller('entries/:entryId/comments')
 export class CommentsController {
   constructor(private readonly commentsService: CommentsService) {}

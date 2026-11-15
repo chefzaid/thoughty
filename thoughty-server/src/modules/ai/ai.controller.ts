@@ -40,6 +40,7 @@ import {
   ApplyJournalRetagResponseDto,
   JournalRetagPlanResponseDto,
 } from './dto/journal-retag.dto';
+import { RequireFeature } from '@/common/feature-flags';
 
 @ApiTags('AI')
 @ApiBearerAuth()
@@ -55,6 +56,7 @@ export class AiController {
   ) {}
 
   @Get('models')
+  @RequireFeature('ai')
   @ApiOperation({ summary: 'List available OpenRouter models' })
   @ApiResponse({ status: 200, description: 'List of available models', type: [AiModelDto] })
   async listModels(
@@ -77,6 +79,7 @@ export class AiController {
   }
 
   @Put('credentials')
+  @RequireFeature('ai')
   @ApiOperation({ summary: 'Validate and store a personal OpenRouter API key' })
   @ApiResponse({
     status: 200,
@@ -102,6 +105,7 @@ export class AiController {
   }
 
   @Get('usage')
+  @RequireFeature('ai')
   @ApiOperation({ summary: 'Get personal OpenRouter token and cost usage' })
   @ApiResponse({
     status: 200,
@@ -113,6 +117,7 @@ export class AiController {
   }
 
   @Post('suggest-tags')
+  @RequireFeature('ai')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Suggest tags for journal content using OpenRouter' })
   @ApiResponse({ status: 200, description: 'Suggested tags returned successfully', type: SuggestTagsResponseDto })
@@ -124,6 +129,7 @@ export class AiController {
   }
 
   @Post('fix-writing')
+  @RequireFeature('ai')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Fix grammar, spelling, and style in journal content using OpenRouter' })
   @ApiResponse({ status: 200, description: 'Corrected content returned successfully', type: FixWritingResponseDto })
@@ -135,6 +141,7 @@ export class AiController {
   }
 
   @Post('summarize')
+  @RequireFeature('ai')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Summarize a journal entry with optional detail guidance' })
   @ApiResponse({
@@ -150,6 +157,7 @@ export class AiController {
   }
 
   @Post('inspiration')
+  @RequireFeature('ai')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Ask a reflective journal question based on the user tags' })
   @ApiResponse({
@@ -165,6 +173,7 @@ export class AiController {
   }
 
   @Post('duplicates')
+  @RequireFeature('ai')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Find high-confidence semantic duplicate journal entries' })
   @ApiResponse({
@@ -180,6 +189,7 @@ export class AiController {
   }
 
   @Post('semantic-search')
+  @RequireFeature('ai')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Search owned journal entries by semantic similarity' })
   @ApiResponse({
@@ -195,6 +205,7 @@ export class AiController {
   }
 
   @Post('journal-retag/preview')
+  @RequireFeature('ai')
   @ApiOperation({ summary: 'Preview an AI-generated whole-journal theme and retag plan' })
   @ApiResponse({
     status: 201,
@@ -208,6 +219,7 @@ export class AiController {
   }
 
   @Post('journal-retag/apply')
+  @RequireFeature('ai')
   @ApiOperation({ summary: 'Apply a reviewed journal retag plan to owned entries' })
   @ApiResponse({
     status: 201,
@@ -222,6 +234,7 @@ export class AiController {
   }
 
   @Post('chat')
+  @RequireFeature('ai')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Chat about a journal entry with AI for analysis or discussion' })
   @ApiResponse({
@@ -237,6 +250,7 @@ export class AiController {
   }
 
   @Get('history/:entryId')
+  @RequireFeature('ai')
   @ApiOperation({ summary: 'Get persisted AI chat history for an entry' })
   @ApiParam({ name: 'entryId', type: Number })
   @ApiResponse({ status: 200, description: 'Stored AI chat history', type: ChatHistoryResponseDto })

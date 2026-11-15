@@ -868,7 +868,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get runtime feature flags for the current environment */
+        /**
+         * Get runtime feature flags for the current environment
+         * @description Each feature is on unless its flag is false; a flag missing from the answer is on. While a flag is off, the routes of its feature answer 503 with the code FEATURE_DISABLED. A change at the flag provider shows here within FEATURE_FLAG_CACHE_TTL_MS (60 seconds by default).
+         */
         get: operations["ConfigController_getFeatureFlags"];
         put?: never;
         post?: never;
@@ -9677,7 +9680,7 @@ export interface components {
          * @example VALIDATION_FAILED
          * @enum {string}
          */
-        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "COMMENT_NOT_FOUND" | "FEATURE_REQUEST_NOT_FOUND";
+        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "FEATURE_DISABLED" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "COMMENT_NOT_FOUND" | "FEATURE_REQUEST_NOT_FOUND";
         /**
          * @example {
          *       "statusCode": 401,
@@ -10962,6 +10965,23 @@ export interface operations {
                     "application/json": components["schemas"]["CreateEntryResponseDto"];
                 };
             };
+            /** @description FEATURE_DISABLED: a public entry while public sharing is off */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: a public entry while public sharing is off",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     EntriesController_getDates: {
@@ -11912,6 +11932,23 @@ export interface operations {
                     "application/json": components["schemas"]["CountedMutationResponseDto"];
                 };
             };
+            /** @description FEATURE_DISABLED: making entries public while public sharing is off */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: making entries public while public sharing is off",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     EntriesController_renameTag: {
@@ -12091,6 +12128,23 @@ export interface operations {
                      *       "message": "The entry is a sealed time capsule",
                      *       "error": "Conflict",
                      *       "code": "CONFLICT"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: making a private entry public while public sharing is off */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: making a private entry public while public sharing is off",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];
@@ -12456,6 +12510,23 @@ export interface operations {
                      *       "message": "The entry is a sealed time capsule, which stays private",
                      *       "error": "Conflict",
                      *       "code": "CONFLICT"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: making a private entry public while public sharing is off */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: making a private entry public while public sharing is off",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];
@@ -13030,6 +13101,23 @@ export interface operations {
                     "application/json": components["schemas"]["AiModelDto"][];
                 };
             };
+            /** @description FEATURE_DISABLED: the `ai` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     AiController_getCredentialStatus: {
@@ -13093,6 +13181,23 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["OpenRouterCredentialStatusDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `ai` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -13167,6 +13272,23 @@ export interface operations {
                     "application/json": components["schemas"]["OpenRouterUsageDashboardDto"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `ai` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     AiController_suggestTags: {
@@ -13207,6 +13329,23 @@ export interface operations {
                     "application/json": components["schemas"]["SuggestTagsResponseDto"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `ai` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     AiController_fixWriting: {
@@ -13240,6 +13379,23 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["FixWritingResponseDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `ai` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -13278,6 +13434,23 @@ export interface operations {
                     "application/json": components["schemas"]["EntrySummaryResponseDto"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `ai` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     AiController_generateInspiration: {
@@ -13310,6 +13483,23 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["InspirationResponseDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `ai` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -13366,6 +13556,23 @@ export interface operations {
                     "application/json": components["schemas"]["DuplicateEntryScanResponseDto"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `ai` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     AiController_semanticSearch: {
@@ -13407,6 +13614,23 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["SemanticSearchResponseDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `ai` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -13452,6 +13676,23 @@ export interface operations {
                     "application/json": components["schemas"]["JournalRetagPlanResponseDto"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `ai` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     AiController_applyJournalRetag: {
@@ -13495,6 +13736,23 @@ export interface operations {
                     "application/json": components["schemas"]["ApplyJournalRetagResponseDto"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `ai` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     AiController_chat: {
@@ -13536,6 +13794,23 @@ export interface operations {
                     "application/json": components["schemas"]["ChatResponseDto"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `ai` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     AiController_getHistory: {
@@ -13567,6 +13842,23 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["ChatHistoryResponseDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `ai` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -14511,6 +14803,23 @@ export interface operations {
                     "application/json": components["schemas"]["PersonalityAnalysisResponseDto"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `ai` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     IoController_getFormat: {
@@ -14978,6 +15287,23 @@ export interface operations {
                     "application/json": components["schemas"]["AudioTranscriptionResponseDto"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `ai` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     AttachmentsController_delete: {
@@ -15117,6 +15443,23 @@ export interface operations {
                     "application/json": components["schemas"]["BookVersionResponseDto"][];
                 };
             };
+            /** @description FEATURE_DISABLED: the `bookConverter` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     BooksController_createVersion: {
@@ -15217,6 +15560,23 @@ export interface operations {
                     "application/json": components["schemas"]["BookVersionResponseDto"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `bookConverter` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     BooksController_downloadVersion: {
@@ -15236,6 +15596,23 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description FEATURE_DISABLED: the `bookConverter` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
             };
         };
     };
@@ -15276,6 +15653,23 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["BookPickedEntriesResponseDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `bookConverter` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -15365,6 +15759,23 @@ export interface operations {
                     "application/json": components["schemas"]["BookPreviewResponseDto"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `bookConverter` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     BooksController_export: {
@@ -15433,6 +15844,23 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description FEATURE_DISABLED: the `bookConverter` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
             };
         };
     };
@@ -15509,6 +15937,23 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description FEATURE_DISABLED: the `bookConverter` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
             };
         };
     };
@@ -15598,6 +16043,23 @@ export interface operations {
                     "application/json": components["schemas"]["CloudFileInfoDto"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `bookConverter` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     CloudSyncController_getStatus: {
@@ -15632,6 +16094,23 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["CloudStatusResponseDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `cloudSync` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -15669,7 +16148,11 @@ export interface operations {
                     "application/json": components["schemas"]["CloudAuthUrlResponseDto"];
                 };
             };
-            /** @description This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`) */
+            /**
+             * @description FEATURE_DISABLED: the `cloudSync` feature is turned off on this server
+             *
+             *     This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`), or cloud sync is turned off (`FEATURE_DISABLED`)
+             */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -15678,7 +16161,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "statusCode": 503,
-                     *       "message": "This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`)",
+                     *       "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server\n\nThis server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`), or cloud sync is turned off (`FEATURE_DISABLED`)",
                      *       "error": "Service Unavailable",
                      *       "code": "SERVICE_UNAVAILABLE"
                      *     }
@@ -15723,7 +16206,11 @@ export interface operations {
                     "application/json": components["schemas"]["CloudConnectResponseDto"];
                 };
             };
-            /** @description This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`) */
+            /**
+             * @description FEATURE_DISABLED: the `cloudSync` feature is turned off on this server
+             *
+             *     This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`), or cloud sync is turned off (`FEATURE_DISABLED`)
+             */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -15732,7 +16219,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "statusCode": 503,
-                     *       "message": "This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`)",
+                     *       "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server\n\nThis server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`), or cloud sync is turned off (`FEATURE_DISABLED`)",
                      *       "error": "Service Unavailable",
                      *       "code": "SERVICE_UNAVAILABLE"
                      *     }
@@ -15807,6 +16294,23 @@ export interface operations {
                     "application/json": components["schemas"]["CloudFileInfoDto"][];
                 };
             };
+            /** @description FEATURE_DISABLED: the `cloudSync` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     CloudSyncController_upload: {
@@ -15848,6 +16352,23 @@ export interface operations {
                     "application/json": components["schemas"]["CloudFileInfoDto"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `cloudSync` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     CloudSyncController_download: {
@@ -15881,6 +16402,23 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["CloudDownloadResponseDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `cloudSync` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -15940,6 +16478,23 @@ export interface operations {
                     "application/json": components["schemas"]["CloudSyncSchedulesResponseDto"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `cloudSync` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     CloudSyncController_setSchedule: {
@@ -15996,6 +16551,23 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `cloudSync` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     CloudSyncController_deleteSchedule: {
@@ -16022,6 +16594,23 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["SuccessResponseDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `cloudSync` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -16064,6 +16653,23 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["DiffSyncResponseDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `cloudSync` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -16862,6 +17468,23 @@ export interface operations {
                     "application/json": components["schemas"]["PublicFeedResponseDto"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     FollowsController_list: {
@@ -16893,6 +17516,23 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["FollowsResponseDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -16957,6 +17597,23 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     FollowsController_unfollow: {
@@ -16983,6 +17640,23 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["FollowStateDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -17039,6 +17713,23 @@ export interface operations {
                      *       "message": "The entry is not visible in the public feed",
                      *       "error": "Not Found",
                      *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];
@@ -17107,6 +17798,23 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     CommentsController_remove: {
@@ -17148,6 +17856,23 @@ export interface operations {
                      *       "message": "No deletable comment with this id on the entry",
                      *       "error": "Not Found",
                      *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];
@@ -17215,6 +17940,23 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     LikesController_unlikeEntry: {
@@ -17255,6 +17997,23 @@ export interface operations {
                      *       "message": "The entry is not visible in the public feed",
                      *       "error": "Not Found",
                      *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];
@@ -17323,6 +18082,23 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     LikesController_unlikeComment: {
@@ -17364,6 +18140,23 @@ export interface operations {
                      *       "message": "No visible comment with this id on the entry",
                      *       "error": "Not Found",
                      *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];
@@ -17430,6 +18223,23 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["LeaderboardResponseDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -18244,7 +19054,11 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description AI is not available or could not read the year */
+            /**
+             * @description FEATURE_DISABLED: the `ai` feature is turned off on this server
+             *
+             *     AI is turned off (FEATURE_DISABLED), not available, or could not read the year
+             */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -18253,7 +19067,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "statusCode": 503,
-                     *       "message": "AI is not available or could not read the year",
+                     *       "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server\n\nAI is turned off (FEATURE_DISABLED), not available, or could not read the year",
                      *       "error": "Service Unavailable",
                      *       "code": "SERVICE_UNAVAILABLE"
                      *     }
@@ -19227,6 +20041,23 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     ShareLinksController_revoke: {
@@ -19347,6 +20178,23 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     SharedContentController_downloadBook: {
@@ -19380,6 +20228,23 @@ export interface operations {
                      *       "message": "No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed",
                      *       "error": "Not Found",
                      *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];
@@ -19448,6 +20313,23 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     SharedContentController_poster: {
@@ -19482,6 +20364,23 @@ export interface operations {
                      *       "message": "No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed",
                      *       "error": "Not Found",
                      *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];

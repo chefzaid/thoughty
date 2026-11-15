@@ -48,7 +48,7 @@ export class UserConfigDto extends OmitType(UpdateConfigDto, [
   comfortReads?: string;
 }
 
-/** The runtime feature flags by name: `ai`, `bookConverter`, `cloudSync`, `publicSharing`, and any the provider adds. */
+/** The runtime feature flags by name: `ai`, `bookConverter`, `cloudSync`, `publicSharing`, and any the provider adds; a missing one is on. */
 export const FEATURE_FLAGS_SCHEMA = {
   type: 'object',
   additionalProperties: { type: 'boolean' },

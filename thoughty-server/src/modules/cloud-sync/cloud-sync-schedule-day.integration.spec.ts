@@ -11,6 +11,7 @@ import { IoService } from '@/modules/io/io.service';
 import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
 import { CloudSyncQueueService } from './cloud-sync-queue.service';
 import { CloudSyncService } from './cloud-sync.service';
+import { featureFlagsWith } from '@/common/feature-flags/feature-flags.test-helpers';
 
 // 10:30 UTC on 31 October 2026: already 00:30 on 1 November in Kiritimati (UTC+14), still 23:30 on
 // 30 October in Pago Pago (UTC-11).
@@ -34,7 +35,7 @@ describePostgres('PostgreSQL scheduled cloud sync on the writer’s day', () => 
     const settings = dataSource.getRepository(Setting);
     const io = new IoService(entries, settings, dataSource.getRepository(Diary), dataSource.getRepository(User),
       new EntryMentionsService(entries), timeCapsuleServiceOn(dataSource), { getFileBuffer: jest.fn() } as never,
-      { getConfig: async () => ({}) } as never);
+      { getConfig: async () => ({}) } as never, featureFlagsWith());
     const googleDrive = {
       isConfigured: () => true,
       exchangeCode: async () => ({ accessToken: 'access', refreshToken: 'refresh', expiresAt: Date.now() + 3_600_000 }),

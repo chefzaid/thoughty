@@ -32,6 +32,23 @@ API and worker logs are JSON lines. Request logs carry `requestId` (also the `x-
 
 `/api/metrics` exports request counts and latency, `thoughty_database_up`, `thoughty_cloud_sync_jobs{status}`, `thoughty_cloud_sync_stuck_jobs` (locked over 15 minutes), `thoughty_feature_usage_total` (no user data), and process memory and uptime. Prometheus scrapes the API pods by annotation; the endpoint answers only private-network addresses, so it returns `404` through the public URL. The optional `infra/k8s/components/monitoring` component holds the `thoughty-alerts` PrometheusRule ([ADR 0015](./adr/0015-observability-baseline.md)). Its expressions match the Thoughty pods and Deployments by name, not by namespace, so they work in any namespace. No overlay includes it, because swirl-cloud runs a plain Prometheus without the Prometheus Operator and Argo CD would reject the unknown resource. To alert in production, add the same rules to the platform's Prometheus configuration; on a cluster with the Operator, add the component to the overlay and make sure the API pods are scraped.
 
+## Feature Flags
+
+Four flags switch a feature off for everyone without a new image: `ai`, `bookConverter`, `cloudSync` and `publicSharing` ([what each covers](./architecture.md#feature-flags)). While one is off, its routes answer `503 FEATURE_DISABLED` and the web hides it with a short note; nothing stored is changed or deleted, and turning it back on restores the feature as it was (queued cloud syncs run, private links open again, public entries reappear in the feed).
+
+Read the flags the API serves now (`COOKIE_JAR` holds a signed-in session; never commit it):
+
+```bash
+curl --cookie "$COOKIE_JAR" https://thoughty.swirlit.dev/api/config/feature-flags
+```
+
+Switch one off:
+
+- **With a flag provider** (`FEATURE_FLAG_PROVIDER_URL`, and `FEATURE_FLAG_PROVIDER_TOKEN` in Vault `apps/thoughty/app` if it needs one): change the flag there, e.g. answer `{"flags": {"ai": false}}`. Each API pod and the worker read it within `FEATURE_FLAG_CACHE_TTL_MS` (60 s by default), and open browsers within a minute more, when their window regains focus (a reload shows it at once). If the provider cannot be reached, the API keeps the flags it last read (the defaults, every feature on, after a restart) and logs `Feature flag provider unavailable`; it tries again once a TTL. Production has no provider yet (TODO.md › Needs Input).
+- **Without one**: set `FEATURE_FLAGS: "ai=false"` (comma-separated, `flag=false` or `flag=true`) in `infra/k8s/overlays/swirl-cloud/configmap-patch.yaml`, commit, let Argo CD sync (self-heal reverts a `kubectl edit`), then restart both workloads, since a ConfigMap is read into the environment at start: `kubectl rollout restart deployment/thoughty-server deployment/thoughty-cloud-sync-worker -n apps`. The provider, when set, wins over `FEATURE_FLAGS` for the flags it names.
+
+Each refused request is a `503` in `thoughty_http_requests_total`, so the 5xx alert counts them. The web stops sending them once it has read the flags, so only browsers left open from before the change send a few, for at most a minute or two; a 5xx rate that stays up after a flag change is something else.
+
 ## Migrations
 
 Production runs the `thoughty-db-migrate` hook before the rollout. If it fails, save its logs, check that the `thoughty-database` secret is ready and the database reachable, and read the `migrations` table. Do not restart the worker until the schema matches the code.

@@ -9,6 +9,7 @@ interface IconActionButtonProps {
     /** Set for a button that opens a menu, so the menu state is announced. */
     ariaExpanded?: boolean;
     buttonRef?: Ref<HTMLButtonElement>;
+    disabled?: boolean;
 }
 
 export function IconActionButton({
@@ -19,13 +20,15 @@ export function IconActionButton({
     ariaLabel,
     ariaExpanded,
     buttonRef,
+    disabled,
 }: Readonly<IconActionButtonProps>) {
     return (
         <button
             ref={buttonRef}
             type="button"
             onClick={onClick}
-            className={`${className} rounded transition-colors`}
+            disabled={disabled}
+            className={`${className} rounded transition-colors disabled:cursor-not-allowed disabled:opacity-60`}
             title={title}
             aria-label={ariaLabel ?? title}
             aria-haspopup={ariaExpanded === undefined ? undefined : 'menu'}

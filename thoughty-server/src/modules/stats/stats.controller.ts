@@ -14,6 +14,7 @@ import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { writersDayOr } from '@/common/utils/writers-day.util';
 import { StatsPersonalityAnalysisService } from './stats-personality-analysis.service';
 import { StatsStreakService } from './stats-streak.service';
+import { RequireFeature } from '@/common/feature-flags';
 
 @ApiTags('Stats')
 @ApiBearerAuth()
@@ -59,6 +60,7 @@ export class StatsController {
   }
 
   @Post('personality-analysis')
+  @RequireFeature('ai')
   @ApiOperation({ summary: 'Analyze writing tendencies for all entries in a selected scope' })
   @ApiResponse({
     status: 201,

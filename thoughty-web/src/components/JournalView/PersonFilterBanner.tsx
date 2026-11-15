@@ -7,6 +7,7 @@ import { pluralPhrase } from '../../utils/pluralPhrase';
 import type { Language } from '../../utils/translations';
 import { mutedTextClass } from '../../utils/tintedText';
 import { usePersonBook } from './usePersonBook';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 
 interface PersonFilterBannerProps {
   readonly person: Person;
@@ -26,6 +27,7 @@ export default function PersonFilterBanner({ person, onClear, onNotify, language
   const titleId = useId();
   const personBook = usePersonBook({ onNotify, t });
   const makingBook = personBook.pendingPersonId === person.id;
+  const bookConverterOn = useFeatureFlag('bookConverter');
   const isDark = theme === 'dark';
   const buttonClass = `inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-sm font-medium ${isDark
     ? 'border-gray-600 bg-gray-900 text-gray-200 hover:bg-gray-800'
@@ -49,7 +51,7 @@ export default function PersonFilterBanner({ person, onClear, onNotify, language
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
-        {person.entryCount > 0 && (
+        {bookConverterOn && person.entryCount > 0 && (
           <button
             type="button"
             onClick={() => { void personBook.makeBook(person); }}

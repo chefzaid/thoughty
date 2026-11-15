@@ -10,6 +10,7 @@ import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test
 import { EntriesCommandService } from './entries-command.service';
 import { EntryInlineImagesService } from './entry-inline-images.service';
 import { EntryMentionsService } from './entry-mentions.service';
+import { featureFlagsWith } from '@/common/feature-flags/feature-flags.test-helpers';
 
 describePostgres('PostgreSQL inline images', () => {
   let database: PostgresTestDatabase;
@@ -36,6 +37,7 @@ describePostgres('PostgreSQL inline images', () => {
       new EntryMentionsService(entries),
       timeCapsuleServiceOn(dataSource),
       inlineImages,
+      featureFlagsWith(),
     );
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });

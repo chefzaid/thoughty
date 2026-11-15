@@ -174,12 +174,12 @@ export const CONTRACT_SUITES = {
     'GET /api/feature-requests/votes',
     'POST /api/feature-requests/{id}/vote',
   ],
+  featureFlags: ['GET /api/config/feature-flags'],
   account: [
     'GET /api/health',
     'GET /api/metrics',
     'GET /api/config',
     'POST /api/config',
-    'GET /api/config/feature-flags',
     'GET /api/config/download-data',
     'GET /api/stats',
     'GET /api/stats/streak',

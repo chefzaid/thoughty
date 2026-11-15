@@ -51,7 +51,7 @@ The defaults in the code match the Compose stack, so you need no `.env` locally.
 | Email (password reset, verification, 2FA codes, memoir questions) | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`. Without them, no email is sent and the API logs a warning. |
 | Shared rate-limit counters | `REDIS_URL` or `REDIS_HOST` (in memory when unset) |
 
-Read replicas ([Data Model](./data-model.md#read-replicas)), request body limits ([Security](./security.md#abuse-controls)), and feature flags (`FEATURE_FLAG_PROVIDER_URL`, or a static `FEATURE_FLAGS=flag=true,other=false`) are optional and not in the example file. Production settings are in the [Deployment Guide](./deployment.md#configuration-and-secrets). The web app's only variable is `VITE_GOOGLE_CLIENT_ID` for Google sign-in.
+Read replicas ([Data Model](./data-model.md#read-replicas)), request body limits ([Security](./security.md#abuse-controls)), and feature flags (`FEATURE_FLAG_PROVIDER_URL` with an optional `FEATURE_FLAG_PROVIDER_TOKEN` and `FEATURE_FLAG_CACHE_TTL_MS`, or a static `FEATURE_FLAGS=ai=false,cloudSync=false`; see [Feature flags](./architecture.md#feature-flags)) are optional and not in the example file. Production settings are in the [Deployment Guide](./deployment.md#configuration-and-secrets). The web app's only variable is `VITE_GOOGLE_CLIENT_ID` for Google sign-in.
 
 ## Seed Data
 

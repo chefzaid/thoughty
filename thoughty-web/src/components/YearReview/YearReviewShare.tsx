@@ -7,6 +7,7 @@ import { formatEntryDate } from '../../utils/entryDate';
 import type { Language } from '../../utils/translations';
 import { buildShareText } from './yearReviewFormat';
 import { useQuietMode } from '../QuietMode/quietMode';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 
 interface YearReviewShareProps {
   readonly review: YearReview;
@@ -23,6 +24,8 @@ type ShareState = { step: 'closed' } | { step: 'editing'; failed: boolean } | { 
  */
 function YearReviewShare({ review, language, onOpenEntry, t }: YearReviewShareProps) {
   const quiet = useQuietMode();
+  // The summary is posted as a public entry, which nothing becomes while public sharing is switched off
+  const publicSharing = useFeatureFlag('publicSharing');
   const entriesService = useAuthenticatedService(createEntriesService);
   const [state, setState] = useState<ShareState>({ step: 'closed' });
   const [includeThemes, setIncludeThemes] = useState(false);
@@ -91,7 +94,7 @@ function YearReviewShare({ review, language, onOpenEntry, t }: YearReviewSharePr
 
       {state.step === 'closed' && (
         <div className="review-actions">
-          {!quiet && (
+          {!quiet && publicSharing && (
             <button type="button" className="review-primary" onClick={() => setState({ step: 'editing', failed: false })}>
               {t('reviewShareAction')}
             </button>

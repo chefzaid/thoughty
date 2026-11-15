@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
-import { fulfillJson } from '../support/mockApp.route-utils';
+import { fulfillApiUnreachable, fulfillJson } from '../support/mockApp.route-utils';
 
 const entry = {
   id: 10,
@@ -14,7 +14,7 @@ const entry = {
 
 /** Answers the given entry endpoint as if the API were down. */
 async function failEntryRequests(page: Page, path: string) {
-  await page.route(`http://localhost:5173${path}`, (route) => fulfillJson(route, {}, { status: 503 }));
+  await page.route(`http://localhost:5173${path}`, (route) => fulfillApiUnreachable(route));
 }
 
 test.describe('Entry action messages', () => {

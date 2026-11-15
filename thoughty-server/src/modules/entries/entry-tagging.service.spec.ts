@@ -1,3 +1,4 @@
+import { featureFlagsWith } from '@/common/feature-flags/feature-flags.test-helpers';
 import { EntryTaggingService } from './entry-tagging.service';
 
 describe('EntryTaggingService', () => {
@@ -14,7 +15,7 @@ describe('EntryTaggingService', () => {
       autoTagEntry: jest.fn().mockResolvedValue([]),
     };
 
-    service = new EntryTaggingService(configService as never, aiService as never);
+    service = new EntryTaggingService(configService as never, aiService as never, featureFlagsWith());
   });
 
   afterEach(() => {
@@ -36,5 +37,15 @@ describe('EntryTaggingService', () => {
 
     expect(aiService.autoTagEntry).not.toHaveBeenCalled();
     expect(result).toEqual(['focus']);
+  });
+
+  it('saves the given tags without asking AI while AI is switched off', async () => {
+    configService.getConfig.mockResolvedValue({ autoTagMaxTags: '3' });
+    service = new EntryTaggingService(configService as never, aiService as never, featureFlagsWith({ ai: false }));
+
+    const result = await service.resolveSavedTags(5, 'Hello world', ['work']);
+
+    expect(aiService.autoTagEntry).not.toHaveBeenCalled();
+    expect(result).toEqual(['work']);
   });
 });

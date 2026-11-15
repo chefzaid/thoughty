@@ -232,6 +232,7 @@ export class EntriesController {
   @Post()
   @ApiOperation({ summary: 'Create a new entry' })
   @ApiResponse({ status: 201, description: 'Entry created', type: CreateEntryResponseDto })
+  @ApiResponse({ status: 503, description: 'FEATURE_DISABLED: a public entry while public sharing is off' })
   async create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateEntryDto,
@@ -247,6 +248,7 @@ export class EntriesController {
     description: 'Bulk operation completed',
     type: CountedMutationResponseDto,
   })
+  @ApiResponse({ status: 503, description: 'FEATURE_DISABLED: making entries public while public sharing is off' })
   async bulkOperation(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: BulkOperationDto,
@@ -283,6 +285,7 @@ export class EntriesController {
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Entry updated', type: EntryMutationResponseDto })
   @ApiResponse({ status: 409, description: 'The entry is a sealed time capsule' })
+  @ApiResponse({ status: 503, description: 'FEATURE_DISABLED: making a private entry public while public sharing is off' })
   async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
@@ -341,6 +344,7 @@ export class EntriesController {
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Visibility updated', type: EntryMutationResponseDto })
   @ApiResponse({ status: 409, description: 'The entry is a sealed time capsule, which stays private' })
+  @ApiResponse({ status: 503, description: 'FEATURE_DISABLED: making a private entry public while public sharing is off' })
   async updateVisibility(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,

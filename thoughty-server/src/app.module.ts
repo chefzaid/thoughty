@@ -33,6 +33,8 @@ import {
   createThrottlerModuleOptions,
   ApiErrorCodeFilter,
   DatabaseInputExceptionFilter,
+  FeatureFlagGuard,
+  FeatureFlagsModule,
   JsonLogger,
   applyRequestLogging,
 } from './common';
@@ -51,6 +53,9 @@ import {
 
     // Database
     DatabaseModule,
+
+    // Runtime feature flags, read by the guard below and by the services that check one
+    FeatureFlagsModule,
 
     // Feature modules
     AuthModule,
@@ -89,6 +94,11 @@ import {
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    // Refuses a `@RequireFeature` route while its feature flag is off (after auth and rate limits)
+    {
+      provide: APP_GUARD,
+      useClass: FeatureFlagGuard,
     },
     // Client input rejected by the database (e.g. out-of-range ids) is a 400, not a 500
     {

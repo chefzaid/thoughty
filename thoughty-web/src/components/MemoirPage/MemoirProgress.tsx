@@ -2,6 +2,7 @@ import type { MemoirChapter, MemoirProgress as Progress } from '../../services/a
 import type { TranslationFunction } from '../../types';
 import { localize, type MemoirLanguage } from './memoirFormat';
 import { useQuietMode } from '../QuietMode/quietMode';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 
 interface MemoirProgressProps {
   readonly progress: Progress;
@@ -15,6 +16,8 @@ interface MemoirProgressProps {
 /** How far the memoir has come, and the way to its book; quiet mode keeps only the way to the book. */
 function MemoirProgress({ progress, chapters, language, canMakeBook, onMakeBook, t }: MemoirProgressProps) {
   const quiet = useQuietMode();
+  // The memoir becomes a book through the book converter, left out while it is switched off
+  const bookConverterOn = useFeatureFlag('bookConverter');
   const chapterCounts = chapters.map((chapter) => ({
     id: chapter.id,
     title: localize(chapter.title, language),
@@ -23,7 +26,7 @@ function MemoirProgress({ progress, chapters, language, canMakeBook, onMakeBook,
   }));
   const chaptersStarted = chapterCounts.filter((chapter) => chapter.answered > 0).length;
 
-  const makeBook = (
+  const makeBook = bookConverterOn && (
     <button type="button" className="memoir-primary" onClick={onMakeBook} disabled={!canMakeBook}>
       <span className="codicon codicon-book" aria-hidden="true" />
       {t('memoirMakeBook')}

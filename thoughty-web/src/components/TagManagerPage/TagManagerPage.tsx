@@ -15,6 +15,7 @@ import {
   serializeTagMetadata,
 } from '../../utils/tagMetadata';
 import JournalRetagReview from './JournalRetagReview';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import { useTransientMessage } from '../../hooks/useTransientMessage';
 import AutoDismiss from '../AutoDismiss/AutoDismiss';
 import { resolveLanguage } from '../../utils/language';
@@ -45,6 +46,8 @@ function TagManagerPage({
   t,
 }: Readonly<TagManagerPageProps>) {
   const [localConfig, setLocalConfig] = useState<ProfileConfig>(config);
+  // Retagging the journal is AI, left out while AI is switched off
+  const aiOn = useFeatureFlag('ai');
   const [renameDrafts, setRenameDrafts] = useState<Record<string, string>>({});
   const saveToast = useTransientMessage();
   const [tagUsage, setTagUsage] = useState<Record<string, number>>({});
@@ -169,7 +172,7 @@ function TagManagerPage({
         theme={isDark ? 'dark' : 'light'}
         actions={(
           <>
-            <JournalRetagReview isDark={isDark} language={resolveLanguage(config.language)} onApplied={onRetagApplied} t={t} />
+            {aiOn && <JournalRetagReview isDark={isDark} language={resolveLanguage(config.language)} onApplied={onRetagApplied} t={t} />}
             <button type="button" onClick={handleSave} className="btn-save">
               {t('saveSettings')}
             </button>

@@ -2,12 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { sanitizeString } from '@/common/utils';
 import { AiService } from '@/modules/ai';
 import { ConfigService } from '@/modules/config';
+import { FeatureFlagsService } from '@/common/feature-flags';
 
 @Injectable()
 export class EntryTaggingService {
   constructor(
     private readonly configService: ConfigService,
     private readonly aiService: AiService,
+    private readonly featureFlags: FeatureFlagsService,
   ) {}
 
   async resolveSavedTags(userId: number, text: string, rawTags: string[]): Promise<string[]> {
@@ -19,6 +21,10 @@ export class EntryTaggingService {
     const autoTagMaxTags = Number.parseInt(String(config.autoTagMaxTags || '0'), 10);
 
     if (!Number.isFinite(autoTagMaxTags) || autoTagMaxTags <= 0 || sanitizedTags.length >= autoTagMaxTags) {
+      return sanitizedTags;
+    }
+    // With AI switched off, an entry saves with the tags it was given
+    if (!(await this.featureFlags.isEnabled('ai'))) {
       return sanitizedTags;
     }
 

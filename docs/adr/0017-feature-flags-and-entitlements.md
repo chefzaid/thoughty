@@ -37,3 +37,7 @@ Treat feature flags and entitlements as separate concepts.
 ## Implementation Note (2026-10-23)
 
 Flags are served by `GET /api/config/feature-flags`, but no server module checks a flag and the web app does not fetch them yet, so no feature is currently switched on or off by a flag. Entitlements and trials are not implemented.
+
+## Implementation Note (2026-11-15)
+
+The four flags (`ai`, `bookConverter`, `cloudSync`, `publicSharing`) now switch their features off. The API enforces them (`@RequireFeature` routes refused by the global `FeatureFlagGuard` with `503 FEATURE_DISABLED`, and service checks for auto-tagging, a book's AI options, publishing, imports and the cloud sync worker); the web reads them once (`FeatureFlagsProvider`, `useFeatureFlag`) only to hide what the API would refuse. Turning a flag off deletes and rewrites nothing. See [Architecture › Feature flags](../architecture.md#feature-flags). Which provider production uses is still open (TODO.md › Needs Input); entitlements and trials are still not implemented.

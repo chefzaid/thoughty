@@ -10,6 +10,8 @@ import { SavedSearchesService } from '@/modules/saved-searches';
 import { BookEntrySourceService } from './book-entry-source.service';
 import { LifeErasService } from '@/modules/life-eras';
 import { ConfigService } from '@/modules/config';
+import { FeatureFlagsService } from '@/common/feature-flags';
+import { featureFlagsWith } from '@/common/feature-flags/feature-flags.test-helpers';
 
 describe('BooksService', () => {
   const png = Buffer.from(
@@ -99,6 +101,7 @@ describe('BooksService', () => {
         { provide: AttachmentsService, useValue: attachmentsService },
         { provide: LifeErasService, useValue: lifeErasService },
         { provide: ConfigService, useValue: configService },
+        { provide: FeatureFlagsService, useValue: featureFlagsWith() },
       ],
     }).compile();
 

@@ -56,15 +56,15 @@ export const createConfigService = (authFetch: (url: string, options?: RequestIn
     }
   };
 
-  const fetchFeatureFlags = async (): Promise<FeatureFlags> => {
+  /** The runtime feature flags, or null when they could not be read. */
+  const fetchFeatureFlags = async (): Promise<FeatureFlags | null> => {
     try {
       const response = await authFetch('/api/config/feature-flags');
-      if (!response?.ok) return {};
-      const data = await safeJsonParse<FeatureFlags>(response);
-      return data ?? {};
+      if (!response?.ok) return null;
+      return await safeJsonParse<FeatureFlags>(response);
     } catch (error) {
       console.error('Error fetching feature flags:', error);
-      return {};
+      return null;
     }
   };
 

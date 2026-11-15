@@ -44,6 +44,7 @@ import { AudioTranscriptionService } from './audio-transcription.service';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { MULTIPART_FIELD_LIMITS } from '@/common/multipart-limits';
+import { RequireFeature } from '@/common/feature-flags';
 
 export { RangeNotSatisfiableException } from './attachment-file-response';
 
@@ -127,6 +128,7 @@ export class AttachmentsController {
   }
 
   @Post(':id/transcribe')
+  @RequireFeature('ai')
   @ApiOperation({ summary: 'Transcribe an audio attachment' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({

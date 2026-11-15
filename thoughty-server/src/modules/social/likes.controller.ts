@@ -4,9 +4,11 @@ import { Throttle } from '@nestjs/throttler';
 import { AuthenticatedUser, CurrentUser, RATE_LIMITS, throttleDefault } from '@/common';
 import { LikeStateDto } from './dto';
 import { LikesService } from './likes.service';
+import { RequireFeature } from '@/common/feature-flags';
 
 @ApiTags('Social')
 @ApiBearerAuth()
+@RequireFeature('publicSharing')
 @Controller('entries/:entryId')
 export class LikesController {
   constructor(private readonly likesService: LikesService) {}

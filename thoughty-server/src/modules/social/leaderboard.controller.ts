@@ -2,9 +2,11 @@ import { Controller, Get, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { GetLeaderboardQueryDto, LeaderboardResponseDto } from './dto';
 import { LeaderboardService } from './leaderboard.service';
+import { RequireFeature } from '@/common/feature-flags';
 
 @ApiTags('Social')
 @ApiBearerAuth()
+@RequireFeature('publicSharing')
 @Controller('leaderboard')
 export class LeaderboardController {
   constructor(private readonly leaderboardService: LeaderboardService) {}

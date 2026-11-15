@@ -9,6 +9,7 @@ import type { Diary as ApiDiary, DiaryFormData } from '../../types';
 import { DEFAULT_DIARY_COLORS, normalizeDiaryColor, resolveDiaryColor, withAlpha } from '../../utils/diaryColors';
 import { describeDiaryGoal, diaryGoalDraft, NO_DIARY_GOAL, readDiaryGoal } from '../../utils/diaryGoals';
 import { resolveLanguage } from '../../utils/language';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 
 /** The diary fields Manage Diaries reads. */
 type Diary = Pick<ApiDiary, 'id' | 'name' | 'icon' | 'color' | 'visibility' | 'isDefault' | 'goalType' | 'goalTarget'>;
@@ -33,6 +34,9 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
     const [newDiaryIcon, setNewDiaryIcon] = useState<string>('📓');
     const [newDiaryColor, setNewDiaryColor] = useState<string>(DEFAULT_NEW_DIARY_COLOR);
     const [newDiaryVisibility, setNewDiaryVisibility] = useState<'public' | 'private'>('private');
+    // While public sharing is switched off a diary's default can be made private, not public
+    const publicSharing = useFeatureFlag('publicSharing');
+    const visibilityHint = (current: 'public' | 'private') => (!publicSharing && current === 'private' ? t('featureOffPublicVisibility') : t('visibilityOverrideHint'));
     const [newDiaryGoal, setNewDiaryGoal] = useState(NO_DIARY_GOAL);
     const [editingDiary, setEditingDiary] = useState<Diary | null>(null);
     const [editName, setEditName] = useState<string>('');
@@ -243,8 +247,9 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                     type="button"
                                     className={`toggle-switch ${newDiaryVisibility === 'public' ? 'public' : 'private'}`}
                                     onClick={() => setNewDiaryVisibility(newDiaryVisibility === 'private' ? 'public' : 'private')}
+                                    disabled={!publicSharing && newDiaryVisibility === 'private'}
                                     aria-label={t('diaryVisibilityToggle')}
-                                    title={t('visibilityOverrideHint')}
+                                    title={visibilityHint(newDiaryVisibility)}
                                 >
                                     <span className={`toggle-thumb ${newDiaryVisibility === 'public' ? 'on' : 'off'}`} />
                                 </button>
@@ -307,8 +312,9 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                                         type="button"
                                                         className={`toggle-switch ${editVisibility === 'public' ? 'public' : 'private'}`}
                                                         onClick={() => setEditVisibility(editVisibility === 'private' ? 'public' : 'private')}
+                                                        disabled={!publicSharing && editVisibility === 'private'}
                                                         aria-label={t('diaryVisibilityToggle')}
-                                                        title={t('visibilityOverrideHint')}
+                                                        title={visibilityHint(editVisibility)}
                                                     >
                                                         <span className={`toggle-thumb ${editVisibility === 'public' ? 'on' : 'off'}`} />
                                                     </button>

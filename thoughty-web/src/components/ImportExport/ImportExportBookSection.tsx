@@ -28,6 +28,7 @@ import { describeBookVersionSource } from './bookSource';
 import { bookUsesAi } from './bookFile';
 import type { SavedSearch } from '../../services/api/savedSearchesService';
 import type { BookSourceLoad } from './useBookSourceData';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 
 const BOOK_CHECKBOXES: ReadonlyArray<{
     key: 'narrative' | 'chapterFraming' | 'embedImages' | 'includeUntagged' | 'includeDates' | 'includeToc';
@@ -116,6 +117,9 @@ export function BookSection({
         ? t('savingBookVersion')
         : generatingLabel;
     const usesAi = bookUsesAi(options);
+    // The AI options are left out while AI is switched off
+    const aiOn = useFeatureFlag('ai');
+    const checkboxes = aiOn ? BOOK_CHECKBOXES : BOOK_CHECKBOXES.filter(({ key }) => key !== 'narrative' && key !== 'chapterFraming');
 
     return (
         <section ref={sectionRef} className={`io-section ${activeSection === 'book' ? 'is-route-target' : ''}`} id="book-section">
@@ -218,7 +222,7 @@ export function BookSection({
                             ))}
                         </select>
                     </div>
-                    <div className="export-option-group book-field">
+                    {aiOn && <div className="export-option-group book-field">
                         <label htmlFor="book-weaving-mode">{t('bookWeavingMode')}</label>
                         <select
                             id="book-weaving-mode"
@@ -231,14 +235,14 @@ export function BookSection({
                                 <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
                             ))}
                         </select>
-                    </div>
+                    </div>}
                 </div>
 
                 {options.chapterMode === 'eras' && (
                     <p id="book-chapter-mode-eras" className="book-field-hint">{t('bookErasHint')}</p>
                 )}
                 <div className="export-option-row book-checkbox-row">
-                    {BOOK_CHECKBOXES.map((checkbox) => (
+                    {checkboxes.map((checkbox) => (
                         <label key={checkbox.key} className="checkbox-label">
                             <input
                                 type="checkbox"

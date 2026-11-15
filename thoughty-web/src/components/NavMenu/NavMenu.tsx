@@ -6,6 +6,7 @@ import { buildNavGroups, type NavGroupId } from './navGroups';
 import PrivacyBlurButton from '../PrivacyBlur/PrivacyBlurButton';
 import type { PrivacyBlurState } from '../PrivacyBlur/usePrivacyBlur';
 import QuickCaptureButton from '../QuickCapture/QuickCaptureButton';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 
 interface NavMenuProps {
     readonly currentView: ViewType;
@@ -26,7 +27,9 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
     const isLight = theme === 'light';
     const displayName = name || t('user');
     const initial = displayName.charAt(0).toUpperCase();
-    const groups = useMemo(() => buildNavGroups(t), [t]);
+    // The feed is left out while public sharing is switched off
+    const publicSharing = useFeatureFlag('publicSharing');
+    const groups = useMemo(() => buildNavGroups(t, publicSharing ? [] : ['feed']), [publicSharing, t]);
     const [openGroup, setOpenGroup] = useState<NavGroupId | null>(null);
     const closeGroup = useCallback(() => setOpenGroup(null), []);
     const selectView = useCallback((view: ViewType) => {

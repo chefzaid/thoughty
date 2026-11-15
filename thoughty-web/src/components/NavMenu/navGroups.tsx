@@ -51,10 +51,11 @@ const importExportIcon = (
 
 /**
  * The main navigation's groups, in order: writing, other people, looking back, and what organizes,
- * moves or holds the data itself (the diaries, the tags, import and export, the recycle bin).
+ * moves or holds the data itself (the diaries, the tags, import and export, the recycle bin). The views in
+ * `hiddenViews` (a feature switched off) are left out.
  */
-export function buildNavGroups(t: Translate): readonly NavGroupDefinition[] {
-    return [
+export function buildNavGroups(t: Translate, hiddenViews: readonly ViewType[] = []): readonly NavGroupDefinition[] {
+    const groups: readonly NavGroupDefinition[] = [
         {
             id: 'journaling',
             label: t('navGroupJournaling'),
@@ -95,5 +96,6 @@ export function buildNavGroups(t: Translate): readonly NavGroupDefinition[] {
             ],
         },
     ];
+    return groups.map((group) => ({ ...group, items: group.items.filter((item) => !hiddenViews.includes(item.view)) }));
 }
 

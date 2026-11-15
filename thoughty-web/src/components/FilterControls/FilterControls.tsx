@@ -1,4 +1,4 @@
-import { useId, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
+import { useEffect, useId, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import TagPicker from '../TagPicker/TagPicker';
 import TypedDatePicker from '../TypedDatePicker/TypedDatePicker';
 import VisibilityIcon from '../VisibilityIcon/VisibilityIcon';
@@ -12,6 +12,7 @@ import type { LifeEra } from '../../services/api/lifeErasService';
 import EraFilterSelect from './EraFilterSelect';
 import type { Person } from '../../services/api/peopleService';
 import PersonFilterSelect from './PersonFilterSelect';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 
 type VisibilityFilter = 'all' | 'public' | 'private';
 
@@ -97,6 +98,11 @@ function FilterControls({
     actions
 }: FilterControlsProps) {
     const isLight = theme === 'light';
+    // Meaning search is AI: while AI is switched off only word search is offered, and a meaning search goes back to it
+    const aiOn = useFeatureFlag('ai');
+    useEffect(() => {
+        if (!aiOn && searchMode === 'semantic') setSearchMode('keyword');
+    }, [aiOn, searchMode, setSearchMode]);
     const searchHelpId = useId();
     const [searchFocused, setSearchFocused] = useState(false);
     const hasKeywordSearch = searchMode === 'keyword' && search.trim() !== '';
@@ -226,26 +232,28 @@ function FilterControls({
     return (
         <div className={containerClass}>
             <div className="flex flex-wrap items-center gap-3">
-                <fieldset
-                    className={`semantic-search-control flex h-10 shrink-0 overflow-hidden rounded-md border ${isLight ? 'border-gray-300' : 'border-gray-700'}`}
+                {aiOn && (
+                    <fieldset
+                        className={`semantic-search-control flex h-10 shrink-0 overflow-hidden rounded-md border ${isLight ? 'border-gray-300' : 'border-gray-700'}`}
 
-                    aria-label={t('searchMode')}
-                >
-                    {(['keyword', 'semantic'] as const).map((mode) => (
-                        <button
-                            key={mode}
-                            type="button"
-                            className={`h-full px-3 text-sm font-medium ${searchMode === mode
-                                ? 'bg-blue-600 text-white'
-                                : inactiveSearchClass
-                                }`}
-                            aria-pressed={searchMode === mode}
-                            onClick={() => setSearchMode(mode)}
-                        >
-                            {t(mode === 'keyword' ? 'keywordSearchMode' : 'semanticSearchMode')}
-                        </button>
-                    ))}
-                </fieldset>
+                        aria-label={t('searchMode')}
+                    >
+                        {(['keyword', 'semantic'] as const).map((mode) => (
+                            <button
+                                key={mode}
+                                type="button"
+                                className={`h-full px-3 text-sm font-medium ${searchMode === mode
+                                    ? 'bg-blue-600 text-white'
+                                    : inactiveSearchClass
+                                    }`}
+                                aria-pressed={searchMode === mode}
+                                onClick={() => setSearchMode(mode)}
+                            >
+                                {t(mode === 'keyword' ? 'keywordSearchMode' : 'semanticSearchMode')}
+                            </button>
+                        ))}
+                    </fieldset>
+                )}
                 <input
                     type="text"
                     placeholder={t(searchMode === 'keyword' ? 'searchPlaceholder' : 'semanticSearchPlaceholder')}

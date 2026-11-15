@@ -2,7 +2,7 @@ import AxeBuilder from '../support/axe';
 import { expect, test, type Page } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
 import { mockDiary } from '../support/mockApp.diaries';
-import { fulfillJson } from '../support/mockApp.route-utils';
+import { fulfillApiUnreachable } from '../support/mockApp.route-utils';
 import type { MockEntry } from '../support/mockApp.shared';
 
 const TODAY = '2026-11-01';
@@ -21,7 +21,7 @@ const captureDialog = (page: Page, name = 'Quick capture') => page.getByRole('di
 /** Answers the next entry saves as if the API were down. */
 async function failEntrySaves(page: Page) {
   await page.route('http://localhost:5173/api/entries', (route) => (
-    route.request().method() === 'POST' ? fulfillJson(route, {}, { status: 503 }) : route.fallback()
+    route.request().method() === 'POST' ? fulfillApiUnreachable(route) : route.fallback()
   ));
 }
 

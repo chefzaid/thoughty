@@ -23,6 +23,7 @@ import {
 import { SuccessResponseDto } from '@/common/dto';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
+import { RequireFeature } from '@/common/feature-flags';
 
 @ApiTags('Cloud Sync')
 @ApiBearerAuth()
@@ -32,6 +33,7 @@ export class CloudSyncController {
   constructor(private readonly cloudSyncService: CloudSyncService) {}
 
   @Get('status')
+  @RequireFeature('cloudSync')
   @ApiOperation({ summary: 'Get cloud provider connection status' })
   @ApiResponse({ status: 200, description: 'Connection status for each provider', type: CloudStatusResponseDto })
   async getStatus(@CurrentUser() user: AuthenticatedUser): Promise<CloudStatusResponseDto> {
@@ -42,7 +44,8 @@ export class CloudSyncController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get OAuth authorization URL for a provider' })
   @ApiResponse({ status: 200, description: 'Authorization URL', type: CloudAuthUrlResponseDto })
-  @ApiResponse({ status: 503, description: 'This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`)' })
+  @ApiResponse({ status: 503, description: 'This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`), or cloud sync is turned off (`FEATURE_DISABLED`)' })
+  @RequireFeature('cloudSync')
   async getAuthUrl(@Body() dto: CloudAuthUrlDto): Promise<CloudAuthUrlResponseDto> {
     const state = randomBytes(32).toString('hex');
     return this.cloudSyncService.getAuthUrl(dto.provider, dto.redirectUri, state);
@@ -52,7 +55,8 @@ export class CloudSyncController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Connect a cloud provider with OAuth code' })
   @ApiResponse({ status: 200, description: 'Provider connected', type: CloudConnectResponseDto })
-  @ApiResponse({ status: 503, description: 'This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`)' })
+  @ApiResponse({ status: 503, description: 'This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`), or cloud sync is turned off (`FEATURE_DISABLED`)' })
+  @RequireFeature('cloudSync')
   async connect(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CloudConnectDto,
@@ -72,6 +76,7 @@ export class CloudSyncController {
   }
 
   @Get('files')
+  @RequireFeature('cloudSync')
   @ApiOperation({ summary: 'List files in cloud storage' })
   @ApiResponse({ status: 200, description: 'List of files', type: [CloudFileInfoDto] })
   async listFiles(
@@ -82,6 +87,7 @@ export class CloudSyncController {
   }
 
   @Post('upload')
+  @RequireFeature('cloudSync')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Export and upload journal to cloud storage' })
   @ApiResponse({ status: 200, description: 'File uploaded', type: CloudFileInfoDto })
@@ -93,6 +99,7 @@ export class CloudSyncController {
   }
 
   @Post('download')
+  @RequireFeature('cloudSync')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Download a file from cloud storage' })
   @ApiResponse({ status: 200, description: 'File content', type: CloudDownloadResponseDto })
@@ -104,6 +111,7 @@ export class CloudSyncController {
   }
 
   @Get('schedules')
+  @RequireFeature('cloudSync')
   @ApiOperation({ summary: 'Get sync schedules for all providers' })
   @ApiResponse({ status: 200, description: 'Sync schedule configurations', type: CloudSyncSchedulesResponseDto })
   async getSchedules(@CurrentUser() user: AuthenticatedUser): Promise<CloudSyncSchedulesResponseDto> {
@@ -111,6 +119,7 @@ export class CloudSyncController {
   }
 
   @Post('schedule')
+  @RequireFeature('cloudSync')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Set or update a sync schedule' })
   @ApiResponse({ status: 200, description: 'Schedule configured', type: SuccessResponseDto })
@@ -131,6 +140,7 @@ export class CloudSyncController {
   }
 
   @Delete('schedule')
+  @RequireFeature('cloudSync')
   @ApiOperation({ summary: 'Remove a sync schedule' })
   @ApiResponse({ status: 200, description: 'Schedule removed', type: SuccessResponseDto })
   async deleteSchedule(
@@ -141,6 +151,7 @@ export class CloudSyncController {
   }
 
   @Post('sync')
+  @RequireFeature('cloudSync')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Trigger a diff-based sync (uploads only if content has changed)' })
   @ApiResponse({ status: 200, description: 'Sync result', type: DiffSyncResponseDto })

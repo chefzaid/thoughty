@@ -287,6 +287,34 @@ Test content
       );
     });
 
+    it('imports every entry private while public sharing is off, whatever the file or the diary says', async () => {
+      const bed = await createIoServiceTestBed({ publicSharing: false });
+      bed.settingRepository.find.mockResolvedValue([]);
+      bed.diaryRepository.findOne.mockResolvedValue({ ...mockDiary, visibility: 'public' });
+      bed.entryRepository.count.mockResolvedValue(0);
+      bed.entryRepository.save.mockResolvedValue(mockEntry);
+      bed.entryRepository.createQueryBuilder().getMany.mockResolvedValue([]);
+
+      const content = `
+---2024-01-15--[tag1]--[public]
+Shared in the old app
+
+--------------------------------------------------------------------------------
+
+---2024-01-16--[tag1]
+Diary default
+
+--------------------------------------------------------------------------------
+`;
+
+      await bed.service.import(1, { content, diaryId: 1 });
+
+      expect(bed.entryRepository.save).toHaveBeenCalledTimes(2);
+      for (const [saved] of bed.entryRepository.save.mock.calls) {
+        expect(saved).toMatchObject({ visibility: 'private' });
+      }
+    });
+
     it('should match diary by name when importing all diaries', async () => {
       settingRepository.find.mockResolvedValue([]);
       diaryRepository.findOne.mockResolvedValue(mockDiary);

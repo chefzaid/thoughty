@@ -1,4 +1,10 @@
+import { featureFlagsWith } from '@/common/feature-flags/feature-flags.test-helpers';
 import { CloudSyncWorkerService } from './cloud-sync-worker.service';
+
+/** Lets the timer's work run past its feature flag check. */
+async function flushMicrotasks(): Promise<void> {
+  for (let tick = 0; tick < 10; tick++) await Promise.resolve();
+}
 
 describe('CloudSyncWorkerService', () => {
   let service: CloudSyncWorkerService;
@@ -18,7 +24,7 @@ describe('CloudSyncWorkerService', () => {
       stop: jest.fn(),
     };
 
-    service = new CloudSyncWorkerService(cloudSyncQueueService as never);
+    service = new CloudSyncWorkerService(cloudSyncQueueService as never, featureFlagsWith());
   });
 
   afterEach(() => {
@@ -44,15 +50,17 @@ describe('CloudSyncWorkerService', () => {
     expect(cloudSyncQueueService.processAvailableJobs).toHaveBeenCalledWith(expect.any(String), 5);
 
     jest.advanceTimersByTime(60_000);
-    await Promise.resolve();
+    await flushMicrotasks();
 
     expect(cloudSyncQueueService.enqueueDueSyncJobs).toHaveBeenCalledTimes(2);
+    // The twelve polls of that minute fire at once, and only the first claims jobs while it runs
+    expect(cloudSyncQueueService.recoverStaleJobs).toHaveBeenCalledTimes(2);
 
     jest.advanceTimersByTime(5_000);
-    await Promise.resolve();
+    await flushMicrotasks();
 
-    expect(cloudSyncQueueService.recoverStaleJobs).toHaveBeenCalledTimes(2);
-    expect(cloudSyncQueueService.processAvailableJobs).toHaveBeenCalledTimes(2);
+    expect(cloudSyncQueueService.recoverStaleJobs).toHaveBeenCalledTimes(3);
+    expect(cloudSyncQueueService.processAvailableJobs).toHaveBeenCalledTimes(3);
   });
 
   it('clears both timers on module destroy', async () => {
@@ -69,7 +77,7 @@ describe('CloudSyncWorkerService', () => {
     let finish!: () => void;
     cloudSyncQueueService.processAvailableJobs.mockImplementation(() => new Promise<void>(resolve => { finish = resolve; }));
     const start = service.start();
-    for (let tick = 0; tick < 10 && !finish; tick++) await Promise.resolve();
+    for (let tick = 0; tick < 20 && !finish; tick++) await Promise.resolve();
     let closed = false;
     const close = service.onModuleDestroy().then(() => { closed = true; });
     await Promise.resolve();
@@ -132,6 +140,19 @@ describe('CloudSyncWorkerService', () => {
     await (service as any).processJobs();
 
     expect(logger.error).toHaveBeenCalledWith('Failed to process queued cloud sync jobs', error.stack);
+    expect((service as any).processingJobs).toBe(false);
+  });
+
+  it('leaves due schedules and queued jobs alone while cloud sync is switched off', async () => {
+    service = new CloudSyncWorkerService(cloudSyncQueueService as never, featureFlagsWith({ cloudSync: false }));
+
+    await (service as any).scanSchedules();
+    await (service as any).processJobs();
+
+    expect(cloudSyncQueueService.enqueueDueSyncJobs).not.toHaveBeenCalled();
+    expect(cloudSyncQueueService.recoverStaleJobs).not.toHaveBeenCalled();
+    expect(cloudSyncQueueService.processAvailableJobs).not.toHaveBeenCalled();
+    expect((service as any).scanningSchedules).toBe(false);
     expect((service as any).processingJobs).toBe(false);
   });
 });

@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { AttachmentsService } from "../../services/api";
 import type { Attachment } from "../../types";
 import { tintedTextClass } from "../../utils/tintedText";
+import { useFeatureFlag } from "../FeatureFlags/featureFlags";
 
 interface AudioTranscriptProps {
   readonly attachment: Attachment;
@@ -16,6 +17,7 @@ function AudioTranscript({
   isDark,
   t,
 }: AudioTranscriptProps) {
+  const aiOn = useFeatureFlag("ai");
   const [transcript, setTranscript] = useState(
     attachment.transcript?.trim() ?? "",
   );
@@ -40,6 +42,11 @@ function AudioTranscript({
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1500);
   };
+
+  // Transcribing is AI: while AI is switched off a recording without a transcript offers none
+  if (!transcript && !aiOn) {
+    return null;
+  }
 
   if (!transcript) {
     return (

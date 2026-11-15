@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { BooksService } from './books.service';
 import type { BookEntrySourceService } from './book-entry-source.service';
 import { expectApiError } from '@/common/errors/api-error.test-helpers';
+import { featureFlagsWith } from '@/common/feature-flags/feature-flags.test-helpers';
 
 /** The book's own pages (dedication, epigraph): checked, normalized and printed in every format. */
 describe('BooksService book pages', () => {
@@ -23,6 +24,7 @@ describe('BooksService book pages', () => {
       { getFileBuffer: jest.fn() } as never,
       { findAll: jest.fn().mockResolvedValue([]) } as never,
       config as never,
+      featureFlagsWith(),
     );
   });
 

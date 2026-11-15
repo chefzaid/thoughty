@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagg
 import { AuthenticatedUser, CurrentUser } from '@/common';
 import { GetPublicFeedQueryDto, PublicFeedResponseDto } from './dto';
 import { PublicFeedService } from './public-feed.service';
+import { RequireFeature } from '@/common/feature-flags';
 
 /**
  * Serves the feed under the entries prefix it has always used. The entries controller has
@@ -10,6 +11,7 @@ import { PublicFeedService } from './public-feed.service';
  */
 @ApiTags('Social')
 @ApiBearerAuth()
+@RequireFeature('publicSharing')
 @Controller('entries/feed')
 export class FeedController {
   constructor(private readonly publicFeedService: PublicFeedService) {}

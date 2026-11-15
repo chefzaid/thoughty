@@ -33,6 +33,7 @@ import { AttachmentsService } from '@/modules/attachments';
 import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 import { ConfigService } from '@/modules/config';
+import { FeatureFlagsService } from '@/common/feature-flags';
 import { FormatConfigDto, PreviewImportDto, ImportDto, PreviewResponseDto, ImportResponseDto } from './dto';
 
 const MAX_IMPORT_SIZE = 5 * 1024 * 1024; // 5MB
@@ -66,6 +67,7 @@ export class IoService {
     private readonly timeCapsules: TimeCapsuleService,
     private readonly attachmentsService: AttachmentsService,
     private readonly configService: ConfigService,
+    private readonly featureFlags: FeatureFlagsService,
   ) {}
 
   private async getFormatConfig(userId: number): Promise<FormatConfig> {
@@ -188,7 +190,7 @@ export class IoService {
   private async saveImportedEntry(
     userId: number,
     entry: ParsedEntry,
-    defaultVisibility: 'public' | 'private',
+    visibility: 'public' | 'private',
     diaryId?: number,
   ): Promise<void> {
     const countResult = await this.entryRepository.count({
@@ -208,7 +210,7 @@ export class IoService {
       // A file carries no attachments, so an inline image it names keeps only its alt text
       content: entry.format === 'markdown' ? inlineImagesToAltText(entry.content) : entry.content,
       format: entry.format || 'plain',
-      visibility: entry.visibility || defaultVisibility,
+      visibility,
       diaryId,
     });
   }
@@ -450,6 +452,8 @@ export class IoService {
       this.buildDuplicatesToSkip(userId, parsedEntries, skipDuplicates, dto.diaryId),
       this.getDefaultVisibility(userId, targetDiaryId),
     ]);
+    // While public sharing is off, nothing becomes public: every imported entry comes in private
+    const mayPublish = await this.featureFlags.isEnabled('publicSharing');
 
     let importedCount = 0;
     let skippedCount = 0;
@@ -462,7 +466,8 @@ export class IoService {
 
       const entry = parsedEntries[i];
       const entryDiaryId = this.resolveEntryDiaryId(entry, targetDiaryId, diaryNameMap);
-      await this.saveImportedEntry(userId, entry, defaultVisibility, entryDiaryId);
+      const visibility = mayPublish ? entry.visibility || defaultVisibility : 'private';
+      await this.saveImportedEntry(userId, entry, visibility, entryDiaryId);
 
       importedCount++;
     }

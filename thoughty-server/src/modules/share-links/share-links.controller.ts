@@ -12,6 +12,7 @@ import {
   ShareLinkTargetQueryDto,
 } from './dto';
 import { ShareLinksService } from './share-links.service';
+import { RequireFeature } from '@/common/feature-flags';
 
 @ApiTags('Share links')
 @ApiBearerAuth()
@@ -32,6 +33,7 @@ export class ShareLinksController {
   }
 
   @Post()
+  @RequireFeature('publicSharing')
   @Throttle(throttleDefault(RATE_LIMITS.shareLinkWrite))
   @ApiOperation({
     summary: 'Make a private share link for an entry or a book version',

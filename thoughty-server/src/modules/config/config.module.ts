@@ -26,7 +26,6 @@ import {
 import { ConfigController } from './config.controller';
 import { ConfigService } from './config.service';
 import { UserDataExportService } from './user-data-export.service';
-import { FeatureFlagsService } from '@/common';
 import { TimeCapsulesModule } from '@/modules/time-capsules/time-capsules.module';
 
 @Module({
@@ -57,7 +56,7 @@ import { TimeCapsulesModule } from '@/modules/time-capsules/time-capsules.module
     TimeCapsulesModule,
   ],
   controllers: [ConfigController],
-  providers: [ConfigService, FeatureFlagsService, UserDataExportService],
-  exports: [ConfigService, FeatureFlagsService, UserDataExportService],
+  providers: [ConfigService, UserDataExportService],
+  exports: [ConfigService, UserDataExportService],
 })
 export class UserConfigModule {}

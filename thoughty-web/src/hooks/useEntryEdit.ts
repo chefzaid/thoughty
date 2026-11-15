@@ -7,6 +7,7 @@ import { useApiServices } from './useApiServices';
 import { storePlacedFiles } from '../utils/inlineImages';
 import type { Notifier } from './useAppNotice';
 import type { MoveToDiary } from './useMoveToDiary';
+import { useFeatureFlag } from '../components/FeatureFlags/featureFlags';
 
 /**
  * The entry editor's state and save. `moveToDiary` moves the entry when the editor chose another diary for it,
@@ -14,7 +15,8 @@ import type { MoveToDiary } from './useMoveToDiary';
  */
 export const useEntryEdit = (config: Config, onSave: () => void, { notify, t }: Notifier, moveToDiary?: MoveToDiary) => {
   const { entriesService, attachmentsService } = useApiServices();
-  const autoTagLimit = getAutoTagLimit(config.autoTagMaxTags);
+  // With AI switched off nothing adds tags on save, so an edited entry needs one of its own
+  const autoTagLimit = useFeatureFlag('ai') ? getAutoTagLimit(config.autoTagMaxTags) : 0;
 
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [editText, setEditText] = useState<string>('');

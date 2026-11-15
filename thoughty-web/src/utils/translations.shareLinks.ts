@@ -46,6 +46,8 @@ export type ShareLinksTranslationKey =
   | 'sharedLoading'
   | 'sharedUnavailableTitle'
   | 'sharedUnavailableText'
+  | 'sharedPausedTitle'
+  | 'sharedPausedText'
   | 'sharedFailedTitle'
   | 'sharedFailedText'
   | 'sharedExpiresOn'
@@ -104,6 +106,8 @@ export const shareLinksTranslations: Record<Language, Record<ShareLinksTranslati
     sharedUnavailableTitle: 'This link is not available',
     sharedUnavailableText:
       'It may have expired, been revoked or used all its views. Ask the person who shared it for a new link.',
+    sharedPausedTitle: 'Sharing is paused',
+    sharedPausedText: 'Shared links are turned off for now. This one has not been removed: try again later.',
     sharedFailedTitle: 'This page could not be loaded',
     sharedFailedText: 'Check your connection and try again.',
     sharedExpiresOn: 'This link works until {date}.',
@@ -161,6 +165,8 @@ export const shareLinksTranslations: Record<Language, Record<ShareLinksTranslati
     sharedUnavailableTitle: 'Ce lien n’est pas disponible',
     sharedUnavailableText:
       'Il a peut-être expiré, été révoqué ou utilisé toutes ses vues. Demandez un nouveau lien à la personne qui vous l’a envoyé.',
+    sharedPausedTitle: 'Le partage est en pause',
+    sharedPausedText: 'Les liens partagés sont désactivés pour le moment. Celui-ci n’a pas été supprimé : réessayez plus tard.',
     sharedFailedTitle: 'Cette page n’a pas pu être chargée',
     sharedFailedText: 'Vérifiez votre connexion et réessayez.',
     sharedExpiresOn: 'Ce lien fonctionne jusqu’au {date}.',

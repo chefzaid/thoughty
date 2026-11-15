@@ -8,6 +8,7 @@ import type { Language } from '../../utils/translations';
 import MemoirEraField from './MemoirEraField';
 import { formatRecordingTime, isVoiceRecordingSupported, useVoiceRecorder } from './useVoiceRecorder';
 import './MemoirAnswerForm.css';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 
 const MAX_RECORDING_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_AUDIO = 'audio/mpeg,audio/mp4,audio/x-m4a,audio/aac,audio/ogg,audio/wav,audio/webm';
@@ -42,6 +43,8 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
   const [eraId, setEraId] = useState<number | null>(null);
   const [problem, setProblem] = useState<FormProblem>(null);
   const [busy, setBusy] = useState<'transcribing' | 'saving' | null>(null);
+  // Transcribing a recording is AI, left out while AI is switched off
+  const aiOn = useFeatureFlag('ai');
   const uploaded = useRef<{ file: File; id: number } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const fieldId = `memoir-answer-${questionId}`;
@@ -161,10 +164,12 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
             <track kind="captions" src={EMPTY_CAPTIONS_TRACK_URL} srcLang={t('languageCode')} label={t('captionsUnavailable')} default />
           </audio>
           <div className="memoir-actions">
-            <button type="button" className="memoir-secondary" disabled={busy !== null} onClick={() => void handleTranscribe()}>
-              <span className="codicon codicon-symbol-text" aria-hidden="true" />
-              {busy === 'transcribing' ? t('memoirTranscribing') : t('memoirTranscribe')}
-            </button>
+            {aiOn && (
+              <button type="button" className="memoir-secondary" disabled={busy !== null} onClick={() => void handleTranscribe()}>
+                <span className="codicon codicon-symbol-text" aria-hidden="true" />
+                {busy === 'transcribing' ? t('memoirTranscribing') : t('memoirTranscribe')}
+              </button>
+            )}
             <button type="button" className="memoir-secondary" disabled={busy !== null} onClick={recorder.clear}>
               <span className="codicon codicon-trash" aria-hidden="true" />
               {t('memoirDiscardRecording')}

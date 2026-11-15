@@ -9,6 +9,8 @@ import ProfileHeaderCard from './ProfileHeaderCard';
 import PersonalSection from './PersonalSection';
 import AppearanceSection from './AppearanceSection';
 import AISection from './AISection';
+import FeatureOffSection from './FeatureOffSection';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import CloudProvidersSection from './CloudProvidersSection';
 import ProfileActions from './ProfileActions';
 import DataPrivacySection from './DataPrivacySection';
@@ -57,6 +59,9 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats,
   const { user, changePassword, deleteAccount } = useAuth();
   // Quiet mode, once saved, leaves out karma and badges
   const quiet = useQuietMode();
+  // A switched-off feature's settings are kept, and the section says so instead of showing them
+  const aiOn = useFeatureFlag('ai');
+  const cloudSyncOn = useFeatureFlag('cloudSync');
   const [localConfig, setLocalConfig] = useState<ProfileConfig>(config);
 
   // Password change state
@@ -281,16 +286,24 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats,
         t={t}
       />
 
-      <AISection
-        localConfig={localConfig}
-        handleChange={handleChange}
-        t={t}
-      />
+      {aiOn ? (
+        <AISection
+          localConfig={localConfig}
+          handleChange={handleChange}
+          t={t}
+        />
+      ) : (
+        <FeatureOffSection title={t('aiConfiguration')} message="featureOffAi" isDark={isDark} t={t} />
+      )}
 
-      <CloudProvidersSection
-        t={t}
-        isDark={isDark}
-      />
+      {cloudSyncOn ? (
+        <CloudProvidersSection
+          t={t}
+          isDark={isDark}
+        />
+      ) : (
+        <FeatureOffSection title={t('cloudProviders')} message="featureOffCloudSync" isDark={isDark} t={t} />
+      )}
 
       <SubscriptionSection
         localConfig={localConfig}

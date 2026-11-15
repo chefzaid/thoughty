@@ -30,7 +30,7 @@ Thoughty accepts two kinds of accounts side by side, in every environment: local
 
 `@Public()` routes: health, metrics, register, login, 2FA verify and resend, OAuth, SSO, refresh, logout, forgot and reset password, verify email, the opt-in email unsubscribes (`POST /api/email-unsubscribe` and the older `POST /api/on-this-day-email/unsubscribe`), the feature-request list, and the reader's side of private share links (`GET /api/shared/:token…`, below). A new public route must state why, which throttle applies, and what it reveals. `/api/metrics` answers only callers on the private network (Prometheus scrapes the pods directly); anyone else, including every request through the ingress, gets `404`.
 
-Social features need a session and share one rule (`modules/social/public-feed-visibility.ts`): an entry is visible only if it is `public`, has `moderation_status = 'visible'`, is not archived or in the recycle bin, and its author is not deleted. Follows, comments, and likes on anything else answer `404`.
+Social features need a session and are refused with `503 FEATURE_DISABLED` while the `publicSharing` flag is off; then nothing becomes public either (a new public entry, a private one made public, or entries made public in bulk are refused, and imports come in private), while entries already public keep their stored visibility and are shown to no one until it is on again. They share one rule (`modules/social/public-feed-visibility.ts`): an entry is visible only if it is `public`, has `moderation_status = 'visible'`, is not archived or in the recycle bin, and its author is not deleted. Follows, comments, and likes on anything else answer `404`.
 
 - `moderation_status` is platform-controlled. No entry DTO may accept it.
 - The feed returns at most 20 entries per page and leaves out mood and feelings. Authors show only `id`, `username`, `avatarUrl`, and follow state. Followers are counted, never listed.
@@ -53,6 +53,7 @@ A writer can share one entry or one saved book version with someone who has no a
 - **Logs and metrics:** the request log and HTTP metrics name the route `/api/shared/:token…`, never the token. Proxies in front of the web and API (Traefik, Cloudflare) may log full paths: keep their access logs off for these paths or treat them as secret.
 - **Ingress:** only `/api/auth/sso` goes through the Keycloak OAuth2 Proxy (`sso-ingress.yaml`, and the canary IngressRoute); `/api/shared` falls under the open `/api` ingress and `/s/` under the web one, so a reader without an account reaches both.
 - **Rate limits:** opening a link and downloading a book are throttled at 60 per 15 minutes per IP, its files (pictures, video ranges) at 600; with 256-bit tokens, guessing is not a practical attack either way.
+- **Sharing switched off:** while the `publicSharing` [flag](./architecture.md#feature-flags) is off, every `/api/shared/…` request answers the same `503 FEATURE_DISABLED` whatever the token (so it tells nothing about one), no link is made, and a writer can still list and revoke theirs. Nothing is deleted: a link opens again, with its expiry and views, once the flag is on.
 
 ## Abuse Controls
 
@@ -117,7 +118,7 @@ In production the API and worker refuse to start without `CONFIG_ENCRYPTION_SECR
 
 ## AI Privacy
 
-AI is optional and uses OpenRouter. A user's personal key, when set, replaces the shared key for all of their requests.
+AI is optional and uses OpenRouter. A user's personal key, when set, replaces the shared key for all of their requests. While the `ai` [flag](./architecture.md#feature-flags) is off nothing is sent to OpenRouter: the AI routes answer `503 FEATURE_DISABLED`, auto-tagging on save is skipped, and a book's AI options are refused; a stored personal key can still be read (its hint) and removed.
 
 | Feature | What is sent |
 |---|---|

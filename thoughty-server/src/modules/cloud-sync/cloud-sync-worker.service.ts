@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { hostname } from 'node:os';
+import { FeatureFlagsService } from '@/common/feature-flags';
 import { CloudSyncQueueService } from './cloud-sync-queue.service';
 
 const SCHEDULE_SCAN_INTERVAL_MS = 60_000;
@@ -18,7 +19,10 @@ export class CloudSyncWorkerService implements OnModuleDestroy {
   private stopping = false;
   private readonly activeTasks = new Set<Promise<void>>();
 
-  constructor(private readonly cloudSyncQueueService: CloudSyncQueueService) {}
+  constructor(
+    private readonly cloudSyncQueueService: CloudSyncQueueService,
+    private readonly featureFlags: FeatureFlagsService,
+  ) {}
 
   async start(): Promise<void> {
     this.logger.log(`Starting cloud sync worker ${this.workerId}`);
@@ -65,6 +69,8 @@ export class CloudSyncWorkerService implements OnModuleDestroy {
     this.scanningSchedules = true;
 
     try {
+      // While cloud sync is switched off, due schedules wait and queued jobs stay queued until it is on
+      if (!(await this.featureFlags.isEnabled('cloudSync'))) return;
       await this.cloudSyncQueueService.enqueueDueSyncJobs();
     } catch (error) {
       this.logger.error('Failed to enqueue due cloud sync jobs', error instanceof Error ? error.stack : undefined);
@@ -81,6 +87,7 @@ export class CloudSyncWorkerService implements OnModuleDestroy {
     this.processingJobs = true;
 
     try {
+      if (!(await this.featureFlags.isEnabled('cloudSync'))) return;
       await this.cloudSyncQueueService.recoverStaleJobs();
       await this.cloudSyncQueueService.processAvailableJobs(this.workerId, MAX_JOBS_PER_TICK);
     } catch (error) {

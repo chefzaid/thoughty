@@ -156,6 +156,12 @@
     background: linear-gradient(135deg, #3b82f6, #8b5cf6);
 }
 
+/* A private default while public sharing is switched off */
+.toggle-switch:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
 .toggle-thumb {
     position: absolute;
     top: 2px;

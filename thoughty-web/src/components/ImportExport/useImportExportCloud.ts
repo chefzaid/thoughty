@@ -9,10 +9,12 @@ interface UseImportExportCloudOptions {
     readonly showMessage: (type: MessageState['type'], text: string) => void;
     readonly previewImportContent: (content: string, successText?: string) => Promise<void>;
     readonly t: TranslationFunction;
+    /** False while cloud sync is switched off: nothing is asked of the cloud API. */
+    readonly enabled?: boolean;
 }
 
 /** Cloud provider status, one-off uploads, scheduled syncs, and imports from cloud files. */
-export function useImportExportCloud({ diaryId, showMessage, previewImportContent, t }: UseImportExportCloudOptions) {
+export function useImportExportCloud({ diaryId, showMessage, previewImportContent, t, enabled = true }: UseImportExportCloudOptions) {
     const { cloudSyncService } = useApiServices();
     const [cloudStatus, setCloudStatus] = useState<Partial<CloudStatus>>({});
     const [cloudLoading, setCloudLoading] = useState(true);
@@ -28,7 +30,7 @@ export function useImportExportCloud({ diaryId, showMessage, previewImportConten
     const [cloudFiles, setCloudFiles] = useState<CloudFileInfo[]>([]);
     const [loadingCloudFiles, setLoadingCloudFiles] = useState(false);
     const [importingCloudFile, setImportingCloudFile] = useState<string | null>(null);
-    const connectedProviders = CLOUD_PROVIDERS.filter((provider) => cloudStatus[provider]?.connected);
+    const connectedProviders = enabled ? CLOUD_PROVIDERS.filter((provider) => cloudStatus[provider]?.connected) : [];
 
     /** Shows a refused cloud request: the API's translated reason, or the call's own fallback message. */
     function showError(error: string | null): void {
@@ -76,9 +78,10 @@ export function useImportExportCloud({ diaryId, showMessage, previewImportConten
     }, [cloudSyncService]);
 
     useEffect(() => {
+        if (!enabled) return;
         void fetchCloudStatus();
         void fetchSchedules();
-    }, [fetchCloudStatus, fetchSchedules]);
+    }, [enabled, fetchCloudStatus, fetchSchedules]);
 
     async function handleCloudUpload(provider: CloudProviderType): Promise<void> {
         setUploading(provider);

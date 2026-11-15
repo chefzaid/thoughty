@@ -1501,6 +1501,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: a public entry while public sharing is off",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: a public entry while public sharing is off",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2961,6 +2977,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: making entries public while public sharing is off",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: making entries public while public sharing is off",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -3175,6 +3207,22 @@
                   "message": "The entry is a sealed time capsule",
                   "error": "Conflict",
                   "code": "CONFLICT"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: making a private entry public while public sharing is off",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: making a private entry public while public sharing is off",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -3590,6 +3638,22 @@
                   "message": "The entry is a sealed time capsule, which stays private",
                   "error": "Conflict",
                   "code": "CONFLICT"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: making a private entry public while public sharing is off",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: making a private entry public while public sharing is off",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -4204,6 +4268,7 @@
     },
     "/api/config/feature-flags": {
       "get": {
+        "description": "Each feature is on unless its flag is false; a flag missing from the answer is on. While a flag is off, the routes of its feature answer 503 with the code FEATURE_DISABLED. A change at the flag provider shows here within FEATURE_FLAG_CACHE_TTL_MS (60 seconds by default).",
         "operationId": "ConfigController_getFeatureFlags",
         "parameters": [],
         "responses": {
@@ -4299,6 +4364,22 @@
                 ]
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4373,6 +4454,22 @@
                   "keyHint": "...0b855d",
                   "source": "personal",
                   "aiAvailable": true
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -4456,6 +4553,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4505,6 +4618,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4546,6 +4675,22 @@
                 },
                 "example": {
                   "content": "Today I wrote a thoughtful journal entry about focus and calm."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -4594,6 +4739,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4634,6 +4795,22 @@
                 },
                 "example": {
                   "question": "example"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -4700,6 +4877,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4752,6 +4945,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4797,6 +5006,22 @@
                       ]
                     }
                   ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -4852,6 +5077,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4902,6 +5143,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4944,6 +5201,22 @@
                       "content": "Today I wrote a thoughtful journal entry about focus and calm."
                     }
                   ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -6031,6 +6304,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6659,6 +6948,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6848,6 +7153,22 @@
                     "createdAt": "2026-06-24T10:00:00.000Z"
                   }
                 ]
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
               }
             }
           }
@@ -7196,6 +7517,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -7225,6 +7562,22 @@
         "responses": {
           "200": {
             "description": "The exact file stored for this version"
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -7276,6 +7629,22 @@
                   "missingIds": [
                     44
                   ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -7605,6 +7974,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -7910,6 +8295,22 @@
         "responses": {
           "200": {
             "description": "Book file in the requested format (PDF, HTML, or Markdown)"
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -8229,6 +8630,22 @@
         "responses": {
           "200": {
             "description": "Book file with the requested custom cover"
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -8577,6 +8994,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `bookConverter` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -8615,6 +9048,22 @@
                     "connected": true,
                     "connectedAt": "2026-06-24T10:00:00.000Z"
                   }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -8664,7 +9113,7 @@
             }
           },
           "503": {
-            "description": "This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`)",
+            "description": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server\n\nThis server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`), or cloud sync is turned off (`FEATURE_DISABLED`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -8672,7 +9121,7 @@
                 },
                 "example": {
                   "statusCode": 503,
-                  "message": "This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`)",
+                  "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server\n\nThis server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`), or cloud sync is turned off (`FEATURE_DISABLED`)",
                   "error": "Service Unavailable",
                   "code": "SERVICE_UNAVAILABLE"
                 }
@@ -8726,7 +9175,7 @@
             }
           },
           "503": {
-            "description": "This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`)",
+            "description": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server\n\nThis server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`), or cloud sync is turned off (`FEATURE_DISABLED`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -8734,7 +9183,7 @@
                 },
                 "example": {
                   "statusCode": 503,
-                  "message": "This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`)",
+                  "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server\n\nThis server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`), or cloud sync is turned off (`FEATURE_DISABLED`)",
                   "error": "Service Unavailable",
                   "code": "SERVICE_UNAVAILABLE"
                 }
@@ -8836,6 +9285,22 @@
                 ]
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -8886,6 +9351,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -8927,6 +9408,22 @@
                 },
                 "example": {
                   "content": "Today I wrote a thoughtful journal entry about focus and calm."
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -8989,6 +9486,22 @@
                     "lastSyncHash": "example",
                     "nextSyncAt": "2026-06-24T10:00:00.000Z"
                   }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -9056,6 +9569,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -9096,6 +9625,22 @@
                 },
                 "example": {
                   "success": true
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -9147,6 +9692,22 @@
                     "size": 1,
                     "modifiedAt": "2026-06-24T10:00:00.000Z"
                   }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `cloudSync` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -10066,6 +10627,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -10101,6 +10678,22 @@
                     }
                   ],
                   "followerCount": 3
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -10176,6 +10769,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -10211,6 +10820,22 @@
                 "example": {
                   "userId": 2,
                   "following": true
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -10281,6 +10906,22 @@
                   "message": "The entry is not visible in the public feed",
                   "error": "Not Found",
                   "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -10360,6 +11001,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -10421,6 +11078,22 @@
                   "message": "No deletable comment with this id on the entry",
                   "error": "Not Found",
                   "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -10496,6 +11169,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -10547,6 +11236,22 @@
                   "message": "The entry is not visible in the public feed",
                   "error": "Not Found",
                   "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -10630,6 +11335,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -10689,6 +11410,22 @@
                   "message": "No visible comment with this id on the entry",
                   "error": "Not Found",
                   "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -10771,6 +11508,22 @@
                       "count": 7
                     }
                   ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -11653,7 +12406,7 @@
             }
           },
           "503": {
-            "description": "AI is not available or could not read the year",
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server\n\nAI is turned off (FEATURE_DISABLED), not available, or could not read the year",
             "content": {
               "application/json": {
                 "schema": {
@@ -11661,7 +12414,7 @@
                 },
                 "example": {
                   "statusCode": 503,
-                  "message": "AI is not available or could not read the year",
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server\n\nAI is turned off (FEATURE_DISABLED), not available, or could not read the year",
                   "error": "Service Unavailable",
                   "code": "SERVICE_UNAVAILABLE"
                 }
@@ -12792,6 +13545,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -12935,6 +13704,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "summary": "Read what a private share link shares",
@@ -12973,6 +13758,22 @@
                   "message": "No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed",
                   "error": "Not Found",
                   "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -13045,6 +13846,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "summary": "Serve a file of the entry a private share link shares",
@@ -13091,6 +13908,22 @@
                   "message": "No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed",
                   "error": "Not Found",
                   "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -24609,6 +25442,7 @@
           "SERVICE_UNAVAILABLE",
           "BAD_GATEWAY",
           "INTERNAL_ERROR",
+          "FEATURE_DISABLED",
           "AUTH_INVALID_CREDENTIALS",
           "AUTH_ACCOUNT_DELETED",
           "AUTH_EMAIL_TAKEN",

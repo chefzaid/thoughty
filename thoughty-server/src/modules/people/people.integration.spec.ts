@@ -19,6 +19,7 @@ import { PeopleService } from './people.service';
 import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
 import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
 import { personDatesServiceOn } from '@/modules/people/person-dates.test-helpers';
+import { featureFlagsWith } from '@/common/feature-flags/feature-flags.test-helpers';
 
 const anyFilters = {
   search: '',
@@ -60,6 +61,7 @@ describePostgres('PostgreSQL people', () => {
       mentions,
       timeCapsuleServiceOn(dataSource),
       new EntryInlineImagesService(dataSource.getRepository(Attachment), entries),
+      featureFlagsWith(),
     );
     const search = new EntrySearchService(entries);
     queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), search, timeCapsuleServiceOn(dataSource), rereadReminderServiceOn(dataSource), personDatesServiceOn(dataSource));
@@ -71,7 +73,7 @@ describePostgres('PostgreSQL people', () => {
       { removeStoredFiles: jest.fn() } as never,
       configService as never,
     );
-    io = new IoService(entries, dataSource.getRepository(Setting), dataSource.getRepository(Diary), dataSource.getRepository(User), mentions, timeCapsuleServiceOn(dataSource), { getFileBuffer: jest.fn() } as never, { getConfig: async () => ({}) } as never);
+    io = new IoService(entries, dataSource.getRepository(Setting), dataSource.getRepository(Diary), dataSource.getRepository(User), mentions, timeCapsuleServiceOn(dataSource), { getFileBuffer: jest.fn() } as never, { getConfig: async () => ({}) } as never, featureFlagsWith());
     savedSearches = new SavedSearchesService(dataSource.getRepository(SavedSearch), dataSource.getRepository(BookVersion));
     people = new PeopleService(dataSource.getRepository(Person));
   }, POSTGRES_SETUP_TIMEOUT_MS);

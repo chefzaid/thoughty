@@ -13,6 +13,7 @@ import { SavedSearchesService } from '@/modules/saved-searches';
 import { BookEntrySourceService } from './book-entry-source.service';
 import { BooksService } from './books.service';
 import { BookVersionsService } from './book-versions.service';
+import { featureFlagsWith } from '@/common/feature-flags/feature-flags.test-helpers';
 
 const everything = {
   search: '',
@@ -44,7 +45,7 @@ describePostgres('PostgreSQL book versions of deleted sources', () => {
     savedSearches = new SavedSearchesService(dataSource.getRepository(SavedSearch), dataSource.getRepository(BookVersion));
     const source = new BookEntrySourceService(entries, dataSource.getRepository(Diary), savedSearches, new EntrySearchService(entries));
     const noAi = { isConfigured: jest.fn().mockResolvedValue(false) };
-    const books = new BooksService(source, dataSource.getRepository(User), noAi as never, {} as never, { findAll: async () => [] } as never, { getConfig: async () => ({}) } as never);
+    const books = new BooksService(source, dataSource.getRepository(User), noAi as never, {} as never, { findAll: async () => [] } as never, { getConfig: async () => ({}) } as never, featureFlagsWith());
     versions = new BookVersionsService(dataSource.getRepository(BookVersion), books);
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });

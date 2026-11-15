@@ -17,6 +17,7 @@ import type { TagMetadataMap } from '../../utils/tagMetadata';
 import StatsActivityHeatmap from './StatsActivityHeatmap';
 import StatsInsights from './StatsInsights';
 import StatsPersonalityPanel from './StatsPersonalityPanel';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import StatsCorrelationGraph from './StatsCorrelationGraph';
 import StatsMoodPanel from './StatsMoodPanel';
 import StatsMoodTags from './StatsMoodTags';
@@ -83,6 +84,8 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onSearch
     const { authFetch } = useAuth();
     // Quiet mode keeps the readings of the journal (insights, moods, personality, links) and leaves out its counts and goals
     const quiet = useQuietMode();
+    // The AI reading of writing tendencies is left out while AI is switched off
+    const aiOn = useFeatureFlag('ai');
     // The writing times are read in the writer's own time zone
     const timeZone = useMemo(() => browserTimeZone(), []);
     const [stats, setStats] = useState<StatsData | null>(null);
@@ -407,7 +410,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onSearch
                             subjectAnalysis={stats.subjectAnalysis}
                             t={t}
                         />
-                        <StatsPersonalityPanel themeClass={themeClass} diaryId={diaryId} t={t} />
+                        {aiOn && <StatsPersonalityPanel themeClass={themeClass} diaryId={diaryId} t={t} />}
                     </>
                 )}
             </div>

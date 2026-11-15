@@ -11,6 +11,8 @@ import { EntryMentionsService } from './entry-mentions.service';
 import { EntryInlineImagesService } from './entry-inline-images.service';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 import { assertEntryNotSealed } from '@/modules/time-capsules/time-capsule.guard';
+import { FeatureFlagsService } from '@/common/feature-flags';
+import { assertMayPublish } from './entry-publishing';
 
 const DEFAULT_MAX_PINNED_ENTRIES = 3;
 
@@ -60,6 +62,7 @@ export class EntriesCommandService {
     private readonly entryMentions: EntryMentionsService,
     private readonly timeCapsules: TimeCapsuleService,
     private readonly inlineImages: EntryInlineImagesService,
+    private readonly featureFlags: FeatureFlagsService,
   ) {}
 
   private sanitizeTagName(tag?: string | null): string {
@@ -67,6 +70,7 @@ export class EntriesCommandService {
   }
 
   async create(userId: number, dto: CreateEntryDto): Promise<{ success: boolean; entryId: number }> {
+    await assertMayPublish(this.featureFlags, dto.visibility);
     const targetDiaryId = await this.resolveTargetDiaryId(userId, dto.diaryId);
     const resolvedTags = await this.entryTaggingService.resolveSavedTags(userId, dto.text, dto.tags);
     const dateStr = dto.date || new Date().toISOString().split('T')[0];
@@ -128,6 +132,7 @@ export class EntriesCommandService {
       throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
     assertEntryNotSealed(entry);
+    await assertMayPublish(this.featureFlags, dto.visibility, entry.visibility);
 
     await this.revisionRepository.save(entryRevisionSnapshot(entry));
 
@@ -188,6 +193,7 @@ export class EntriesCommandService {
       throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
     assertEntryNotSealed(entry);
+    await assertMayPublish(this.featureFlags, visibility, entry.visibility);
 
     entry.visibility = visibility;
     const updated = await this.entryRepository.save(entry);
@@ -416,6 +422,7 @@ export class EntriesCommandService {
     if (!visibility) {
       throw apiError(BadRequestException, 'VALIDATION_FAILED', 'Visibility value is required');
     }
+    await assertMayPublish(this.featureFlags, visibility);
 
     if (validIds.length > 0) {
       await this.entryRepository.update({ id: In(validIds), userId }, { visibility });

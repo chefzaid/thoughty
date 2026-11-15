@@ -1,4 +1,4 @@
-import { requestJson, type AuthFetchFunction, type ServiceResult } from './base';
+import { requestJson, safeJsonParse, type AuthFetchFunction, type ServiceResult } from './base';
 import type { components } from '../../generated/openapi';
 
 export type ShareLink = components['schemas']['ShareLinkResponseDto'];
@@ -85,16 +85,27 @@ export async function fetchSharedBookFile(token: string, fetchImpl: typeof fetch
 export type SharedContentResult =
   | { readonly status: 'ready'; readonly content: SharedContent }
   | { readonly status: 'unavailable' }
+  /** Sharing is switched off on the server for now (503 `FEATURE_DISABLED`), the same for every link. */
+  | { readonly status: 'paused' }
   | { readonly status: 'failed' };
+
+/** Whether an answer says the feature is switched off for now. */
+async function isFeatureDisabled(response: Response): Promise<boolean> {
+  if (response.status !== 503) return false;
+  const body = await safeJsonParse<{ code?: unknown }>(response);
+  return body?.code === 'FEATURE_DISABLED';
+}
 
 /**
  * What a private share link shares, read without signing in: no cookie or token goes with it, and no
- * referrer. Any 404 means the link does not work, whatever the reason; other failures can be retried.
+ * referrer. Any 404 means the link does not work, whatever the reason; while sharing is switched off every
+ * link is paused; other failures can be retried.
  */
 export async function fetchSharedContent(token: string, fetchImpl: typeof fetch = fetch): Promise<SharedContentResult> {
   try {
     const response = await fetchImpl(`/api/shared/${tokenPath(token)}`, { credentials: 'omit', referrerPolicy: 'no-referrer' });
     if (response.status === 404) return { status: 'unavailable' };
+    if (await isFeatureDisabled(response)) return { status: 'paused' };
     if (!response.ok) return { status: 'failed' };
     return { status: 'ready', content: (await response.json()) as SharedContent };
   } catch {

@@ -10,6 +10,7 @@ import VisibilityIcon from '../VisibilityIcon/VisibilityIcon';
 import { extractDate } from './EntriesList.utils';
 import { formatEntryDay } from '../ShareLinks/shareLinkText';
 import { IconActionButton } from './EntryActionPrimitives';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import EntryRephraseButton from './EntryRephraseButton';
 import EntrySecondaryActionsMenu from './EntrySecondaryActionsMenu';
 import EntrySummaryDialog from './EntrySummaryDialog';
@@ -99,6 +100,12 @@ export default function EntryViewMode(props: Readonly<EntryViewModeProps>) {
     ) : <OpenEntryViewMode {...props} />;
 }
 
+/** What the visibility button says: the entry's visibility, or why a private entry cannot be made public now. */
+function entryVisibilityTitle(visibility: Entry['visibility'], publicSharing: boolean, t: TranslationFn): string {
+    if (visibility === 'public') return t('publicTooltip');
+    return publicSharing ? t('privateTooltip') : t('featureOffPublicVisibility');
+}
+
 function OpenEntryViewMode({
     entry,
     config,
@@ -125,9 +132,9 @@ function OpenEntryViewMode({
     onFetchBacklinks,
     backlinksVersion,
     onDeleteRevision,
-    onDiscuss,
-    onRephrase,
-    onSummarize,
+    onDiscuss: discuss,
+    onRephrase: rephrase,
+    onSummarize: summarize,
     onUseAsStartingPoint,
     onReply,
     onMoveToDiary,
@@ -137,6 +144,12 @@ function OpenEntryViewMode({
     tagMetadata,
     t,
 }: Readonly<EntryViewModeProps>) {
+    // The AI actions are left out while AI is switched off
+    const aiOn = useFeatureFlag('ai');
+    const onDiscuss = aiOn ? discuss : undefined;
+    const onRephrase = aiOn ? rephrase : undefined;
+    const onSummarize = aiOn ? summarize : undefined;
+    const publicSharing = useFeatureFlag('publicSharing');
     const [summaryOpen, setSummaryOpen] = useLocalState(false);
     const [shareImage, setShareImage] = useLocalState<{ excerpt?: string } | null>(null);
     const [sharePrivatelyOpen, setSharePrivatelyOpen] = useLocalState(false);
@@ -193,7 +206,9 @@ function OpenEntryViewMode({
                     <IconActionButton
                         onClick={() => onToggleVisibility(entry)}
                         className={`p-1 ${entry.visibility === 'public' ? `${isDark ? 'text-green-500' : 'text-green-600'} hover:bg-green-500/10` : 'text-gray-500 hover:bg-gray-500/10'}`}
-                        title={entry.visibility === 'public' ? t('publicTooltip') : t('privateTooltip')}
+                        // While public sharing is off a private entry cannot be made public; a public one can be made private
+                        disabled={!publicSharing && entry.visibility !== 'public'}
+                        title={entryVisibilityTitle(entry.visibility, publicSharing, t)}
                     >
                         <VisibilityIcon visibility={entry.visibility} />
                     </IconActionButton>

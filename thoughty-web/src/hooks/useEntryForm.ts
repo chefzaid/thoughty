@@ -9,6 +9,7 @@ import { storePlacedFiles } from '../utils/inlineImages';
 import { useApiServices } from './useApiServices';
 import { useEntryTagSuggestions } from './useEntryTagSuggestions';
 import type { SavedEntry } from '../components/ComfortReads/comfortReadsState';
+import { useFeatureFlag } from '../components/FeatureFlags/featureFlags';
 
 export const useEntryForm = (
   config: Config,
@@ -26,7 +27,10 @@ export const useEntryForm = (
   const [timeCapsule, setTimeCapsule] = useState<TimeCapsuleDraft | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [visibility, setVisibility] = useState<'public' | 'private' | null>(null);
+  const [chosenVisibility, setVisibility] = useState<'public' | 'private' | null>(null);
+  // While public sharing is switched off, a new entry is saved private whatever the default or the choice
+  const publicSharing = useFeatureFlag('publicSharing');
+  const visibility = publicSharing ? chosenVisibility : 'private';
   const [format, setFormat] = useState<'plain' | 'markdown'>('plain');
   /** A translation key, which the form shows with `t`. */
   const [formError, setFormError] = useState<string>('');
@@ -35,7 +39,8 @@ export const useEntryForm = (
   const [uploadedAttachments, setUploadedAttachments] = useState<Attachment[]>([]);
   /** The entry saved last, a new object for each save, which the journal's comfort reads offer follows. */
   const [savedEntry, setSavedEntry] = useState<SavedEntry | null>(null);
-  const autoTagLimit = getAutoTagLimit(config.autoTagMaxTags);
+  // With AI switched off nothing adds tags, so an entry needs one of its own
+  const autoTagLimit = useFeatureFlag('ai') ? getAutoTagLimit(config.autoTagMaxTags) : 0;
   const tagSuggestions = useEntryTagSuggestions(aiService, newEntryText, tags, setTags, autoTagLimit, setFormError);
 
   const resetEntryForm = useCallback(() => {
@@ -66,10 +71,10 @@ export const useEntryForm = (
   }, [newEntryText, tags, autoTagLimit, timeCapsule]);
 
   useEffect(() => {
-    if (config.defaultVisibility && visibility === null) {
+    if (config.defaultVisibility && chosenVisibility === null) {
       setVisibility(config.defaultVisibility);
     }
-  }, [config.defaultVisibility, visibility]);
+  }, [config.defaultVisibility, chosenVisibility]);
 
   const handleSubmit = useCallback(async (e: { preventDefault: () => void }) => {
     e.preventDefault();

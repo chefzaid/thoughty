@@ -5,6 +5,7 @@ import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { YearMoodRequestDto, YearMoodResponseDto, YearReviewDto, YearReviewQueryDto } from './dto';
 import { YearMoodService } from './year-mood.service';
 import { YearReviewService } from './year-review.service';
+import { RequireFeature } from '@/common/feature-flags';
 
 @ApiTags('Year in review')
 @ApiBearerAuth()
@@ -30,7 +31,8 @@ export class ReviewController {
   @ApiResponse({ status: 200, description: 'The mood arc, saved with the review', type: YearMoodResponseDto })
   @ApiResponse({ status: 400, description: 'No entries to read in that year' })
   @ApiResponse({ status: 404, description: 'Diary not found' })
-  @ApiResponse({ status: 503, description: 'AI is not available or could not read the year' })
+  @ApiResponse({ status: 503, description: 'AI is turned off (FEATURE_DISABLED), not available, or could not read the year' })
+  @RequireFeature('ai')
   async readMood(@CurrentUser() user: AuthenticatedUser, @Body() dto: YearMoodRequestDto): Promise<YearMoodResponseDto> {
     return { mood: await this.yearMoodService.generate(user.userId, dto.year, dto.diaryId) };
   }

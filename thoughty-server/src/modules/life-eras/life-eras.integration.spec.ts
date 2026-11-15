@@ -19,6 +19,7 @@ import { LifeErasService } from './life-eras.service';
 import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
 import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
 import { personDatesServiceOn } from '@/modules/people/person-dates.test-helpers';
+import { featureFlagsWith } from '@/common/feature-flags/feature-flags.test-helpers';
 
 const anyFilters = {
   search: '',
@@ -55,7 +56,7 @@ describePostgres('PostgreSQL life eras', () => {
     savedSearches = new SavedSearchesService(dataSource.getRepository(SavedSearch), dataSource.getRepository(BookVersion));
     const source = new BookEntrySourceService(entries, dataSource.getRepository(Diary), savedSearches, search);
     const noAi = { isConfigured: jest.fn().mockResolvedValue(false) };
-    books = new BooksService(source, dataSource.getRepository(User), noAi as never, {} as never, service, { getConfig: async () => ({}) } as never);
+    books = new BooksService(source, dataSource.getRepository(User), noAi as never, {} as never, service, { getConfig: async () => ({}) } as never, featureFlagsWith());
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });
 
