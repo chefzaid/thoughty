@@ -110,6 +110,31 @@ test.describe('Journal activity by day', () => {
     await expect(page.getByText('Canal walk.')).toBeVisible();
   });
 
+  test('keeps the keyboard’s day when the arrows scroll the page under a resting mouse, and follows the mouse once it moves', async ({ page }) => {
+    const grid = await openStats(page);
+    await grid.focus();
+    await expect(tooltip(page)).toHaveText(/^Tuesday, March 10, 2026/);
+    // The map's Monday and Tuesday rows go above the window's top edge
+    await page.evaluate(() => window.scrollBy(0, document.querySelector('[data-date="2026-03-10"]')!.getBoundingClientRect().bottom + 2));
+    // The mouse comes to rest on a Friday three weeks back
+    const friday = await box(day(grid, 'Friday, February 20, 2026. No entries. Daily goal not met'));
+    const rest = { x: friday.left + friday.width / 2, y: friday.top + friday.height / 2 };
+    await page.mouse.move(rest.x, rest.y);
+    await expect(tooltip(page)).toHaveText(/^Friday, February 20, 2026/);
+
+    // Up to Monday, which the page scrolls into view: an earlier day of that week slides under the mouse,
+    // and Chromium sends it a pointerover
+    await page.keyboard.press('ArrowUp');
+    const hovered = () => page.evaluate(() => document.querySelector('[role="gridcell"]:hover')?.getAttribute('data-date') ?? null);
+    await expect.poll(hovered).toMatch(/^2026-02-1[6-9]$/);
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    await expect(tooltip(page)).toHaveText('Monday, March 9, 2026' + 'No entries' + 'Daily goal not met');
+    await expect(grid.locator('.tipped')).toHaveAttribute('data-date', '2026-03-09');
+
+    await page.mouse.move(rest.x + 1, rest.y);
+    await expect(grid.locator('.tipped')).toHaveAttribute('data-date', (await hovered())!);
+  });
+
   test('a click opens the day in the journal', async ({ page }) => {
     const grid = await openStats(page);
     await day(grid, 'Tuesday, March 10, 2026. 1 entry. 3 words. Daily goal not met yet').click();

@@ -8,6 +8,7 @@ import './StatsGoals.css';
 import { monthName, weekdayName } from '../../utils/calendarNames';
 import type { Language } from '../../utils/translations';
 import { moveHeatmapFocus } from './heatmapFocus';
+import { usePointerMoved } from './heatmapPointer';
 import { describeHeatmapDay, heatmapDateFormatter, heatmapDayLabel, type HeatmapGoal } from './heatmapDayDetails';
 import StatsHeatmapLegend from './StatsHeatmapLegend';
 import StatsHeatmapTooltip from './StatsHeatmapTooltip';
@@ -25,7 +26,11 @@ interface HeatmapCell {
     inRange: boolean;
 }
 
-/** The day whose details show, and how it was reached: a touch shows them before a second one opens the day. */
+/**
+ * The day whose details show, and how it was reached: a touch shows them before a second one opens the day.
+ * They follow the input that last moved: the mouse when it really moves, the keyboard when it moves the
+ * active day or focuses the map. A day the page scrolls under a still mouse does not take them.
+ */
 interface HeatmapTip {
     readonly date: string;
     readonly via: 'pointer' | 'keyboard' | 'touch';
@@ -115,9 +120,9 @@ function buildHeatmapWeeks(thoughtsPerDay: Record<string, number>, wordsPerDay: 
  * A year of days, a column a week from Monday, shaded by the number of entries, like a contribution
  * graph: small rounded tiles with a gap between them. The days form one grid with a single tab stop:
  * the arrows move the active day (announced through `aria-activedescendant`), and Enter, Space or a
- * click opens it in the journal. A day's details (its date, entries, words and goal) show beside it on hover,
- * on keyboard focus and on a first tap, which a second tap turns into opening the day; screen readers
- * hear the same details as the day's name. On a narrow screen the year scrolls inside its card,
+ * click opens it in the journal. A day's details (its date, entries, words and goal) show beside it when
+ * the mouse moves over it, on keyboard focus and on a first tap, which a second tap turns into opening the
+ * day; screen readers hear the same details as the day's name. On a narrow screen the year scrolls inside its card,
  * starting on the latest weeks.
  */
 export default function StatsActivityHeatmap({
@@ -134,6 +139,7 @@ export default function StatsActivityHeatmap({
     // Whether the latest press was a touch, and whether a press (rather than the keyboard) is focusing the grid
     const touchPress = useRef(false);
     const pressing = useRef(false);
+    const pointerMoved = usePointerMoved();
     const heatmapWeeks = useMemo(() => buildHeatmapWeeks(thoughtsPerDay, wordsPerDay), [thoughtsPerDay, wordsPerDay]);
     const metPeriods = useMemo(() => new Set(goal?.metPeriods ?? []), [goal]);
     const [chosenDate, setChosenDate] = useState<string | null>(null);
@@ -212,9 +218,12 @@ export default function StatsActivityHeatmap({
         pressing.current = true;
     };
 
-    const handlePointerOver = (event: PointerEvent<HTMLDivElement>) => {
+    // A move, not `pointerover`: Chromium sends that one when the page scrolls a day under a still mouse,
+    // which would take the details from the day the keyboard just moved to
+    const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
         const date = dateOf(event.target);
-        if (event.pointerType !== 'touch' && date) setTip({ date, via: 'pointer' });
+        if (event.pointerType === 'touch' || !date || !pointerMoved(event)) return;
+        setTip((current) => (current?.via === 'pointer' && current.date === date ? current : { date, via: 'pointer' }));
     };
 
     const handlePointerLeave = (event: PointerEvent<HTMLDivElement>) => {
@@ -280,7 +289,7 @@ export default function StatsActivityHeatmap({
                                     aria-activedescendant={cellId(activeDate)}
                                     onKeyDown={handleKeyDown}
                                     onPointerDown={handlePointerDown}
-                                    onPointerOver={handlePointerOver}
+                                    onPointerMove={handlePointerMove}
                                     onPointerLeave={handlePointerLeave}
                                     onFocus={handleFocus}
                                     onBlur={handleBlur}

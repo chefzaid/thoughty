@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createEvent, fireEvent, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import userEvent, { type UserEvent } from '@testing-library/user-event';
 
 import StatsActivityHeatmap from './StatsActivityHeatmap';
 import type { HeatmapGoal } from './heatmapDayDetails';
@@ -27,6 +27,9 @@ const tap = (cell: HTMLElement) => {
     fireEvent(cell, press);
     fireEvent.click(cell);
 };
+
+/** The mouse moving onto a day: jsdom lays nothing out, so each move says where in the window it reached. */
+const moveOnto = (user: UserEvent, cell: Element, clientX: number) => user.pointer({ target: cell, coords: { clientX, clientY: 40 } });
 
 describe('StatsActivityHeatmap', () => {
     it.each([
@@ -105,10 +108,10 @@ describe('StatsActivityHeatmap', () => {
             />,
         );
 
-        await user.hover(screen.getByRole('gridcell', { name }));
+        await moveOnto(user, screen.getByRole('gridcell', { name }), 10);
         expect(tooltip()?.querySelector('.heatmap-tooltip-words')?.textContent).toBe(words);
         // A day the server counted no words for has no words line
-        await user.hover(screen.getByRole('gridcell', { name: language === 'en' ? 'Tuesday, January 16, 2024. 1 entry' : 'mardi 16 janvier 2024. 1 entrée' }));
+        await moveOnto(user, screen.getByRole('gridcell', { name: language === 'en' ? 'Tuesday, January 16, 2024. 1 entry' : 'mardi 16 janvier 2024. 1 entrée' }), 30);
         expect(tooltip()?.querySelector('.heatmap-tooltip-words')).toBeNull();
     });
 
@@ -152,6 +155,42 @@ describe('StatsActivityHeatmap', () => {
         // Leaving the map hides the details
         await user.tab();
         expect(tooltip()).not.toBeInTheDocument();
+    });
+
+    it('keeps the keyboard’s day while the page scrolls other days under a still mouse, and follows the mouse once it moves', async () => {
+        const user = userEvent.setup();
+        renderHeatmap('en', vi.fn());
+        const monday = screen.getByRole('gridcell', { name: 'Monday, January 15, 2024. 2 entries' });
+        const tuesday = screen.getByRole('gridcell', { name: 'Tuesday, January 16, 2024. 1 entry' });
+
+        await moveOnto(user, monday, 10);
+        expect(tooltip()).toHaveTextContent('Monday, January 15, 2024');
+        await user.tab();
+        await user.keyboard('{ArrowUp}');
+        expect(tooltip()).toHaveTextContent('Wednesday, January 17, 2024');
+
+        // The page scrolls Tuesday under the mouse: Chromium sends it a pointerover, another browser may
+        // send a move to where the mouse already was
+        fireEvent.pointerOver(tuesday);
+        await moveOnto(user, tuesday, 10);
+        expect(tooltip()).toHaveTextContent('Wednesday, January 17, 2024');
+        expect(tuesday).not.toHaveClass('tipped');
+
+        await moveOnto(user, tuesday, 12);
+        expect(tooltip()).toHaveTextContent('Tuesday, January 16, 2024');
+        // The keyboard takes them back from the mouse
+        await user.keyboard('{ArrowDown}');
+        expect(tooltip()).toHaveTextContent('Thursday, January 18, 2024');
+    });
+
+    it('leaves a tapped day’s details to the tap while the finger moves', () => {
+        renderHeatmap('en', vi.fn());
+        tap(screen.getByRole('gridcell', { name: 'Tuesday, January 16, 2024. 1 entry' }));
+
+        const slide = createEvent.pointerMove(screen.getByRole('gridcell', { name: 'Monday, January 15, 2024. 2 entries' }), { clientX: 5 });
+        Object.defineProperty(slide, 'pointerType', { value: 'touch' });
+        fireEvent(screen.getByRole('gridcell', { name: 'Monday, January 15, 2024. 2 entries' }), slide);
+        expect(tooltip()).toHaveTextContent('Tuesday, January 16, 2024' + '1 entry' + 'Tap again to open the day');
     });
 
     it('shows the details on a first tap and opens the day on a second', () => {

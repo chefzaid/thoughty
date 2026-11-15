@@ -44,6 +44,9 @@ test.describe('stats accessibility with entries', () => {
           await card.getByRole('button', { name: 'Show as table' }).click();
           await expect(card.getByRole('table', { name: title })).toBeVisible();
         }
+        // The last click left the mouse where the focus below scrolls the map in: keep it off the map for the
+        // keyboard part and its scan (`activity-heatmap.spec.ts` checks the keyboard's day with a mouse resting there)
+        await page.mouse.move(0, 0);
         await page.getByRole('grid', { name: 'Journal Activity by Day' }).focus();
         await page.keyboard.press('ArrowLeft');
         await expect(page.getByTestId('heatmap-tooltip')).toHaveText('Tuesday, December 30, 2025' + 'No entries');
