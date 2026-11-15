@@ -7,6 +7,7 @@ import {
   hasPendingKeycloakSsoAttempt,
   markKeycloakSsoFailed,
 } from '../utils/keycloakSso';
+import { forgetLocalComposerDrafts } from '../components/ComposerDraft/composerDraftStorage';
 
 /** Keys where older versions kept tokens in localStorage; they are removed on load. */
 const LEGACY_TOKEN_KEYS = ['accessToken', 'refreshToken'] as const;
@@ -191,6 +192,8 @@ export function useAuthSession() {
       console.error('Logout error:', err);
     }
     const signedInWithKeycloak = user?.authProvider === 'keycloak';
+    // A draft is private text: it stays on the server for the next sign-in, not in this browser
+    forgetLocalComposerDrafts();
     clearSession();
     setUser(null);
     // Only a Keycloak account also ends its Keycloak session; a local account just signs out here.

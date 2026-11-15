@@ -28,6 +28,7 @@ import { OptInEmailModule } from './modules/opt-in-email';
 import { AccountPurgeModule } from './modules/account-purge';
 import { TimeCapsuleEmailModule } from './modules/time-capsules';
 import { ShareLinksModule } from './modules/share-links';
+import { ComposerDraftsModule } from './modules/composer-drafts';
 import { HealthController } from './health.controller';
 import {
   createThrottlerModuleOptions,
@@ -83,6 +84,7 @@ import {
     AccountPurgeModule,
     TimeCapsuleEmailModule,
     ShareLinksModule,
+    ComposerDraftsModule,
   ],
   providers: [
     // Global JWT Auth Guard

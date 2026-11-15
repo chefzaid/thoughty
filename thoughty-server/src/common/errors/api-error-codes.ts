@@ -90,6 +90,9 @@ export const API_ERROR_MESSAGES = {
   SAVED_SEARCH_NAME_TAKEN: 'A saved search with this name already exists',
   SAVED_SEARCH_LIMIT_REACHED: 'Saved search limit reached',
 
+  // Composer drafts.
+  COMPOSER_DRAFT_CONFLICT: 'The draft was changed on another device',
+
   // Private share links.
   SHARE_LINK_NOT_FOUND: 'This link is not available',
   SHARE_LINK_LIMIT_REACHED: 'Share link limit reached',

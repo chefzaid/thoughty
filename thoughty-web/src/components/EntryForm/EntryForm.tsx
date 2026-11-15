@@ -30,6 +30,8 @@ import { defaultTimeCapsule, type TimeCapsuleDraft } from '../../utils/timeCapsu
 import { useInlineImageInsert } from '../InlineImages/useInlineImageInsert';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import { useDictationField } from '../Dictation/useDictationField';
+import type { ComposerDraftSync } from '../ComposerDraft/useComposerDraftSync';
+import { ComposerDraftOfferBar, ComposerDraftStatusText } from '../ComposerDraft/ComposerDraftBar';
 
 const LazyMDEditor = lazy(() => import('../MarkdownEditor/MarkdownEditor'));
 
@@ -90,6 +92,8 @@ interface EntryFormProps {
     readonly onSaveTemplate?: (template: EntryTemplateDraft) => Promise<boolean>;
     /** Resolves whether the template was deleted; it stays selected when it was not. */
     readonly onDeleteTemplate?: (templateId: string) => Promise<boolean>;
+    /** The draft saved as the writer types, which continues on their other devices. */
+    readonly draft?: ComposerDraftSync;
 }
 
 function entryFormClasses({ theme, format, visibility }: Pick<EntryFormProps, 'theme' | 'format' | 'visibility'>) {
@@ -167,7 +171,8 @@ function EntryForm({
     language,
     entryTemplates = [],
     onSaveTemplate,
-    onDeleteTemplate
+    onDeleteTemplate,
+    draft,
 }: EntryFormProps) {
     const writingArea = useAutoGrowTextarea(newEntryText);
     const inlineImages = useInlineImageInsert({
@@ -211,7 +216,15 @@ function EntryForm({
 
     return (
         <div className={containerClass} data-focus-mode-scope="">
-            <form onSubmit={onSubmit} className="space-y-4 overflow-visible">
+            <form
+                onSubmit={onSubmit}
+                // Leaving the composer saves the draft at once
+                onBlur={(event) => !event.currentTarget.contains(event.relatedTarget) && draft?.flush()}
+                className="space-y-4 overflow-visible"
+            >
+                {draft && (
+                    <ComposerDraftOfferBar draft={draft} composerEmpty={!newEntryText.trim() && !title.trim()} language={resolveLanguage(language)} theme={theme} t={t} />
+                )}
                 <EntryTemplateBar
                     templates={entryTemplates}
                     onApply={applyTemplate}
@@ -440,6 +453,7 @@ function EntryForm({
                         <span className="codicon codicon-save" aria-hidden="true" />
                         {t('save')}
                     </button>
+                    {draft && <ComposerDraftStatusText status={draft.status} theme={theme} t={t} />}
                 </div>
             </form>
             {inlineImages.dialog}

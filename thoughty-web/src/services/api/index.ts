@@ -13,6 +13,7 @@ export * from './appImportService';
 export * from './reviewService';
 export * from './recycleBinService';
 export * from './savedSearchesService';
+export * from './composerDraftService';
 export * from './lifeErasService';
 export * from './peopleService';
 export * from './entryCalendarService';

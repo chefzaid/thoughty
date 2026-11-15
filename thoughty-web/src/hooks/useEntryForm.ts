@@ -10,6 +10,8 @@ import { useApiServices } from './useApiServices';
 import { useEntryTagSuggestions } from './useEntryTagSuggestions';
 import type { SavedEntry } from '../components/ComfortReads/comfortReadsState';
 import { useFeatureFlag } from '../components/FeatureFlags/featureFlags';
+import { useComposerDraftSync } from '../components/ComposerDraft/useComposerDraftSync';
+import type { ComposerDraftFields } from '../services/api/composerDraftService';
 
 export const useEntryForm = (
   config: Config,
@@ -42,6 +44,21 @@ export const useEntryForm = (
   // With AI switched off nothing adds tags, so an entry needs one of its own
   const autoTagLimit = useFeatureFlag('ai') ? getAutoTagLimit(config.autoTagMaxTags) : 0;
   const tagSuggestions = useEntryTagSuggestions(aiService, newEntryText, tags, setTags, autoTagLimit, setFormError);
+
+  // The draft follows the writer to their other devices; the date, time, visibility, capsule and files stay here
+  const applyDraft = useCallback((fields: ComposerDraftFields) => {
+    setNewEntryText(fields.text);
+    setTitle(fields.title ?? '');
+    setTags(fields.tags);
+    setFormat(fields.format);
+    setMood(fields.mood);
+    setFeelings(fields.feelings);
+  }, []);
+  const draft = useComposerDraftSync(
+    { text: newEntryText, title: title === '' ? null : title, tags, format, mood, feelings },
+    applyDraft,
+  );
+  const { onPublished: onDraftPublished } = draft;
 
   const resetEntryForm = useCallback(() => {
     setNewEntryText('');
@@ -120,9 +137,10 @@ export const useEntryForm = (
     }
 
     setSavedEntry({ id: result.entryId, mood });
+    onDraftPublished();
     resetEntryForm();
     onSuccess();
-  }, [attachmentsService, currentDiaryId, entriesService, feelings, format, mood, newEntryText, onSuccess, pendingFiles, resetEntryForm, selectedDate, tags, timeCapsule, timeOfDay, title, uploadedAttachments, validateEntryForm, visibility]);
+  }, [attachmentsService, currentDiaryId, entriesService, feelings, format, mood, newEntryText, onDraftPublished, onSuccess, pendingFiles, resetEntryForm, selectedDate, tags, timeCapsule, timeOfDay, title, uploadedAttachments, validateEntryForm, visibility]);
 
   const addPendingFile = useCallback((file: File) => {
     setPendingFiles((prev) => [...prev, file]);
@@ -194,5 +212,6 @@ export const useEntryForm = (
     addPendingFile,
     removePendingFile,
     removeUploadedAttachment,
+    draft,
   };
 };

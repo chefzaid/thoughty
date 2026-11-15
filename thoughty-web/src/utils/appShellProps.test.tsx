@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { buildAuthenticatedLayoutProps, buildAuthenticatedRoutesProps, buildPublicShellProps } from './appShellProps';
 import { createLayoutParams, createRoutesParams, createRoutingState } from './appShellProps.test-helpers';
+import { composerDraftSyncMock } from '../components/ComposerDraft/composerDraft.test-helpers';
 
 describe('appShellProps', () => {
   it('builds public shell props for intro and register views', () => {
@@ -174,6 +175,7 @@ describe('appShellProps', () => {
       },
       entryFormState: {
         addPendingFile: vi.fn(),
+        draft: composerDraftSyncMock(),
         feelings: [],
         fixingWriting: false,
         formError: '',

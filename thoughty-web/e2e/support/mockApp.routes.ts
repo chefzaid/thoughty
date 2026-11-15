@@ -26,6 +26,7 @@ import { handleTimeCapsuleRoutes } from "./mockApp.routes.time-capsules";
 import { handleRereadReminderRoutes } from "./mockApp.routes.reread-reminders";
 import { handleAttachmentRoutes } from "./mockApp.routes.attachments";
 import { handleShareLinkRoutes } from "./mockApp.routes.share-links";
+import { handleComposerDraftRoutes } from "./mockApp.routes.composer-draft";
 import { refuseInvalidJsonBody, refuseInvalidQueryParameters, refuseMislabelledUpload } from "./mockApp.routes.multipart";
 import { checkWritersDaySent } from "./mockApp.writers-day";
 import { handleFeatureFlagRoutes } from "./mockApp.feature-flags";
@@ -433,6 +434,9 @@ export async function registerMockAppRoutes(page: Page, state: MockAppState) {
       return;
     }
     if (await handleShareLinkRoutes(context)) {
+      return;
+    }
+    if (await handleComposerDraftRoutes(context)) {
       return;
     }
     if (await handleEntriesRoutes(context)) {

@@ -134,6 +134,7 @@ export const CONTRACT_SUITES = {
     'GET /api/entries/reader',
     'GET /api/entries/comfort-reads',
   ],
+  drafts: ['GET /api/composer-draft', 'PUT /api/composer-draft', 'DELETE /api/composer-draft'],
   // The writer's own day (`today`) across Highlights, stats and file names; its routes are listed where they are tested in full
   'writers-day': [],
   sharing: [

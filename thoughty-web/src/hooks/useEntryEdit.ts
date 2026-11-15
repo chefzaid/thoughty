@@ -8,6 +8,7 @@ import { storePlacedFiles } from '../utils/inlineImages';
 import type { Notifier } from './useAppNotice';
 import type { MoveToDiary } from './useMoveToDiary';
 import { useFeatureFlag } from '../components/FeatureFlags/featureFlags';
+import { useLeaveWarning } from '../components/ComposerDraft/useLeaveWarning';
 
 /**
  * The entry editor's state and save. `moveToDiary` moves the entry when the editor chose another diary for it,
@@ -31,6 +32,10 @@ export const useEntryEdit = (config: Config, onSave: () => void, { notify, t }: 
   const [editDiaryId, setEditDiaryId] = useState<number | null>(null);
   const [editPendingFiles, setEditPendingFiles] = useState<File[]>([]);
   const [editExistingAttachments, setEditExistingAttachments] = useState<Attachment[]>([]);
+
+  // Closing the page with unsaved changes to the entry asks first; the editor itself keeps them while the app is open
+  useLeaveWarning(() => editingEntry !== null
+    && (editText !== editingEntry.content || editTitle !== (editingEntry.title ?? '')));
 
   const handleEdit = useCallback((entry: Entry) => {
     setEditingEntry(entry);

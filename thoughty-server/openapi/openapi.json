@@ -13934,6 +13934,184 @@
           "Shared links"
         ]
       }
+    },
+    "/api/composer-draft": {
+      "get": {
+        "operationId": "ComposerDraftsController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The draft, or null",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComposerDraftEnvelopeDto"
+                },
+                "example": {
+                  "draft": {
+                    "text": "We walked along the river until the light went.",
+                    "title": "Evening walk",
+                    "tags": [
+                      "walks"
+                    ],
+                    "format": "plain",
+                    "mood": 4,
+                    "feelings": [
+                      "calm"
+                    ],
+                    "revision": 4,
+                    "updatedAt": "2026-11-15T09:30:00.000Z"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get the new entry the writer is still writing, saved from any of their devices",
+        "tags": [
+          "Composer draft"
+        ]
+      },
+      "put": {
+        "description": "Autosaved as the writer types. Its text, title, tags, format, mood and feelings keep the entry limits.",
+        "operationId": "ComposerDraftsController_save",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveComposerDraftDto"
+              },
+              "example": {
+                "text": "We walked along the river until the light went.",
+                "title": "Evening walk",
+                "tags": [
+                  "walks"
+                ],
+                "format": "plain",
+                "mood": 4,
+                "feelings": [
+                  "calm"
+                ],
+                "baseRevision": 3
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Draft saved at its new revision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComposerDraftResponseDto"
+                },
+                "example": {
+                  "text": "We walked along the river until the light went.",
+                  "title": "Evening walk",
+                  "tags": [
+                    "walks"
+                  ],
+                  "format": "plain",
+                  "mood": 4,
+                  "feelings": [
+                    "calm"
+                  ],
+                  "revision": 4,
+                  "updatedAt": "2026-11-15T09:30:00.000Z"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The draft was saved, published or discarded on another device (COMPOSER_DRAFT_CONFLICT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "The draft was saved, published or discarded on another device (COMPOSER_DRAFT_CONFLICT)",
+                  "error": "Conflict",
+                  "code": "CONFLICT"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Save the composer draft on top of the revision the device last saw",
+        "tags": [
+          "Composer draft"
+        ]
+      },
+      "delete": {
+        "operationId": "ComposerDraftsController_discard",
+        "parameters": [
+          {
+            "name": "revision",
+            "required": false,
+            "in": "query",
+            "description": "Only discard the draft if it is still at this revision; a newer one, saved on another device, is kept and refused with COMPOSER_DRAFT_CONFLICT. Left out, the draft is discarded whatever its revision.",
+            "schema": {
+              "minimum": 1,
+              "example": 3,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Draft discarded, or there was none",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComposerDraftDiscardResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A newer draft was saved on another device and is kept (COMPOSER_DRAFT_CONFLICT)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "A newer draft was saved on another device and is kept (COMPOSER_DRAFT_CONFLICT)",
+                  "error": "Conflict",
+                  "code": "CONFLICT"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Discard the composer draft, once it is published or the writer discards it",
+        "tags": [
+          "Composer draft"
+        ]
+      }
     }
   },
   "info": {
@@ -25429,6 +25607,222 @@
           }
         }
       },
+      "ComposerDraftResponseDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "example": "We walked along the river until the light went.",
+            "maxLength": 50000
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200,
+            "example": "Evening walk"
+          },
+          "tags": {
+            "maxItems": 20,
+            "example": [
+              "walks"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "plain",
+              "markdown"
+            ],
+            "example": "plain"
+          },
+          "mood": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 5,
+            "example": 4
+          },
+          "feelings": {
+            "maxItems": 10,
+            "example": [
+              "calm"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "revision": {
+            "type": "number",
+            "example": 4,
+            "minimum": 1,
+            "description": "Grows by one with every save"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-11-15T09:30:00.000Z",
+            "description": "When it was last saved, from any device"
+          }
+        },
+        "required": [
+          "text",
+          "title",
+          "tags",
+          "format",
+          "mood",
+          "feelings",
+          "revision",
+          "updatedAt"
+        ],
+        "example": {
+          "text": "We walked along the river until the light went.",
+          "title": "Evening walk",
+          "tags": [
+            "walks"
+          ],
+          "format": "plain",
+          "mood": 4,
+          "feelings": [
+            "calm"
+          ],
+          "revision": 4,
+          "updatedAt": "2026-11-15T09:30:00.000Z"
+        }
+      },
+      "ComposerDraftEnvelopeDto": {
+        "type": "object",
+        "properties": {
+          "draft": {
+            "nullable": true,
+            "description": "Null when the writer has no draft",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ComposerDraftResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "draft"
+        ],
+        "example": {
+          "draft": {
+            "text": "We walked along the river until the light went.",
+            "title": "Evening walk",
+            "tags": [
+              "walks"
+            ],
+            "format": "plain",
+            "mood": 4,
+            "feelings": [
+              "calm"
+            ],
+            "revision": 4,
+            "updatedAt": "2026-11-15T09:30:00.000Z"
+          }
+        }
+      },
+      "SaveComposerDraftDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "example": "We walked along the river until the light went.",
+            "maxLength": 50000
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200,
+            "example": "Evening walk"
+          },
+          "tags": {
+            "maxItems": 20,
+            "example": [
+              "walks"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "plain",
+              "markdown"
+            ],
+            "example": "plain"
+          },
+          "mood": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 5,
+            "example": 4
+          },
+          "feelings": {
+            "maxItems": 10,
+            "example": [
+              "calm"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "baseRevision": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 1,
+            "example": 3,
+            "description": "The revision this save is written on top of, as the device last saved or loaded it; null when the device knows of no draft. Any other revision than the stored one (or null while one is stored, or a number when none is) is refused with COMPOSER_DRAFT_CONFLICT, so a device behind cannot overwrite newer text."
+          }
+        },
+        "required": [
+          "text",
+          "title",
+          "tags",
+          "format",
+          "mood",
+          "feelings",
+          "baseRevision"
+        ],
+        "example": {
+          "text": "We walked along the river until the light went.",
+          "title": "Evening walk",
+          "tags": [
+            "walks"
+          ],
+          "format": "plain",
+          "mood": 4,
+          "feelings": [
+            "calm"
+          ],
+          "baseRevision": 3
+        }
+      },
+      "ComposerDraftDiscardResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "success"
+        ],
+        "example": {
+          "success": true
+        }
+      },
       "ApiErrorCode": {
         "type": "string",
         "enum": [
@@ -25502,6 +25896,7 @@
           "SAVED_SEARCH_NOT_FOUND",
           "SAVED_SEARCH_NAME_TAKEN",
           "SAVED_SEARCH_LIMIT_REACHED",
+          "COMPOSER_DRAFT_CONFLICT",
           "SHARE_LINK_NOT_FOUND",
           "SHARE_LINK_LIMIT_REACHED",
           "SHARE_LINK_EXPIRY_INVALID",

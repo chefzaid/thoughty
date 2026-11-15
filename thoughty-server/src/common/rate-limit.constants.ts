@@ -10,6 +10,8 @@ export const RATE_LIMITS = {
   socialWrite: { limit: 30, ttl: FIFTEEN_MINUTES_MS },
   // App imports send one request per batch of entries or files; a large library needs hundreds.
   importWrite: { limit: 300, ttl: FIFTEEN_MINUTES_MS },
+  // Composer autosave: the web saves at most once every three seconds while the writer types.
+  draftWrite: { limit: 300, ttl: FIFTEEN_MINUTES_MS },
   shareLinkWrite: { limit: 30, ttl: FIFTEEN_MINUTES_MS },
   // A private share link, opened without signing in: the entry or book, then each picture and video range.
   sharedLinkRead: { limit: 60, ttl: FIFTEEN_MINUTES_MS },

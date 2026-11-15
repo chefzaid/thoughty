@@ -31,6 +31,7 @@ erDiagram
     User ||--o| OnThisDayEmail : receives
     User ||--o| MonthlyRecapEmail : receives
     User ||--o{ ShareLink : shares
+    User ||--o| ComposerDraft : "is writing"
     Person ||--o{ PersonHandle : "is mentioned by"
     Person ||--o{ EntryPerson : "appears in"
 
@@ -76,6 +77,7 @@ Every table except `users` references a user, and those foreign keys cascade. Ac
 | `LifeEra` | Deleted with the user. Deleting one leaves entries untouched and sets `eraId` to null in the writer's saved searches filtered by it, in the same transaction, so they cover every date. |
 | `Person`, `PersonHandle`, `EntryPerson` | Deleted with the user. An entry's links (`entry_people`) are rebuilt from its text on every save and go with the entry when it is purged; they stay while it is in the recycle bin, which only counts leave out. Deleting a person deletes their handles and links, keeps the text, and sets `personId` to null in saved searches filtered by them; merging moves the duplicate's handles and links to the person kept and points those saved searches at them. |
 | `ShareLink` | Deleted with the user, its entry or its book version (`ON DELETE CASCADE`), and when revoked. Moving its entry to the recycle bin or sealing it deletes its links at once (trigger `trg_entries_drop_share_links`), so restoring the entry does not bring them back. Expired links are deleted as the writer next makes or lists links. |
+| `ComposerDraft` | Deleted with the user, when the entry it was is published, when the writer discards it or empties the composer, and from the other devices' local copies as they learn of it. |
 | `OnThisDayEmail`, `MonthlyRecapEmail` | Deleted with the user. Deleting its diary widens the email to all diaries (`SET NULL`). Unsubscribing only turns it off and keeps the hour, zone and diary. |
 | Everything else | Deleted with the user. Votes also go with their request. |
 
@@ -212,6 +214,15 @@ Progress is computed on request (`StatsGoalService`, in `GET /api/stats` as `goa
 - A writer has at most 100 unexpired links (`SHARE_LINK_LIMIT`, sent with the list), counted under a transaction-scoped advisory lock on `(hashtext('share_links'), user_id)`.
 - `trg_entries_drop_share_links` (`AFTER UPDATE OF deleted_at, sealed_until ON entries`) runs `share_links_drop_for_hidden_entry()`, which deletes an entry's links when `deleted_at` or `sealed_until` goes from null to a value.
 - Links are part of the data download, without their token or hash.
+
+## Composer Drafts
+
+`composer_drafts` keeps the new entry the writer is still writing (`ComposerDraftsModule`, `/api/composer-draft`, migration `1787875200000-composer-drafts`), so a draft started on one device continues on another.
+
+- One row per writer: `user_id` is the primary key, cascading with the account. One draft, not one per diary or per entry, because the composer is a single box that keeps its text across diaries and views; the entry goes to the diary open when it is published. Editing an existing entry has no server draft (its text is already saved; closing the page with unsaved changes asks first).
+- The composer fields that follow the writer: `content` (`TEXT`, at most 50,000 characters, `chk_composer_drafts_content_length`), `title` (`VARCHAR(200)`), `tags`, `format` (`plain` or `markdown`, `chk_composer_drafts_format`), `mood` (1 to 5, `chk_composer_drafts_mood`) and `feelings`, within the entry limits the DTO checks too. The date, time of day, visibility, time capsule and files waiting to upload stay on the device that set them; a picture placed in the text but not uploaded shows as its description elsewhere once published.
+- `revision` (from 1, `chk_composer_drafts_revision`) grows by one with every save. A save names the revision it was written on (`baseRevision`, null for none) and is one statement: `INSERT … ON CONFLICT (user_id) DO NOTHING` for the first, `UPDATE … WHERE revision = $base` after, so a save from a device behind the stored revision (or two at once) is refused with `409 COMPOSER_DRAFT_CONFLICT` instead of overwriting newer text. A discard can name the revision too, and then keeps a newer draft.
+- Drafts are private text, stored like entries (no application-level encryption, as for entries), never logged, read only by their owner, and part of the data download (`composerDraft`).
 
 ## Life Eras
 

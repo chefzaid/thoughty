@@ -26,3 +26,4 @@ export * from './opt-in-email-setting.base';
 export * from './monthly-recap-email.entity';
 export * from './time-capsule.entity';
 export * from './share-link.entity';
+export * from './composer-draft.entity';

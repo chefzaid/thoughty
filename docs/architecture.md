@@ -46,6 +46,7 @@ flowchart TD
 | `recycle-bin` | deleted entries kept for 30 days: list, restore, delete forever, empty, and the hourly purge |
 | `diaries` | diary containers, ordering, default diary, writing goals, moving entries when a diary is deleted |
 | `saved-searches` | named journal filter combinations with their diary scope: list, save, rename, delete, at most 50 per writer |
+| `composer-drafts` | the new entry still being written, one per writer (`GET`/`PUT`/`DELETE /api/composer-draft`, `ComposerDraftsService`): each save and discard names the revision it was written on and is one statement, so a device behind is refused (`COMPOSER_DRAFT_CONFLICT`); in the data download and gone with the account |
 | `life-eras` | named date ranges of the writer's life: list, add, change, delete, at most 100 per writer; the journal's `eraId` filter lives in the entries module's `applyEntryListFilters`, era chapters in `buildBook`, and `books` and `memoir` read eras through `LifeErasService` |
 | `people` | people mentioned with `@handle`: list with counts, rename and date (a birthday or an anniversary, checked in `person-dates.ts`; Highlights reads the day's people through `PersonDatesService` in `PersonDatesModule`, imported by the entries module), merge, delete, at most 1,000 per writer; mentions are parsed and linked on every entry save by `EntryMentionsService` in the entries module (composer, edits and both imports), and the journal's `personId` filter lives in `applyEntryListFilters` |
 | `attachments` | upload validation, object storage, audio transcription; `sendAttachmentFile` (`attachment-file-response.ts`) streams a stored file with its safe headers and byte ranges for both the owner's file route and a share link's |
@@ -133,6 +134,7 @@ flowchart TD
 ```
 
 - A private share link's page (`/s/<token>`) is not part of this tree: `main.tsx` renders `SharedLinkPage` on its own, lazily, with no `AuthProvider`, router, query client or app chrome, and it calls only `/api/shared/…` with plain `fetch` ([ADR 0024](./adr/0024-private-share-links.md)). The writer's side is `ShareLinkDialog` (`components/ShareLinks`), opened from an entry's More actions and from each saved book version.
+- The composer's draft (`components/ComposerDraft`) lives with the composer's state in `useEntryForm`, which the app shell keeps across views: `useComposerDraftSync` writes every change to `localStorage` at once and to `/api/composer-draft` two seconds after typing stops (at once on blur, `visibilitychange` and `pagehide`, at most every three seconds), naming the revision it last saw. On sign-in `planComposerDraft` weighs this device's copy against the server's draft: a copy never sent comes back and is sent, the draft this device saved last comes back silently, and a draft from another device is offered (`ComposerDraftOfferBar`) rather than put in. A `409 COMPOSER_DRAFT_CONFLICT` turns into the same offer, and nothing more is sent until the writer chooses. Publishing discards it at its revision (a save still on its way is undone), sign-out removes the local copies, and `useLeaveWarning` asks before the page closes on text the server does not have yet (and on unsaved changes in the entry editor).
 - Route files stay thin. Components render; hooks own shared state, URL parameters, and API calls.
 - Server state goes through TanStack Query. The entry list keeps the previous page on screen while the next one loads.
 - The journal sends its first list request once everything that shapes it is known: the profile config (page size; a failed config request falls back to 10 at once), the default or route diary, and on a permalink the page that holds the entry. Until then the list query is disabled and the journal shows as loading, so no request is sent with defaults and thrown away.
@@ -221,6 +223,7 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 | Saved searches | `SAVED_SEARCH_NOT_FOUND` | Saved search not found |
 |  | `SAVED_SEARCH_NAME_TAKEN` | A saved search with this name already exists |
 |  | `SAVED_SEARCH_LIMIT_REACHED` | Saved search limit reached |
+| Composer drafts | `COMPOSER_DRAFT_CONFLICT` | The draft was changed on another device |
 | Private share links | `SHARE_LINK_NOT_FOUND` | This link is not available |
 |  | `SHARE_LINK_LIMIT_REACHED` | Share link limit reached |
 |  | `SHARE_LINK_EXPIRY_INVALID` | Choose an expiry from one hour up to a year ahead |

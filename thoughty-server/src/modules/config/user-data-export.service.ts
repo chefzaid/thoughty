@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import {
   Attachment,
   CommentLike,
+  ComposerDraft,
   Diary,
   Entry,
   EntryComment,
@@ -91,10 +92,12 @@ export class UserDataExportService {
     private readonly shareLinkRepository: Repository<ShareLink>,
     @InjectRepository(MemoirSnooze)
     private readonly memoirSnoozeRepository: Repository<MemoirSnooze>,
+    @InjectRepository(ComposerDraft)
+    private readonly composerDraftRepository: Repository<ComposerDraft>,
   ) {}
 
   async downloadData(userId: number): Promise<Record<string, unknown>> {
-    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people, onThisDayEmail, monthlyRecapEmail, capsules, shareLinks] = await Promise.all([
+    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people, onThisDayEmail, monthlyRecapEmail, capsules, shareLinks, composerDraft] = await Promise.all([
       this.userRepository.findOne({ where: { id: userId } }),
       this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
       // Entries in the recycle bin are still personal data until they are removed for good, and sealed
@@ -116,6 +119,7 @@ export class UserDataExportService {
       this.timeCapsuleRepository.find({ where: { userId }, order: { createdAt: 'ASC', id: 'ASC' } }),
       // The token's hash is never selected; the token itself was never kept
       this.shareLinkRepository.find({ where: { userId }, order: { createdAt: 'ASC', id: 'ASC' } }),
+      this.composerDraftRepository.findOne({ where: { userId } }),
     ]);
 
     const safeUser = user
@@ -254,6 +258,20 @@ export class UserDataExportService {
         expiresAt: link.expiresAt,
         createdAt: link.createdAt,
       })),
+      // The new entry still being written in the composer, saved from any device; null when there is none
+      composerDraft: composerDraft
+        ? {
+            title: composerDraft.title,
+            content: composerDraft.content,
+            tags: composerDraft.tags,
+            format: composerDraft.format,
+            mood: composerDraft.mood,
+            feelings: composerDraft.feelings,
+            revision: composerDraft.revision,
+            createdAt: composerDraft.createdAt,
+            updatedAt: composerDraft.updatedAt,
+          }
+        : null,
     };
   }
 

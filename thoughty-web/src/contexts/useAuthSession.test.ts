@@ -96,6 +96,18 @@ describe('useAuthSession', () => {
         expect(result.current.getAccessToken()).toBeNull();
     });
 
+    it('forgets the composer drafts kept in this browser on sign-out', async () => {
+        stubFetch(() => json({ id: 1, username: 'ada', email: 'ada@example.com' }));
+        const result = await renderSession();
+        localStorage.setItem('thoughty.composerDraft.1', '{"fields":{}}');
+
+        await act(async () => {
+            await result.current.logout();
+        });
+
+        expect(localStorage.getItem('thoughty.composerDraft.1')).toBeNull();
+    });
+
     it('sends a multipart body without a JSON content type, also when retrying after a refresh', async () => {
         const fetchMock = stubFetch(() => json({ id: 1, username: 'ada', email: 'ada@example.com' }));
         const result = await renderSession();

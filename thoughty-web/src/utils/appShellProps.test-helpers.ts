@@ -1,6 +1,7 @@
 import { vi } from 'vitest';
 
 import type { buildAuthenticatedLayoutProps, buildAuthenticatedRoutesProps } from './appShellProps';
+import { composerDraftSyncMock } from '../components/ComposerDraft/composerDraft.test-helpers';
 
 type BuildAuthenticatedLayoutPropsParams = Parameters<typeof buildAuthenticatedLayoutProps>[0];
 type BuildAuthenticatedRoutesPropsParams = Parameters<typeof buildAuthenticatedRoutesProps>[0];
@@ -174,6 +175,7 @@ export function createRoutesParams(
     },
     entryFormState: {
       addPendingFile: vi.fn(),
+      draft: composerDraftSyncMock(),
       feelings: [],
       fixingWriting: false,
       formError: '',
