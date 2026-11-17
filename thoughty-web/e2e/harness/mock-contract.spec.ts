@@ -1,6 +1,7 @@
 import { test, expect } from '../support/test';
 import { mockDiary } from '../support/mockApp.diaries';
-import { checkJsonRequestBody, checkMockResponse, checkQueryParameters } from '../support/mockApp.contract';
+import { checkJsonRequestBody, checkMockResponse, checkQueryParameters, takeContractViolations } from '../support/mockApp.contract';
+import { setupMockApp } from '../support/mockApp';
 import { readQueryFlag } from '../support/mockApp.route-utils';
 
 // The guard every mock answer goes through: it must catch the drift that hid `is_default`.
@@ -48,6 +49,42 @@ test.describe('Mock API contract check', () => {
     expect(check('diaryId=1.5&title=1.5')).toEqual(['GET /api/books/export sends diaryId=1.5, which the API refuses as a number']);
     expect(checkQueryParameters('GET', '/api/entries', new URLSearchParams('favorites=on'))).toEqual([
       'GET /api/entries sends favorites=on, which the API refuses as a boolean',
+    ]);
+  });
+
+  test('refuses a query parameter the operation does not document, as the API whitelist does', () => {
+    // The API answers `GET /api/entries/first?year=2024&limit=10` with 400 VALIDATION_FAILED and
+    // `message: ['property limit should not exist']` (thoughty-server/test/api-contract/entries.e2e-spec.ts)
+    expect(checkQueryParameters('GET', '/api/entries/first', new URLSearchParams('year=2024&month=3&archiveStatus=active'))).toEqual([]);
+    expect(checkQueryParameters('GET', '/api/entries/first', new URLSearchParams('year=2024&limit=10&limit=20&favorites=on'))).toEqual([
+      'GET /api/entries/first sends limit, which the API refuses: property limit should not exist',
+      'GET /api/entries/first sends favorites=on, which the API refuses as a boolean',
+    ]);
+    // An operation documenting no query parameter reads no query, so the API ignores what it is sent
+    expect(checkQueryParameters('GET', '/api/diaries', new URLSearchParams('anything=1'))).toEqual([]);
+    expect(checkQueryParameters('GET', '/api/not-an-endpoint', new URLSearchParams('anything=1'))).toEqual([]);
+  });
+
+  test('answers an undocumented query parameter with the API refusal and fails the test that sent it', async ({ page }) => {
+    await setupMockApp(page, { startAuthenticated: true });
+    await page.goto('/');
+
+    const answer = await page.evaluate(async () => {
+      const response = await fetch('/api/entries/first?year=2024&limit=10');
+      return { status: response.status, body: await response.json() as unknown };
+    });
+
+    expect(answer).toEqual({
+      status: 400,
+      body: {
+        statusCode: 400,
+        message: ['GET /api/entries/first sends limit, which the API refuses: property limit should not exist'],
+        error: 'Bad Request',
+        code: 'VALIDATION_FAILED',
+      },
+    });
+    expect(takeContractViolations()).toEqual([
+      'GET /api/entries/first sends limit, which the API refuses: property limit should not exist',
     ]);
   });
 

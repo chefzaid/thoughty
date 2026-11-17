@@ -42,7 +42,7 @@ export function fulfillApiUnreachable(route: Route) {
 }
 
 /** Answers like the API's errors: Nest's body plus the stable `code` the web app translates (docs/architecture.md). */
-export function fulfillApiError(route: Route, statusCode: number, code: string, message: string) {
+export function fulfillApiError(route: Route, statusCode: number, code: string, message: string | string[]) {
   return fulfillJson(route, { statusCode, message, error: STATUS_CODES[statusCode] ?? 'Error', code }, { status: statusCode });
 }
 

@@ -86,6 +86,27 @@ test.describe('Journal full-text search', () => {
     await expect.poll(() => entryIds(page)).toEqual(['entry-203', 'entry-201', 'entry-202', 'entry-204']);
   });
 
+  test('jumps to the first match of a month without sending the order of results', async ({ page }) => {
+    await setupMockApp(page, { startAuthenticated: true, initialEntries: searchEntries });
+    const firstRequests: URLSearchParams[] = [];
+    page.on('request', (request) => {
+      const url = new URL(request.url());
+      if (url.pathname === '/api/entries/first') firstRequests.push(url.searchParams);
+    });
+    await page.goto('/journal?diary=all');
+
+    await page.getByRole('textbox', { name: 'Search entries' }).fill('morning');
+    await expect.poll(() => entryIds(page)).toEqual(['entry-202', 'entry-201']);
+    await page.getByLabel('Year', { exact: true }).selectOption('2024');
+    await page.getByLabel('Month', { exact: true }).selectOption('2024-05');
+    await page.getByRole('button', { name: 'Go', exact: true }).click();
+
+    // The API takes no `sort` there and would refuse it (`property sort should not exist`)
+    await expect(page.locator('#entry-202')).toHaveClass(/highlight-entry/);
+    expect(firstRequests.at(-1)?.get('search')).toBe('morning');
+    expect(firstRequests.at(-1)?.has('sort')).toBe(false);
+  });
+
   test('explains the search in French', async ({ page }) => {
     await setupMockApp(page, { startAuthenticated: true, config: { language: 'fr' }, initialEntries: searchEntries });
     await page.goto('/journal?diary=all');

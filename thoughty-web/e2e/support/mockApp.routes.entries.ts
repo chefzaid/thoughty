@@ -44,7 +44,8 @@ export function getFilteredEntries(
   const date = searchParams.get('date') || '';
   const visibility = searchParams.get('visibility') || '';
   const favorites = readQueryFlag(searchParams, 'favorites', false);
-  const archiveStatus = searchParams.get('archiveStatus') || 'active';
+  // Left out (as the web does for All), every entry matches, as `applyEntryListFilters` adds no condition
+  const archiveStatus = searchParams.get('archiveStatus') || 'all';
   const diaryId = searchParams.get('diaryId');
   const mood = searchParams.get('mood') || '';
   const eraId = searchParams.get('eraId');

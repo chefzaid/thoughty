@@ -238,6 +238,16 @@ describe('entriesService', () => {
       expect(mockAuthFetch).toHaveBeenCalledWith(expect.stringContaining('month=1'));
     });
 
+    it('leaves out the order of search results, which the API does not take here', async () => {
+      mockAuthFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ found: false, years: [], months: [] }) });
+
+      await service.navigateToFirst(2024, 5, { ...firstFilters, search: 'morning', sort: 'relevance' });
+
+      const url = new URL(String(mockAuthFetch.mock.calls[0]?.[0]), 'http://localhost');
+      expect(url.searchParams.get('search')).toBe('morning');
+      expect(url.searchParams.has('sort')).toBe(false);
+    });
+
     it('handles null month', async () => {
       mockAuthFetch.mockResolvedValue({
         ok: true,

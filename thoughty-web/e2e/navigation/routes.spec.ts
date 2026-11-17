@@ -40,6 +40,26 @@ test.describe('Route navigation', () => {
     await expect(page.getByLabel('Open entry permalink')).toHaveAttribute('href', /\/journal\?entry=7$/);
   });
 
+  test('opens an archived entry from its permalink, where the list shows every entry', async ({ page }) => {
+    await setupMockApp(page, {
+      startAuthenticated: true,
+      initialEntries: [
+        { id: 8, date: '2024-01-21', index: 1, content: 'Entry still in use', tags: [], visibility: 'private', diaryId: 1 },
+        { id: 7, date: '2024-01-20', index: 1, content: 'Archived permalink entry', tags: [], visibility: 'private', diaryId: 1, is_archived: true },
+      ],
+    });
+    const aroundRequest = page.waitForRequest((request) => new URL(request.url()).searchParams.get('around') === '7');
+
+    await page.goto('/journal?entry=7');
+
+    // A permalink resets the filters to All, which leaves archiveStatus out, as the API reads it: every entry
+    expect(new URL((await aroundRequest).url()).searchParams.has('archiveStatus')).toBe(false);
+    await expect(page.locator('#entry-7')).toHaveClass(/highlight-entry/);
+    await expect(page.getByText('Archived permalink entry')).toBeVisible();
+    await expect(page.getByText('Entry still in use')).toBeVisible();
+    await expect(page.getByRole('alert').filter({ hasText: 'Entry not found' })).toHaveCount(0);
+  });
+
   test('lands a permalink on its entry with one request around it, and no lookup', async ({ page }) => {
     await setupMockApp(page, {
       startAuthenticated: true,

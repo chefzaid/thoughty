@@ -194,9 +194,10 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     filters: EntryListQuery,
   ): Promise<NavigateToFirstResponse | null> => {
     try {
-      // A day filter has no say in which month to open
+      // A day filter has no say in which month to open, nor the order of search results (the API refuses both here)
       const params = entryListParams(filters);
       params.delete('date');
+      params.delete('sort');
       params.set('year', year.toString());
       if (month) params.set('month', month.toString());
 

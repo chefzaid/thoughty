@@ -92,17 +92,26 @@ const QUERY_BOOLEANS = ['true', 'false', '1', '0'];
 const QUERY_INTEGER = /^-?\d+$/;
 
 /**
- * Why the API would refuse this query string, or an empty list: like its `@StrictBoolean()` and `@StrictInt()`
+ * Why the API would refuse this query string, or an empty list. Like its `@StrictBoolean()` and `@StrictInt()`
  * (docs/development.md), a boolean must be sent once as true, false, 1 or 0 and a number once as whole digits.
+ * An operation that documents query parameters reads them into a DTO, whose global pipe (`forbidNonWhitelisted`)
+ * refuses any other parameter with 400 `VALIDATION_FAILED` and `property <name> should not exist`; one that
+ * documents none reads no query, so the API ignores what it is sent.
  */
 export function checkQueryParameters(method: string, pathname: string, searchParams: URLSearchParams): string[] {
   const queryTypes = findOperation(method, pathname)?.queryTypes ?? {};
-  return Object.entries(queryTypes).flatMap(([name, type]) => {
+  const readsQuery = Object.keys(queryTypes).length > 0;
+  const undocumented = readsQuery ? [...new Set(searchParams.keys())].filter((name) => !Object.hasOwn(queryTypes, name)) : [];
+  const typeProblems = Object.entries(queryTypes).flatMap(([name, type]) => {
     const values = searchParams.getAll(name);
     if (values.length === 0 || (type !== 'boolean' && type !== 'number' && type !== 'integer')) return [];
     const valid = values.length === 1 && (type === 'boolean' ? QUERY_BOOLEANS.includes(values[0]!) : QUERY_INTEGER.test(values[0]!));
     return valid ? [] : [`${method} ${pathname} sends ${name}=${values.join('&')}, which the API refuses as a ${type}`];
   });
+  return [
+    ...undocumented.map((name) => `${method} ${pathname} sends ${name}, which the API refuses: property ${name} should not exist`),
+    ...typeProblems,
+  ];
 }
 
 const JSON_BOOLEANS: readonly unknown[] = [true, false, 1, 0, 'true', 'false', '1', '0'];
