@@ -67,6 +67,7 @@ flowchart TD
 | `monthly-recap-email` | the opt-in monthly recap: its setting (`GET`/`PUT /api/monthly-recap-email`) and the delivery on the 1st of the writer's month, which counts the month just ended with `YearReviewService.loadEntries` and the year in review's tag and recorded-mood helpers, and picks one memory of that month in an earlier year with `EntriesQueryService.findMonthMemory` |
 | `time-capsules` | sealing a new entry as a time capsule (`TimeCapsuleService.createSealed`, from `POST /api/entries` with `seal`; the schedule in `time-capsule-schedule.ts` reads the writer's day and hour with the time-zone utils), opening it early (`POST /api/entries/:id/unseal`) or on time (the worker's `TimeCapsuleDeliveryService` and the capsule email), the sealed copy given back to exports and the data download (`reveal`), and the capsules opened lately that Highlights shows; `assertEntryNotSealed` guards the writes, AI and attachment reads that refuse a sealed entry |
 | `reread-reminders` | asking to reread an entry on a day (`PUT`/`DELETE /api/entries/:id/reread-reminder`, `RereadReminderService`, the day window in `reread-reminder-dates.ts`, shared with the time capsules' tomorrow-to-50-years rule) and the due reminders Highlights shows (`RereadReminderService.findDue`, read by `EntriesQueryService.getHighlights` with the writer's `today`, which On This Day and `currentDate` go by too; see [The writer's day](./development.md#the-writers-day)) |
+| `content-lock` | the PIN lock: the PIN (`ContentPinService`: bcrypt, wrong tries counted under a row lock with a growing lockout, change, reset and removal with a proof, the emailed code through `TwoFactorService`), the unlocks (`ContentUnlockService`, `content_unlocks`), `ContentUnlockMiddleware`, which reads `X-Content-Unlock` before any guard and runs the request with what it unlocks, and locking an entry or a diary (`PATCH /api/entries/:id/lock`, `PATCH /api/diaries/:id/lock`, `ContentLocksService`). The read side is `src/common/content-lock`: the request's access in an `AsyncLocalStorage` (`isContentUnlocked`, locked outside a request and in `runWithoutUnlock`), and the helpers every query uses (`readableEntrySql`, `hideLockedEntries`, `readableEntryWhere`, `isEntryWithheld`, `assertEntryUnlocked`, `423 CONTENT_LOCKED`); `toEntryResponse` withholds a locked entry itself |
 | `metrics` | Prometheus metrics (the health endpoint is `HealthController` in `AppModule`) |
 
 Cross-cutting runtime code goes in `src/common`, entities and migrations in `src/database`, and operational scripts in `thoughty-server/scripts`.
@@ -218,6 +219,12 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 |  | `TAG_RENAME_SAME_NAME` | New tag name must be different |
 |  | `TAG_NOT_FOUND` | No entries found with that tag |
 |  | `RECYCLE_BIN_ENTRIES_NOT_FOUND` | No matching entries in the recycle bin |
+| PIN lock | `CONTENT_LOCKED` | This is locked. Unlock it with your PIN. (423) |
+|  | `CONTENT_LOCKED_PRIVATE` | Locked diaries and entries stay private |
+|  | `CONTENT_PIN_NOT_SET` | Set a PIN in your profile first |
+|  | `CONTENT_PIN_INCORRECT` | Wrong PIN |
+|  | `CONTENT_PIN_BLOCKED` | Too many wrong PINs. Try again later. |
+|  | `CONTENT_PIN_PROOF_REQUIRED` | Enter your current PIN or your account password |
 | Diaries and settings | `DIARY_NOT_FOUND` | Diary not found |
 |  | `DIARY_NAME_TAKEN` | A diary with this name already exists |
 |  | `DIARY_DEFAULT_NOT_DELETABLE` | Cannot delete the default diary |
@@ -299,6 +306,7 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 
 - `entries` owns entry lifecycle rules; other modules call its services. `diaries` owns the default diary and moving entries off a deleted diary.
 - Deleting an entry only sets `deleted_at`; `recycle-bin` owns restoring and purging. Queries that bypass TypeORM's entity filtering (raw SQL, `update`, `delete`) must add `deleted_at IS NULL` themselves.
+- A query that reads entry text, tags, mood, mentions or files for a writer leaves their locked entries out unless the request is unlocked (`readableEntrySql(userId)` and its siblings in `src/common/content-lock`), or refuses a locked entry with `assertEntryUnlocked`; a new read path adds one, and its route joins the gated routes of the `content-lock` contract suite.
 - `attachments` owns object-storage keys and file validation. Original filenames are never storage keys.
 - `config` owns preferences and encrypted integration settings. `cloud-sync` owns job status, locking, retries, and provider sync state.
 - `memoir` owns the question catalogue and which entry answers which question. Answers are created through the `entries` service, so entry rules still apply.

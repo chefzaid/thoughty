@@ -186,6 +186,16 @@ Migration `1788134400000-case-insensitive-usernames` resolved what databases hel
 
 `diaries.default_template_id` (migration `1787961600000-diary-default-templates`) names the entry template the composer starts from in that diary, or is null. Templates are not database rows: the built-in ones live in the web app (`builtin-gratitude`, …) and the writer's own in the `entryTemplates` setting (`custom-<timestamp>`), so the column holds only the ID, which `chk_diaries_default_template_id` and `DIARY_TEMPLATE_ID_PATTERN` keep to 1 to 100 letters, digits, `_` and `-` (`400 VALIDATION_FAILED` otherwise). An ID that no longer resolves, a custom template deleted since, is ignored by the composer and kept until the writer picks another. On `PUT /api/diaries/:id`, leaving `defaultTemplateId` out keeps it and `null` removes it; it goes with the diary and is part of the data download.
 
+## PIN Lock
+
+Migration `1788307200000-content-locks` adds the PIN lock ([security](./security.md), "PIN lock"):
+
+- `content_pins`: one row per writer who set a PIN (`user_id` primary key, cascading with the account): `pin_hash` (bcrypt), `failed_attempts` (wrong tries in a row, `chk_content_pins_failed_attempts`), `blocked_until` (no PIN accepted before then), `updated_at`.
+- `content_unlocks`: the live unlocks, each a token's SHA-256 (`token_hash`, unique, `chk_content_unlocks_token_hash`) and `expires_at`, moved 15 minutes on by every request carrying it; a writer's ended unlocks are cleared when the next is made, and every unlock goes when the PIN changes or is removed.
+- `diaries.is_locked` and `entries.is_locked`: the writer's own locks. An entry is locked when it or its diary is. So that every query can tell from the entry row alone, `entries.diary_locked` copies its diary's flag: the `trg_entries_copy_diary_lock` trigger sets it on every insert and on every change of `diary_id`, and `trg_diaries_lock_entries` follows a diary's flag to its entries, so no create, import, move or restore path can leave it out of step (the application never writes it, `insert: false, update: false`). The same entry trigger keeps a locked entry `private`. Queries test `lockedEntrySql()` (`is_locked OR diary_locked`) through the helpers of `common/content-lock`.
+
+Removing the PIN clears every lock. Locks are part of the data download (`isLocked` on diaries and entries).
+
 ## Diary Writing Goals
 
 A diary can carry one optional writing goal in `goal_type` (`entries_per_week` or `words_per_day`) and `goal_target`. The `chk_diaries_goal` constraint keeps them set together or both null, with 1 to 50 entries a week or 10 to 10,000 words a day; `DIARY_GOAL_LIMITS` and the `IsDiaryGoalTarget` validator hold the same bounds for the API, which answers `400 VALIDATION_FAILED` outside them. On `PUT /api/diaries/:id`, leaving `goalType` out keeps the goal and `null` removes it.
