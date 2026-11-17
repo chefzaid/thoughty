@@ -8,6 +8,7 @@ import { ConfigService } from '@/modules/config';
 import { resolveEmailLanguage } from '@/modules/opt-in-email/opt-in-email-layout';
 import { buildTimeCapsuleEmail } from './time-capsule-email-content';
 import { TimeCapsuleService } from './time-capsules.service';
+import { isEntryLocked } from '@/common/content-lock';
 
 const DELIVERY_BATCH_SIZE = 50;
 
@@ -79,7 +80,8 @@ export class TimeCapsuleDeliveryService {
       for (const row of due) {
         const capsule = await manager.getRepository(TimeCapsule).findOneByOrFail({ id: row.id });
         const entry = await this.timeCapsuleService.openCapsule(manager, capsule, now);
-        if (canSend && row.email && row.email_verified) {
+        // A locked entry opens without an email: its text never leaves behind the PIN
+        if (canSend && row.email && row.email_verified && !isEntryLocked(entry)) {
           opened.push({ capsule, entry, email: row.email });
         }
       }

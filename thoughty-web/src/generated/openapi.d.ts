@@ -2527,6 +2527,124 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/content-lock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether a PIN is set, anything is locked, and this request is unlocked */
+        get: operations["ContentLockController_status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/content-lock/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set or change the PIN
+         * @description Four digits. A first PIN needs nothing more; changing it needs the current PIN or, if it is forgotten, the account password (and the emailed code when two-factor authentication is on). Ends every unlock.
+         */
+        put: operations["ContentLockController_setPin"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/content-lock/pin/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remove the PIN and every lock
+         * @description Needs the same proof as changing it. Every diary and entry is unlocked for good.
+         */
+        post: operations["ContentLockController_removePin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/content-lock/unlock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unlock locked diaries and entries with the PIN
+         * @description Five wrong PINs in a row block tries for a minute, and each further wrong one doubles the wait (up to a day). The unlock covers all of the account’s locked content until 15 minutes pass without a request carrying it.
+         */
+        post: operations["ContentLockController_unlock"];
+        /** Lock again: end the unlock this request carries */
+        delete: operations["ContentLockController_lock"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/entries/{id}/lock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Lock or unlock an entry
+         * @description Locking hides it behind the writer’s PIN on this account (an access gate, not encryption) and makes it private: its public entries leave the feed and its share links stop opening until the lock is lifted. Lifting the lock needs an unlocked request.
+         */
+        patch: operations["EntryLockController_setLocked"];
+        trace?: never;
+    };
+    "/api/diaries/{id}/lock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Lock or unlock a diary and every entry in it
+         * @description Locking hides it behind the writer’s PIN on this account (an access gate, not encryption) and makes it private: its public entries leave the feed and its share links stop opening until the lock is lifted. Lifting the lock needs an unlocked request.
+         */
+        patch: operations["DiaryLockController_setLocked"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2905,6 +3023,9 @@ export interface components {
          *       "created_at": "2026-06-24T10:00:00.000Z",
          *       "sealed_until": null,
          *       "reread_on": null,
+         *       "is_locked": false,
+         *       "diary_locked": false,
+         *       "withheld": false,
          *       "search_matches": [
          *         "morning run",
          *         "swimming"
@@ -2964,6 +3085,21 @@ export interface components {
              */
             reread_on: string | null;
             /**
+             * @description Whether the writer locked this entry behind their PIN
+             * @example false
+             */
+            is_locked: boolean;
+            /**
+             * @description Whether the entry's diary is locked behind the writer's PIN, which locks the entry too
+             * @example false
+             */
+            diary_locked: boolean;
+            /**
+             * @description Whether the entry is locked and this request carries no unlock: its text is then empty and its tags, mood, feelings and attachments are left out; its date, title, diary and flags stay.
+             * @example false
+             */
+            withheld: boolean;
+            /**
              * @description With a search: the words and phrases of this entry's title and text that match it, as written, longest first, for highlighting. Empty when only a tag matched.
              * @example [
              *       "morning run",
@@ -3015,6 +3151,9 @@ export interface components {
          *           "created_at": "2026-06-24T10:00:00.000Z",
          *           "sealed_until": null,
          *           "reread_on": null,
+         *           "is_locked": false,
+         *           "diary_locked": false,
+         *           "withheld": false,
          *           "search_matches": [
          *             "morning run",
          *             "swimming"
@@ -3074,7 +3213,8 @@ export interface components {
          *       "title": "Morning walk by the river",
          *       "snippet": "A slow walk along the river before work…",
          *       "mood": 4,
-         *       "sealed": false
+         *       "sealed": false,
+         *       "withheld": false
          *     }
          */
         EntryCalendarItemDto: {
@@ -3112,6 +3252,11 @@ export interface components {
              * @example false
              */
             sealed: boolean;
+            /**
+             * @description Whether the entry is locked behind the PIN and this request is not unlocked: no snippet or mood then
+             * @example false
+             */
+            withheld: boolean;
         };
         /**
          * @example {
@@ -3126,7 +3271,8 @@ export interface components {
          *           "title": "Morning walk by the river",
          *           "snippet": "A slow walk along the river before work…",
          *           "mood": 4,
-         *           "sealed": false
+         *           "sealed": false,
+         *           "withheld": false
          *         }
          *       ]
          *     }
@@ -3321,6 +3467,9 @@ export interface components {
          *         "created_at": "2026-06-24T10:00:00.000Z",
          *         "sealed_until": null,
          *         "reread_on": null,
+         *         "is_locked": false,
+         *         "diary_locked": false,
+         *         "withheld": false,
          *         "search_matches": [
          *           "morning run",
          *           "swimming"
@@ -3417,6 +3566,9 @@ export interface components {
          *         "created_at": "2026-06-24T10:00:00.000Z",
          *         "sealed_until": null,
          *         "reread_on": null,
+         *         "is_locked": false,
+         *         "diary_locked": false,
+         *         "withheld": false,
          *         "search_matches": [
          *           "morning run",
          *           "swimming"
@@ -3489,6 +3641,9 @@ export interface components {
          *         "created_at": "2026-06-24T10:00:00.000Z",
          *         "sealed_until": null,
          *         "reread_on": null,
+         *         "is_locked": false,
+         *         "diary_locked": false,
+         *         "withheld": false,
          *         "search_matches": [
          *           "morning run",
          *           "swimming"
@@ -3599,6 +3754,9 @@ export interface components {
          *         "created_at": "2026-06-24T10:00:00.000Z",
          *         "sealed_until": null,
          *         "reread_on": null,
+         *         "is_locked": false,
+         *         "diary_locked": false,
+         *         "withheld": false,
          *         "search_matches": [
          *           "morning run",
          *           "swimming"
@@ -3667,6 +3825,9 @@ export interface components {
          *         "created_at": "2026-06-24T10:00:00.000Z",
          *         "sealed_until": null,
          *         "reread_on": null,
+         *         "is_locked": false,
+         *         "diary_locked": false,
+         *         "withheld": false,
          *         "search_matches": [
          *           "morning run",
          *           "swimming"
@@ -3722,6 +3883,9 @@ export interface components {
          *             "created_at": "2026-06-24T10:00:00.000Z",
          *             "sealed_until": null,
          *             "reread_on": null,
+         *             "is_locked": false,
+         *             "diary_locked": false,
+         *             "withheld": false,
          *             "search_matches": [
          *               "morning run",
          *               "swimming"
@@ -3773,6 +3937,9 @@ export interface components {
          *           "created_at": "2026-06-24T10:00:00.000Z",
          *           "sealed_until": null,
          *           "reread_on": null,
+         *           "is_locked": false,
+         *           "diary_locked": false,
+         *           "withheld": false,
          *           "search_matches": [
          *             "morning run",
          *             "swimming"
@@ -3831,6 +3998,9 @@ export interface components {
          *             "created_at": "2026-06-24T10:00:00.000Z",
          *             "sealed_until": null,
          *             "reread_on": null,
+         *             "is_locked": false,
+         *             "diary_locked": false,
+         *             "withheld": false,
          *             "search_matches": [
          *               "morning run",
          *               "swimming"
@@ -4226,6 +4396,9 @@ export interface components {
          *         "created_at": "2026-06-24T10:00:00.000Z",
          *         "sealed_until": null,
          *         "reread_on": null,
+         *         "is_locked": false,
+         *         "diary_locked": false,
+         *         "withheld": false,
          *         "search_matches": [
          *           "morning run",
          *           "swimming"
@@ -5158,6 +5331,7 @@ export interface components {
          *       "goalType": "entries_per_week",
          *       "goalTarget": 3,
          *       "defaultTemplateId": "builtin-gratitude",
+         *       "isLocked": false,
          *       "createdAt": "2026-06-24T10:00:00.000Z"
          *     }
          */
@@ -5187,6 +5361,11 @@ export interface components {
              * @example builtin-gratitude
              */
             defaultTemplateId: string | null;
+            /**
+             * @description Whether the diary is locked behind the writer’s PIN, with every entry in it
+             * @example false
+             */
+            isLocked: boolean;
             /** Format: date-time */
             createdAt: string;
         };
@@ -8937,6 +9116,7 @@ export interface components {
          *       "diaryColor": "#2A9D8F",
          *       "attachmentCount": 1,
          *       "sealedUntil": null,
+         *       "withheld": false,
          *       "deletedAt": "2026-10-22T08:30:00.000Z",
          *       "purgeAt": "2026-11-21T08:30:00.000Z"
          *     }
@@ -8992,6 +9172,11 @@ export interface components {
              */
             sealedUntil: string | null;
             /**
+             * @description Whether the entry is locked behind the PIN and this request is not unlocked: no text or tags then
+             * @example false
+             */
+            withheld: boolean;
+            /**
              * Format: date-time
              * @example 2026-10-22T08:30:00.000Z
              */
@@ -9022,6 +9207,7 @@ export interface components {
          *           "diaryColor": "#2A9D8F",
          *           "attachmentCount": 1,
          *           "sealedUntil": null,
+         *           "withheld": false,
          *           "deletedAt": "2026-10-22T08:30:00.000Z",
          *           "purgeAt": "2026-11-21T08:30:00.000Z"
          *         }
@@ -9907,11 +10093,140 @@ export interface components {
             success: boolean;
         };
         /**
+         * @example {
+         *       "success": true
+         *     }
+         */
+        ContentPinChangedDto: {
+            /** @example true */
+            success: boolean;
+        };
+        /**
+         * @example {
+         *       "pinSet": true,
+         *       "hasLockedContent": true,
+         *       "unlocked": true,
+         *       "unlockExpiresAt": "2026-06-24T10:00:00.000Z",
+         *       "attemptsLeft": 5,
+         *       "blockedUntil": "2026-06-24T10:00:00.000Z"
+         *     }
+         */
+        ContentLockStatusDto: {
+            /** @description Whether the writer has set a PIN */
+            pinSet: boolean;
+            /** @description Whether any of their diaries or entries is locked */
+            hasLockedContent: boolean;
+            /** @description Whether this request carries a valid unlock */
+            unlocked: boolean;
+            /**
+             * Format: date-time
+             * @description When that unlock ends without further activity
+             */
+            unlockExpiresAt: string | null;
+            /**
+             * @description Wrong PINs that may still be tried before tries are blocked for a while
+             * @example 5
+             */
+            attemptsLeft: number;
+            /**
+             * Format: date-time
+             * @description Until when no PIN is accepted after too many wrong ones
+             */
+            blockedUntil: string | null;
+        };
+        /**
+         * @example {
+         *       "currentPin": "1234",
+         *       "password": "Password123!",
+         *       "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+         *       "code": "123456",
+         *       "pin": "2468"
+         *     }
+         */
+        SetContentPinDto: {
+            /**
+             * @description The current PIN
+             * @example 1234
+             */
+            currentPin?: string;
+            /** @description The account password, for a forgotten PIN */
+            password?: string;
+            /** @description The challenge an earlier try answered with, when an emailed code is needed */
+            challengeToken?: string;
+            /**
+             * @description The emailed code of that challenge
+             * @example 123456
+             */
+            code?: string;
+            /**
+             * @description The new PIN
+             * @example 2468
+             */
+            pin: string;
+        };
+        /**
+         * @example {
+         *       "currentPin": "1234",
+         *       "password": "Password123!",
+         *       "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+         *       "code": "123456"
+         *     }
+         */
+        ContentPinProofDto: {
+            /**
+             * @description The current PIN
+             * @example 1234
+             */
+            currentPin?: string;
+            /** @description The account password, for a forgotten PIN */
+            password?: string;
+            /** @description The challenge an earlier try answered with, when an emailed code is needed */
+            challengeToken?: string;
+            /**
+             * @description The emailed code of that challenge
+             * @example 123456
+             */
+            code?: string;
+        };
+        /**
+         * @example {
+         *       "pin": "2468"
+         *     }
+         */
+        UnlockContentDto: {
+            /** @example 2468 */
+            pin: string;
+        };
+        /**
+         * @example {
+         *       "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+         *       "expiresAt": "2026-06-24T10:00:00.000Z"
+         *     }
+         */
+        ContentUnlockResponseDto: {
+            /** @description Send it as the `X-Content-Unlock` header to read locked diaries and entries. Keep it for this tab only. */
+            token: string;
+            /**
+             * Format: date-time
+             * @description When it ends without further activity (each request extends it)
+             */
+            expiresAt: string;
+        };
+        /**
+         * @example {
+         *       "locked": true
+         *     }
+         */
+        SetLockDto: {
+            /** @description Lock (true) or unlock (false); unlocking needs an unlocked request */
+            locked: boolean;
+        };
+        /**
          * @description Stable machine-readable code (docs/architecture.md, "API error codes"). Every error the API raises carries one; only an unexpected server failure (500) may come without it.
          * @example VALIDATION_FAILED
          * @enum {string}
          */
-        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "FEATURE_DISABLED" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_WEAK_PASSWORD" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "AUTH_INVALID_SIGN_UP_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "COMPOSER_DRAFT_CONFLICT" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "COMMENT_NOT_FOUND" | "FEATURE_REQUEST_NOT_FOUND";
+        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "FEATURE_DISABLED" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_WEAK_PASSWORD" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "AUTH_INVALID_SIGN_UP_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "CONTENT_LOCKED" | "CONTENT_LOCKED_PRIVATE" | "CONTENT_PIN_NOT_SET" | "CONTENT_PIN_INCORRECT" | "CONTENT_PIN_BLOCKED" | "CONTENT_PIN_PROOF_REQUIRED" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "COMPOSER_DRAFT_CONFLICT" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "COMMENT_NOT_FOUND" | "FEATURE_REQUEST_NOT_FOUND";
         /**
          * @example {
          *       "statusCode": 401,
@@ -11346,6 +11661,9 @@ export interface operations {
                      *           "created_at": "2026-06-24T10:00:00.000Z",
                      *           "sealed_until": null,
                      *           "reread_on": null,
+                     *           "is_locked": false,
+                     *           "diary_locked": false,
+                     *           "withheld": false,
                      *           "search_matches": [
                      *             "morning run",
                      *             "swimming"
@@ -11548,7 +11866,8 @@ export interface operations {
                      *           "title": "Morning walk by the river",
                      *           "snippet": "A slow walk along the river before work…",
                      *           "mood": 4,
-                     *           "sealed": false
+                     *           "sealed": false,
+                     *           "withheld": false
                      *         }
                      *       ]
                      *     }
@@ -11859,6 +12178,9 @@ export interface operations {
                      *         "created_at": "2026-06-24T10:00:00.000Z",
                      *         "sealed_until": null,
                      *         "reread_on": null,
+                     *         "is_locked": false,
+                     *         "diary_locked": false,
+                     *         "withheld": false,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -12030,6 +12352,9 @@ export interface operations {
                      *         "created_at": "2026-06-24T10:00:00.000Z",
                      *         "sealed_until": null,
                      *         "reread_on": null,
+                     *         "is_locked": false,
+                     *         "diary_locked": false,
+                     *         "withheld": false,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -12106,6 +12431,9 @@ export interface operations {
                      *         "created_at": "2026-06-24T10:00:00.000Z",
                      *         "sealed_until": null,
                      *         "reread_on": null,
+                     *         "is_locked": false,
+                     *         "diary_locked": false,
+                     *         "withheld": false,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -12161,6 +12489,9 @@ export interface operations {
                      *             "created_at": "2026-06-24T10:00:00.000Z",
                      *             "sealed_until": null,
                      *             "reread_on": null,
+                     *             "is_locked": false,
+                     *             "diary_locked": false,
+                     *             "withheld": false,
                      *             "search_matches": [
                      *               "morning run",
                      *               "swimming"
@@ -12212,6 +12543,9 @@ export interface operations {
                      *           "created_at": "2026-06-24T10:00:00.000Z",
                      *           "sealed_until": null,
                      *           "reread_on": null,
+                     *           "is_locked": false,
+                     *           "diary_locked": false,
+                     *           "withheld": false,
                      *           "search_matches": [
                      *             "morning run",
                      *             "swimming"
@@ -12270,6 +12604,9 @@ export interface operations {
                      *             "created_at": "2026-06-24T10:00:00.000Z",
                      *             "sealed_until": null,
                      *             "reread_on": null,
+                     *             "is_locked": false,
+                     *             "diary_locked": false,
+                     *             "withheld": false,
                      *             "search_matches": [
                      *               "morning run",
                      *               "swimming"
@@ -12606,6 +12943,9 @@ export interface operations {
                      *         "created_at": "2026-06-24T10:00:00.000Z",
                      *         "sealed_until": null,
                      *         "reread_on": null,
+                     *         "is_locked": false,
+                     *         "diary_locked": false,
+                     *         "withheld": false,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -12750,6 +13090,9 @@ export interface operations {
                      *         "created_at": "2026-06-24T10:00:00.000Z",
                      *         "sealed_until": null,
                      *         "reread_on": null,
+                     *         "is_locked": false,
+                     *         "diary_locked": false,
+                     *         "withheld": false,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -12873,6 +13216,9 @@ export interface operations {
                      *         "created_at": "2026-06-24T10:00:00.000Z",
                      *         "sealed_until": null,
                      *         "reread_on": null,
+                     *         "is_locked": false,
+                     *         "diary_locked": false,
+                     *         "withheld": false,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -12988,6 +13334,9 @@ export interface operations {
                      *         "created_at": "2026-06-24T10:00:00.000Z",
                      *         "sealed_until": null,
                      *         "reread_on": null,
+                     *         "is_locked": false,
+                     *         "diary_locked": false,
+                     *         "withheld": false,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -13103,6 +13452,9 @@ export interface operations {
                      *         "created_at": "2026-06-24T10:00:00.000Z",
                      *         "sealed_until": null,
                      *         "reread_on": null,
+                     *         "is_locked": false,
+                     *         "diary_locked": false,
+                     *         "withheld": false,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -13184,6 +13536,9 @@ export interface operations {
                      *         "created_at": "2026-06-24T10:00:00.000Z",
                      *         "sealed_until": null,
                      *         "reread_on": null,
+                     *         "is_locked": false,
+                     *         "diary_locked": false,
+                     *         "withheld": false,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -13265,6 +13620,9 @@ export interface operations {
                      *         "created_at": "2026-06-24T10:00:00.000Z",
                      *         "sealed_until": null,
                      *         "reread_on": null,
+                     *         "is_locked": false,
+                     *         "diary_locked": false,
+                     *         "withheld": false,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -13570,6 +13928,23 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Something is locked and the request is not unlocked with the PIN */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 423,
+                     *       "message": "Something is locked and the request is not unlocked with the PIN",
+                     *       "error": "Locked",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
             };
         };
     };
@@ -14431,6 +14806,9 @@ export interface operations {
                      *         "created_at": "2026-06-24T10:00:00.000Z",
                      *         "sealed_until": null,
                      *         "reread_on": null,
+                     *         "is_locked": false,
+                     *         "diary_locked": false,
+                     *         "withheld": false,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -14554,6 +14932,9 @@ export interface operations {
                      *         "created_at": "2026-06-24T10:00:00.000Z",
                      *         "sealed_until": null,
                      *         "reread_on": null,
+                     *         "is_locked": false,
+                     *         "diary_locked": false,
+                     *         "withheld": false,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -14629,6 +15010,7 @@ export interface operations {
                      *         "goalType": "entries_per_week",
                      *         "goalTarget": 3,
                      *         "defaultTemplateId": "builtin-gratitude",
+                     *         "isLocked": false,
                      *         "createdAt": "2026-06-24T10:00:00.000Z"
                      *       }
                      *     ]
@@ -14681,6 +15063,7 @@ export interface operations {
                      *       "goalType": "entries_per_week",
                      *       "goalTarget": 3,
                      *       "defaultTemplateId": "builtin-gratitude",
+                     *       "isLocked": false,
                      *       "createdAt": "2026-06-24T10:00:00.000Z"
                      *     }
                      */
@@ -14768,6 +15151,7 @@ export interface operations {
                      *       "goalType": "entries_per_week",
                      *       "goalTarget": 3,
                      *       "defaultTemplateId": "builtin-gratitude",
+                     *       "isLocked": false,
                      *       "createdAt": "2026-06-24T10:00:00.000Z"
                      *     }
                      */
@@ -14791,7 +15175,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description The writer already has another diary of this name, ignoring case */
+            /** @description The writer already has another diary of this name, ignoring case, or a locked diary was to be made public (`CONTENT_LOCKED_PRIVATE`) */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -14800,7 +15184,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "statusCode": 409,
-                     *       "message": "The writer already has another diary of this name, ignoring case",
+                     *       "message": "The writer already has another diary of this name, ignoring case, or a locked diary was to be made public (`CONTENT_LOCKED_PRIVATE`)",
                      *       "error": "Conflict",
                      *       "code": "CONFLICT"
                      *     }
@@ -14869,6 +15253,23 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description The diary is locked and the request is not unlocked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 423,
+                     *       "message": "The diary is locked and the request is not unlocked",
+                     *       "error": "Locked",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     DiariesController_setDefault: {
@@ -14901,6 +15302,7 @@ export interface operations {
                      *       "goalType": "entries_per_week",
                      *       "goalTarget": 3,
                      *       "defaultTemplateId": "builtin-gratitude",
+                     *       "isLocked": false,
                      *       "createdAt": "2026-06-24T10:00:00.000Z"
                      *     }
                      */
@@ -15896,6 +16298,23 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description The file’s entry is locked and the request is not unlocked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 423,
+                     *       "message": "The file’s entry is locked and the request is not unlocked",
+                     *       "error": "Locked",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     BooksController_listVersions: {
@@ -16100,6 +16519,23 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description The version holds entries locked now, and the request is not unlocked */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 423,
+                     *       "message": "The version holds entries locked now, and the request is not unlocked",
+                     *       "error": "Locked",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
             };
             /** @description FEATURE_DISABLED: the `bookConverter` feature is turned off on this server */
             503: {
@@ -19618,6 +20054,7 @@ export interface operations {
                      *           "diaryColor": "#2A9D8F",
                      *           "attachmentCount": 1,
                      *           "sealedUntil": null,
+                     *           "withheld": false,
                      *           "deletedAt": "2026-10-22T08:30:00.000Z",
                      *           "purgeAt": "2026-11-21T08:30:00.000Z"
                      *         }
@@ -20528,7 +20965,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description The entry is sealed as a time capsule */
+            /** @description The entry is sealed as a time capsule, or it (or an entry of the book) is locked */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -20537,7 +20974,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "statusCode": 409,
-                     *       "message": "The entry is sealed as a time capsule",
+                     *       "message": "The entry is sealed as a time capsule, or it (or an entry of the book) is locked",
                      *       "error": "Conflict",
                      *       "code": "CONFLICT"
                      *     }
@@ -21040,6 +21477,615 @@ export interface operations {
                      *       "message": "A newer draft was saved on another device and is kept (COMPOSER_DRAFT_CONFLICT)",
                      *       "error": "Conflict",
                      *       "code": "CONFLICT"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    ContentLockController_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The PIN lock’s state for the writer and this request */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "pinSet": true,
+                     *       "hasLockedContent": true,
+                     *       "unlocked": true,
+                     *       "unlockExpiresAt": "2026-06-24T10:00:00.000Z",
+                     *       "attemptsLeft": 5,
+                     *       "blockedUntil": "2026-06-24T10:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ContentLockStatusDto"];
+                };
+            };
+        };
+    };
+    ContentLockController_setPin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "currentPin": "1234",
+                 *       "password": "Password123!",
+                 *       "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                 *       "code": "123456",
+                 *       "pin": "2468"
+                 *     }
+                 */
+                "application/json": components["schemas"]["SetContentPinDto"];
+            };
+        };
+        responses: {
+            /** @description Done, or (with the account password, when two-factor authentication is on or the account has no password) an emailed-code challenge to send back with its code */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true,
+                     *       "twoFactorRequired": true,
+                     *       "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                     *       "expiresInSeconds": 600
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ContentPinChangedDto"] | components["schemas"]["TwoFactorChallengeResponseDto"];
+                };
+            };
+            /** @description Not four digits, or no proof (`CONTENT_PIN_PROOF_REQUIRED`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "Not four digits, or no proof (`CONTENT_PIN_PROOF_REQUIRED`)",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Wrong password or code */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 401,
+                     *       "message": "Wrong password or code",
+                     *       "error": "Unauthorized",
+                     *       "code": "UNAUTHORIZED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Wrong current PIN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 403,
+                     *       "message": "Wrong current PIN",
+                     *       "error": "Forbidden",
+                     *       "code": "FORBIDDEN"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Too many wrong PINs */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 429,
+                     *       "message": "Too many wrong PINs",
+                     *       "error": "Too Many Requests",
+                     *       "code": "RATE_LIMITED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    ContentLockController_removePin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "currentPin": "1234",
+                 *       "password": "Password123!",
+                 *       "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                 *       "code": "123456"
+                 *     }
+                 */
+                "application/json": components["schemas"]["ContentPinProofDto"];
+            };
+        };
+        responses: {
+            /** @description Done, or (with the account password, when two-factor authentication is on or the account has no password) an emailed-code challenge to send back with its code */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true,
+                     *       "twoFactorRequired": true,
+                     *       "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                     *       "expiresInSeconds": 600
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ContentPinChangedDto"] | components["schemas"]["TwoFactorChallengeResponseDto"];
+                };
+            };
+            /** @description No proof (`CONTENT_PIN_PROOF_REQUIRED`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "No proof (`CONTENT_PIN_PROOF_REQUIRED`)",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Wrong password or code */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 401,
+                     *       "message": "Wrong password or code",
+                     *       "error": "Unauthorized",
+                     *       "code": "UNAUTHORIZED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Wrong current PIN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 403,
+                     *       "message": "Wrong current PIN",
+                     *       "error": "Forbidden",
+                     *       "code": "FORBIDDEN"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description No PIN is set */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 409,
+                     *       "message": "No PIN is set",
+                     *       "error": "Conflict",
+                     *       "code": "CONFLICT"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Too many wrong PINs */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 429,
+                     *       "message": "Too many wrong PINs",
+                     *       "error": "Too Many Requests",
+                     *       "code": "RATE_LIMITED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    ContentLockController_unlock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "pin": "2468"
+                 *     }
+                 */
+                "application/json": components["schemas"]["UnlockContentDto"];
+            };
+        };
+        responses: {
+            /** @description The unlock token, to send with each request */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                     *       "expiresAt": "2026-06-24T10:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ContentUnlockResponseDto"];
+                };
+            };
+            /** @description Wrong PIN */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 403,
+                     *       "message": "Wrong PIN",
+                     *       "error": "Forbidden",
+                     *       "code": "FORBIDDEN"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description No PIN is set */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 409,
+                     *       "message": "No PIN is set",
+                     *       "error": "Conflict",
+                     *       "code": "CONFLICT"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Too many wrong PINs */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 429,
+                     *       "message": "Too many wrong PINs",
+                     *       "error": "Too Many Requests",
+                     *       "code": "RATE_LIMITED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    ContentLockController_lock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Locked again */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessResponseDto"];
+                };
+            };
+        };
+    };
+    EntryLockController_setLocked: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "locked": true
+                 *     }
+                 */
+                "application/json": components["schemas"]["SetLockDto"];
+            };
+        };
+        responses: {
+            /** @description The entry, withheld while the request is not unlocked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true,
+                     *       "entry": {
+                     *         "id": 1,
+                     *         "user_id": 1,
+                     *         "diary_id": 1,
+                     *         "date": "2026-06-24",
+                     *         "index": 1,
+                     *         "title": "Morning walk by the river",
+                     *         "time_of_day": "08:30",
+                     *         "mood": 4,
+                     *         "feelings": [
+                     *           "calm",
+                     *           "grateful"
+                     *         ],
+                     *         "tags": [
+                     *           "reflection"
+                     *         ],
+                     *         "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                     *         "format": "plain",
+                     *         "visibility": "private",
+                     *         "is_favorite": true,
+                     *         "is_archived": true,
+                     *         "is_pinned": true,
+                     *         "diary_name": "Daily Journal",
+                     *         "diary_icon": "journal",
+                     *         "diary_color": "#2A9D8F",
+                     *         "attachments": [
+                     *           {
+                     *             "id": 1,
+                     *             "original_filename": "Daily Journal",
+                     *             "stored_filename": "Daily Journal",
+                     *             "mimetype": "example",
+                     *             "size": 1,
+                     *             "poster_filename": "Daily Journal",
+                     *             "transcript": "example",
+                     *             "transcribed_at": "2026-06-24T10:00:00.000Z"
+                     *           }
+                     *         ],
+                     *         "created_at": "2026-06-24T10:00:00.000Z",
+                     *         "sealed_until": null,
+                     *         "reread_on": null,
+                     *         "is_locked": false,
+                     *         "diary_locked": false,
+                     *         "withheld": false,
+                     *         "search_matches": [
+                     *           "morning run",
+                     *           "swimming"
+                     *         ]
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["EntryMutationResponseDto"];
+                };
+            };
+            /** @description Entry not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "Entry not found",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description No PIN is set yet (`CONTENT_PIN_NOT_SET`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 409,
+                     *       "message": "No PIN is set yet (`CONTENT_PIN_NOT_SET`)",
+                     *       "error": "Conflict",
+                     *       "code": "CONFLICT"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Lifting the lock needs an unlocked request */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 423,
+                     *       "message": "Lifting the lock needs an unlocked request",
+                     *       "error": "Locked",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    DiaryLockController_setLocked: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "locked": true
+                 *     }
+                 */
+                "application/json": components["schemas"]["SetLockDto"];
+            };
+        };
+        responses: {
+            /** @description The diary */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": 1,
+                     *       "userId": 1,
+                     *       "name": "Daily Journal",
+                     *       "icon": "journal",
+                     *       "color": "#2A9D8F",
+                     *       "visibility": "private",
+                     *       "isDefault": true,
+                     *       "position": 1,
+                     *       "goalType": "entries_per_week",
+                     *       "goalTarget": 3,
+                     *       "defaultTemplateId": "builtin-gratitude",
+                     *       "isLocked": false,
+                     *       "createdAt": "2026-06-24T10:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["DiaryResponseDto"];
+                };
+            };
+            /** @description Diary not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "Diary not found",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description No PIN is set yet (`CONTENT_PIN_NOT_SET`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 409,
+                     *       "message": "No PIN is set yet (`CONTENT_PIN_NOT_SET`)",
+                     *       "error": "Conflict",
+                     *       "code": "CONFLICT"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Lifting the lock needs an unlocked request */
+            423: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 423,
+                     *       "message": "Lifting the lock needs an unlocked request",
+                     *       "error": "Locked",
+                     *       "code": "VALIDATION_FAILED"
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];

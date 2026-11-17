@@ -13,6 +13,7 @@ import type {
   ApplyJournalRetagResponseDto,
   JournalRetagPlanResponseDto,
 } from './dto/journal-retag.dto';
+import { readableEntryWhere } from '@/common/content-lock';
 
 const MAX_ANALYZED_ENTRIES = 300;
 
@@ -29,7 +30,7 @@ export class AiJournalRetagService {
 
   async createPlan(userId: number): Promise<JournalRetagPlanResponseDto> {
     const [foundEntries, totalEntries] = await this.entryRepository.findAndCount({
-      where: { userId },
+      where: { userId, ...readableEntryWhere(userId) },
       select: { id: true, date: true, index: true, content: true, tags: true },
       order: { date: 'DESC', index: 'ASC' },
       take: MAX_ANALYZED_ENTRIES,
@@ -92,7 +93,7 @@ export class AiJournalRetagService {
     }
 
     const entries = await this.entryRepository.find({
-      where: { userId, id: In([...uniqueAssignments.keys()]) },
+      where: { userId, id: In([...uniqueAssignments.keys()]), ...readableEntryWhere(userId) },
     });
     if (entries.length !== uniqueAssignments.size) {
       throw apiError(BadRequestException, 'ENTRIES_NOT_FOUND', 'One or more entries are unavailable');

@@ -42,7 +42,7 @@ export class ShareLinksController {
   @ApiResponse({ status: 201, description: 'Link made', type: CreatedShareLinkResponseDto })
   @ApiResponse({ status: 400, description: 'Invalid expiry or options, or the share link limit is reached' })
   @ApiResponse({ status: 404, description: 'Entry or book version not found' })
-  @ApiResponse({ status: 409, description: 'The entry is sealed as a time capsule' })
+  @ApiResponse({ status: 409, description: 'The entry is sealed as a time capsule, or it (or an entry of the book) is locked' })
   async create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateShareLinkDto,

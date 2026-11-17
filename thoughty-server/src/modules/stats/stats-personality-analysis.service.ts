@@ -10,6 +10,7 @@ import {
   type WritingProfile,
   type WritingProfileItem,
 } from '@/modules/ai';
+import { readableEntrySql } from '@/common/content-lock';
 
 export interface PersonalityAnalysisOptions {
   diaryId?: number;
@@ -172,6 +173,7 @@ export class StatsPersonalityAnalysisService {
         .createQueryBuilder('e')
         .select(['e.id', 'e.content', 'e.tags', 'e.date'])
         .where('e.user_id = :userId', { userId })
+        .andWhere(readableEntrySql(userId))
         .andWhere('e.id > :lastEntryId', { lastEntryId })
         .orderBy('e.id', 'ASC')
         .take(PAGE_SIZE);

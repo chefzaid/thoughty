@@ -1,6 +1,7 @@
 import { sortEntries, type MockAppState, type MockTrashedEntry } from './mockApp.shared';
 import { fulfillApiError, fulfillJson, type RouteContext } from './mockApp.route-utils';
 import { isMockSealed } from './mockApp.routes.time-capsules';
+import { isMockWithheld } from './mockApp.content-lock';
 
 const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -11,9 +12,10 @@ function toTrashedEntryResponse(entry: MockTrashedEntry, state: MockAppState) {
     date: entry.date,
     title: isMockSealed(entry) ? null : (entry.title ?? null),
     timeOfDay: entry.time_of_day ?? null,
-    content: isMockSealed(entry) ? '' : entry.content,
+    content: isMockSealed(entry) || isMockWithheld(entry, state) ? '' : entry.content,
     format: entry.format ?? 'plain',
-    tags: isMockSealed(entry) ? [] : entry.tags,
+    tags: isMockSealed(entry) || isMockWithheld(entry, state) ? [] : entry.tags,
+    withheld: isMockWithheld(entry, state),
     diaryId: diary ? diary.id : null,
     diaryName: diary?.name ?? null,
     diaryIcon: diary?.icon ?? null,

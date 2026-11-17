@@ -28,3 +28,5 @@ export * from './time-capsule.entity';
 export * from './share-link.entity';
 export * from './composer-draft.entity';
 export * from './sign-up-request.entity';
+export * from './content-pin.entity';
+export * from './content-unlock.entity';

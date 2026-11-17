@@ -19,6 +19,7 @@ import type {
   SyncFrequency,
 } from './dto';
 import { checkCloudCancellation, verifyCloudOwnership } from './providers/cloud-operation';
+import { runWithoutUnlock } from '@/common/content-lock';
 
 const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
 
@@ -214,7 +215,10 @@ export class CloudSyncService {
     today?: string,
   ): Promise<CloudFileInfo> {
     const accessToken = await this.getValidAccessToken(userId, provider);
-    const { content, filename, contentType } = await this.ioService.export(userId, diaryId, includeVisibility, format, writersDayOr(today));
+    // A copy in the cloud never holds locked diaries or entries, even from an unlocked request
+    const { content, filename, contentType } = await runWithoutUnlock(() =>
+      this.ioService.export(userId, diaryId, includeVisibility, format, writersDayOr(today)),
+    );
     return this.providers[provider].uploadFile(accessToken, filename, String(content), contentType);
   }
 
@@ -356,7 +360,9 @@ export class CloudSyncService {
     const lastHash = lastHashSetting?.value || '';
 
     // Generate export content (text formats only, per the schedule DTO)
-    const exported = await this.ioService.export(userId, diaryId, includeVisibility, format, today ?? this.scheduledDay(timeZoneSetting?.value));
+    const exported = await runWithoutUnlock(() =>
+      this.ioService.export(userId, diaryId, includeVisibility, format, today ?? this.scheduledDay(timeZoneSetting?.value)),
+    );
     await verifyCloudOwnership();
     const { filename, contentType } = exported;
     const content = String(exported.content);

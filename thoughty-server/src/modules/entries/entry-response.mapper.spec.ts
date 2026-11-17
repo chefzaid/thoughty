@@ -1,5 +1,6 @@
 import type { Attachment, Diary, Entry } from '@/database/entities';
 import { toEntryResponse } from './entry-response.mapper';
+import { asUnlocked } from '@/common/content-lock/content-lock.test-helpers';
 
 const entity = (fields: Partial<Entry> = {}) =>
   ({
@@ -51,6 +52,9 @@ describe('toEntryResponse', () => {
       created_at: new Date('2026-10-21T08:30:00Z'),
       sealed_until: null,
       reread_on: '2026-11-21',
+      is_locked: false,
+      diary_locked: false,
+      withheld: false,
     });
   });
 
@@ -109,5 +113,27 @@ describe('toEntryResponse', () => {
         transcribed_at: undefined,
       },
     ]);
+  });
+
+  it('withholds a locked entry’s text, tags, mood, feelings and files, keeping its title, unless unlocked', () => {
+    const attachment = { id: 5, originalFilename: 'harbor.jpg', storedFilename: 'abc.jpg', mimetype: 'image/jpeg', size: 1 } as Attachment;
+    for (const locks of [{ isLocked: true }, { diaryLocked: true }]) {
+      expect(toEntryResponse(entity({ ...locks, attachments: [attachment] }))).toMatchObject({
+        title: 'Harbor',
+        content: '',
+        tags: [],
+        mood: null,
+        feelings: [],
+        attachments: [],
+        is_locked: Boolean(locks.isLocked),
+        diary_locked: Boolean(locks.diaryLocked),
+        withheld: true,
+      });
+    }
+
+    const unlocked = asUnlocked(3, () => toEntryResponse(entity({ isLocked: true })));
+    expect(unlocked).toMatchObject({ content: 'Walked by the harbor.', tags: ['walks'], is_locked: true, withheld: false });
+    // Another writer's unlock opens nothing of this writer's
+    expect(asUnlocked(4, () => toEntryResponse(entity({ isLocked: true })))).toMatchObject({ content: '', withheld: true });
   });
 });

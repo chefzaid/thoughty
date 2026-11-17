@@ -91,6 +91,9 @@ export class TrashedEntryDto {
   })
   sealedUntil!: string | null;
 
+  @ApiProperty({ description: 'Whether the entry is locked behind the PIN and this request is not unlocked: no text or tags then', example: false })
+  withheld!: boolean;
+
   @ApiProperty({ example: '2026-10-22T08:30:00.000Z', format: 'date-time' })
   deletedAt!: string;
 

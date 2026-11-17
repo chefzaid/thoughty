@@ -36,6 +36,7 @@ const trashed = (overrides: Partial<TrashedEntry> = {}): TrashedEntry => ({
   diaryColor: '#2A9D8F',
   attachmentCount: 2,
   sealedUntil: null,
+  withheld: false,
   deletedAt: new Date().toISOString(),
   purgeAt: new Date(Date.now() + 29.5 * 24 * 60 * 60 * 1000).toISOString(),
   ...overrides,

@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Entry } from '@/database/entities';
 import type { StatsWritingTimesDto } from './dto';
 import { ENTRY_LOCAL_HOUR_SQL, ENTRY_LOCAL_WEEKDAY_SQL } from './stats-sql';
+import { readableEntrySql } from '@/common/content-lock';
 
 /**
  * When the writer writes: their entries by hour of the day and by weekday, in their time zone (a typed
@@ -24,6 +25,7 @@ export class StatsWritingTimesService {
       .addSelect(ENTRY_LOCAL_WEEKDAY_SQL, 'weekday')
       .addSelect('COUNT(*)', 'entries')
       .where('e.user_id = :userId', { userId })
+      .andWhere(readableEntrySql(userId))
       .setParameter('timeZone', timeZone)
       .groupBy('hour')
       .addGroupBy('weekday');

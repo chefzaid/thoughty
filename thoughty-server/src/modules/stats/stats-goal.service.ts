@@ -5,6 +5,7 @@ import { Diary, Entry } from '@/database/entities';
 import { measureDiaryGoal, type DayWriting } from './diary-goal-progress';
 import type { DiaryGoalProgressDto } from './dto';
 import { ENTRY_WORDS_SQL } from './stats-sql';
+import { readableEntrySql } from '@/common/content-lock';
 
 interface DayRow {
   diaryId: number | string;
@@ -38,6 +39,7 @@ export class StatsGoalService {
       .addSelect('COUNT(*)', 'entries')
       .addSelect(`COALESCE(SUM(${ENTRY_WORDS_SQL}), 0)`, 'words')
       .where('e.user_id = :userId', { userId })
+      .andWhere(readableEntrySql(userId))
       .andWhere('e.diary_id IN (:...diaryIds)', { diaryIds: diaries.map((diary) => diary.id) })
       .andWhere('e.date <= :today', { today })
       .groupBy('e.diary_id')

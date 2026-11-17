@@ -34,6 +34,7 @@ import {
   maxSizeFor,
   storedKeysOf,
 } from './attachment-media';
+import { assertEntryUnlocked } from '@/common/content-lock';
 
 /** A stored file its owner may read: an attachment's file or a video's poster frame. */
 export type OwnedAttachmentFile = StoredAttachmentFile;
@@ -228,7 +229,7 @@ export class AttachmentsService implements OnModuleInit {
    * A stored file for the user who owns its attachment: the attachment's own file, or the poster
    * frame of their video. Attachments are never shown in the public feed, so nobody else may read
    * them here (a private share link serves its one entry's files on a route of its own); a key that is not the caller's answers as missing, as does a file of a sealed time capsule
-   * until the capsule opens. The type comes from the attachment row (limited to the upload
+   * until the capsule opens, and one of a locked entry is refused (423) unless the request is unlocked. The type comes from the attachment row (limited to the upload
    * allowlist), not from storage; a poster frame is always a JPEG.
    */
   async findOwnedFile(userId: number, key: string): Promise<OwnedAttachmentFile> {
@@ -242,6 +243,9 @@ export class AttachmentsService implements OnModuleInit {
     });
     if (!attachment || attachment.entry?.sealedUntil) {
       throw apiError(NotFoundException, 'ATTACHMENT_FILE_NOT_FOUND');
+    }
+    if (attachment.entry) {
+      assertEntryUnlocked(attachment.entry);
     }
     return describeStoredFile(attachment, key);
   }
@@ -258,7 +262,7 @@ export class AttachmentsService implements OnModuleInit {
     return { stream: result.Body as Readable, contentLength: result.ContentLength };
   }
 
-  /** One of the writer's attachments, to work on; one of a sealed time capsule is refused until the capsule opens. */
+  /** One of the writer's attachments, to work on; one of a sealed time capsule is refused until the capsule opens, one of a locked entry until the request is unlocked. */
   async getOwnedAttachment(userId: number, attachmentId: number): Promise<Attachment> {
     const attachment = await this.attachmentRepository.findOne({
       where: { id: attachmentId, userId },
@@ -270,6 +274,7 @@ export class AttachmentsService implements OnModuleInit {
     }
     if (attachment.entry) {
       assertEntryNotSealed(attachment.entry);
+      assertEntryUnlocked(attachment.entry);
     }
     return attachment;
   }

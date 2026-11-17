@@ -2,6 +2,7 @@ import { getFilteredEntries } from './mockApp.routes.entries';
 import { isMockSealed } from './mockApp.routes.time-capsules';
 import { fulfillApiError, fulfillJson, type RouteContext } from './mockApp.route-utils';
 import { sortEntries } from './mockApp.shared';
+import { isMockWithheld } from './mockApp.content-lock';
 
 /** The start of an entry as plain words, roughly as the API cuts its snippets. */
 function mockSnippet(content: string): string {
@@ -36,9 +37,10 @@ export async function handleCalendarRoutes({ route, request, pathname, searchPar
       index: entry.index,
       time_of_day: entry.time_of_day ?? null,
       title: isMockSealed(entry) ? null : (entry.title ?? null),
-      snippet: isMockSealed(entry) ? '' : mockSnippet(entry.content),
-      mood: isMockSealed(entry) ? null : (entry.mood ?? null),
+      snippet: isMockSealed(entry) || isMockWithheld(entry, state) ? '' : mockSnippet(entry.content),
+      mood: isMockSealed(entry) || isMockWithheld(entry, state) ? null : (entry.mood ?? null),
       sealed: isMockSealed(entry),
+      withheld: isMockWithheld(entry, state),
     })),
   });
   return true;

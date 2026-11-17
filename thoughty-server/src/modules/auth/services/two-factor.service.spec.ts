@@ -188,6 +188,20 @@ describe('TwoFactorService', () => {
     ).rejects.toThrow('Invalid or expired two-factor challenge.');
   });
 
+  it('confirms a PIN change by email for any verified account, a passwordless one included', async () => {
+    const user = createUser({ authProvider: 'google', passwordHash: null });
+    const result = await service.startContentPinChallenge(user);
+    const code = emailService.sendTwoFactorCodeEmail.mock.calls[0][1] as string;
+    expect(user.twoFactorChallengePurpose).toBe('content-pin');
+    userRepository.findOne.mockImplementation(({ where }: any) =>
+      Promise.resolve(where.id === user.id && where.twoFactorChallengePurpose === 'content-pin' ? user : null),
+    );
+
+    await expect(service.consumeContentPinChallenge(user.id + 1, { challengeToken: result.challengeToken, code })).rejects.toThrow(UnauthorizedException);
+    await expect(service.consumeContentPinChallenge(user.id, { challengeToken: result.challengeToken, code })).resolves.toBeUndefined();
+    await expect(service.startContentPinChallenge(createUser({ emailVerified: false }))).rejects.toThrow('Verify your email');
+  });
+
   it('requires the current password to disable two-factor authentication', async () => {
     const user = createUser({ twoFactorEnabled: true });
     userRepository.findOne.mockResolvedValue(user);

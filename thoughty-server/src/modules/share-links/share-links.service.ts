@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThan, Repository, type EntityManager } from 'typeorm';
 import { apiError } from '@/common/errors';
@@ -15,6 +15,8 @@ import {
   type ShareLinkKind,
 } from './dto';
 import { createShareToken, hashShareToken } from './share-link-token';
+import { isEntryLocked } from '@/common/content-lock';
+import { bookVersionHoldsLockedEntries } from '@/modules/books/book-version-locks';
 
 /** Namespace of the advisory lock that serializes one writer's new links, so the limit holds under concurrent requests. */
 const SHARE_LINK_LOCK_NAMESPACE = 'share_links';
@@ -121,15 +123,26 @@ export class ShareLinksService {
     return expiresAt;
   }
 
-  /** A sealed time capsule cannot be shared until it opens; neither can an entry in the recycle bin (it is not found). */
+  /**
+   * A sealed time capsule cannot be shared until it opens; neither can an entry in the recycle bin (it is
+   * not found). A locked entry, or a book version holding one, stays private (409 CONTENT_LOCKED_PRIVATE).
+   */
   private async assertShareable(manager: EntityManager, userId: number, kind: ShareLinkKind, targetId: number): Promise<void> {
     if (kind === 'entry') {
-      const entry = await manager.getRepository(Entry).findOne({ select: { id: true, sealedUntil: true }, where: { id: targetId, userId } });
+      const entry = await manager.getRepository(Entry).findOne({
+        select: { id: true, sealedUntil: true, isLocked: true, diaryLocked: true },
+        where: { id: targetId, userId },
+      });
       if (!entry) throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
       assertEntryNotSealed(entry);
+      if (isEntryLocked(entry)) throw apiError(ConflictException, 'CONTENT_LOCKED_PRIVATE');
       return;
     }
     await this.assertOwnTarget(manager, userId, kind, targetId);
+    const version = await manager.getRepository(BookVersion).findOne({ select: { id: true, manifest: true }, where: { id: targetId, userId } });
+    if (await bookVersionHoldsLockedEntries(manager, userId, version?.manifest)) {
+      throw apiError(ConflictException, 'CONTENT_LOCKED_PRIVATE');
+    }
   }
 
   private async assertOwnTarget(manager: EntityManager, userId: number, kind: ShareLinkKind, targetId: number): Promise<void> {

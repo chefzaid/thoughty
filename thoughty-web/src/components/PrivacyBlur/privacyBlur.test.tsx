@@ -1,5 +1,5 @@
 import { act, fireEvent, render, renderHook, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { translations } from '../../utils/translations';
 import { isPrivacyBlurShortcut, PRIVACY_BLUR_ATTRIBUTE } from './privacyBlur';
 import PrivacyBlurButton from './PrivacyBlurButton';
@@ -66,6 +66,27 @@ describe('usePrivacyBlur', () => {
         act(() => { field.dispatchEvent(new KeyboardEvent('keydown', { key: 'e', metaKey: true, shiftKey: true, bubbles: true })); });
         expect(result.current.blurred).toBe(false);
         field.remove();
+    });
+
+    it('asks before lifting the blur when told to, and says when it goes on', async () => {
+        const onBlur = vi.fn();
+        let allow = false;
+        const beforeShow = vi.fn(async () => allow);
+        const { result } = renderHook(() => usePrivacyBlur({ beforeShow, onBlur }));
+
+        act(() => result.current.toggle());
+        expect(onBlur).toHaveBeenCalledTimes(1);
+        await act(async () => result.current.toggle());
+        expect(beforeShow).toHaveBeenCalledTimes(1);
+        expect(result.current.blurred).toBe(true);
+
+        allow = true;
+        await act(async () => result.current.toggle());
+        expect(result.current.blurred).toBe(false);
+
+        act(() => result.current.toggle());
+        act(() => result.current.show());
+        expect(result.current.blurred).toBe(false);
     });
 
     it('shows the text again and stops listening when the signed-in app goes away', () => {

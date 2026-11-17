@@ -128,6 +128,9 @@ export class DiaryResponseDto {
   @ApiProperty({ type: String, nullable: true, example: 'builtin-gratitude', description: 'Entry template the composer starts from in this diary; an ID that no longer resolves is ignored' })
   defaultTemplateId: string | null;
 
+  @ApiProperty({ description: 'Whether the diary is locked behind the writer’s PIN, with every entry in it', example: false })
+  isLocked: boolean;
+
   @ApiProperty()
   createdAt: Date;
 }

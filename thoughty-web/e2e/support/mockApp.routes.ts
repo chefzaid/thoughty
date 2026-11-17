@@ -32,6 +32,7 @@ import { checkWritersDaySent } from "./mockApp.writers-day";
 import { handleFeatureFlagRoutes } from "./mockApp.feature-flags";
 import { handleSignUpRoutes } from "./mockApp.sign-up";
 import { handlePasswordResetRoutes } from "./mockApp.password-reset";
+import { handleContentLockRoutes, readMockUnlock } from "./mockApp.content-lock";
 
 async function handleAuthRoutes({
   route,
@@ -331,6 +332,10 @@ export async function registerMockAppRoutes(page: Page, state: MockAppState) {
       return;
     }
     checkWritersDaySent(context);
+    readMockUnlock(context);
+    if (await handleContentLockRoutes(context)) {
+      return;
+    }
     if (await handleSignUpRoutes(context) || await handlePasswordResetRoutes(context)) {
       return;
     }

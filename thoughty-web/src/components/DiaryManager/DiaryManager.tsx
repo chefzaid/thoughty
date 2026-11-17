@@ -12,9 +12,11 @@ import { DEFAULT_DIARY_COLORS, normalizeDiaryColor, resolveDiaryColor, withAlpha
 import { describeDiaryGoal, diaryGoalDraft, NO_DIARY_GOAL, readDiaryGoal } from '../../utils/diaryGoals';
 import { resolveLanguage } from '../../utils/language';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
+import DiaryLockButton from '../ContentLock/DiaryLockButton';
 
 /** The diary fields Manage Diaries reads. */
-type Diary = Pick<ApiDiary, 'id' | 'name' | 'icon' | 'color' | 'visibility' | 'isDefault' | 'goalType' | 'goalTarget' | 'defaultTemplateId'>;
+type Diary = Pick<ApiDiary, 'id' | 'name' | 'icon' | 'color' | 'visibility' | 'isDefault' | 'goalType' | 'goalTarget' | 'defaultTemplateId'>
+    & Partial<Pick<ApiDiary, 'isLocked'>>;
 
 const DEFAULT_NEW_DIARY_COLOR = DEFAULT_DIARY_COLORS[0] ?? '#E76F51';
 
@@ -367,6 +369,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                                 <span className="diary-name-row">
                                                     <span className="diary-color-dot" />
                                                     <span className="diary-name">{diary.name}</span>
+                                                    {diary.isLocked && <span className="codicon codicon-lock diary-lock-badge" title={t('lockedEntryHint')} aria-label={t('lockedEntryHint')} role="img" />}
                                                 </span>
                                                 <span className="diary-visibility">{t('defaultVisibility')}: {t(diary.visibility)}</span>
                                                 {diary.goalType && diary.goalTarget && (
@@ -392,6 +395,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                                     ☆
                                                 </button>
                                             )}
+                                            <DiaryLockButton diary={diary} theme={isLight ? 'light' : 'dark'} t={t} />
                                             <button type="button"
                                                 onClick={() => handleEdit(diary)}
                                                 className="action-btn edit"

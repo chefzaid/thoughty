@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Entry } from '@/database/entities';
 import { plainExcerpt } from '@/common/utils/plain-excerpt.util';
 import type { ComfortReadsResponseDto, GetComfortReadsQueryDto } from './dto';
+import { readableEntrySql } from '@/common/content-lock';
 
 /** At most this many entries are offered at once. */
 export const COMFORT_READS_LIMIT = 3;
@@ -28,8 +29,8 @@ interface ComfortRow {
  * Comfort reads: after the writer records a very low mood, the web offers to reread a few entries they
  * kept as favorites or tagged with gratitude. PostgreSQL picks up to three of them with `ORDER BY random()
  * LIMIT 3`, so the picks are distinct, every candidate is equally likely, and only those rows (with the
- * start of their text) leave the database. Sealed time capsules and the entry just written are never
- * offered; entries in the recycle bin are left out by the entity's soft delete.
+ * start of their text) leave the database. Sealed time capsules, locked entries (unless the request is
+ * unlocked) and the entry just written are never offered; entries in the recycle bin are left out by the entity's soft delete.
  *
  * The journal filters cannot express this in one request: they combine with AND (favorites *and* a tag),
  * and the random entry endpoint gives one ID per call without its text.
@@ -52,6 +53,7 @@ export class EntryComfortReadsService {
       .setParameter('excerptSource', EXCERPT_SOURCE_LENGTH)
       .where('e.user_id = :userId', { userId })
       .andWhere('e.sealed_until IS NULL')
+      .andWhere(readableEntrySql(userId))
       .andWhere(
         '(e.is_favorite = true OR EXISTS (SELECT 1 FROM unnest(e.tags) AS tag WHERE lower(tag) IN (:...gratitudeTags)))',
         { gratitudeTags: GRATITUDE_TAGS },

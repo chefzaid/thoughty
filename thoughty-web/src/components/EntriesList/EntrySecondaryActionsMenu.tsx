@@ -7,6 +7,7 @@ import {
 import useDismissibleMenu from './useDismissibleMenu';
 import PrintIcon from '../PrintSheet/PrintIcon';
 import RereadIcon from '../RereadReminder/RereadIcon';
+import type { EntryLockMenuAction } from '../ContentLock/useEntryLockAction';
 
 interface EntrySecondaryActionsMenuProps {
     isDark: boolean;
@@ -29,6 +30,8 @@ interface EntrySecondaryActionsMenuProps {
     /** Opens the dialog that moves this entry to another diary. */
     onMoveToDiary?: () => void;
     onToggleArchived: () => void;
+    /** Locks the entry behind the PIN, or removes its lock. */
+    lockAction?: EntryLockMenuAction;
     onDelete: () => void;
     t: TranslationFn;
 }
@@ -49,6 +52,7 @@ export default function EntrySecondaryActionsMenu({
     onUseAsStartingPoint,
     onMoveToDiary,
     onToggleArchived,
+    lockAction,
     onDelete,
     t,
 }: Readonly<EntrySecondaryActionsMenuProps>) {
@@ -322,6 +326,20 @@ export default function EntrySecondaryActionsMenu({
                         </svg>
                         <span>{archiveActionLabel}</span>
                     </MenuActionButton>
+                    {lockAction && (
+                        <MenuActionButton
+                            onClick={() => {
+                                closeMenuForDialog();
+                                lockAction.onSelect();
+                            }}
+                            disabled={lockAction.disabled}
+                            className={`${secondaryActionClass} disabled:cursor-not-allowed disabled:opacity-60`}
+                            title={lockAction.label}
+                        >
+                            <span className="codicon codicon-lock h-4 w-4 flex-shrink-0" aria-hidden="true" />
+                            <span>{lockAction.label}</span>
+                        </MenuActionButton>
+                    )}
                     <MenuActionButton
                         onClick={handleDelete}
                         className={destructiveSecondaryActionClass}

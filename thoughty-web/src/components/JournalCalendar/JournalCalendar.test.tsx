@@ -24,7 +24,7 @@ const UNIVERSITY: LifeEra = {
 };
 
 const item = (overrides: Partial<EntryCalendarItem>): EntryCalendarItem => ({
-  id: 1, diary_id: 1, date: '2026-10-20', index: 1, time_of_day: null, title: null, snippet: 'Text', mood: null, sealed: false, ...overrides,
+  id: 1, diary_id: 1, date: '2026-10-20', index: 1, time_of_day: null, title: null, snippet: 'Text', mood: null, sealed: false, withheld: false, ...overrides,
 });
 
 const OCTOBER: EntryCalendarItem[] = [

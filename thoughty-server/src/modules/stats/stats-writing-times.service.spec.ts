@@ -34,7 +34,8 @@ describe('StatsWritingTimesService', () => {
     expect(times.weekdays).toEqual([2, 3, 0, 0, 0, 0, 2]);
     expect(query.where).toHaveBeenCalledWith('e.user_id = :userId', { userId: 4 });
     expect(query.setParameter).toHaveBeenCalledWith('timeZone', 'Pacific/Kiritimati');
-    expect(query.andWhere).not.toHaveBeenCalled();
+    // Only the locked entries are left out, while the request is not unlocked
+    expect(query.andWhere.mock.calls).toEqual([['NOT (e.is_locked OR e.diary_locked)']]);
   });
 
   it('reads one diary in UTC when no time zone is given, and empty lists for no entries', async () => {

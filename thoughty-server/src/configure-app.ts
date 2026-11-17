@@ -51,7 +51,7 @@ export function configureApp(app: NestExpressApplication): ConfiguredApp {
   app.enableCors({
     origin: corsOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Content-Unlock'],
     credentials: true,
     maxAge: 86400, // 24 hours
   });

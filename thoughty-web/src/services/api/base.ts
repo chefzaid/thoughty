@@ -1,6 +1,7 @@
 // Base API utilities for making authenticated requests
 
 import { apiErrorsTranslations, type ApiErrorTranslationKey } from '../../utils/translations.apiErrors';
+import { CONTENT_UNLOCK_HEADER, getContentUnlockToken } from './contentUnlockToken';
 
 export type AuthFetchFunction = (url: string, options?: RequestInit) => Promise<Response>;
 export type GetAccessTokenFunction = () => string | null;
@@ -135,6 +136,7 @@ const isJsonBody = (body: RequestInit['body']): boolean => body === undefined ||
  * caller set no content type and the body is JSON text (or there is none), then the bearer token. Other bodies
  * keep the type the browser gives them: a FormData its multipart boundary, a Blob its own type, URLSearchParams
  * a form encoding. A JSON type on a multipart body makes the API's JSON parser refuse it before the upload.
+ * While the writer's PIN unlock lasts, it goes along too (`X-Content-Unlock`).
  */
 export const buildAuthHeaders = (options: RequestInit, token: string | null): Record<string, string> => {
   const headers: Record<string, string> = options.headers instanceof Headers || Array.isArray(options.headers)
@@ -146,6 +148,10 @@ export const buildAuthHeaders = (options: RequestInit, token: string | null): Re
   }
   if (token) {
     headers.Authorization = `Bearer ${token}`;
+    const unlockToken = getContentUnlockToken();
+    if (unlockToken) {
+      headers[CONTENT_UNLOCK_HEADER] = unlockToken;
+    }
   }
   return headers;
 };

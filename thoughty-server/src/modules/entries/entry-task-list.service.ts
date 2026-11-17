@@ -6,6 +6,7 @@ import { setTaskListItem, withoutTaskStates } from '@/common/utils';
 import { entryRevisionSnapshot } from './entries-command.service';
 import { UpdateEntryTaskDto } from './dto';
 import { assertEntryNotSealed } from '@/modules/time-capsules/time-capsule.guard';
+import { assertEntryUnlocked } from '@/common/content-lock';
 
 /** Ticks within this time of the entry's last revision add no revision of their own. */
 export const TASK_REVISION_WINDOW_MS = 10 * 60 * 1000;
@@ -52,6 +53,7 @@ export class EntryTaskListService {
         throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
       }
       assertEntryNotSealed(entry);
+      assertEntryUnlocked(entry);
       if (entry.format !== 'markdown') {
         throw apiError(BadRequestException, 'ENTRY_TASKS_MARKDOWN_ONLY');
       }

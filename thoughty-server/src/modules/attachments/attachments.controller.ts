@@ -45,6 +45,7 @@ import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { MULTIPART_FIELD_LIMITS } from '@/common/multipart-limits';
 import { RequireFeature } from '@/common/feature-flags';
+import { ContentLockedException } from '@/common/content-lock';
 
 export { RangeNotSatisfiableException } from './attachment-file-response';
 
@@ -164,6 +165,7 @@ export class AttachmentsController {
   @ApiResponse({ status: 206, description: 'The requested byte range of the file' })
   @ApiResponse({ status: 404, description: 'File missing or not owned by the caller' })
   @ApiResponse({ status: 416, description: 'The requested range starts past the end of the file' })
+  @ApiResponse({ status: 423, description: 'The file’s entry is locked and the request is not unlocked' })
   async serveFile(
     @CurrentUser() user: AuthenticatedUser,
     @Param('filename') filename: string,
@@ -176,7 +178,8 @@ export class AttachmentsController {
     let file: OwnedAttachmentFile;
     try {
       file = await this.attachmentsService.findOwnedFile(user.userId, sanitized);
-    } catch {
+    } catch (error) {
+      if (error instanceof ContentLockedException) throw error;
       throw apiError(NotFoundException, 'ATTACHMENT_FILE_NOT_FOUND');
     }
 

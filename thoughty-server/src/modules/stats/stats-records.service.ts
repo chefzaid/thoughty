@@ -5,6 +5,7 @@ import { Entry } from '@/database/entities';
 import { longestRun } from './diary-goal-progress';
 import type { StatsBusiestDayDto, StatsLongestStreakDto, StatsRecordEntryDto, StatsRecordsDto } from './dto';
 import { ENTRY_LOCAL_TIME_SQL, ENTRY_WORDS_SQL } from './stats-sql';
+import { readableEntrySql } from '@/common/content-lock';
 
 interface EntryRow {
   id: number | string;
@@ -63,7 +64,8 @@ export class StatsRecordsService {
         .select('e.id', 'id')
         .addSelect("TO_CHAR(e.date, 'YYYY-MM-DD')", 'day')
         .addSelect('e.index', 'index')
-        .where('e.user_id = :userId', { userId });
+        .where('e.user_id = :userId', { userId })
+        .andWhere(readableEntrySql(userId));
       return diaryId ? query.andWhere('e.diary_id = :diaryId', { diaryId }) : query;
     };
     // Equal records go to the first written: the earlier day, then the day's own order

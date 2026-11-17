@@ -158,7 +158,7 @@ describe('NavMenu', () => {
     const { rerender } = render(<NavMenu {...defaultProps} />);
     expect(screen.queryByRole('button', { name: 'privacyBlur' })).not.toBeInTheDocument();
 
-    rerender(<NavMenu {...defaultProps} privacyBlur={{ blurred: true, changed: true, toggle }} />);
+    rerender(<NavMenu {...defaultProps} privacyBlur={{ blurred: true, changed: true, toggle, show: vi.fn() }} />);
     const button = screen.getByRole('button', { name: 'privacyBlur' });
     expect(button).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('status')).toHaveTextContent('privacyBlurOnAnnouncement');

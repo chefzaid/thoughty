@@ -1,5 +1,6 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { DataSource } from 'typeorm';
+import { isContentUnlocked } from '@/common/content-lock';
 import { GetEntriesQueryDto, EntriesListResponseDto } from './dto';
 
 interface CachedEntryList {
@@ -95,6 +96,8 @@ export class EntryListCacheService {
 
     const normalized = {
       userId,
+      // A locked entry reads differently while the request is unlocked
+      unlocked: isContentUnlocked(userId),
       after: query.after ?? '',
       around: query.around ?? '',
       before: query.before ?? '',

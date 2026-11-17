@@ -4,6 +4,7 @@ import { In, Repository } from 'typeorm';
 import { Entry, Person } from '@/database/entities';
 import type { PersonDateDto } from './dto';
 import { personDateDaysOn, toPersonDate, yearsOn, type PersonDateColumns } from './person-dates';
+import { hideLockedEntriesSql } from '@/common/content-lock';
 
 /** A person whose birthday or anniversary is on the writer's day, as Highlights shows them. */
 export interface PersonOfTheDay {
@@ -12,7 +13,7 @@ export interface PersonOfTheDay {
   date: PersonDateDto;
   /** Their age, or the years the anniversary marks; null without the year. */
   years: number | null;
-  /** Entries that mention them, leaving out the recycle bin and sealed time capsules. */
+  /** Entries that mention them, leaving out the recycle bin, sealed time capsules and (unless unlocked) locked entries. */
   entryCount: number;
   /** The newest of those entries, or null when there is none. */
   latestEntry: Entry | null;
@@ -25,16 +26,19 @@ interface PersonOfTheDayRow extends PersonDateColumns {
   latestEntryId: number | null;
 }
 
-/** The entries that mention person `p`, as Highlights counts them: neither in the recycle bin nor sealed. */
-const MENTIONING_ENTRIES = `
+/**
+ * The entries that mention person `p`, as Highlights counts them: neither in the recycle bin nor sealed, nor
+ * locked unless the request is unlocked (`lockFilter`).
+ */
+const mentioningEntries = (lockFilter: string) => `
   FROM entry_people ep
   JOIN entries e ON e.id = ep.entry_id
- WHERE ep.person_id = p.id AND e.user_id = p.user_id AND e.deleted_at IS NULL AND e.sealed_until IS NULL`;
+ WHERE ep.person_id = p.id AND e.user_id = p.user_id AND e.deleted_at IS NULL AND e.sealed_until IS NULL${lockFilter}`;
 
-const PEOPLE_OF_THE_DAY_SQL = `
+const peopleOfTheDaySql = (lockFilter: string) => `
   SELECT p.id, p.name, p.date_kind AS "dateKind", p.date_month AS "dateMonth", p.date_day AS "dateDay", p.date_year AS "dateYear",
-         (SELECT COUNT(*)::int ${MENTIONING_ENTRIES}) AS "entryCount",
-         (SELECT e.id ${MENTIONING_ENTRIES}
+         (SELECT COUNT(*)::int ${mentioningEntries(lockFilter)}) AS "entryCount",
+         (SELECT e.id ${mentioningEntries(lockFilter)}
            ORDER BY e.date DESC, e.time_of_day DESC NULLS LAST, e."index" DESC, e.id DESC LIMIT 1) AS "latestEntryId"
     FROM people p
    WHERE p.user_id = $1
@@ -57,7 +61,7 @@ export class PersonDatesService {
 
   async findOn(userId: number, today: string): Promise<PersonOfTheDay[]> {
     const days = personDateDaysOn(today);
-    const rows = (await this.personRepository.query(PEOPLE_OF_THE_DAY_SQL, [
+    const rows = (await this.personRepository.query(peopleOfTheDaySql(hideLockedEntriesSql(userId)), [
       userId,
       days.map(({ month }) => month),
       days.map(({ day }) => day),

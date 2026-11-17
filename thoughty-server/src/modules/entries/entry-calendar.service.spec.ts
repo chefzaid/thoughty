@@ -1,5 +1,6 @@
 import { EntryCalendarService } from './entry-calendar.service';
 import { createQueryBuilder } from './entries-query.test-helpers';
+import { asUnlocked } from '@/common/content-lock/content-lock.test-helpers';
 
 describe('EntryCalendarService', () => {
   let entryRepository: Record<string, jest.Mock>;
@@ -29,7 +30,7 @@ describe('EntryCalendarService', () => {
 
     const { entries } = await service.getMonth(4, { month: '2026-10' });
 
-    expect(entries).toEqual([{ id: 7, diary_id: 2, date: '2026-10-01', index: 1, time_of_day: null, title: null, snippet: '', mood: null, sealed: true }]);
+    expect(entries).toEqual([{ id: 7, diary_id: 2, date: '2026-10-01', index: 1, time_of_day: null, title: null, snippet: '', mood: null, sealed: true, withheld: false }]);
   });
 
   it("summarizes the writer's entries of the month in day order", async () => {
@@ -59,7 +60,7 @@ describe('EntryCalendarService', () => {
     expect(result).toEqual({
       month: '2026-10',
       entries: [
-        { id: 7, diary_id: 2, date: '2026-10-01', index: 1, time_of_day: null, title: 'Harbor run', snippet: 'Ran along the harbor.', mood: 4, sealed: false },
+        { id: 7, diary_id: 2, date: '2026-10-01', index: 1, time_of_day: null, title: 'Harbor run', snippet: 'Ran along the harbor.', mood: 4, sealed: false, withheld: false },
         {
           id: 9,
           diary_id: null,
@@ -70,9 +71,23 @@ describe('EntryCalendarService', () => {
           snippet: 'Evening A quiet night at home, reading by the window until late.',
           mood: null,
           sealed: false,
+          withheld: false,
         },
       ],
     });
+  });
+
+  it('keeps a locked entry’s title but not its text or mood, unless the request is unlocked', async () => {
+    qb.getRawAndEntities.mockResolvedValue({
+      entities: [{ id: 7, diaryId: 2, date: '2026-10-01', index: 1, timeOfDay: null, title: 'Harbor run', mood: 4, isLocked: false, diaryLocked: true }],
+      raw: [{ e_id: 7, content_start: 'Ran along the harbor.' }],
+    });
+
+    const locked = await service.getMonth(4, { month: '2026-10' });
+    expect(locked.entries[0]).toMatchObject({ title: 'Harbor run', snippet: '', mood: null, withheld: true });
+
+    const unlocked = await asUnlocked(4, () => service.getMonth(4, { month: '2026-10' }));
+    expect(unlocked.entries[0]).toMatchObject({ title: 'Harbor run', snippet: 'Ran along the harbor.', mood: 4, withheld: false });
   });
 
   it('ends December at the next new year and cuts long texts into a short snippet', async () => {

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, type SelectQueryBuilder } from 'typeorm';
 import { Entry } from '@/database/entities';
 import { apiError } from '@/common/errors';
+import { hideLockedEntries } from '@/common/content-lock';
 import type { EntriesListResponseDto, GetEntriesQueryDto } from './dto';
 import { toEntryResponse } from './entry-response.mapper';
 import { applyEntryListFilters, entrySearchRank, parseEntryIdsFilter } from './entry-list-filters';
@@ -69,7 +70,7 @@ export class EntryListService {
     const prepared = query.search ? await this.entrySearch.prepare(query.search) : null;
     const listed = (): { qb: SelectQueryBuilder<Entry>; lead: string } => {
       const qb = this.entryRepository.createQueryBuilder('e').where('e.user_id = :userId', { userId });
-      applyEntryListFilters(qb, query, prepared);
+      applyEntryListFilters(qb, query, prepared, userId);
       if (query.date) {
         qb.andWhere('e.date = :date', { date: query.date });
       }
@@ -203,13 +204,13 @@ export class EntryListService {
     return ids.flatMap((id) => byId.get(id) ?? []);
   }
 
-  /** Every tag the writer uses, for the tag filter. */
+  /** Every tag the writer uses, for the tag filter; a locked entry's only while the request is unlocked. */
   private async allTags(userId: number): Promise<string[]> {
-    const rows: Array<{ tag: string }> = await this.entryRepository
+    const qb = this.entryRepository
       .createQueryBuilder('e')
       .select('DISTINCT UNNEST(e.tags)', 'tag')
-      .where('e.user_id = :userId', { userId })
-      .getRawMany();
+      .where('e.user_id = :userId', { userId });
+    const rows: Array<{ tag: string }> = await hideLockedEntries(qb, userId).getRawMany();
     return rows.map((row) => row.tag).sort((left, right) => left.localeCompare(right));
   }
 

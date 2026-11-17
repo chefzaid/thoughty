@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Entry } from '@/database/entities';
 import { MAX_MOOD } from '@/common/utils/entry-mood.util';
 import type { StatsMoodDto } from './dto';
+import { readableEntrySql } from '@/common/content-lock';
 
 const TOP_FEELINGS = 10;
 
@@ -41,6 +42,7 @@ export class StatsMoodService {
       const query = this.entryRepository
         .createQueryBuilder('e')
         .where('e.user_id = :userId', { userId })
+        .andWhere(readableEntrySql(userId))
         .andWhere('e.mood IS NOT NULL');
       return diaryId ? query.andWhere('e.diary_id = :diaryId', { diaryId }) : query;
     };
@@ -48,6 +50,7 @@ export class StatsMoodService {
       const query = this.entryRepository
         .createQueryBuilder('e')
         .where('e.user_id = :userId', { userId })
+        .andWhere(readableEntrySql(userId))
         .andWhere('CARDINALITY(e.feelings) > 0');
       return diaryId ? query.andWhere('e.diary_id = :diaryId', { diaryId }) : query;
     };

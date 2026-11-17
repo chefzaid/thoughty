@@ -82,6 +82,14 @@ export const API_ERROR_MESSAGES = {
   TAG_NOT_FOUND: 'No entries found with that tag',
   RECYCLE_BIN_ENTRIES_NOT_FOUND: 'No matching entries in the recycle bin',
 
+  // The PIN lock of diaries and entries.
+  CONTENT_LOCKED: 'This is locked. Unlock it with your PIN.',
+  CONTENT_LOCKED_PRIVATE: 'Locked diaries and entries stay private',
+  CONTENT_PIN_NOT_SET: 'Set a PIN in your profile first',
+  CONTENT_PIN_INCORRECT: 'Wrong PIN',
+  CONTENT_PIN_BLOCKED: 'Too many wrong PINs. Try again later.',
+  CONTENT_PIN_PROOF_REQUIRED: 'Enter your current PIN or your account password',
+
   // Diaries and settings.
   DIARY_NOT_FOUND: 'Diary not found',
   DIARY_NAME_TAKEN: 'A diary with this name already exists',

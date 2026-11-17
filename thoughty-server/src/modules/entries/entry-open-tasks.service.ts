@@ -10,6 +10,7 @@ import {
   parseOpenTaskCursor,
   type OpenTaskPosition,
 } from './entry-open-tasks.cursor';
+import { readableEntrySql } from '@/common/content-lock';
 
 /** Entries read at a time while the tasks are counted. */
 export const OPEN_TASKS_BATCH_SIZE = 200;
@@ -22,8 +23,8 @@ const DEFAULT_LIMIT = 50;
  * They are read from the entries themselves rather than kept in a table of their own, so no write path
  * (editing, importing, restoring a revision or from the recycle bin, opening a time capsule...) has to
  * keep one in step. Only entries whose text holds an empty box (`[ ]`) are read, a few at a time, which
- * keeps the cost to the entries with tasks still open. Sealed time capsules and the recycle bin are
- * left out; archived entries count, since their tasks are still to do.
+ * keeps the cost to the entries with tasks still open. Sealed time capsules, the recycle bin and locked
+ * entries (unless the request is unlocked) are left out; archived entries count, since their tasks are still to do.
  */
 @Injectable()
 export class EntryOpenTasksService {
@@ -87,6 +88,7 @@ export class EntryOpenTasksService {
       .where('e.user_id = :userId', { userId })
       .andWhere("e.format = 'markdown'")
       .andWhere('e.sealed_until IS NULL')
+      .andWhere(readableEntrySql(userId))
       .andWhere("strpos(e.content, '[ ]') > 0");
     if (diaryId) {
       qb.andWhere('e.diary_id = :diaryId', { diaryId });

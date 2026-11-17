@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry } from '@/database/entities';
 import { addSameDayOrder } from '@/common/utils';
+import { assertEntryUnlocked, hideLockedEntries } from '@/common/content-lock';
 import { GetFirstEntryQueryDto, GetEntryByDateQueryDto, EntryBacklinksResponseDto } from './dto';
 import { entryContentReferencesTarget } from './entry-references.util';
 import { applyEntryListFilters, applyEntryMonthFilter } from './entry-list-filters';
@@ -65,7 +66,7 @@ export class EntryLookupService {
         .orderBy('e.date', 'ASC'),
       'e',
     ).limit(1);
-    applyEntryListFilters(firstEntryQb, query, query.search ? await this.entrySearch.prepare(query.search) : null);
+    applyEntryListFilters(firstEntryQb, query, query.search ? await this.entrySearch.prepare(query.search) : null, userId);
 
     if (month) {
       applyEntryMonthFilter(firstEntryQb, `${year}-${String(month).padStart(2, '0')}`);
@@ -118,6 +119,7 @@ export class EntryLookupService {
     if (!targetEntry) {
       throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
+    assertEntryUnlocked(targetEntry);
 
     const targetDate = this.normalizeEntryDate(targetEntry.date);
     const targetIndex = targetEntry.index || 1;
@@ -130,6 +132,7 @@ export class EntryLookupService {
       .andWhere('e.content ILIKE :targetDate', { targetDate: `%${targetDate}%` })
       .orderBy('e.date', 'DESC');
     addSameDayOrder(candidates, 'e');
+    hideLockedEntries(candidates, userId);
 
     return {
       backlinks: (await candidates.getMany())

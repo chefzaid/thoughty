@@ -6,6 +6,8 @@ import { Attachment, BookVersion, Entry, ShareLink } from '@/database/entities';
 import { describeStoredFile, type StoredAttachmentFile } from '@/modules/attachments/attachment-media';
 import { SharedContentResponseDto, SharedEntryDto } from './dto';
 import { shareTokenHashOf } from './share-link-token';
+import { lockedEntrySql } from '@/common/content-lock';
+import { bookVersionHoldsLockedEntries } from '@/modules/books/book-version-locks';
 
 /** After the last view a limited link allows, the pictures of that view still load for this long. */
 const LAST_VIEW_FILE_GRACE = "interval '1 hour'";
@@ -51,7 +53,8 @@ const notFound = () => apiError(NotFoundException, 'SHARE_LINK_NOT_FOUND');
  * What a private share link shows to whoever holds it, without signing in. A link works while it has
  * not expired, its writer's account is not deleted, and its entry is neither in the recycle bin nor a
  * sealed time capsule (binning or sealing an entry deletes its links; the check here is the second
- * line). Opening an entry or downloading a book counts a view, refused once a limited link has none
+ * line). A link to a locked entry, or to a book version holding one, does not open while the lock lasts,
+ * and opens again once it is lifted: locking keeps the link. Opening an entry or downloading a book counts a view, refused once a limited link has none
  * left. Only the entry's own files are served, by attachment ID, never the authenticated file route.
  */
 @Injectable()
@@ -72,6 +75,7 @@ export class SharedContentService {
     const link = await this.findLive(token);
     if (link.bookVersionId !== null) {
       if (!link.viewsLeft) throw notFound();
+      await this.assertBookOpen(link);
       return { kind: 'bookVersion', expiresAt: link.expiresAt, entry: null, bookVersion: await this.describeBook(link.bookVersionId) };
     }
     await this.countView(link);
@@ -82,6 +86,7 @@ export class SharedContentService {
   async downloadBook(token: string): Promise<SharedBookFile> {
     const link = await this.findLive(token);
     if (link.bookVersionId === null) throw notFound();
+    await this.assertBookOpen(link);
     await this.countView(link);
     const version = await this.bookVersionRepository
       .createQueryBuilder('version')
@@ -115,7 +120,7 @@ export class SharedContentService {
          FROM share_links l
          JOIN users u ON u.id = l.user_id AND u.deleted_at IS NULL
          LEFT JOIN entries e ON e.id = l.entry_id AND e.user_id = l.user_id
-                            AND e.deleted_at IS NULL AND e.sealed_until IS NULL
+                            AND e.deleted_at IS NULL AND e.sealed_until IS NULL AND NOT ${lockedEntrySql('e')}
          LEFT JOIN book_versions b ON b.id = l.book_version_id AND b.user_id = l.user_id
         WHERE l.token_hash = $1
           AND l.expires_at > now()
@@ -175,6 +180,14 @@ export class SharedContentService {
           hasPoster: Boolean(attachment.posterFilename),
         })),
     };
+  }
+
+  /** A shared book version holding a locked entry stays closed while it is locked. */
+  private async assertBookOpen(link: LiveShareLink): Promise<void> {
+    const version = await this.bookVersionRepository.findOne({ select: { id: true, manifest: true }, where: { id: link.bookVersionId! } });
+    if (await bookVersionHoldsLockedEntries(this.bookVersionRepository.manager, link.userId, version?.manifest)) {
+      throw notFound();
+    }
   }
 
   private async describeBook(bookVersionId: number) {

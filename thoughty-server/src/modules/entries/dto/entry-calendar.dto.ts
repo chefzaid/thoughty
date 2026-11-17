@@ -38,6 +38,9 @@ export class EntryCalendarItemDto {
 
   @ApiProperty({ description: 'Whether the entry is a sealed time capsule, which shows no title, text or mood', example: false })
   sealed: boolean;
+
+  @ApiProperty({ description: 'Whether the entry is locked behind the PIN and this request is not unlocked: no snippet or mood then', example: false })
+  withheld: boolean;
 }
 
 export class EntryCalendarResponseDto {

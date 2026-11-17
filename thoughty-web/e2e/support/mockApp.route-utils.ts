@@ -6,6 +6,7 @@ import type { components } from '../../src/generated/openapi';
 
 import { checkMockResponse, recordContractViolations } from './mockApp.contract';
 import type { MockAppState, MockEntry, MockEntryRevision } from './mockApp.shared';
+import { isMockWithheld } from './mockApp.content-lock';
 
 export type RouteContext = {
   route: Route;
@@ -84,9 +85,17 @@ export function toRevisionResponse(revision: MockEntryRevision): components['sch
 
 /**
  * An entry exactly as the API serializes it (`EntryResponseDto`), so the mock cannot drift from the contract.
- * A sealed time capsule shows only its date, diary, flags and when it opens.
+ * A sealed time capsule shows only its date, diary, flags and when it opens; a locked one, unless the request
+ * carries the unlock, only its title beside them.
  */
 export function toEntryResponse(entry: MockEntry, state: MockAppState): components['schemas']['EntryResponseDto'] {
+  const response = sealedOrOpenResponse(entry, state);
+  return isMockWithheld(entry, state)
+    ? { ...response, mood: null, feelings: [], tags: [], content: '', withheld: true, ...(response.attachments ? { attachments: [] } : {}) }
+    : response;
+}
+
+function sealedOrOpenResponse(entry: MockEntry, state: MockAppState): components['schemas']['EntryResponseDto'] {
   const response = openEntryResponse(entry, state);
   return entry.capsule && !entry.capsule.openedAt
     ? {
@@ -130,6 +139,9 @@ function openEntryResponse(entry: MockEntry, state: MockAppState): components['s
     created_at: entry.createdAt ?? `${entry.date}T12:00:00.000Z`,
     sealed_until: null,
     reread_on: entry.rereadOn ?? null,
+    is_locked: Boolean(entry.isLocked),
+    diary_locked: Boolean(diary?.isLocked),
+    withheld: false,
   };
 }
 

@@ -12,6 +12,8 @@ import { Repository, type EntityManager } from 'typeorm';
 import { BookQueryDto, BookVersionResponseDto, BookVersionSourceDto, BookVersionsQueryDto } from './dto';
 import { bookScopeKey } from './book-entry-source.service';
 import { BooksService, type BookFile, type BookFormat } from './books.service';
+import { ContentLockedException, isContentUnlocked } from '@/common/content-lock';
+import { bookVersionHoldsLockedEntries } from './book-version-locks';
 
 const MAX_VERSION_ARTIFACT_SIZE = 50 * 1024 * 1024;
 
@@ -168,6 +170,9 @@ export class BookVersionsService {
       .getOne();
     if (!version) {
       throw apiError(NotFoundException, 'BOOK_VERSION_NOT_FOUND');
+    }
+    if (!isContentUnlocked(userId) && (await bookVersionHoldsLockedEntries(this.versionRepository.manager, userId, version.manifest))) {
+      throw apiError(ContentLockedException, 'CONTENT_LOCKED');
     }
     return {
       content: version.content,

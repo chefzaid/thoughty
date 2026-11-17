@@ -12,6 +12,7 @@ import {
   DuplicateEntryScanResponseDto,
   FindDuplicateEntriesDto,
 } from './dto/duplicate-entries.dto';
+import { readableEntryWhere } from '@/common/content-lock';
 
 const MAX_ANALYZED_ENTRIES = 40;
 const MAX_PREVIEW_LENGTH = 400;
@@ -31,7 +32,7 @@ export class AiDuplicateService {
     dto: FindDuplicateEntriesDto,
   ): Promise<DuplicateEntryScanResponseDto> {
     const [foundEntries, totalEntries] = await this.entryRepository.findAndCount({
-      where: dto.diaryId == null ? { userId } : { userId, diaryId: dto.diaryId },
+      where: { userId, ...readableEntryWhere(userId), ...(dto.diaryId == null ? {} : { diaryId: dto.diaryId }) },
       select: { id: true, date: true, index: true, diaryId: true, content: true, tags: true },
       order: { date: 'DESC', index: 'DESC' },
       take: MAX_ANALYZED_ENTRIES,

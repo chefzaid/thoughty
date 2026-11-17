@@ -11,7 +11,7 @@ const inDays = (days: number) => new Date(now.getTime() + days * 24 * 60 * 60 * 
 describe('ShareLinksService', () => {
   let linkRepository: Record<string, jest.Mock> & { manager?: unknown };
   let entryRepository: { findOne: jest.Mock; exists: jest.Mock };
-  let bookVersionRepository: { exists: jest.Mock };
+  let bookVersionRepository: { exists: jest.Mock; findOne: jest.Mock };
   let deleteBuilder: Record<string, jest.Mock>;
   let manager: { query: jest.Mock; getRepository: jest.Mock };
   let service: ShareLinksService;
@@ -24,7 +24,7 @@ describe('ShareLinksService', () => {
       execute: jest.fn().mockResolvedValue({ affected: 0 }),
     };
     entryRepository = { findOne: jest.fn().mockResolvedValue({ id: 12, sealedUntil: null }), exists: jest.fn().mockResolvedValue(true) };
-    bookVersionRepository = { exists: jest.fn().mockResolvedValue(true) };
+    bookVersionRepository = { exists: jest.fn().mockResolvedValue(true), findOne: jest.fn().mockResolvedValue({ id: 9, manifest: null }) };
     linkRepository = {
       createQueryBuilder: jest.fn(() => deleteBuilder),
       count: jest.fn().mockResolvedValue(0),
@@ -51,7 +51,10 @@ describe('ShareLinksService', () => {
     }, now);
 
     expect(manager.query).toHaveBeenCalledWith('SELECT pg_advisory_xact_lock(hashtext($1), $2)', ['share_links', 3]);
-    expect(entryRepository.findOne).toHaveBeenCalledWith({ select: { id: true, sealedUntil: true }, where: { id: 12, userId: 3 } });
+    expect(entryRepository.findOne).toHaveBeenCalledWith({
+      select: { id: true, sealedUntil: true, isLocked: true, diaryLocked: true },
+      where: { id: 12, userId: 3 },
+    });
     const saved = linkRepository.save.mock.calls[0][0] as ShareLink;
     expect(saved).toEqual(expect.objectContaining({
       userId: 3, entryId: 12, bookVersionId: null, label: 'For Mum', showMood: true, showTags: false, maxViews: 5,
@@ -91,6 +94,18 @@ describe('ShareLinksService', () => {
     await expectApiError(service.create(3, { kind: 'entry', targetId: 12, expiresAt: inDays(1) }, now), ConflictException, 'ENTRY_SEALED');
     linkRepository.count.mockResolvedValueOnce(SHARE_LINK_LIMIT);
     await expectApiError(service.create(3, { kind: 'entry', targetId: 12, expiresAt: inDays(1) }, now), BadRequestException, 'SHARE_LINK_LIMIT_REACHED');
+    expect(linkRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('keeps a locked entry, one in a locked diary, and a book holding a locked entry private', async () => {
+    entryRepository.findOne.mockResolvedValueOnce({ id: 12, sealedUntil: null, isLocked: true, diaryLocked: false });
+    await expectApiError(service.create(3, { kind: 'entry', targetId: 12, expiresAt: inDays(1) }, now), ConflictException, 'CONTENT_LOCKED_PRIVATE');
+    entryRepository.findOne.mockResolvedValueOnce({ id: 12, sealedUntil: null, isLocked: false, diaryLocked: true });
+    await expectApiError(service.create(3, { kind: 'entry', targetId: 12, expiresAt: inDays(1) }, now), ConflictException, 'CONTENT_LOCKED_PRIVATE');
+    bookVersionRepository.findOne.mockResolvedValueOnce({ id: 9, manifest: { chapters: [{ title: 'One', entryIds: [12] }] } });
+    manager.query.mockImplementation(async (sql: string) => (sql.startsWith('SELECT 1 FROM entries') ? [{ '?column?': 1 }] : []));
+    await expectApiError(service.create(3, { kind: 'bookVersion', targetId: 9, expiresAt: inDays(1) }, now), ConflictException, 'CONTENT_LOCKED_PRIVATE');
+    expect(manager.query).toHaveBeenCalledWith(expect.stringContaining('AND (e.is_locked OR e.diary_locked) LIMIT 1'), [3, [12]]);
     expect(linkRepository.save).not.toHaveBeenCalled();
   });
 

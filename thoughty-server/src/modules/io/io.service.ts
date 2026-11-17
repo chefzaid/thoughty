@@ -35,6 +35,7 @@ import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.servic
 import { ConfigService } from '@/modules/config';
 import { FeatureFlagsService } from '@/common/feature-flags';
 import { FormatConfigDto, PreviewImportDto, ImportDto, PreviewResponseDto, ImportResponseDto } from './dto';
+import { readableEntrySql } from '@/common/content-lock';
 
 const MAX_IMPORT_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_ENTRIES_PER_IMPORT = 10000;
@@ -303,9 +304,11 @@ export class IoService {
       ? await this.diaryRepository.findOne({ where: { id: diaryId, userId } })
       : null;
 
+    // Locked entries stay out unless the request is unlocked; the data download keeps them (with the PIN)
     const qb = this.entryRepository
       .createQueryBuilder('e')
       .where('e.user_id = :userId', { userId })
+      .andWhere(readableEntrySql(userId))
       .orderBy('e.date', 'ASC')
       .addOrderBy('e.index', 'ASC');
 
@@ -407,10 +410,11 @@ export class IoService {
     const formatConfig = await this.getFormatConfig(userId);
     const parsedEntries = this.parseContent(dto.content, formatConfig);
 
-    // Get existing entries
+    // Get existing entries; a locked one is not compared unless the request is unlocked
     const qb = this.entryRepository
       .createQueryBuilder('e')
-      .where('e.user_id = :userId', { userId });
+      .where('e.user_id = :userId', { userId })
+      .andWhere(readableEntrySql(userId));
 
     if (dto.diaryId) {
       qb.andWhere('e.diary_id = :diaryId', { diaryId: dto.diaryId });

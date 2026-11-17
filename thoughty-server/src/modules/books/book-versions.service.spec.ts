@@ -5,6 +5,8 @@ import { BookVersion, SavedSearch } from '@/database/entities';
 import { BooksService, type BookFile } from './books.service';
 import { BookVersionsService } from './book-versions.service';
 import { expectApiError } from '@/common/errors/api-error.test-helpers';
+import { ContentLockedException } from '@/common/content-lock';
+import { asUnlocked } from '@/common/content-lock/content-lock.test-helpers';
 
 describe('BookVersionsService', () => {
   let service: BookVersionsService;
@@ -255,5 +257,23 @@ describe('BookVersionsService', () => {
 
     queryBuilder.getOne.mockResolvedValue(null);
     await expect(service.download(8, 4)).rejects.toThrow(NotFoundException);
+  });
+
+  it('downloads a version holding an entry locked now only from an unlocked request', async () => {
+    const queryBuilder = {
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue({
+        content: Buffer.from('saved'), filename: 'book_v2.pdf', contentType: 'application/pdf', title: 'Book', author: null,
+        manifest: { chapters: [{ title: 'Travel', entryIds: [1, 2] }] }, source: { kind: 'journal', diaryId: null },
+      }),
+    };
+    repository.createQueryBuilder.mockReturnValue(queryBuilder);
+    (repository.manager as Record<string, unknown>).query = jest.fn().mockResolvedValue([{ '?column?': 1 }]);
+
+    await expectApiError(service.download(7, 4), ContentLockedException, 'CONTENT_LOCKED');
+    expect((repository.manager as { query: jest.Mock }).query).toHaveBeenCalledWith(expect.stringContaining('e.id = ANY($2::int[])'), [7, [1, 2]]);
+    await expect(asUnlocked(7, () => service.download(7, 4))).resolves.toMatchObject({ filename: 'book_v2.pdf' });
   });
 });

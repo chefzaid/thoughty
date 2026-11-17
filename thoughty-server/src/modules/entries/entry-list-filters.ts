@@ -1,5 +1,6 @@
 import type { SelectQueryBuilder } from 'typeorm';
 import type { Entry } from '@/database/entities';
+import { hideLockedEntries } from '@/common/content-lock';
 import type { EntryFilterQueryDto } from './dto';
 import { escapeLikePattern } from './entry-search-query';
 import type { PreparedEntrySearch } from './entry-search.service';
@@ -33,14 +34,20 @@ export function parseEntryIdsFilter(ids: string | undefined): number[] {
 /**
  * Narrows a query on entries aliased `e` to the journal filters: the given IDs, the prepared search,
  * tags, visibility, diary, favorites, archive state, mood, life era and person. The caller scopes it to the
- * writer and orders it; entries in the recycle bin are left out by the entity's soft delete.
+ * writer (`userId`) and orders it; entries in the recycle bin are left out by the entity's soft delete. A
+ * filter that reads what a locked entry holds (its words, tags, mood, mentions, or a meaning search's IDs)
+ * leaves the writer's locked entries out unless the request is unlocked, so matching never tells of them.
  */
 export function applyEntryListFilters(
   qb: SelectQueryBuilder<Entry>,
   query: EntryFilterQueryDto,
   prepared: PreparedEntrySearch | null,
+  userId: number,
 ): void {
   const { ids, tags, visibility, diaryId, favorites, archiveStatus, mood, eraId, personId } = query;
+  if (prepared || ids || tags?.trim() || mood || personId) {
+    hideLockedEntries(qb, userId);
+  }
 
   const entryIds = parseEntryIdsFilter(ids);
   if (entryIds.length > 0) {

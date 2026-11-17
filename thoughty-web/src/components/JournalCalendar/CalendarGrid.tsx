@@ -40,11 +40,14 @@ function longDate(date: string, language: Language): string {
   }).format(utc);
 }
 
-/** What an entry is called in the grid: its title, else the start of its text; a sealed time capsule only says it is one. */
+/**
+ * What an entry is called in the grid: its title, else the start of its text; a sealed time capsule only says it
+ * is one, and a withheld locked entry is called by its title or as locked.
+ */
 function calendarEntryName(entry: EntryCalendarItem, t: TranslationFunction): string {
-  const name = entry.sealed
-    ? `🔒 ${t('timeCapsuleSealedLabel')}`
-    : entry.title || entry.snippet || t('calendarUntitledEntry', { index: entry.index });
+  let name = entry.title || entry.snippet || t('calendarUntitledEntry', { index: entry.index });
+  if (entry.sealed) name = `🔒 ${t('timeCapsuleSealedLabel')}`;
+  else if (entry.withheld) name = `🔒 ${entry.title || t('lockedEntryLabel')}`;
   return entry.time_of_day ? `${entry.time_of_day} ${name}` : name;
 }
 

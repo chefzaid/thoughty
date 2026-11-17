@@ -4,6 +4,30 @@ import { describe, expect, it, vi } from 'vitest';
 import { getTranslation } from '../utils/translations';
 import AuthenticatedAppLayout from './AuthenticatedAppLayout';
 import { useQuietMode } from '../components/QuietMode/quietMode';
+import { useContentLock } from '../components/ContentLock/contentLockContext';
+
+const lockApi = vi.hoisted(() => ({
+  pinSet: true,
+  hasLockedContent: false,
+  unlocked: false,
+  requestUnlock: vi.fn(async () => true),
+  lock: vi.fn(async () => undefined),
+  ensurePin: vi.fn(async () => true),
+  refresh: vi.fn(async () => undefined),
+  setEntryLocked: vi.fn(async () => true),
+  setDiaryLocked: vi.fn(async () => true),
+}));
+const lockController = vi.hoisted(() => ({ epoch: 0 }));
+
+// The PIN lock reads the API; its controller is covered by its own tests
+vi.mock('../components/ContentLock/useContentLockController', () => ({
+  useContentLockController: () => ({ api: lockApi, epoch: lockController.epoch, dialog: null }),
+}));
+
+function UnblurProbe() {
+  const contentLock = useContentLock();
+  return <button type="button" onClick={() => void contentLock?.unblur()}>unblur probe</button>;
+}
 
 function QuietProbe() {
   return <p data-testid="quiet-probe">{useQuietMode() ? 'quiet' : 'counting'}</p>;
@@ -94,6 +118,43 @@ describe('AuthenticatedAppLayout', () => {
     fireEvent.keyDown(document.body, { key: 'E', ctrlKey: true, shiftKey: true });
     unmount();
     expect(document.documentElement).not.toHaveAttribute('data-privacy-blur');
+  });
+
+  it('asks for the PIN before lifting the blur over locked entries, and locks them again when it goes back on', async () => {
+    lockApi.hasLockedContent = true;
+    lockApi.lock.mockClear();
+    lockApi.requestUnlock.mockClear();
+    lockApi.requestUnlock.mockResolvedValueOnce(false);
+    render(
+      <AuthenticatedAppLayout {...defaultProps}>
+        <UnblurProbe />
+      </AuthenticatedAppLayout>,
+    );
+    const button = screen.getByRole('button', { name: 'privacyBlur' });
+
+    fireEvent.click(button);
+    expect(lockApi.lock).toHaveBeenCalledTimes(1);
+    fireEvent.click(button);
+    expect(lockApi.requestUnlock).toHaveBeenCalledTimes(1);
+    await screen.findByRole('button', { name: 'privacyBlur' });
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.click(button);
+    await vi.waitFor(() => expect(button).toHaveAttribute('aria-pressed', 'false'));
+
+    fireEvent.click(button);
+    fireEvent.click(screen.getByRole('button', { name: 'unblur probe' }));
+    await vi.waitFor(() => expect(button).toHaveAttribute('aria-pressed', 'false'));
+    lockApi.hasLockedContent = false;
+  });
+
+  it('locks again before signing out', async () => {
+    const onLogout = vi.fn();
+    render(<AuthenticatedAppLayout {...defaultProps} onLogout={onLogout}><p>View</p></AuthenticatedAppLayout>);
+    lockApi.lock.mockClear();
+    fireEvent.click(screen.getByTitle('logout'));
+    await vi.waitFor(() => expect(onLogout).toHaveBeenCalled());
+    expect(lockApi.lock).toHaveBeenCalled();
   });
 
   it('gives every view quiet mode from the saved settings, off unless turned on', () => {

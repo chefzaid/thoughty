@@ -12,6 +12,7 @@ import {
   RecycleBinRestoreResponseDto,
   TrashedEntryDto,
 } from './dto';
+import { isEntryWithheld } from '@/common/content-lock';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PURGE_BATCH_SIZE = 100;
@@ -255,18 +256,23 @@ export class RecycleBinService {
     return new Map(rows.map((row) => [Number(row.entryId), Number(row.count)]));
   }
 
-  /** A sealed time capsule shows only its date, time and diary until it opens. */
+  /**
+   * A sealed time capsule shows only its date, time and diary until it opens; a locked entry keeps its
+   * title too, unless the request is unlocked.
+   */
   private toDto(entry: Entry, attachmentCount: number): TrashedEntryDto {
     const deletedAt = entry.deletedAt as Date;
     const sealed = Boolean(entry.sealedUntil);
+    const withheld = isEntryWithheld(entry);
     return {
       id: entry.id,
       date: entry.date,
       title: sealed ? null : (entry.title ?? null),
       timeOfDay: entry.timeOfDay ?? null,
-      content: sealed ? '' : entry.content,
+      content: sealed || withheld ? '' : entry.content,
       format: entry.format,
-      tags: sealed ? [] : entry.tags,
+      tags: sealed || withheld ? [] : entry.tags,
+      withheld,
       diaryId: entry.diary ? entry.diaryId : null,
       diaryName: entry.diary?.name ?? null,
       diaryIcon: entry.diary?.icon ?? null,

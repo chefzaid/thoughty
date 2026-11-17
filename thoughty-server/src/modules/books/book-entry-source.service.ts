@@ -12,6 +12,7 @@ import {
   type BookQueryDto,
   type BookSourceKind,
 } from './dto';
+import { readableEntrySql } from '@/common/content-lock';
 
 /** The entries a book is built from, where they came from, and the title it takes when given none. */
 export interface BookEntrySelection {
@@ -92,6 +93,7 @@ export class BookEntrySourceService {
       .where('e.user_id = :userId', { userId })
       .andWhere('e.id IN (:...ids)', { ids })
       .andWhere('e.sealed_until IS NULL')
+      .andWhere(readableEntrySql(userId))
       .orderBy('e.date', 'ASC')
       .addOrderBy('e.index', 'ASC')
       .getMany();
@@ -111,12 +113,16 @@ export class BookEntrySourceService {
     };
   }
 
-  /** The writer's entries for a book; sealed time capsules stay out of books until they open. */
+  /**
+   * The writer's entries for a book; sealed time capsules stay out of books until they open, and locked
+   * entries unless the request is unlocked (a picked one then reads as unavailable).
+   */
   private baseQuery(userId: number, query: BookQueryDto): SelectQueryBuilder<Entry> {
     const qb = this.entryRepository
       .createQueryBuilder('e')
       .where('e.user_id = :userId', { userId })
       .andWhere('e.sealed_until IS NULL')
+      .andWhere(readableEntrySql(userId))
       .orderBy('e.date', 'ASC')
       .addOrderBy('e.index', 'ASC');
     if (query.embedImages === true) {
@@ -162,7 +168,7 @@ export class BookEntrySourceService {
 
     const qb = this.baseQuery(userId, query);
     const { filters, date } = toSavedSearchEntryFilters(saved);
-    applyEntryListFilters(qb, filters, search ? await this.entrySearch.prepare(search) : null);
+    applyEntryListFilters(qb, filters, search ? await this.entrySearch.prepare(search) : null, userId);
     if (date) {
       qb.andWhere('e.date = :date', { date });
     }

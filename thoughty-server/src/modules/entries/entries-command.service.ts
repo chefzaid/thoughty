@@ -12,7 +12,8 @@ import { EntryInlineImagesService } from './entry-inline-images.service';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 import { assertEntryNotSealed } from '@/modules/time-capsules/time-capsule.guard';
 import { FeatureFlagsService } from '@/common/feature-flags';
-import { assertMayPublish } from './entry-publishing';
+import { assertMayPublish, assertStaysPrivateWhileLocked } from './entry-publishing';
+import { assertEntryUnlocked, isEntryLocked, isEntryWithheld } from '@/common/content-lock';
 
 const DEFAULT_MAX_PINNED_ENTRIES = 3;
 
@@ -132,6 +133,8 @@ export class EntriesCommandService {
       throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
     assertEntryNotSealed(entry);
+    assertEntryUnlocked(entry);
+    assertStaysPrivateWhileLocked(entry, dto.visibility);
     await assertMayPublish(this.featureFlags, dto.visibility, entry.visibility);
 
     await this.revisionRepository.save(entryRevisionSnapshot(entry));
@@ -193,6 +196,7 @@ export class EntriesCommandService {
       throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
     assertEntryNotSealed(entry);
+    assertStaysPrivateWhileLocked(entry, visibility);
     await assertMayPublish(this.featureFlags, visibility, entry.visibility);
 
     entry.visibility = visibility;
@@ -280,18 +284,19 @@ export class EntriesCommandService {
     }
 
     const validIds = entries.map((entry) => entry.id);
-    // Sealed time capsules stay private and keep their tags as written until they open
-    const openEntries = entries.filter((entry) => !entry.sealedUntil);
+    // Sealed time capsules, and locked entries the request may not read, keep their tags, diary and privacy
+    const openEntries = entries.filter((entry) => !entry.sealedUntil && !isEntryWithheld(entry));
+    const publishable = dto.visibility === 'public' ? openEntries.filter((entry) => !isEntryLocked(entry)) : openEntries;
 
     switch (dto.action) {
       case 'delete':
         return this.bulkDelete(userId, entries, validIds);
       case 'visibility':
-        return this.bulkUpdateVisibility(userId, openEntries.map((entry) => entry.id), dto.visibility);
+        return this.bulkUpdateVisibility(userId, publishable.map((entry) => entry.id), dto.visibility);
       case 'tags':
         return this.bulkAddTags(openEntries, dto.tags);
       case 'move':
-        return this.bulkMove(userId, validIds, dto.diaryId);
+        return this.bulkMove(userId, openEntries.map((entry) => entry.id), dto.diaryId);
       case 'archive':
         return this.bulkUpdateArchived(userId, validIds, dto.isArchived);
       default:
@@ -460,7 +465,9 @@ export class EntriesCommandService {
       throw apiError(NotFoundException, 'DIARY_NOT_FOUND', 'Target diary not found');
     }
 
-    await this.entryRepository.update({ id: In(validIds), userId }, { diaryId });
+    if (validIds.length > 0) {
+      await this.entryRepository.update({ id: In(validIds), userId }, { diaryId });
+    }
     return { success: true, affectedCount: validIds.length };
   }
 
@@ -486,7 +493,7 @@ export class EntriesCommandService {
     }
   }
 
-    private async getMaxPinnedEntries(userId: number): Promise<number> {
+  private async getMaxPinnedEntries(userId: number): Promise<number> {
     const config = await this.configService.getConfig(userId);
     return resolveMaxPinnedEntries(config.maxPinnedEntries);
   }

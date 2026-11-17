@@ -12,6 +12,7 @@ import { StatsRecordsService } from './stats-records.service';
 import { StatsTopWordsService } from './stats-top-words.service';
 import { ENTRY_WORDS_SQL } from './stats-sql';
 import { writersDayOr } from '@/common/utils/writers-day.util';
+import { readableEntrySql } from '@/common/content-lock';
 
 const WORDS_PER_MINUTE = 200;
 
@@ -40,7 +41,8 @@ export class StatsService {
     const createQb = () => {
       const qb = this.entryRepository
         .createQueryBuilder('e')
-        .where('e.user_id = :userId', { userId });
+        .where('e.user_id = :userId', { userId })
+        .andWhere(readableEntrySql(userId));
 
       if (diaryId) {
         qb.andWhere('e.diary_id = :diaryId', { diaryId });

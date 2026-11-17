@@ -6,6 +6,7 @@ import { Entry } from '@/database/entities';
 import { assertEntryNotSealed } from '@/modules/time-capsules/time-capsule.guard';
 import { isWritersDay } from '@/common/utils/writers-day.util';
 import { isRereadDayAllowed } from './reread-reminder-dates';
+import { readableEntrySql } from '@/common/content-lock';
 
 /** Reminders Highlights shows at most. */
 export const REREAD_REMINDER_HIGHLIGHT_LIMIT = 10;
@@ -41,7 +42,8 @@ export class RereadReminderService {
 
   /**
    * The writer's entries due to be reread by their day `today`, in one diary or all of them, longest
-   * waiting first. Entries in the recycle bin are left out (TypeORM skips them).
+   * waiting first. Entries in the recycle bin are left out (TypeORM skips them), and so are locked ones
+   * unless the request is unlocked.
    */
   async findDue(userId: number, diaryId: number | undefined, today: string): Promise<Entry[]> {
     const qb = this.entryRepository
@@ -50,6 +52,7 @@ export class RereadReminderService {
       .where('e.user_id = :userId', { userId })
       .andWhere('e.reread_on IS NOT NULL')
       .andWhere('e.reread_on <= :today', { today })
+      .andWhere(readableEntrySql(userId))
       .orderBy('e.reread_on', 'ASC')
       .addOrderBy('e.id', 'ASC')
       .limit(REREAD_REMINDER_HIGHLIGHT_LIMIT);

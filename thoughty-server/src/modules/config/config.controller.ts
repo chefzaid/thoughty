@@ -66,6 +66,7 @@ export class ConfigController {
   @Get('download-data')
   @ApiOperation({ summary: 'Download all user data (GDPR)' })
   @ApiResponse({ status: 200, description: 'JSON file with all user data' })
+  @ApiResponse({ status: 423, description: 'Something is locked and the request is not unlocked with the PIN' })
   async downloadData(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: DownloadDataQueryDto,

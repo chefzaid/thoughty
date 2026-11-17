@@ -48,7 +48,7 @@ export class DiariesController {
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Diary updated', type: DiaryResponseDto })
   @ApiResponse({ status: 404, description: 'Diary not found' })
-  @ApiResponse({ status: 409, description: 'The writer already has another diary of this name, ignoring case' })
+  @ApiResponse({ status: 409, description: 'The writer already has another diary of this name, ignoring case, or a locked diary was to be made public (`CONTENT_LOCKED_PRIVATE`)' })
   async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
@@ -63,6 +63,7 @@ export class DiariesController {
   @ApiResponse({ status: 200, description: 'Diary deleted', type: SuccessResponseDto })
   @ApiResponse({ status: 400, description: 'Cannot delete default diary' })
   @ApiResponse({ status: 404, description: 'Diary not found' })
+  @ApiResponse({ status: 423, description: 'The diary is locked and the request is not unlocked' })
   async delete(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,

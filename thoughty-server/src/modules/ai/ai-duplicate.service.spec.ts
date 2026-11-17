@@ -4,6 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Entry } from '@/database/entities';
 import { ConfigService } from '@/modules/config';
 import { AiDuplicateService } from './ai-duplicate.service';
+import { LOCKED_OUT_WHERE } from '@/common/content-lock/content-lock.test-helpers';
 
 describe('AiDuplicateService', () => {
   const entryRepository = { findAndCount: jest.fn() };
@@ -84,7 +85,7 @@ describe('AiDuplicateService', () => {
     const result = await service.findDuplicates(7, { diaryId: 4 });
 
     expect(entryRepository.findAndCount).toHaveBeenCalledWith(expect.objectContaining({
-      where: { userId: 7, diaryId: 4 },
+      where: { userId: 7, ...LOCKED_OUT_WHERE, diaryId: 4 },
       take: 40,
     }));
     expect(configService.getDecryptedConfig).toHaveBeenCalledWith(7, 'openRouterToneModel');

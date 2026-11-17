@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Entry } from '@/database/entities';
 import { AiSemanticSearchService } from './ai-semantic-search.service';
+import { LOCKED_OUT_WHERE } from '@/common/content-lock/content-lock.test-helpers';
 
 describe('AiSemanticSearchService', () => {
   const entryRepository = { findAndCount: jest.fn() };
@@ -72,7 +73,7 @@ describe('AiSemanticSearchService', () => {
     const result = await service.search(7, { query: 'changing careers', diaryId: 4 });
 
     expect(entryRepository.findAndCount).toHaveBeenCalledWith(expect.objectContaining({
-      where: { userId: 7, diaryId: 4 },
+      where: { userId: 7, ...LOCKED_OUT_WHERE, diaryId: 4 },
       take: 100,
     }));
     const requestBody = JSON.parse(fetchMock.mock.calls[0][1]?.body as string);

@@ -89,6 +89,20 @@ export class EntryResponseDto {
   })
   reread_on: string | null;
 
+  @ApiProperty({ description: 'Whether the writer locked this entry behind their PIN', example: false })
+  is_locked: boolean;
+
+  @ApiProperty({ description: 'Whether the entry\'s diary is locked behind the writer\'s PIN, which locks the entry too', example: false })
+  diary_locked: boolean;
+
+  @ApiProperty({
+    description:
+      'Whether the entry is locked and this request carries no unlock: its text is then empty and its tags, ' +
+      'mood, feelings and attachments are left out; its date, title, diary and flags stay.',
+    example: false,
+  })
+  withheld: boolean;
+
   @ApiPropertyOptional({
     type: [String],
     description:

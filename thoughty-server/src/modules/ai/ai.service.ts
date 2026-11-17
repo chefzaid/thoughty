@@ -24,6 +24,7 @@ import { AiUsageService } from './ai-usage.service';
 import { resolveOpenRouterCredential } from './openrouter-credential.util';
 import { UNTRUSTED_CONTENT_INSTRUCTION, untrustedBlock, unwrapBlock } from './untrusted-content';
 import { assertEntryNotSealed } from '@/modules/time-capsules/time-capsule.guard';
+import { assertEntryUnlocked, readableEntryWhere } from '@/common/content-lock';
 
 export type { JournalAnalysis, SubjectAnalysis, ToneMoodAnalysis } from './journal-analysis';
 
@@ -64,13 +65,17 @@ export class AiService {
     @Optional() private readonly usageService?: AiUsageService,
   ) {}
 
-  /** The writer's entry, for an AI feature about it; a sealed time capsule is refused until it opens. */
+  /**
+   * The writer's entry, for an AI feature about it; a sealed time capsule is refused until it opens, and a
+   * locked entry (423) unless the request is unlocked.
+   */
   private async assertEntryOwnership(userId: number, entryId: number): Promise<Entry> {
     const entry = await this.entryRepository.findOne({ where: { id: entryId, userId } });
     if (!entry) {
       throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
     assertEntryNotSealed(entry);
+    assertEntryUnlocked(entry);
     return entry;
   }
 
@@ -260,7 +265,7 @@ export class AiService {
     dto: GenerateInspirationDto,
   ): Promise<{ question: string }> {
     const entries = await this.entryRepository.find({
-      where: dto.diaryId == null ? { userId } : { userId, diaryId: dto.diaryId },
+      where: { userId, ...readableEntryWhere(userId), ...(dto.diaryId == null ? {} : { diaryId: dto.diaryId }) },
       select: { tags: true },
       order: { date: 'DESC', index: 'DESC' },
       take: INSPIRATION_ENTRY_WINDOW,

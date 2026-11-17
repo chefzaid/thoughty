@@ -23,6 +23,8 @@ import {
 } from './EntryViewModeSections';
 import useEntryViewModeState from './useEntryViewModeState';
 import SealedEntryCard from './SealedEntryCard';
+import LockedEntryCard from '../ContentLock/LockedEntryCard';
+import { useEntryLockAction } from '../ContentLock/useEntryLockAction';
 import AuthenticatedShareLinkDialog from '../ShareLinks/AuthenticatedShareLinkDialog';
 import PrintEntriesDialog from '../PrintSheet/PrintEntriesDialog';
 import RereadReminderDialog from '../RereadReminder/RereadReminderDialog';
@@ -86,11 +88,15 @@ export type EntryCardActions = Pick<EntryViewModeProps,
     | 'onMoveToDiary'>;
 
 /**
- * An entry card's content: a sealed time capsule shows only its placeholder, any other entry all of itself.
- * A card draws again only when its own props change, so loading another batch of the list leaves it alone.
+ * An entry card's content: a sealed time capsule or a locked entry the API withheld shows only its placeholder,
+ * any other entry all of itself. A card draws again only when its own props change, so loading another batch of
+ * the list leaves it alone.
  */
 function EntryViewMode(props: Readonly<EntryViewModeProps>) {
     const { entry, config, showDiaryLabel, onUnseal, onDelete, t } = props;
+    if (entry.withheld && !entry.sealed_until) {
+        return <LockedEntryCard entry={entry} theme={config.theme} showDiaryLabel={showDiaryLabel} t={t} />;
+    }
     return entry.sealed_until ? (
         <SealedEntryCard
             entry={{ ...entry, sealed_until: entry.sealed_until }}
@@ -161,6 +167,7 @@ function OpenEntryViewMode({
     const [rereadOpen, setRereadOpen] = useLocalState(false);
     const [moveOpen, setMoveOpen] = useLocalState(false);
     const isDark = config.theme !== 'light';
+    const lockAction = useEntryLockAction(entry, config.theme, t);
     const archiveActionLabel = entry.is_archived ? t('unarchive') : t('archive');
     const entryPermalink = getEntryPermalink?.(entry.id);
     const {
@@ -305,11 +312,13 @@ function OpenEntryViewMode({
                         onUseAsStartingPoint={onUseAsStartingPoint ? () => onUseAsStartingPoint(entry) : undefined}
                         onMoveToDiary={onMoveToDiary && diaries.length > 1 ? () => setMoveOpen(true) : undefined}
                         onToggleArchived={() => onToggleArchived(entry)}
+                        lockAction={lockAction.action}
                         onDelete={() => onDelete(entry.id)}
                         t={t}
                     />
                 </div>
             </div>
+            {lockAction.dialog}
             {entry.reread_on && (
                 <RereadReminderBadge
                     entryId={entry.id}

@@ -14,6 +14,7 @@ import type {
 } from './dto';
 import { plainExcerpt } from '@/common/utils/plain-excerpt.util';
 import { countWords, isoWeekdayIndex, longestStreak, rankTags } from './year-review-stats';
+import { readableEntrySql } from '@/common/content-lock';
 
 const TOP_TAGS = 10;
 const NEW_TAGS = 10;
@@ -121,6 +122,7 @@ export class YearReviewService {
         .select(['e.id', 'e.index', 'e.content', 'e.tags', 'e.isFavorite', 'e.isArchived', 'e.mood', 'e.feelings'])
         .addSelect(`to_char(e.date, 'YYYY-MM-DD')`, 'day')
         .where('e.user_id = :userId', { userId })
+        .andWhere(readableEntrySql(userId))
         .andWhere('e.date BETWEEN :from AND :to', { from, to })
         .orderBy('e.date', 'ASC'),
       'e',
@@ -222,8 +224,10 @@ export class YearReviewService {
       }));
   }
 
-  private scoped<T extends { andWhere: (condition: string, parameters?: object) => T }>(query: T, diaryId?: number): T {
-    return diaryId ? query.andWhere('e.diary_id = :diaryId', { diaryId }) : query;
+  /** One diary's entries, or all of them; locked ones only while the request is unlocked. */
+  private scoped<T extends { andWhere: (condition: string, parameters?: object) => T }>(query: T, userId: number, diaryId?: number): T {
+    const readable = query.andWhere(readableEntrySql(userId));
+    return diaryId ? readable.andWhere('e.diary_id = :diaryId', { diaryId }) : readable;
   }
 
   private async availableYears(userId: number, diaryId?: number): Promise<number[]> {
@@ -232,6 +236,7 @@ export class YearReviewService {
         .createQueryBuilder('e')
         .select('DISTINCT EXTRACT(YEAR FROM e.date)::int', 'year')
         .where('e.user_id = :userId', { userId }),
+      userId,
       diaryId,
     )
       .orderBy('year', 'DESC')
@@ -252,6 +257,7 @@ export class YearReviewService {
         )
         .where('e.user_id = :userId', { userId })
         .andWhere('e.date BETWEEN :from AND :to', { from, to }),
+      userId,
       diaryId,
     ).getRawOne();
     const entries = Number(row?.entries ?? 0);
@@ -265,6 +271,7 @@ export class YearReviewService {
         .select('DISTINCT UNNEST(e.tags)', 'tag')
         .where('e.user_id = :userId', { userId })
         .andWhere('e.date < :from', { from: yearRange(year).from }),
+      userId,
       diaryId,
     ).getRawMany();
     return new Set(rows.map((row) => row.tag));
@@ -277,6 +284,6 @@ export class YearReviewService {
       .innerJoin('a.entry', 'e')
       .where('a.user_id = :userId', { userId })
       .andWhere('e.date BETWEEN :from AND :to', { from, to });
-    return this.scoped(query, diaryId).getCount();
+    return this.scoped(query, userId, diaryId).getCount();
   }
 }

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry } from '@/database/entities';
 import type { EntryCorrelationDto, StatsCorrelationsDto, TagCorrelationDto } from './dto';
+import { readableEntrySql } from '@/common/content-lock';
 
 const MAX_CONNECTIONS = 12;
 const RECENT_CANDIDATES_PER_TAG = 4;
@@ -37,6 +38,7 @@ export class StatsCorrelationService {
       .createQueryBuilder('entry')
       .select(['entry.id', 'entry.date', 'entry.index', 'entry.tags'])
       .where('entry.user_id = :userId', { userId })
+      .andWhere(readableEntrySql(userId, 'entry'))
       .orderBy('entry.date', 'ASC')
       .addOrderBy('entry.index', 'ASC')
       .addOrderBy('entry.id', 'ASC');

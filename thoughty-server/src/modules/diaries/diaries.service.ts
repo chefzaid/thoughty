@@ -6,6 +6,7 @@ import { Diary, DIARY_NAME_UNIQUE_INDEX } from '@/database/entities';
 import { getDefaultDiaryColor, normalizeDiaryColor, sanitizeString } from '@/common/utils';
 import { CreateDiaryDto, UpdateDiaryDto } from './dto';
 import { DiaryEntryTransferService } from './diary-entry-transfer.service';
+import { ContentLockedException, isContentUnlocked } from '@/common/content-lock';
 
 type DiaryGoalFields = Pick<Diary, 'goalType' | 'goalTarget'>;
 
@@ -100,6 +101,9 @@ export class DiariesService {
       ? dto.visibility
       : diary.visibility;
     const requestedColor = normalizeDiaryColor(dto.color);
+    if (diary.isLocked && visibility === 'public') {
+      throw apiError(ConflictException, 'CONTENT_LOCKED_PRIVATE');
+    }
 
     diary.name = sanitizedName;
     diary.icon = sanitizedIcon;
@@ -121,6 +125,10 @@ export class DiariesService {
 
     if (diary.isDefault) {
       throw apiError(BadRequestException, 'DIARY_DEFAULT_NOT_DELETABLE');
+    }
+    // Its entries would move to the default diary, out of the lock
+    if (diary.isLocked && !isContentUnlocked(userId)) {
+      throw apiError(ContentLockedException, 'CONTENT_LOCKED');
     }
 
     // Get default diary to move entries to

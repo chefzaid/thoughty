@@ -9,6 +9,7 @@ import {
   EntryResponseDto,
 } from './dto';
 import { toEntryResponse } from './entry-response.mapper';
+import { assertEntryUnlocked, hideLockedEntries, hideLockedEntriesSql } from '@/common/content-lock';
 import { dayParts, writersDayOr } from '@/common/utils';
 import { ENTRY_WORDS_SQL } from '@/modules/stats/stats-sql';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
@@ -61,7 +62,7 @@ export class EntriesQueryService {
       `SELECT t.tag AS tag, COUNT(*)::int AS count
          FROM entries e
          CROSS JOIN LATERAL UNNEST(e.tags) AS t(tag)
-        WHERE e.user_id = $1 AND e.deleted_at IS NULL
+        WHERE e.user_id = $1 AND e.deleted_at IS NULL${hideLockedEntriesSql(userId)}
         GROUP BY t.tag
         ORDER BY t.tag`,
       [userId],
@@ -101,6 +102,7 @@ export class EntriesQueryService {
     if (diaryId) {
       randomQb = randomQb.andWhere('e.diary_id = :diaryId', { diaryId });
     }
+    hideLockedEntries(randomQb, userId);
 
     const [randomEntry, onThisDayEntries, openedCapsules, dueReminders, peopleOfTheDay] = await Promise.all([
       randomQb.getOne(),
@@ -136,7 +138,8 @@ export class EntriesQueryService {
 
   /**
    * "On this day": the writer's entries from earlier years dated on this month and day, newest first,
-   * in one diary or all of them. Entries in the recycle bin and sealed time capsules never count.
+   * in one diary or all of them. Entries in the recycle bin and sealed time capsules never count, nor
+   * do locked ones unless the request is unlocked (never in the email, which runs without one).
    * Highlights and the "On this day" email both read it.
    */
   async findOnThisDay(userId: number, on: OnThisDayQuery): Promise<OnThisDayEntry[]> {
@@ -155,6 +158,7 @@ export class EntriesQueryService {
     if (on.diaryId) {
       qb.andWhere('e.diary_id = :diaryId', { diaryId: on.diaryId });
     }
+    hideLockedEntries(qb, userId);
 
     const { entities, raw } = await qb.getRawAndEntities();
     return entities.map((entry, index) => ({
@@ -166,7 +170,8 @@ export class EntriesQueryService {
   /**
    * One memory from this calendar month in an earlier year, picked the same way every time: a favorite
    * first, then the entry with the most words, then the oldest. Archived and empty entries, sealed time
-   * capsules and the recycle bin are left out. The monthly recap email reads it.
+   * capsules, locked entries (the email runs without an unlock) and the recycle bin are left out. The
+   * monthly recap email reads it.
    */
   async findMonthMemory(userId: number, on: MonthMemoryQuery): Promise<OnThisDayEntry | null> {
     const qb = this.entryRepository
@@ -187,6 +192,7 @@ export class EntriesQueryService {
     if (on.diaryId) {
       qb.andWhere('e.diary_id = :diaryId', { diaryId: on.diaryId });
     }
+    hideLockedEntries(qb, userId);
 
     const { entities, raw } = await qb.getRawAndEntities<{ entry_year: string }>();
     return entities[0] ? { entry: entities[0], yearsAgo: on.year - Number.parseInt(raw[0].entry_year, 10) } : null;
@@ -200,6 +206,7 @@ export class EntriesQueryService {
     if (!entry) {
       throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
+    assertEntryUnlocked(entry);
     // A sealed time capsule shows no history until it opens
     if (entry.sealedUntil) {
       return [];

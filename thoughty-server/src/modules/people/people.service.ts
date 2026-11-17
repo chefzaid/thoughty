@@ -6,6 +6,7 @@ import { Person } from '@/database/entities';
 import { PEOPLE_LIMIT, PEOPLE_LOCK_NAMESPACE } from '@/modules/entries';
 import { MergePersonDto, PersonListResponseDto, PersonResponseDto, UpdatePersonDto } from './dto';
 import { assertValidPersonDate, toPersonDate, type PersonDateColumns } from './person-dates';
+import { hideLockedEntriesSql } from '@/common/content-lock';
 
 interface PersonRow extends PersonDateColumns {
   id: number;
@@ -17,8 +18,11 @@ interface PersonRow extends PersonDateColumns {
   updatedAt: Date;
 }
 
-/** Each person with their handles, how many entries outside the recycle bin mention them and the latest one's date. */
-const PERSON_SUMMARY_SQL = `
+/**
+ * Each person with their handles, how many entries outside the recycle bin mention them and the latest
+ * one's date; locked entries count only while the request is unlocked (`lockFilter`).
+ */
+const personSummarySql = (lockFilter: string) => `
   SELECT p.id, p.name, p.created_at AS "createdAt", p.updated_at AS "updatedAt",
          p.date_kind AS "dateKind", p.date_month AS "dateMonth", p.date_day AS "dateDay", p.date_year AS "dateYear",
          (SELECT array_agg(h.handle ORDER BY h.created_at, h.handle) FROM person_handles h WHERE h.person_id = p.id) AS handles,
@@ -26,7 +30,7 @@ const PERSON_SUMMARY_SQL = `
          to_char(MAX(e.date), 'YYYY-MM-DD') AS "lastMentionedOn"
     FROM people p
     LEFT JOIN entry_people ep ON ep.person_id = p.id
-    LEFT JOIN entries e ON e.id = ep.entry_id AND e.deleted_at IS NULL
+    LEFT JOIN entries e ON e.id = ep.entry_id AND e.deleted_at IS NULL${lockFilter}
    WHERE p.user_id = $1 AND ($2::int IS NULL OR p.id = $2)
    GROUP BY p.id
    ORDER BY lower(p.name), p.id`;
@@ -128,7 +132,7 @@ export class PeopleService {
   }
 
   private async summaries(manager: EntityManager, userId: number, id: number | null): Promise<PersonResponseDto[]> {
-    const rows = (await manager.query(PERSON_SUMMARY_SQL, [userId, id])) as PersonRow[];
+    const rows = (await manager.query(personSummarySql(hideLockedEntriesSql(userId)), [userId, id])) as PersonRow[];
     return rows.map((row) => ({
       id: row.id,
       name: row.name,

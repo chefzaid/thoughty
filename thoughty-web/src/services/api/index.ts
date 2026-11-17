@@ -27,3 +27,5 @@ export * from './shareLinksService';
 export * from './rereadReminderService';
 export * from './openTasksService';
 export * from './entryReaderService';
+export * from './contentLockService';
+export * from './contentUnlockToken';

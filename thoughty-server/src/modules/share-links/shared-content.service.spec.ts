@@ -26,7 +26,7 @@ describe('SharedContentService', () => {
   let updateBuilder: Record<string, jest.Mock>;
   let entryRepository: { findOne: jest.Mock };
   let attachmentRepository: { findOne: jest.Mock };
-  let bookVersionRepository: { query: jest.Mock; createQueryBuilder: jest.Mock };
+  let bookVersionRepository: { query: jest.Mock; createQueryBuilder: jest.Mock; findOne: jest.Mock; manager: { query: jest.Mock } };
   let bookBuilder: Record<string, jest.Mock>;
   let service: SharedContentService;
 
@@ -50,6 +50,8 @@ describe('SharedContentService', () => {
     bookVersionRepository = {
       query: jest.fn().mockResolvedValue([{ title: 'Summer', author: null, format: 'pdf', filename: 'summer.pdf', size: 4 }]),
       createQueryBuilder: jest.fn(() => bookBuilder),
+      findOne: jest.fn().mockResolvedValue({ id: 5, manifest: { chapters: [{ title: 'June', entryIds: [12] }] } }),
+      manager: { query: jest.fn().mockResolvedValue([]) },
     };
     service = new SharedContentService(linkRepository as never, entryRepository as never, attachmentRepository as never, bookVersionRepository as never);
   });
@@ -58,7 +60,9 @@ describe('SharedContentService', () => {
     const shared = await service.open(token);
 
     expect(linkRepository.query).toHaveBeenCalledWith(expect.stringContaining('l.token_hash = $1'), [hashShareToken(token)]);
-    expect(linkRepository.query.mock.calls[0][0]).toEqual(expect.stringContaining('e.deleted_at IS NULL AND e.sealed_until IS NULL'));
+    expect(linkRepository.query.mock.calls[0][0]).toEqual(
+      expect.stringContaining('e.deleted_at IS NULL AND e.sealed_until IS NULL AND NOT (e.is_locked OR e.diary_locked)'),
+    );
     expect(linkRepository.query.mock.calls[0][0]).toEqual(expect.stringContaining('u.deleted_at IS NULL'));
     expect(updateBuilder.andWhere).toHaveBeenCalledWith('(max_views IS NULL OR view_count < max_views)');
     expect(shared).toEqual({
@@ -123,6 +127,16 @@ describe('SharedContentService', () => {
 
     linkRepository.query.mockResolvedValue([liveRow()]);
     await expectApiError(service.downloadBook(token), NotFoundException, 'SHARE_LINK_NOT_FOUND');
+  });
+
+  it('keeps a book closed, without counting a view, while it holds an entry locked now', async () => {
+    linkRepository.query.mockResolvedValue([liveRow({ entry_id: null, book_version_id: 9 })]);
+    bookVersionRepository.manager.query.mockResolvedValue([{ '?column?': 1 }]);
+
+    await expectApiError(service.open(token), NotFoundException, 'SHARE_LINK_NOT_FOUND');
+    await expectApiError(service.downloadBook(token), NotFoundException, 'SHARE_LINK_NOT_FOUND');
+    expect(bookVersionRepository.manager.query).toHaveBeenCalledWith(expect.stringContaining('e.id = ANY($2::int[])'), [3, [12]]);
+    expect(updateBuilder.execute).not.toHaveBeenCalled();
   });
 
   it('serves only the shared entry’s own files and poster frames', async () => {

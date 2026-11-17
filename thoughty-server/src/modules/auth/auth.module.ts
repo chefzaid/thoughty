@@ -55,6 +55,6 @@ import { getSigningSecret } from './auth-secrets';
     JwtStrategy,
     JwtAuthGuard,
   ],
-  exports: [AuthService, EmailService, EmailVerificationService, JwtAuthGuard, JwtModule],
+  exports: [AuthService, EmailService, EmailVerificationService, TwoFactorService, JwtAuthGuard, JwtModule],
 })
 export class AuthModule {}

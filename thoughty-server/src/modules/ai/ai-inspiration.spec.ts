@@ -5,6 +5,7 @@ import { AiChatHistory, Entry } from '@/database/entities';
 import { ConfigService } from '@/modules/config';
 import { AiService } from './ai.service';
 import { UNTRUSTED_CONTENT_INSTRUCTION } from './untrusted-content';
+import { asUnlocked, LOCKED_OUT_WHERE } from '@/common/content-lock/content-lock.test-helpers';
 
 describe('AiService inspiration', () => {
   let service: AiService;
@@ -73,7 +74,7 @@ describe('AiService inspiration', () => {
 
     expect(result).toEqual({ question: 'What does protecting your focus cost you at work?' });
     expect(entryRepository.find).toHaveBeenCalledWith({
-      where: { userId: 1, diaryId: 4 },
+      where: { userId: 1, ...LOCKED_OUT_WHERE, diaryId: 4 },
       select: { tags: true },
       order: { date: 'DESC', index: 'DESC' },
       take: 200,
@@ -108,9 +109,13 @@ describe('AiService inspiration', () => {
 
     expect(entryRepository.find).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { userId: 7 },
+        where: { userId: 7, ...LOCKED_OUT_WHERE },
       }),
     );
+
+    // An unlocked request reads the tags of locked entries too
+    await asUnlocked(7, () => service.generateInspiration(7, {}));
+    expect(entryRepository.find).toHaveBeenLastCalledWith(expect.objectContaining({ where: { userId: 7 } }));
   });
 
   it('requires tagged entries before contacting OpenRouter', async () => {

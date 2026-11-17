@@ -5,6 +5,8 @@ import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { AttachmentsService } from './attachments.service';
 import { Attachment, Entry } from '@/database/entities';
 import { Readable } from 'node:stream';
+import { ContentLockedException } from '@/common/content-lock';
+import { asUnlocked } from '@/common/content-lock/content-lock.test-helpers';
 
 const mockSend = jest.fn();
 
@@ -303,6 +305,14 @@ describe('AttachmentsService', () => {
       attachmentRepository.findOne.mockResolvedValue({ ...mockAttachment, entry: { sealedUntil: new Date('2030-01-01T08:00:00Z') } });
 
       await expect(service.findOwnedFile(1, 'abc-uuid.jpg')).rejects.toThrow(NotFoundException);
+    });
+
+    it('refuses a file of a locked entry with 423 unless the request is unlocked', async () => {
+      attachmentRepository.findOne.mockResolvedValue({ ...mockAttachment, entry: { userId: 1, sealedUntil: null, isLocked: false, diaryLocked: true } });
+
+      await expectApiError(service.findOwnedFile(1, 'abc-uuid.jpg'), ContentLockedException, 'CONTENT_LOCKED');
+      await expectApiError(service.getOwnedAttachment(1, 1), ContentLockedException, 'CONTENT_LOCKED');
+      await expect(asUnlocked(1, () => service.findOwnedFile(1, 'abc-uuid.jpg'))).resolves.toMatchObject({ key: 'abc-uuid.jpg' });
     });
 
     it('marks SVG and text as downloads and unknown types as octet-stream', async () => {

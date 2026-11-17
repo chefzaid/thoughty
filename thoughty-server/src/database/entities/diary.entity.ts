@@ -61,6 +61,10 @@ export class Diary {
   @Column({ name: 'default_template_id', type: 'varchar', length: 100, nullable: true })
   defaultTemplateId: string | null;
 
+  /** Whether the writer locked the diary behind their PIN; each of its entries is locked with it. */
+  @Column({ name: 'is_locked', type: 'boolean', default: false })
+  isLocked: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

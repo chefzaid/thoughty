@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { buildAuthHeaders, safeJsonParse } from '../services/api/base';
+import { setContentUnlockToken } from '../services/api/contentUnlockToken';
 import { API_BASE } from './authRequests';
 import type { TokenResponse, User } from './authTypes';
 import {
@@ -74,8 +75,10 @@ export function useAuthSession() {
     setUser(session.user);
   }, []);
 
+  // Signing out also ends the PIN unlock of this tab
   const clearSession = useCallback((): void => {
     accessTokenRef.current = null;
+    setContentUnlockToken(null);
   }, []);
 
   // Exchange the refresh token cookie for a new access token (and a rotated cookie). Concurrent

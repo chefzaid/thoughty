@@ -118,6 +118,18 @@ export class Entry {
   @Column({ name: 'reread_on', type: 'date', nullable: true })
   rereadOn: string | null;
 
+  /** Whether the writer locked this entry behind their PIN (see `diaryLocked` for its diary's lock). */
+  @Column({ name: 'is_locked', type: 'boolean', default: false })
+  isLocked: boolean;
+
+  /**
+   * A copy of the diary's `isLocked`, kept in step by database triggers whenever the entry is written,
+   * moves to another diary, or its diary is locked or unlocked; the application never writes it. The
+   * entry is locked when either flag is set (`LOCKED_ENTRY_SQL`).
+   */
+  @Column({ name: 'diary_locked', type: 'boolean', default: false, insert: false, update: false })
+  diaryLocked: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

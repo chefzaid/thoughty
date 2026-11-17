@@ -371,6 +371,17 @@
     background: rgba(239, 68, 68, 0.1);
 }
 
+.action-btn.lock:hover,
+.action-btn.lock.locked {
+    background: rgba(99, 102, 241, 0.12);
+}
+
+.diary-lock-badge {
+    margin-left: 0.35rem;
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
 .edit-actions {
     display: flex;
     gap: 0.5rem;

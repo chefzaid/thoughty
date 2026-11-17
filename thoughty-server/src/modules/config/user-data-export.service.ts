@@ -29,6 +29,8 @@ import {
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 import { toPersonDate, type PersonDateColumns } from '@/modules/people/person-dates';
 import { isExportableSettingKey } from './config.service';
+import { ContentLockedException, holdsLockedContent, isContentUnlocked } from '@/common/content-lock';
+import { apiError } from '@/common/errors';
 
 /** An opt-in email setting as the data download writes it, null when it was never saved. */
 function exportOptInEmail(setting: OptInEmailSetting | null) {
@@ -96,7 +98,14 @@ export class UserDataExportService {
     private readonly composerDraftRepository: Repository<ComposerDraft>,
   ) {}
 
+  /**
+   * Everything the writer's account holds, locked diaries and entries included (it is their data), so
+   * while anything is locked the request must be unlocked with the PIN (423 otherwise).
+   */
   async downloadData(userId: number): Promise<Record<string, unknown>> {
+    if (!isContentUnlocked(userId) && (await holdsLockedContent(this.entryRepository, userId))) {
+      throw apiError(ContentLockedException, 'CONTENT_LOCKED');
+    }
     const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people, onThisDayEmail, monthlyRecapEmail, capsules, shareLinks, composerDraft] = await Promise.all([
       this.userRepository.findOne({ where: { id: userId } }),
       this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
@@ -157,6 +166,7 @@ export class UserDataExportService {
         goalType: diary.goalType,
         goalTarget: diary.goalTarget,
         defaultTemplateId: diary.defaultTemplateId,
+        isLocked: diary.isLocked,
         createdAt: diary.createdAt,
       })),
       entries: entries.map((entry) => ({
@@ -177,6 +187,7 @@ export class UserDataExportService {
         deletedAt: entry.deletedAt,
         sealedUntil: entry.sealedUntil,
         rereadOn: entry.rereadOn,
+        isLocked: entry.isLocked,
       })),
       revisions: revisions.map((revision) => ({
         id: revision.id,

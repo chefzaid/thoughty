@@ -29,6 +29,7 @@ import { AccountPurgeModule } from './modules/account-purge';
 import { TimeCapsuleEmailModule } from './modules/time-capsules';
 import { ShareLinksModule } from './modules/share-links';
 import { ComposerDraftsModule } from './modules/composer-drafts';
+import { ContentLockModule } from './modules/content-lock';
 import { HealthController } from './health.controller';
 import {
   createThrottlerModuleOptions,
@@ -85,6 +86,7 @@ import {
     TimeCapsuleEmailModule,
     ShareLinksModule,
     ComposerDraftsModule,
+    ContentLockModule,
   ],
   providers: [
     // Global JWT Auth Guard

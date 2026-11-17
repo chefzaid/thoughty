@@ -43,6 +43,7 @@ interface MenuActionButtonProps {
     title: string;
     className: string;
     onClick: () => void;
+    disabled?: boolean;
     children: ReactNode;
 }
 
@@ -50,6 +51,7 @@ export function MenuActionButton({
     title,
     className,
     onClick,
+    disabled = false,
     children,
 }: Readonly<MenuActionButtonProps>) {
     return (
@@ -57,6 +59,7 @@ export function MenuActionButton({
             type="button"
             role="menuitem"
             onClick={onClick}
+            disabled={disabled}
             className={`flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors ${className}`}
             title={title}
             aria-label={title}

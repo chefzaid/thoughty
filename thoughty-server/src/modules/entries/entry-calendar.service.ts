@@ -7,6 +7,7 @@ import { plainExcerpt } from '@/common/utils/plain-excerpt.util';
 import type { EntryCalendarResponseDto, GetEntryCalendarQueryDto } from './dto';
 import { applyEntryListFilters, applyEntryMonthFilter } from './entry-list-filters';
 import { EntrySearchService } from './entry-search.service';
+import { isContentUnlocked, isEntryLocked } from '@/common/content-lock';
 
 /** Characters of the text read for a snippet, and the length of the snippet itself. */
 const SNIPPET_SOURCE_LENGTH = 400;
@@ -15,7 +16,8 @@ const SNIPPET_LENGTH = 100;
 /**
  * The journal calendar: a month's entries that match the journal filters, as short summaries (title,
  * the start of the text, time and mood) rather than whole entries, so a month grid loads in one light
- * request. Entries in the recycle bin are left out.
+ * request. Entries in the recycle bin are left out. A locked entry, unless the request is unlocked, keeps its
+ * title, as the privacy blur does, and shows no text or mood.
  */
 @Injectable()
 export class EntryCalendarService {
@@ -29,23 +31,25 @@ export class EntryCalendarService {
     const { month, search } = query;
     const qb = this.entryRepository
       .createQueryBuilder('e')
-      .select(['e.id', 'e.diaryId', 'e.date', 'e.index', 'e.timeOfDay', 'e.title', 'e.mood', 'e.sealedUntil'])
+      .select(['e.id', 'e.diaryId', 'e.date', 'e.index', 'e.timeOfDay', 'e.title', 'e.mood', 'e.sealedUntil', 'e.isLocked', 'e.diaryLocked'])
       .addSelect('LEFT(e.content, :snippetSource)', 'content_start')
       .setParameter('snippetSource', SNIPPET_SOURCE_LENGTH)
       .where('e.user_id = :userId', { userId });
     applyEntryMonthFilter(qb, month);
 
     const prepared = search ? await this.entrySearch.prepare(search) : null;
-    applyEntryListFilters(qb, query, prepared);
+    applyEntryListFilters(qb, query, prepared, userId);
     addSameDayOrder(qb.orderBy('e.date', 'ASC'), 'e');
 
     const { entities, raw } = await qb.getRawAndEntities<{ e_id: number; content_start: string | null }>();
     const textStarts = new Map(raw.map((row) => [Number(row.e_id), row.content_start ?? '']));
+    const unlocked = isContentUnlocked(userId);
 
     return {
       month,
       entries: entities.map((entry) => {
         const sealed = Boolean(entry.sealedUntil);
+        const withheld = !unlocked && isEntryLocked(entry);
         return {
           id: entry.id,
           diary_id: entry.diaryId ?? null,
@@ -53,9 +57,10 @@ export class EntryCalendarService {
           index: entry.index,
           time_of_day: entry.timeOfDay ?? null,
           title: sealed ? null : (entry.title ?? null),
-          snippet: sealed ? '' : plainExcerpt(textStarts.get(entry.id) ?? '', SNIPPET_LENGTH),
-          mood: sealed ? null : (entry.mood ?? null),
+          snippet: sealed || withheld ? '' : plainExcerpt(textStarts.get(entry.id) ?? '', SNIPPET_LENGTH),
+          mood: sealed || withheld ? null : (entry.mood ?? null),
           sealed,
+          withheld,
         };
       }),
     };

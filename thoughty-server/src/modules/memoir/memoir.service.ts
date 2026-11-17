@@ -29,6 +29,7 @@ import {
   memoirTimeZone,
   nextWeeklyDelivery,
 } from './memoir-schedule';
+import { isEntryWithheld } from '@/common/content-lock';
 
 const MEMOIR_DIARY_ICON = '📖';
 const WORDS_PER_PAGE = 250;
@@ -269,18 +270,30 @@ export class MemoirService {
     return new Map(snoozes.map((snooze) => [snooze.questionId, snooze.snoozedUntil]));
   }
 
-  /** Answers whose entry is in the recycle bin load without it and count as unanswered. */
+  /**
+   * Answers whose entry is in the recycle bin load without it and count as unanswered. A locked answer
+   * still counts as answered, but its words only while the request is unlocked.
+   */
   private async loadAnswers(userId: number): Promise<AnswerSummary[]> {
     const answers = await this.answerRepository.find({
       where: { userId },
       relations: { entry: true },
-      select: { questionId: true, entryId: true, createdAt: true, entry: { id: true, content: true } },
+      select: {
+        questionId: true,
+        entryId: true,
+        createdAt: true,
+        entry: { id: true, userId: true, content: true, isLocked: true, diaryLocked: true },
+      },
     });
-    return answers.filter((answer) => answer.entry).map((answer) => ({
-      questionId: answer.questionId,
-      entryId: answer.entryId,
-      createdAt: answer.createdAt,
-      content: answer.entry?.content ?? '',
-    }));
+    return answers.flatMap(({ entry, ...answer }) =>
+      entry
+        ? [{
+            questionId: answer.questionId,
+            entryId: answer.entryId,
+            createdAt: answer.createdAt,
+            content: isEntryWithheld(entry) ? '' : entry.content,
+          }]
+        : [],
+    );
   }
 }

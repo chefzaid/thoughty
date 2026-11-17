@@ -5,6 +5,8 @@ import { AttachmentsController, RangeNotSatisfiableException } from './attachmen
 import { VideoPosterService } from './video-poster.service';
 import { AttachmentsService } from './attachments.service';
 import { AudioTranscriptionService } from './audio-transcription.service';
+import { ContentLockedException } from '@/common/content-lock';
+import { apiError } from '@/common/errors';
 
 describe('AttachmentsController', () => {
   let controller: AttachmentsController;
@@ -192,6 +194,13 @@ describe('AttachmentsController', () => {
       );
       expect(mockRes.status).not.toHaveBeenCalled();
       expect(opened.stream.pipe).toHaveBeenCalledWith(mockRes);
+    });
+
+    it('answers a locked entry’s file with 423, any other failure as missing', async () => {
+      attachmentsService.findOwnedFile.mockRejectedValueOnce(apiError(ContentLockedException, 'CONTENT_LOCKED'));
+      await expect(controller.serveFile(mockUser as any, 'abc-uuid.jpg', undefined, response() as any)).rejects.toThrow(ContentLockedException);
+      attachmentsService.findOwnedFile.mockRejectedValueOnce(new Error('gone'));
+      await expect(controller.serveFile(mockUser as any, 'abc-uuid.jpg', undefined, response() as any)).rejects.toThrow(NotFoundException);
     });
 
     it('cuts the connection when the storage stream fails midway', async () => {

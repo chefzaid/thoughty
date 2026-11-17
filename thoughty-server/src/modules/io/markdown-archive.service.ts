@@ -19,6 +19,7 @@ import {
 import { AttachmentsService, isVideoMimetype, maxSizeFor } from '@/modules/attachments';
 import { ConfigService } from '@/modules/config';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
+import { readableEntrySql } from '@/common/content-lock';
 
 /** Videos go into an archive until they reach 2 GB in all; the README lists the ones left out. */
 export const MAX_ARCHIVE_VIDEO_BYTES = 2 * 1024 * 1024 * 1024;
@@ -84,6 +85,7 @@ export class MarkdownArchiveService {
       .createQueryBuilder('e')
       .leftJoinAndSelect('e.attachments', 'a')
       .where('e.user_id = :userId', { userId })
+      .andWhere(readableEntrySql(userId))
       .orderBy('e.date', 'ASC')
       .addOrderBy('e.index', 'ASC')
       .addOrderBy('a.created_at', 'ASC');

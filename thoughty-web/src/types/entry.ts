@@ -45,6 +45,15 @@ export interface Entry {
   sealed_until?: string | null;
   /** The writer's day (YYYY-MM-DD) on which they asked to reread the entry; from then Highlights shows it until done. */
   reread_on?: string | null;
+  /** Whether the writer locked this entry behind their PIN. */
+  is_locked?: boolean;
+  /** Whether its diary is locked, which locks the entry too. */
+  diary_locked?: boolean;
+  /**
+   * Whether the entry is locked and the request was not unlocked: its text is then empty and its tags, mood,
+   * feelings and attachments are left out; its date, title, diary and flags stay.
+   */
+  withheld?: boolean;
 }
 
 /** Keyword search results come best match first, or by date as without a search. */

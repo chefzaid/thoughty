@@ -4,6 +4,8 @@ import { PASSWORD_SYMBOLS } from '../AuthPage/types';
 import './DataPrivacySection.css';
 import ActiveSessionsSection from './ActiveSessionsSection';
 import TwoFactorSection from './TwoFactorSection';
+import PinLockSection from '../ContentLock/PinLockSection';
+import { useContentLock } from '../ContentLock/contentLockContext';
 
 type FormSubmitHandler = NonNullable<ComponentProps<'form'>['onSubmit']>;
 
@@ -273,9 +275,12 @@ function DataPrivacySection({ t, isDark, onDownloadData, showDeleteConfirm, setS
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const contentLock = useContentLock();
 
   const handleDownload = async () => {
     setDownloadError('');
+    // The download holds everything, locked diaries and entries too, so it needs the PIN while anything is locked
+    if (contentLock?.hasLockedContent && !(await contentLock.requestUnlock())) return;
     setDownloading(true);
     const success = await onDownloadData();
     setDownloading(false);
@@ -318,6 +323,10 @@ function DataPrivacySection({ t, isDark, onDownloadData, showDeleteConfirm, setS
         <div className="download-data-divider" />
 
         <TwoFactorSection isDark={isDark} t={t} />
+
+        <div className="download-data-divider" />
+
+        <PinLockSection isDark={isDark} hasPassword={isLocalAuth} t={t} />
 
         <div className="download-data-divider" />
 

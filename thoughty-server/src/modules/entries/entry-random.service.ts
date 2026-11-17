@@ -6,6 +6,7 @@ import { apiError } from '@/common/errors';
 import type { GetRandomEntryQueryDto, RandomEntryResponseDto } from './dto';
 import { applyEntryListFilters } from './entry-list-filters';
 import { EntrySearchService } from './entry-search.service';
+import { hideLockedEntries } from '@/common/content-lock';
 
 interface PickedRow {
   id: number;
@@ -20,7 +21,8 @@ interface PickedRow {
  * PostgreSQL picks one with `ORDER BY random() LIMIT 1`, so every match is equally likely and only the
  * picked row leaves the database. A writer's journal is thousands of entries at most, which one scan reads
  * in milliseconds; counting first and reading at a random offset would scan the same rows twice and could
- * miss when an entry changes in between. Sealed time capsules are never picked; entries in the recycle bin
+ * miss when an entry changes in between. Sealed time capsules are never picked, nor locked entries unless the
+ * request is unlocked; entries in the recycle bin
  * are left out by the entity's soft delete.
  */
 @Injectable()
@@ -42,7 +44,8 @@ export class EntryRandomService {
       .addSelect('e.index', 'index')
       .where('e.user_id = :userId', { userId })
       .andWhere('e.sealed_until IS NULL');
-    applyEntryListFilters(picked, query, prepared);
+    applyEntryListFilters(picked, query, prepared, userId);
+    hideLockedEntries(picked, userId);
     if (date) {
       picked.andWhere('e.date = :date', { date });
     }

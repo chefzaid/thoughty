@@ -8,13 +8,8 @@ import { addMockMentionedPeople, type MockPerson } from "./mockApp.routes.people
 import type { MockDiary } from "./mockApp.diaries";
 import type { MockFeatureFlags } from "./mockApp.feature-flags";
 import type { components } from "../../src/generated/openapi";
-import {
-  DEFAULT_CLOUD_FILES,
-  DEFAULT_CLOUD_SCHEDULES,
-  DEFAULT_CLOUD_STATUS,
-  DEFAULT_DIARIES,
-  DEFAULT_FEATURE_REQUESTS,
-} from "./mockApp.defaults";
+import { DEFAULT_CLOUD_FILES, DEFAULT_CLOUD_SCHEDULES, DEFAULT_CLOUD_STATUS, DEFAULT_DIARIES, DEFAULT_FEATURE_REQUESTS } from "./mockApp.defaults";
+import { createMockContentLockState, type MockContentLockState } from "./mockApp.content-lock";
 import type { MockCloudFile, MockCloudProvider, MockCloudProviderStatus, MockCloudSchedule } from "./mockApp.cloud";
 import { createMockSignUpState, type MockSignUpOptions, type MockSignUpState } from "./mockApp.sign-up";
 
@@ -58,6 +53,8 @@ export interface MockEntry {
   capsule?: { openAt: string; sealedAt: string; openedAt: string | null };
   /** The day the writer asked to reread it on, `YYYY-MM-DD` (`mockApp.routes.reread-reminders.ts`). */
   rereadOn?: string | null;
+  /** Locked behind the PIN on its own; its diary's `isLocked` locks it too (`mockApp.content-lock.ts`). */
+  isLocked?: boolean;
   attachments?: Array<{
     id: number;
     original_filename: string;
@@ -187,6 +184,8 @@ export interface MockAppState {
     entryTemplates?: string;
   };
   diaries: MockDiary[];
+  /** The PIN, its wrong tries and the unlock (`mockApp.content-lock.ts`). */
+  contentLock: MockContentLockState;
   featureFlags: MockFeatureFlags;
   /** Requests refused with 503 FEATURE_DISABLED, which a spec expects the web app not to send. */
   featureDisabledRequests: string[];
@@ -422,6 +421,7 @@ export function createMockAppState(
     },
     // Copied, so diaries a test creates never leak into the next test's defaults
     diaries: (options.diaries || DEFAULT_DIARIES).map((diary) => ({ ...diary })),
+    contentLock: createMockContentLockState(),
     featureFlags: { ...options.featureFlags },
     featureDisabledRequests: [],
     entries: sortEntries(options.initialEntries || []),

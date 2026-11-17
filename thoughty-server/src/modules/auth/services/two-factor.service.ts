@@ -19,7 +19,8 @@ import {
 import { EmailService } from './email.service';
 import { getTwoFactorSecret } from '../auth-secrets';
 
-type TwoFactorPurpose = 'login' | 'enable';
+/** `content-pin` confirms changing, removing or resetting the PIN of locked diaries and entries. */
+type TwoFactorPurpose = 'login' | 'enable' | 'content-pin';
 
 const CHALLENGE_TTL_MS = 10 * 60 * 1000;
 const CHALLENGE_TTL_SECONDS = CHALLENGE_TTL_MS / 1000;
@@ -54,7 +55,8 @@ export class TwoFactorService {
   }
 
   private assertEligible(user: User, purpose: TwoFactorPurpose): void {
-    if (user.authProvider !== 'local' || !user.passwordHash) {
+    // A PIN change is confirmed by email for any account: one without a password has nothing else to give
+    if (purpose !== 'content-pin' && (user.authProvider !== 'local' || !user.passwordHash)) {
       throw apiError(BadRequestException, 'AUTH_2FA_PASSWORD_ACCOUNTS_ONLY');
     }
     if (!user.emailVerified) {
@@ -164,6 +166,16 @@ export class TwoFactorService {
     }
     this.clearChallengeFields(user);
     return user;
+  }
+
+  /** Emails a code that confirms a change to the writer's PIN (the PIN lock of diaries and entries). */
+  async startContentPinChallenge(user: User): Promise<TwoFactorChallengeResponseDto> {
+    return this.startChallenge(user, 'content-pin');
+  }
+
+  /** Uses up the writer's PIN-change challenge, or refuses a wrong, expired or used code. */
+  async consumeContentPinChallenge(userId: number, dto: TwoFactorCodeDto): Promise<void> {
+    await this.consumeChallenge(dto, 'content-pin', userId);
   }
 
   async consumeLogin(dto: TwoFactorCodeDto): Promise<User> {

@@ -81,6 +81,15 @@ describe('TimeCapsuleDeliveryService', () => {
     expect(emailService.sendRenderedEmail).not.toHaveBeenCalled();
   });
 
+  it('opens a locked entry’s capsule without emailing its text', async () => {
+    timeCapsuleService.openCapsule.mockResolvedValueOnce({ id: 11, date: '2026-10-27', title: null, content: 'Hidden', isLocked: false, diaryLocked: true });
+    withBatches([{ id: 1, email: 'writer@example.com', email_verified: true }]);
+
+    await expect(service.deliverDue(now)).resolves.toBe(0);
+    expect(timeCapsuleService.openCapsule).toHaveBeenCalledTimes(1);
+    expect(emailService.sendRenderedEmail).not.toHaveBeenCalled();
+  });
+
   it('works through full batches until one comes back short', async () => {
     const full = Array.from({ length: 50 }, (_, index) => ({ id: index + 1, email: 'w@example.com', email_verified: true }));
     withBatches(full, [{ id: 51, email: 'w@example.com', email_verified: true }]);

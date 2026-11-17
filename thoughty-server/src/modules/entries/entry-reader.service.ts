@@ -7,6 +7,7 @@ import type { EntryReaderResponseDto, GetEntryReaderQueryDto } from './dto';
 import { toEntryResponse } from './entry-response.mapper';
 import { applyEntryListFilters, applyEntryMonthFilter } from './entry-list-filters';
 import { EntrySearchService } from './entry-search.service';
+import { readableEntrySql } from '@/common/content-lock';
 
 /**
  * Book order: the oldest day first, and each day as the journal orders it (entries without a time first,
@@ -34,7 +35,7 @@ const toId = (value: number | string | null): number | null => (value === null ?
  * row leaves the database; the entry itself is then read whole. The list's pages cannot do this cheaply:
  * they follow the list's order (pins first, a search by relevance), so the oldest-first neighbours of an
  * entry could sit on any page. Sealed time capsules are left out of the reading altogether, so a capsule
- * is never shown or counted; entries in the recycle bin are left out by the entity's soft delete.
+ * is never shown or counted, and so are locked entries unless the request is unlocked; entries in the recycle bin are left out by the entity's soft delete.
  */
 @Injectable()
 export class EntryReaderService {
@@ -56,8 +57,9 @@ export class EntryReaderService {
       .addSelect(`ROW_NUMBER() OVER (${BOOK_ORDER})`, 'position')
       .addSelect('COUNT(*) OVER ()', 'total')
       .where('e.user_id = :userId', { userId })
-      .andWhere('e.sealed_until IS NULL');
-    applyEntryListFilters(read, query, prepared);
+      .andWhere('e.sealed_until IS NULL')
+      .andWhere(readableEntrySql(userId));
+    applyEntryListFilters(read, query, prepared, userId);
     if (date) {
       read.andWhere('e.date = :date', { date });
     }

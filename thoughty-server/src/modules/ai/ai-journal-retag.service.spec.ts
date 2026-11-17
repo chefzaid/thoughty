@@ -1,6 +1,7 @@
 import { BadGatewayException, BadRequestException } from '@nestjs/common';
 import { AiJournalRetagService } from './ai-journal-retag.service';
 import { requestJournalRetagPlan } from './journal-retagging';
+import { LOCKED_OUT_WHERE } from '@/common/content-lock/content-lock.test-helpers';
 
 jest.mock('./journal-retagging', () => ({
   ...jest.requireActual('./journal-retagging'),
@@ -62,7 +63,7 @@ describe('AiJournalRetagService', () => {
     });
     expect(repository.findAndCount).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { userId: 7 },
+        where: { userId: 7, ...LOCKED_OUT_WHERE },
         take: 300,
       }),
     );

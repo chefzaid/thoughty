@@ -107,6 +107,7 @@ export class BooksController {
   @Get('versions/:versionId/download')
   @ApiOperation({ summary: 'Download an immutable saved book version' })
   @ApiResponse({ status: 200, description: 'The exact file stored for this version' })
+  @ApiResponse({ status: 423, description: 'The version holds entries locked now, and the request is not unlocked' })
   async downloadVersion(
     @CurrentUser() user: AuthenticatedUser,
     @Param('versionId', ParseIntPipe) versionId: number,

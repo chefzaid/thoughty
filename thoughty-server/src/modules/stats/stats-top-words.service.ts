@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Entry } from '@/database/entities';
 import type { StatsTopWordsDto } from './dto';
 import { topWords } from './stats-words';
+import { readableEntrySql } from '@/common/content-lock';
 
 /** The list shows at most this many words. */
 export const TOP_WORDS = 10;
@@ -32,6 +33,7 @@ export class StatsTopWordsService {
       .select('e.content', 'content')
       .where('e.user_id = :userId', { userId })
       .andWhere('e.sealed_until IS NULL')
+      .andWhere(readableEntrySql(userId))
       .andWhere('e.date BETWEEN :monthStart AND :today', { monthStart: `${month}-01`, today });
     if (diaryId) {
       query.andWhere('e.diary_id = :diaryId', { diaryId });
