@@ -1,5 +1,5 @@
 # Match the Node version used by the application Dockerfiles and the CI pipeline.
-FROM node:22
+FROM node:26.13.1@sha256:e18c3ccdf7d71619990b0e85639f506e2028a95410999cab24cc373cbd10e0ac
 
 WORKDIR /workspace
 

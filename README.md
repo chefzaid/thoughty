@@ -4,7 +4,7 @@
 
 Thoughty is a privacy-focused journal. Write dated entries in plain text or Markdown, with an optional title, time, and mood, and organize them with tags and separate diaries. Search, highlights, stats, and a yearly review help you revisit what you wrote. A guided memoir asks one life-story question a week and collects the answers, written or spoken, into a book. AI help (tagging, rephrasing, summaries, inspiration) is optional. Your journal stays portable: import from Day One, Journey, Google Keep, or Obsidian and Logseq daily notes, export to Markdown, PDF, or EPUB, and sync to Google Drive, OneDrive, or Dropbox.
 
-![Node](https://img.shields.io/badge/node-22-brightgreen.svg)
+![Node](https://img.shields.io/badge/node-26-brightgreen.svg)
 ![React](https://img.shields.io/badge/react-19-61dafb.svg)
 ![NestJS](https://img.shields.io/badge/nestjs-11-e0234e.svg)
 ![TypeScript](https://img.shields.io/badge/typescript-5-3178c6.svg)
@@ -14,7 +14,7 @@ Production: [thoughty.swirlit.dev](https://thoughty.swirlit.dev)
 
 ## Quick Start
 
-Requires Node.js 22, Docker, and optionally [`mask`](https://github.com/jacobdeichert/mask).
+Requires Node.js 26, Docker, and optionally [`mask`](https://github.com/jacobdeichert/mask).
 
 ```bash
 mask build   # install dependencies

@@ -4,7 +4,7 @@ You run the NestJS API and the Vite React app on your machine. PostgreSQL and [R
 
 ## Prerequisites
 
-- Node.js 22 (the version in the Dockerfiles)
+- Node.js 26 (the version in the Dockerfiles)
 - Docker with Docker Compose
 - `mask` (optional)
 
@@ -37,7 +37,7 @@ cd thoughty-web && npm run dev       # terminal 2
 
 ### VS Code Dev Container
 
-`.devcontainer/` adds an `app` container (Node 22, `git`, `postgresql-client`, the GitHub CLI, and `mask` on x86_64 hosts) next to the `db` and `storage` services. It installs dependencies and forwards ports `3001`, `5173`, `5432`, `9000`, and `9001`. It also points the API at the services (`POSTGRES_HOST=db`, `S3_ENDPOINT=http://storage:9000`), so do not override those in a `.env`. The container has no Docker, so skip `mask run` and use the [manual commands](#without-mask) from `npm run migrate` on.
+`.devcontainer/` adds an `app` container (Node 26, `git`, `postgresql-client`, the GitHub CLI, and `mask` on x86_64 hosts) next to the `db` and `storage` services. It installs dependencies and forwards ports `3001`, `5173`, `5432`, `9000`, and `9001`. It also points the API at the services (`POSTGRES_HOST=db`, `S3_ENDPOINT=http://storage:9000`), so do not override those in a `.env`. The container has no Docker, so skip `mask run` and use the [manual commands](#without-mask) from `npm run migrate` on.
 
 ## Configuration
 

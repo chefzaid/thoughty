@@ -15,7 +15,7 @@ password = secrets.token_hex(32)
 (directory/'password').write_text(password)
 (directory/'env').write_text('POSTGRES_PASSWORD='+password+'\nPOSTGRES_DB=thoughty_ha_test\n')
 PY
-container="$(docker run -d --rm --env-file "$fixture_dir/env" --tmpfs /var/lib/postgresql:rw,size=256m -p 127.0.0.1::5432 "${POSTGRES_TEST_IMAGE:-docker.io/library/postgres:18.6-bookworm}")"
+container="$(docker run -d --rm --env-file "$fixture_dir/env" --tmpfs /var/lib/postgresql:rw,size=256m -p 127.0.0.1::5432 "${POSTGRES_TEST_IMAGE:-docker.io/library/postgres:18.7-bookworm}")"
 for attempt in $(seq 1 60); do
   if docker exec "$container" pg_isready -U postgres -d thoughty_ha_test >/dev/null 2>&1; then break; fi
   sleep 1
