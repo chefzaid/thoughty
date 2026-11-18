@@ -59,6 +59,8 @@ Always set `CONFIG_ENCRYPTION_SECRET`: the API and worker do not start without i
 
 The test jobs (`02-test` and `01-e2e`) ask the platform runner for 8 CPUs and 12 GiB (`KUBERNETES_CPU_LIMIT`, `KUBERNETES_MEMORY_LIMIT`); other jobs keep its 4 CPUs and 8 GiB. Jest, Vitest, ESLint and Playwright would size their pools from the node's threads, so `infra/scripts/ci-workers.sh` reads the job's CPU quota from its cgroup: Jest and Vitest workers and ESLint threads get one fewer than the job's CPUs, and Playwright half of them, since each worker drives a Chromium beside the Vite dev server. `01-build` installs both apps and saves the npm cache; the `02-test` jobs only restore it.
 
+Kaniko (`03-package` and `01-release`, through `infra/scripts/ci-container-build.sh`) pulls Docker Hub base images through the `swirl` group's GitLab Dependency Proxy (`--registry-mirror "$CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX"`, signed in with the job's `CI_DEPENDENCY_PROXY_*` credentials), so image builds are not held to Docker Hub's anonymous pull limit. It falls back to Docker Hub when the proxy fails, and images from other registries are pulled directly.
+
 Release is manual on `main`. It runs automatically from **Run pipeline** with `PIPELINE_MODE=full` (which also runs quality and security) and from onboarding pipelines. It never runs on other branches, merge requests, or `SONAR_SCAN_ONLY=true` pipelines, which the platform starts when analysis is older than 24 hours.
 
 `01-release`:
