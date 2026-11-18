@@ -117,7 +117,7 @@ variables:
     - job: 02-test
       artifacts: false
   image:
-    name: docker.io/library/maven@sha256:5efcc6faba78451290a355763d260f990361e21084ea2125a81ba1d7b5f545f2
+    name: docker.io/library/maven@sha256:a697e2f303fca5675052a656daefab51d845c79e6121a26edbdf8e3e4832ed97
     entrypoint: [""]
   cache:
     - key: thoughty-kaniko-executor-v2
@@ -268,7 +268,7 @@ variables:
     - job: 03-package
       artifacts: false
   image:
-    name: docker.io/library/maven@sha256:5efcc6faba78451290a355763d260f990361e21084ea2125a81ba1d7b5f545f2
+    name: docker.io/library/maven@sha256:a697e2f303fca5675052a656daefab51d845c79e6121a26edbdf8e3e4832ed97
     entrypoint: [""]
   cache:
     - key: thoughty-kaniko-executor-v2
@@ -312,7 +312,7 @@ variables:
     - job: 01-release
       artifacts: true
   image:
-    name: docker.io/library/maven@sha256:5efcc6faba78451290a355763d260f990361e21084ea2125a81ba1d7b5f545f2
+    name: docker.io/library/maven@sha256:a697e2f303fca5675052a656daefab51d845c79e6121a26edbdf8e3e4832ed97
     entrypoint: [""]
   resource_group: thoughty-production
   interruptible: false
@@ -335,7 +335,7 @@ variables:
 set-major-version:
   stage: version
   image:
-    name: docker.io/library/maven@sha256:5efcc6faba78451290a355763d260f990361e21084ea2125a81ba1d7b5f545f2
+    name: docker.io/library/maven@sha256:a697e2f303fca5675052a656daefab51d845c79e6121a26edbdf8e3e4832ed97
     entrypoint: [""]
   needs: []
   dependencies: []
