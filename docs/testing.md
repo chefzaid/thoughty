@@ -46,7 +46,7 @@ Spec files keep to the 500-line rule too (`thoughty-web/src/fileLength.test.js` 
 | `npm run test:e2e` | all Playwright specs |
 | `npx playwright test e2e/journal` | one directory; also takes a file or `--grep "<title>"` |
 
-CI reports whether the combined line coverage of both apps reaches 80%, without blocking. Both suites write `coverage/lcov.info` for SonarQube.
+CI tests the two apps in parallel jobs (`02-test: [server]` and `02-test: [web]`, each with one worker fewer than the job's CPUs), and `02-test-coverage` reports whether their combined line coverage reaches 80%, without blocking. Both suites write `coverage/lcov.info` for SonarQube.
 
 ## PostgreSQL Integration Specs
 
@@ -107,7 +107,7 @@ CI does not run these specs yet: the pipeline has no PostgreSQL service (see Nee
 
 ## Frontend Unit Tests
 
-Vitest uses `jsdom` with `src/test/setup.ts` and runs each file in its own thread, so mocks and DOM never leak between files. Helpers live in `src/test/`. Tests that need real `Blob` streams or `CompressionStream` add `// @vitest-environment node`. jsdom has no 2D canvas, so canvas drawing (the share-as-image card) is tested against the recording context of `components/ShareImageCard/shareCard.test-utils.ts`, and the real pixels and PNG size are checked in Playwright (`e2e/journal/share-image.spec.ts`). Unit tests usually pass an identity translator (`t = (key) => key`), so assert on translation keys, not English text.
+Vitest uses `jsdom` with `src/test/setup.ts` and runs each file in its own thread, so mocks and DOM never leak between files. Its threads start with `--no-experimental-webstorage` (`execArgv` in `vitest.config.ts`): Node 26 defines `localStorage` and `sessionStorage` on `globalThis`, undefined without `--localstorage-file`, and jsdom's storage is only installed where the global is missing. Helpers live in `src/test/`. Tests that need real `Blob` streams or `CompressionStream` add `// @vitest-environment node`. jsdom has no 2D canvas, so canvas drawing (the share-as-image card) is tested against the recording context of `components/ShareImageCard/shareCard.test-utils.ts`, and the real pixels and PNG size are checked in Playwright (`e2e/journal/share-image.spec.ts`). Unit tests usually pass an identity translator (`t = (key) => key`), so assert on translation keys, not English text.
 
 A message that hides itself after a while should be tested with fake timers, not by waiting: a real timer only fires if the test lives long enough, which makes coverage move between identical runs. Plain `vi.useFakeTimers()` also fakes `setImmediate`, which React's scheduler runs effects on, and Testing Library's `findBy*`/`waitFor` wait on `setTimeout`, so both stall under it. For a component that loads data before the message appears, fake only `setTimeout`/`setInterval` with `shouldAdvanceTime: true`, wait for one real `setImmediate` after the message shows so its countdown has started, and leave a margin for the wall-clock drift (`ImportExport.importMessage.test.tsx`). A component that renders at once can use plain fake timers (`AutoDismiss.test.tsx`).
 
@@ -115,7 +115,7 @@ The same goes for a request an effect starts on mount and drops once it is stale
 
 ## Browser Tests
 
-Playwright starts the Vite dev server on port `5173` (or reuses a running one) and runs headless Chromium. There are no named projects, so do not pass `--project`. A failed test keeps its trace (DOM snapshots before and after each action, network, console and sources, but no screencast filmstrip) and a screenshot, and CI retries a failed test twice.
+Playwright starts the Vite dev server on port `5173` (or reuses a running one) and runs headless Chromium. There are no named projects, so do not pass `--project`. A failed test keeps its trace (DOM snapshots before and after each action, network, console and sources, but no screencast filmstrip) and a screenshot, and CI retries a failed test twice. CI runs half as many workers as the job has CPUs (`--workers`, from `infra/scripts/ci-workers.sh browser`); elsewhere the config's own setting applies.
 
 The mock app in `e2e/support` answers every `/api` call, so you need no API server or database. Specs are grouped by feature: `accessibility`, `ai`, `auth`, `cloud-sync`, `diary`, `import-export`, `journal`, `memoir`, `navigation`, `public`, `social`, `stats`, and `tags`, plus `harness` for the test setup itself. Put a new spec in the closest directory and name it after its behavior (`journal/attachments-preview.spec.ts`, not `critical-flows.spec.ts`).
 

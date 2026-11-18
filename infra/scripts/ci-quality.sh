@@ -7,19 +7,32 @@ quality_dir="$repository_root/quality-reports"
 mkdir -p "$quality_dir"
 
 security_status=passed
-run_npm_audit() {
+audit_labels=()
+audit_pids=()
+# The audits wait on the registry, the scanner on the CPU: they run side by side.
+start_npm_audit() {
   local directory="$1" label="$2"
-  if (cd "$directory" && npm audit --audit-level=high --json) \
-      > "$quality_dir/npm-audit-$label.json"; then
-    printf 'npm security audit passed for %s.\n' "$label"
-  else
-    security_status=failed
-    printf 'npm security audit reported findings for %s; see the quality artifact.\n' "$label" >&2
-  fi
+  (cd "$directory" && npm audit --audit-level=high --json) \
+    > "$quality_dir/npm-audit-$label.json" &
+  audit_labels+=("$label")
+  audit_pids+=("$!")
 }
 
-run_npm_audit thoughty-server thoughty-server
-run_npm_audit thoughty-web thoughty-web
+finish_npm_audits() {
+  local index
+  for index in "${!audit_pids[@]}"; do
+    if wait "${audit_pids[$index]}"; then
+      printf 'npm security audit passed for %s.\n' "${audit_labels[$index]}"
+    else
+      security_status=failed
+      printf 'npm security audit reported findings for %s; see the quality artifact.\n' \
+        "${audit_labels[$index]}" >&2
+    fi
+  done
+}
+
+start_npm_audit thoughty-server thoughty-server
+start_npm_audit thoughty-web thoughty-web
 
 submit_sonar() {
   local sonar_version="$1" attempt
@@ -58,6 +71,8 @@ else
   printf 'SonarQube Community Build analyzes the default branch only; local quality reports were still generated for %s.\n' \
     "${CI_COMMIT_BRANCH:-detached}"
 fi
+
+finish_npm_audits
 
 printf 'SONAR_REPORT_STATUS=%s\nSECURITY_REPORT_STATUS=%s\n' \
   "$sonar_status" "$security_status" > "$quality_dir/quality.env"

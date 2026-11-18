@@ -52,10 +52,12 @@ Always set `CONFIG_ENCRYPTION_SECRET`: the API and worker do not start without i
 
 | Stage | Jobs | Behavior |
 |---|---|---|
-| `build` | `01-build` → `02-test` → `03-package` | Build and package must pass; `01-build` also type-checks both apps with their specs (`tsc --noEmit -p tsconfig.json` in the server, `npm run typecheck` in the web). Tests and the 80% coverage rule only report. |
-| `verify` | `01-e2e`, `02-quality`, `03-security` | Reports only. E2E is manual. SonarQube runs automatically on `main`. Trivy is manual. |
-| `release` | `01-release` → `02-deploy` | Needs only build and package. |
+| `build` | `01-build` → `03-package`, and alongside them `02-test: [server]` and `02-test: [web]` → `02-test-coverage` | `01-build` and both `02-test` jobs start together. Build and package must pass; `01-build` also type-checks both apps with their specs (`tsc --noEmit -p tsconfig.json` in the server, `npm run typecheck` in the web). Each `02-test` job lints and tests one app with coverage; `02-test-coverage` checks the 80% rule on their combined lines. Tests and coverage only report. |
+| `verify` | `01-e2e`, `02-quality`, `03-security` | Reports only. E2E is manual, offered once `03-package` passes. SonarQube runs automatically on `main` once both `02-test` jobs end, with the npm audits running beside the scan. Trivy is manual and needs no other job. |
+| `release` | `01-release` → `02-deploy` | Needs only build and package to pass; `01-release` also waits for `02-test-coverage`, so it starts once the test results are in. |
 | `version` | `set-major-version` | Manual; sets `<NEW_MAJOR_VERSION>.0.0`. |
+
+The test jobs (`02-test` and `01-e2e`) ask the platform runner for 8 CPUs and 12 GiB (`KUBERNETES_CPU_LIMIT`, `KUBERNETES_MEMORY_LIMIT`); other jobs keep its 4 CPUs and 8 GiB. Jest, Vitest, ESLint and Playwright would size their pools from the node's threads, so `infra/scripts/ci-workers.sh` reads the job's CPU quota from its cgroup: Jest and Vitest workers and ESLint threads get one fewer than the job's CPUs, and Playwright half of them, since each worker drives a Chromium beside the Vite dev server. `01-build` installs both apps and saves the npm cache; the `02-test` jobs only restore it.
 
 Release is manual on `main`. It runs automatically from **Run pipeline** with `PIPELINE_MODE=full` (which also runs quality and security) and from onboarding pipelines. It never runs on other branches, merge requests, or `SONAR_SCAN_ONLY=true` pipelines, which the platform starts when analysis is older than 24 hours.
 

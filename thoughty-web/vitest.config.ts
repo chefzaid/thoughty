@@ -20,6 +20,9 @@ export default defineConfig({
     include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
     testTimeout: 30000,
     pool: 'threads',
+    // Node 26 defines localStorage and sessionStorage on globalThis (undefined without
+    // --localstorage-file), so the jsdom environment would not install its own.
+    execArgv: ['--no-experimental-webstorage'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
