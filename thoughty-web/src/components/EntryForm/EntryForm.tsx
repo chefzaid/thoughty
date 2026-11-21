@@ -1,4 +1,4 @@
-import { Suspense, lazy, type ComponentPropsWithoutRef, type Dispatch, type SetStateAction } from 'react';
+import { type ComponentPropsWithoutRef, type Dispatch, type SetStateAction } from 'react';
 import TagPicker from '../TagPicker/TagPicker';
 import AttachmentUpload from '../AttachmentUpload/AttachmentUpload';
 import TypedDatePicker from '../TypedDatePicker/TypedDatePicker';
@@ -18,7 +18,7 @@ import { tintedTextClass } from '../../utils/tintedText';
 import EntryTimeField from './EntryTimeField';
 import EntryMoodField from './EntryMoodField';
 import { MAX_ENTRY_TITLE_LENGTH } from '../../utils/entryTime';
-import MarkdownHelp from '../MarkdownEditor/MarkdownHelp';
+import LazyMarkdownField from '../MarkdownEditor/LazyMarkdownField';
 import FocusModeLauncher from '../FocusMode/FocusModeLauncher';
 import EntryTemplateBar from './EntryTemplateBar';
 import type { FontFamilyPreference } from '../../types';
@@ -32,8 +32,6 @@ import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import { useDictationField } from '../Dictation/useDictationField';
 import type { ComposerDraftSync } from '../ComposerDraft/useComposerDraftSync';
 import { ComposerDraftOfferBar, ComposerDraftStatusText } from '../ComposerDraft/ComposerDraftBar';
-
-const LazyMDEditor = lazy(() => import('../MarkdownEditor/MarkdownEditor'));
 
 interface EntryFormProps {
     readonly newEntryText: string;
@@ -259,7 +257,7 @@ function EntryForm({
                 )}
                 <div ref={inlineImages.fieldRef} {...mentions.wrapperProps}>
                     {format === 'markdown' ? (
-                        <Suspense
+                        <LazyMarkdownField
                             fallback={(
                                 <textarea
                                     ref={writingArea.ref}
@@ -277,27 +275,22 @@ function EntryForm({
                                     {...mentions.fieldProps}
                                 />
                             )}
-                        >
-                            <div className="relative" data-color-mode={theme === 'light' ? 'light' : 'dark'}>
-                                <LazyMDEditor
-                                    value={newEntryText}
-                                    onChange={(val) => setNewEntryText(val ?? '')}
-                                    preview="edit"
-                                    height={200}
-                                    textareaProps={{
-                                        placeholder: t('whatsOnYourMind'),
-                                        title: t('entryReferenceHint'),
-                                        style: { color: writingTextStyle.color },
-                                        ...mentions.fieldProps,
-                                    }}
-                                    spacing={{ lineSpacing, letterSpacing }}
-                                    onInsertImage={inlineImages.open}
-                                    t={t}
-                                />
-                                {mentionSuggestions}
-                            </div>
-                            <MarkdownHelp theme={theme} t={t} />
-                        </Suspense>
+                            suggestions={mentionSuggestions}
+                            theme={theme}
+                            value={newEntryText}
+                            onChange={(val) => setNewEntryText(val ?? '')}
+                            preview="edit"
+                            height={200}
+                            textareaProps={{
+                                placeholder: t('whatsOnYourMind'),
+                                title: t('entryReferenceHint'),
+                                style: { color: writingTextStyle.color },
+                                ...mentions.fieldProps,
+                            }}
+                            spacing={{ lineSpacing, letterSpacing }}
+                            onInsertImage={inlineImages.open}
+                            t={t}
+                        />
                     ) : (
                         <div className="relative">
                             <textarea

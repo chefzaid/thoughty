@@ -1,4 +1,4 @@
-import { Suspense, lazy, type Dispatch, type KeyboardEvent, type PointerEvent, type SetStateAction } from 'react';
+import { type Dispatch, type KeyboardEvent, type PointerEvent, type SetStateAction } from 'react';
 import TagPicker from '../TagPicker/TagPicker';
 import AttachmentUpload from '../AttachmentUpload/AttachmentUpload';
 import TypedDatePicker from '../TypedDatePicker/TypedDatePicker';
@@ -11,7 +11,7 @@ import { useAutoGrowTextarea } from '../../hooks/useAutoGrowTextarea';
 import EntryTimeField from '../EntryForm/EntryTimeField';
 import EntryMoodField from '../EntryForm/EntryMoodField';
 import { MAX_ENTRY_TITLE_LENGTH } from '../../utils/entryTime';
-import MarkdownHelp from '../MarkdownEditor/MarkdownHelp';
+import LazyMarkdownField from '../MarkdownEditor/LazyMarkdownField';
 import FocusModeLauncher from '../FocusMode/FocusModeLauncher';
 import MentionSuggestions from '../People/MentionSuggestions';
 import { useMentionAutocomplete } from '../People/useMentionAutocomplete';
@@ -20,8 +20,6 @@ import { useInlineImageInsert } from '../InlineImages/useInlineImageInsert';
 import { useDictationField } from '../Dictation/useDictationField';
 import EntryDiaryField from './EntryDiaryField';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
-
-const LazyMDEditor = lazy(() => import('../MarkdownEditor/MarkdownEditor'));
 
 function getDragBadgeClass(isDark: boolean): string {
     return isDark ? 'bg-indigo-500/20 text-indigo-200' : 'bg-blue-100 text-blue-700';
@@ -253,7 +251,7 @@ export function EditForm({
             )}
             <div ref={inlineImages.fieldRef} {...mentions.wrapperProps}>
                 {editFormat === 'markdown' ? (
-                    <Suspense
+                    <LazyMarkdownField
                         fallback={(
                             <textarea
                                 ref={editArea.ref}
@@ -266,22 +264,17 @@ export function EditForm({
                                 {...mentions.fieldProps}
                             />
                         )}
-                    >
-                        <div className="relative" data-color-mode={isDark ? 'dark' : 'light'}>
-                            <LazyMDEditor
-                                value={editText}
-                                onChange={(val) => setEditText(val ?? '')}
-                                preview="edit"
-                                height={200}
-                                textareaProps={{ 'aria-label': t('entryTextLabel'), style: { color: writingTextStyle.color }, ...mentions.fieldProps }}
-                                spacing={config}
-                                onInsertImage={inlineImages.open}
-                                t={t}
-                            />
-                            {mentionSuggestions}
-                        </div>
-                        <MarkdownHelp theme={config.theme} t={t} />
-                    </Suspense>
+                        suggestions={mentionSuggestions}
+                        theme={config.theme}
+                        value={editText}
+                        onChange={(val) => setEditText(val ?? '')}
+                        preview="edit"
+                        height={200}
+                        textareaProps={{ 'aria-label': t('entryTextLabel'), style: { color: writingTextStyle.color }, ...mentions.fieldProps }}
+                        spacing={config}
+                        onInsertImage={inlineImages.open}
+                        t={t}
+                    />
                 ) : (
                     <div className="relative">
                         <textarea

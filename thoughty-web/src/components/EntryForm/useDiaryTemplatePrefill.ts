@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import type { EntryTemplate } from '../../utils/entryTemplates';
 
 interface DiaryTemplatePrefillOptions {
@@ -21,11 +21,15 @@ interface DiaryTemplatePrefillOptions {
  * The writer's own words are never replaced: the template goes only into an empty composer, and makes way
  * for another diary's template (or none) only while it is untouched. A composer emptied by the writer stays
  * empty, and a draft restored or offered from another device comes first.
+ *
+ * The composer is filled in a layout effect, in the same task as the render that found it empty. A passive
+ * effect could still be pending when the writer typed: React runs it before rendering the keystroke, so the
+ * fill, judged on the older render's "empty", came after the letter and replaced it.
  */
 export function useDiaryTemplatePrefill({ template, scope, enabled, empty, untouched, fill }: DiaryTemplatePrefillOptions): void {
   const handled = useRef<string | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!enabled) return;
     const target = `${scope}|${template?.id ?? ''}`;
     if (handled.current === target) return;

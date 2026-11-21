@@ -44,6 +44,8 @@ test.describe('Diary default template', () => {
 
     // The writer's own words stay whatever diary is picked
     await page.getByTitle('Walks', { exact: true }).click();
+    // `fill` selects the text, then inserts; the template must not arrive in between
+    await expect(composer(page)).toHaveValue('Where I walked:');
     await composer(page).fill('Where I walked: along the canal');
     await expect(page.getByText("Started from this diary's template, Evening walk.")).toHaveCount(0);
     await page.getByTitle('Personal', { exact: true }).click();

@@ -75,7 +75,8 @@ test.describe('People', () => {
     await page.goto('/journal?diary=all');
 
     await page.getByTitle('Plain text - click to enable Markdown formatting').click();
-    const editor = page.getByPlaceholder("What's on your mind?");
+    // The editor itself, not the plain field shown while it loads (the next test covers that one)
+    const editor = page.locator('form .w-md-editor').getByPlaceholder("What's on your mind?");
     await editor.fill('- call @pa');
     await expect(page.getByRole('listbox', { name: 'People to mention' }).getByRole('option', { name: /Paul/ })).toBeVisible();
     await editor.press('Enter');
@@ -94,6 +95,36 @@ test.describe('People', () => {
     await expect(text).toHaveValue('Long call with @Paul about the move and @MarieC ');
     await entry.getByRole('button', { name: 'Save' }).click();
     await expect.poll(() => state.entries.find((candidate) => candidate.id === 402)?.content).toBe('Long call with @Paul about the move and @MarieC ');
+  });
+
+  test('suggests people while the Markdown editor loads, and goes on in the editor once it has, at the same caret', async ({ page }) => {
+    await setupMockApp(page, { startAuthenticated: true, initialEntries: ENTRIES });
+    // The editor's code is held back, as on a slow connection, until a handle has been typed
+    let loadEditor = () => {};
+    const editorLoads = new Promise<void>((resolve) => { loadEditor = resolve; });
+    await page.route(/\/src\/components\/MarkdownEditor\/MarkdownEditor\.tsx/, async (route) => {
+      await editorLoads;
+      await route.continue();
+    });
+    await page.goto('/journal?diary=all');
+
+    await page.getByTitle('Plain text - click to enable Markdown formatting').click();
+    await page.getByPlaceholder("What's on your mind?").pressSequentially('- call @pa');
+    const suggestions = page.getByRole('listbox', { name: 'People to mention' });
+    await expect(suggestions.getByRole('option', { name: /Paul/ })).toBeVisible();
+    await expect(page.locator('form .w-md-editor')).toHaveCount(0);
+
+    loadEditor();
+    const editor = page.locator('form .w-md-editor').getByPlaceholder("What's on your mind?");
+    await expect(editor).toBeFocused();
+    await expect(suggestions.getByRole('option', { name: /Paul/ })).toBeVisible();
+    // The keyboard goes on into the editor, where the caret was
+    await page.keyboard.type('u');
+    await expect(editor).toHaveValue('- call @pau');
+    await expect(suggestions.getByRole('option')).toHaveText([/^Paul/]);
+    await page.keyboard.press('Enter');
+    await expect(editor).toHaveValue('- call @Paul ');
+    await expect(suggestions).toHaveCount(0);
   });
 
   test('renames, merges and deletes people on the People page, and saved searches follow', async ({ page }) => {
