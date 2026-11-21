@@ -90,8 +90,23 @@ test.describe('First-run welcome page', () => {
     await page.getByRole('button', { name: /Un journal quotidien/ }).click();
     await expect(page.getByRole('group', { name: 'Choisissez un premier modèle' })).toBeVisible();
     await expect(page.getByText('Une nouvelle entrée de Work part de ce modèle', { exact: false })).toBeVisible();
+    await expect(page.getByRole('radio', { name: /Réflexion du jour/ })).toBeChecked();
+    await expect(page.getByRole('radio', { name: /Daily reflection/ })).toHaveCount(0);
     await expectNoAccessibilityViolations(page);
     await page.getByRole('button', { name: 'Retour' }).click();
     await expect(page.getByRole('list', { name: 'Qu’est-ce qui vous amène ?' })).toBeVisible();
+  });
+
+  test('starts a French journal from a French template', async ({ page }) => {
+    const { state } = await signInNewAccount(page, { language: 'fr' });
+
+    await page.getByRole('button', { name: /Un journal quotidien/ }).click();
+    await page.getByRole('radio', { name: /Intentions du matin/ }).check();
+    await page.getByRole('button', { name: 'Commencer à écrire' }).click();
+
+    await expect(page).toHaveURL(/\/journal\?diary=1$/);
+    await expect(page.getByPlaceholder("Qu'avez-vous à l'esprit ?")).toHaveValue(/^Comment je me sens en commençant la journée :/);
+    await expect(page.getByText('Commencé à partir du modèle de ce journal, Intentions du matin.')).toBeVisible();
+    expect(state.diaries.find((diary) => diary.isDefault)).toEqual(expect.objectContaining({ defaultTemplateId: 'builtin-morning-intentions' }));
   });
 });

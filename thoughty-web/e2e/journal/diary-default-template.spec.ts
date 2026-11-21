@@ -86,4 +86,32 @@ test.describe('Diary default template', () => {
       .analyze();
     expect(results.violations.map(({ id, nodes }) => ({ id, targets: nodes.map((node) => node.target) }))).toEqual([]);
   });
+
+  test('names and fills the built-in templates in French, by the same ID, and leaves custom ones as saved', async ({ page }) => {
+    const { state } = await setupMockApp(page, { startAuthenticated: true, diaries, config: { ...config, language: 'fr' } });
+
+    await page.goto('/diaries?from=journal&diary=2');
+    await page.locator('.diary-card', { hasText: 'Personal' }).getByTitle('Modifier').click();
+    const editor = page.locator('.diary-card.editing');
+    const field = editor.getByLabel('Modèle par défaut');
+    await expect(field.getByRole('option', { name: 'Journal de gratitude' })).toHaveCount(1);
+    await expect(field.getByRole('option', { name: 'Gratitude journal' })).toHaveCount(0);
+    await field.selectOption({ label: 'Journal de gratitude' });
+    await editor.getByRole('button', { name: 'Enregistrer' }).click();
+    await expect(page.locator('.diary-card', { hasText: 'Personal' }).getByText('Modèle : Journal de gratitude')).toBeVisible();
+    expect(state.diaries.find((diary) => diary.id === 2)).toEqual(expect.objectContaining({ defaultTemplateId: 'builtin-gratitude' }));
+
+    await page.goto('/journal?diary=2');
+    const frenchComposer = page.getByPlaceholder("Qu'avez-vous à l'esprit ?");
+    await expect(frenchComposer).toHaveValue(/^Aujourd'hui, je dis merci pour :/);
+    await expect(page.getByText('Commencé à partir du modèle de ce journal, Journal de gratitude.')).toBeVisible();
+
+    const menu = page.getByRole('combobox', { name: "Modèle d'entrée" });
+    await expect(menu.getByRole('option', { name: 'Bilan de la semaine' })).toHaveCount(1);
+    await expect(menu.getByRole('option', { name: 'Weekly review' })).toHaveCount(0);
+    await menu.selectOption({ label: 'Evening walk' });
+    await expect(frenchComposer).toHaveValue('Where I walked:');
+    await menu.selectOption({ label: 'Journal de rêves' });
+    await expect(frenchComposer).toHaveValue(/^Ce qui s'est passé dans le rêve :/);
+  });
 });

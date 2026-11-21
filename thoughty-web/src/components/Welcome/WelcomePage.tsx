@@ -1,17 +1,18 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import type { Diary, TranslationFunction } from '../../types';
-import { getEntryTemplates } from '../../utils/entryTemplates';
+import { getBuiltInEntryTemplates } from '../../utils/entryTemplates';
 import PageHeader from '../PageHeader/PageHeader';
 import './WelcomePage.css';
 
 /** The built-in templates offered to a new daily journal, in this order. */
 const FIRST_TEMPLATE_IDS = ['builtin-daily-reflection', 'builtin-gratitude', 'builtin-morning-intentions'] as const;
-const FIRST_TEMPLATES = FIRST_TEMPLATE_IDS.flatMap((id) => getEntryTemplates().filter((template) => template.id === id));
 const BLANK = '';
 
 export interface WelcomePageProps {
   readonly theme?: 'light' | 'dark';
+  /** The interface language, which the templates offered are shown in. */
+  readonly language?: string;
   readonly diaries: readonly Diary[];
   /** Marks the welcome page as done; resolves false when the save failed (the app says so). */
   readonly onFinish: () => Promise<boolean>;
@@ -27,11 +28,15 @@ export interface WelcomePageProps {
  * First-run onboarding: asks a new account what it is here for and lands it in the right place, the
  * journal with a first template, the memoir start page or the importers. Any way out marks it done.
  */
-function WelcomePage({ theme = 'dark', diaries, onFinish, onSetDiaryTemplate, onOpenJournal, onOpenMemoir, onOpenImport, t }: WelcomePageProps) {
+function WelcomePage({ theme = 'dark', language, diaries, onFinish, onSetDiaryTemplate, onOpenJournal, onOpenMemoir, onOpenImport, t }: WelcomePageProps) {
   const defaultDiary = diaries.find((diary) => diary.isDefault);
   const [step, setStep] = useState<'choose' | 'template'>('choose');
   const [templateId, setTemplateId] = useState<string>(FIRST_TEMPLATE_IDS[0]);
   const [busy, setBusy] = useState(false);
+  const firstTemplates = useMemo(() => {
+    const builtIns = getBuiltInEntryTemplates(language);
+    return FIRST_TEMPLATE_IDS.flatMap((id) => builtIns.filter((template) => template.id === id));
+  }, [language]);
   const [error, setError] = useState<string | null>(null);
 
   const finishThen = async (open: () => void, beforeFinish?: () => Promise<void>) => {
@@ -103,7 +108,7 @@ function WelcomePage({ theme = 'dark', diaries, onFinish, onSetDiaryTemplate, on
           <fieldset className="welcome-templates" disabled={busy}>
             <legend id="welcome-template-heading">{t('welcomeTemplateTitle')}</legend>
             <p className="welcome-hint">{t('welcomeTemplateHint', { diary: defaultDiary?.name ?? '' })}</p>
-            {[...FIRST_TEMPLATES.map((template) => ({ id: template.id, name: template.name, body: template.content.split('\n')[0] })),
+            {[...firstTemplates.map((template) => ({ id: template.id, name: template.name, body: template.content.split('\n')[0] })),
               { id: BLANK, name: t('welcomeTemplateBlank'), body: t('welcomeTemplateBlankBody') }].map((option) => (
               <label key={option.id || 'blank'} className="welcome-template">
                 <input

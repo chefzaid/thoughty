@@ -9,7 +9,7 @@ import type AuthenticatedRoutes from '../routes/AuthenticatedRoutes';
 import type { DuplicateEntryScan, RephraseMode, SummaryGuidance } from '../services/api/aiService';
 import { writeAboutState } from '../components/JournalView/composerFocusRoute';
 import { buildEntriesListProps } from './entriesListProps';
-import { createEntryTemplate, getEntryTemplates, serializeCustomEntryTemplates, type EntryTemplateDraft } from './entryTemplates';
+import { createEntryTemplate, getEntryTemplates, parseCustomEntryTemplates, serializeCustomEntryTemplates, type EntryTemplateDraft } from './entryTemplates';
 import { listKnownTags, type TagMetadataMap } from './tagMetadata';
 
 export {
@@ -201,6 +201,7 @@ export function buildAuthenticatedRoutesProps({
     },
     welcomeRouteProps: {
       theme: config.theme,
+      language: config.language,
       diaries: diariesState.diaries,
       onFinish: () => saveConfig({ ...config, onboardingDone: true }),
       onSetDiaryTemplate: (diary, templateId) => diariesState.handleUpdateDiary(diary.id, {
@@ -261,7 +262,7 @@ export function buildAuthenticatedRoutesProps({
       onSetDefault: diariesState.handleSetDefaultDiary,
       onReorderDiaries: diariesState.handleReorderDiaries,
       onBack: routingState.handleBackFromDiaries,
-      entryTemplates: getEntryTemplates(config.entryTemplates),
+      entryTemplates: getEntryTemplates(config.entryTemplates, config.language),
       theme: config.theme,
       language: config.language,
       t,
@@ -335,10 +336,10 @@ export function buildAuthenticatedRoutesProps({
         onNavigateToEntry: entryNavigationState.handleNavigateToEntry,
       },
       entryForm: {
-        entryTemplates: getEntryTemplates(config.entryTemplates),
+        entryTemplates: getEntryTemplates(config.entryTemplates, config.language),
         // The name dialog says itself when the template could not be saved
         onSaveTemplate: (draft: EntryTemplateDraft) => {
-          const currentTemplates = getEntryTemplates(config.entryTemplates);
+          const currentTemplates = parseCustomEntryTemplates(config.entryTemplates);
           const nextTemplates = [...currentTemplates, createEntryTemplate(draft)];
           return updateConfig({
             ...config,
@@ -346,7 +347,7 @@ export function buildAuthenticatedRoutesProps({
           });
         },
         onDeleteTemplate: (templateId: string) => {
-          const nextTemplates = getEntryTemplates(config.entryTemplates)
+          const nextTemplates = parseCustomEntryTemplates(config.entryTemplates)
             .filter((template) => template.id !== templateId);
           return saveConfig({
             ...config,

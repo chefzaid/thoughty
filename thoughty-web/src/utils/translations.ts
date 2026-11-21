@@ -42,6 +42,7 @@ import { quickCaptureTranslations, type QuickCaptureTranslationKey } from "./tra
 import { quietModeTranslations, type QuietModeTranslationKey } from "./translations.quietMode";
 import { featureFlagsTranslations, type FeatureFlagsTranslationKey } from "./translations.featureFlags";
 import { entryTemplatesTranslations, type EntryTemplatesTranslationKey } from "./translations.entryTemplates";
+import { builtInTemplatesTranslations, type BuiltInTemplatesTranslationKey } from "./translations.builtInTemplates";
 import { markdownToolbarTranslations, type MarkdownToolbarTranslationKey } from "./translations.markdownToolbar";
 import { landingTranslations, type LandingTranslationKey } from "./translations.landing";
 import { aiChatTranslations, type AiChatTranslationKey } from "./translations.aiChat";
@@ -126,6 +127,7 @@ export type TranslationKey =
   | QuietModeTranslationKey
   | FeatureFlagsTranslationKey
   | EntryTemplatesTranslationKey
+  | BuiltInTemplatesTranslationKey
   | MarkdownToolbarTranslationKey
   | LandingTranslationKey
   | AiChatTranslationKey
@@ -215,6 +217,7 @@ export const translations: Translations = {
     ...quietModeTranslations.en,
     ...featureFlagsTranslations.en,
     ...entryTemplatesTranslations.en,
+    ...builtInTemplatesTranslations.en,
     ...markdownToolbarTranslations.en,
     ...landingTranslations.en,
     ...aiChatTranslations.en,
@@ -297,6 +300,7 @@ export const translations: Translations = {
     ...quietModeTranslations.fr,
     ...featureFlagsTranslations.fr,
     ...entryTemplatesTranslations.fr,
+    ...builtInTemplatesTranslations.fr,
     ...markdownToolbarTranslations.fr,
     ...landingTranslations.fr,
     ...aiChatTranslations.fr,

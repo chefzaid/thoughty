@@ -1,12 +1,39 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { useCallback, useState } from 'react';
-import { act, cleanup, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { useDiaryTemplatePrefill } from './useDiaryTemplatePrefill';
 import type { EntryTemplate } from '../../utils/entryTemplates';
 
 const walk: EntryTemplate = { id: 'custom-1', name: 'Evening walk', content: 'Where I walked:', tags: [], visibility: 'private', format: 'plain' };
 
+const reflection = {
+    en: { id: 'builtin-daily-reflection', name: 'Daily reflection', content: 'What happened today?', tags: [], visibility: 'private', format: 'plain' },
+    fr: { id: 'builtin-daily-reflection', name: 'Réflexion du jour', content: "Que s'est-il passé aujourd'hui ?", tags: [], visibility: 'private', format: 'plain' },
+} satisfies Record<string, EntryTemplate>;
+
 let pickDiary: (diary: string) => void = () => {};
+let pickLanguage: (language: 'en' | 'fr') => void = () => {};
+
+/** A composer whose diary starts from a built-in template, in the language the writer picks. */
+function TranslatedComposer() {
+    const [language, setLanguage] = useState<'en' | 'fr'>('en');
+    const [text, setText] = useState('');
+    const [filled, setFilled] = useState<string | null>(null);
+    pickLanguage = setLanguage;
+    const fill = useCallback((template: EntryTemplate | null) => {
+        setText(template?.content ?? '');
+        setFilled(template?.content ?? null);
+    }, []);
+    useDiaryTemplatePrefill({
+        template: reflection[language],
+        scope: 'personal',
+        enabled: true,
+        empty: text === '',
+        untouched: filled !== null && filled === text,
+        fill,
+    });
+    return <textarea aria-label="composer" value={text} onChange={(event) => setText(event.target.value)} />;
+}
 
 /** A composer whose diary `walks` starts from a template, as the journal's is. */
 function Composer() {
@@ -75,6 +102,30 @@ describe('useDiaryTemplatePrefill', () => {
         act(() => pickDiary('walks'));
         expect(field.value).toBe('Where I walked:');
         act(() => pickDiary('work'));
+        expect(field.value).toBe('');
+    });
+
+    it('fills an untouched template again in the language the writer switches to', () => {
+        render(<TranslatedComposer />);
+        const field = screen.getByLabelText<HTMLTextAreaElement>('composer');
+        expect(field.value).toBe('What happened today?');
+
+        act(() => pickLanguage('fr'));
+        expect(field.value).toBe("Que s'est-il passé aujourd'hui ?");
+        act(() => pickLanguage('en'));
+        expect(field.value).toBe('What happened today?');
+    });
+
+    it('keeps the writer’s words, or the composer they emptied, when the language changes', () => {
+        render(<TranslatedComposer />);
+        const field = screen.getByLabelText<HTMLTextAreaElement>('composer');
+
+        fireEvent.change(field, { target: { value: 'What happened today? A long walk.' } });
+        act(() => pickLanguage('fr'));
+        expect(field.value).toBe('What happened today? A long walk.');
+
+        fireEvent.change(field, { target: { value: '' } });
+        act(() => pickLanguage('en'));
         expect(field.value).toBe('');
     });
 });

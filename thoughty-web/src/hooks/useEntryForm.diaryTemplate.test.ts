@@ -30,14 +30,20 @@ const diaries: Diary[] = [
 
 const onSuccess = vi.fn();
 /** Renders the composer on a diary; `show` picks another one, as the diary tabs do. */
-const render = (diaryId: number | null) => {
+const render = (diaryId: number | null, language?: string) => {
   let current = diaryId;
-  const rendered = renderHook(() => useEntryForm(config, current, onSuccess, diaries));
+  let currentLanguage = language;
+  const rendered = renderHook(() => useEntryForm({ ...config, language: currentLanguage }, current, onSuccess, diaries));
   const show = (id: number | null) => {
     current = id;
     rendered.rerender();
   };
-  return { ...rendered, show };
+  /** The writer picks another interface language in Profile. */
+  const speak = (next: string) => {
+    currentLanguage = next;
+    rendered.rerender();
+  };
+  return { ...rendered, show, speak };
 };
 
 describe("useEntryForm diary templates", () => {
@@ -125,5 +131,25 @@ describe("useEntryForm diary templates", () => {
     await act(async () => { await result.current.handleSubmit({ preventDefault: vi.fn() }); });
     expect(result.current.newEntryText).toBe("Where I walked:");
     expect(result.current.diaryTemplateName).toBe("Evening walk");
+  });
+
+  it("starts from a built-in template in the writer's language, and follows a language change while untouched", () => {
+    const { result, speak } = render(1, "fr");
+    expect(result.current.newEntryText).toMatch(/^Que s'est-il passé aujourd'hui \?/);
+    expect(result.current.tags).toEqual(["reflection"]);
+    expect(result.current.diaryTemplateName).toBe("Réflexion du jour");
+
+    speak("en");
+    expect(result.current.newEntryText).toMatch(/^What happened today\?/);
+    expect(result.current.diaryTemplateName).toBe("Daily reflection");
+
+    act(() => result.current.setNewEntryText("What happened today? Rain."));
+    speak("fr");
+    expect(result.current.newEntryText).toBe("What happened today? Rain.");
+  });
+
+  it("keeps a custom template's text whatever the language", () => {
+    const { result } = render(2, "fr");
+    expect(result.current).toMatchObject({ newEntryText: "Where I walked:", diaryTemplateName: "Evening walk" });
   });
 });

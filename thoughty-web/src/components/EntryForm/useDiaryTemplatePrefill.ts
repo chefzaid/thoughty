@@ -20,7 +20,8 @@ interface DiaryTemplatePrefillOptions {
  * Starts a new entry from its diary's default template, once for each diary picked and each entry saved.
  * The writer's own words are never replaced: the template goes only into an empty composer, and makes way
  * for another diary's template (or none) only while it is untouched. A composer emptied by the writer stays
- * empty, and a draft restored or offered from another device comes first.
+ * empty, and a draft restored or offered from another device comes first. When the writer changes the
+ * interface language, an untouched built-in template is filled again in the new one.
  *
  * The composer is filled in a layout effect, in the same task as the render that found it empty. A passive
  * effect could still be pending when the writer typed: React runs it before rendering the keystroke, so the
@@ -28,12 +29,18 @@ interface DiaryTemplatePrefillOptions {
  */
 export function useDiaryTemplatePrefill({ template, scope, enabled, empty, untouched, fill }: DiaryTemplatePrefillOptions): void {
   const handled = useRef<string | null>(null);
+  const filledText = useRef<string | null>(null);
 
   useLayoutEffect(() => {
     if (!enabled) return;
     const target = `${scope}|${template?.id ?? ''}`;
-    if (handled.current === target) return;
+    // The same built-in template in the writer's new language takes the place of its untouched older text
+    const relocalized = untouched && template !== null && template.content !== filledText.current;
+    if (handled.current === target && !relocalized) return;
     handled.current = target;
-    if (untouched || (empty && template)) fill(template);
+    if (untouched || (empty && template)) {
+      filledText.current = template?.content ?? null;
+      fill(template);
+    }
   }, [empty, enabled, fill, scope, template, untouched]);
 }

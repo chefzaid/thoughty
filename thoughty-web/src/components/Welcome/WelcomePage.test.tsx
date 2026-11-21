@@ -73,6 +73,24 @@ describe('WelcomePage', () => {
     expect(page.onOpenJournal).toHaveBeenCalledTimes(1);
   });
 
+  it('offers the first templates in French to a French writer, and saves the ID', async () => {
+    const user = userEvent.setup();
+    const fr = (key: string, params?: Record<string, string | number>) => getTranslation('fr', key, params);
+    const page = renderPage({ language: 'fr', t: fr });
+
+    await user.click(screen.getByRole('button', { name: /Un journal quotidien/ }));
+
+    expect(screen.getAllByRole('radio').map((radio) => radio.closest('label')?.textContent)).toEqual([
+      "Réflexion du jourQue s'est-il passé aujourd'hui ?",
+      'Journal de gratitudeAujourd\'hui, je dis merci pour :',
+      'Intentions du matinComment je me sens en commençant la journée :',
+      expect.stringMatching(/^Une page blanche/),
+    ]);
+    await user.click(screen.getByRole('radio', { name: /Journal de gratitude/ }));
+    await user.click(screen.getByRole('button', { name: 'Commencer à écrire' }));
+    expect(page.onSetDiaryTemplate).toHaveBeenCalledWith(JOURNAL, 'builtin-gratitude');
+  });
+
   it('starts a blank journal without touching the diary, and goes back to the choices', async () => {
     const user = userEvent.setup();
     const page = renderPage();

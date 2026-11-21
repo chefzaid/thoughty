@@ -68,7 +68,7 @@ export const useEntryForm = (
   const draft = useComposerDraftSync(draftFields, applyDraft, untouchedTemplate);
   const { onPublished: onDraftPublished } = draft;
 
-  const templates = useMemo(() => getEntryTemplates(config.entryTemplates), [config.entryTemplates]);
+  const templates = useMemo(() => getEntryTemplates(config.entryTemplates, config.language), [config.entryTemplates, config.language]);
   const defaultTemplate = diaryDefaultTemplate(diaries, currentDiaryId, templates);
   const fillFromTemplate = useCallback((template: EntryTemplate | null) => {
     setNewEntryText(template?.content ?? '');

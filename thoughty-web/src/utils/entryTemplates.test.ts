@@ -3,6 +3,7 @@ import {
   createEntryTemplate,
   describeDiaryTemplate,
   diaryDefaultTemplate,
+  getBuiltInEntryTemplates,
   getEntryTemplates,
   parseCustomEntryTemplates,
   serializeCustomEntryTemplates,
@@ -137,5 +138,51 @@ describe('entryTemplates', () => {
     expect(describeDiaryTemplate('builtin-gratitude', templates, t)).toBe('diaryDefaultTemplateSummary:Gratitude journal');
     expect(describeDiaryTemplate('custom-gone', templates, t)).toBe('diaryDefaultTemplateSummary:diaryDefaultTemplateMissing');
     expect(describeDiaryTemplate(null, templates, t)).toBeNull();
+  });
+
+  describe('in French', () => {
+    it('gives every built-in template a French name and text, with the same ID, tags and format', () => {
+      const english = getBuiltInEntryTemplates('en');
+      const french = getBuiltInEntryTemplates('fr');
+
+      expect(french.map(({ id, tags, visibility, format, sealYears, builtIn }) => ({ id, tags, visibility, format, sealYears, builtIn })))
+        .toEqual(english.map(({ id, tags, visibility, format, sealYears, builtIn }) => ({ id, tags, visibility, format, sealYears, builtIn })));
+      french.forEach((template, index) => {
+        expect(template.name).not.toBe(english[index]?.name);
+        expect(template.content).not.toBe(english[index]?.content);
+        expect(template.name).not.toMatch(/^template/);
+        expect(template.content.trim()).not.toBe('');
+      });
+      expect(french.find((template) => template.id === 'builtin-gratitude')).toMatchObject({
+        name: 'Journal de gratitude',
+        content: expect.stringMatching(/^Aujourd'hui, je dis merci pour :/),
+      });
+    });
+
+    it('keeps the markdown headings of the markdown templates', () => {
+      const french = getBuiltInEntryTemplates('fr').filter((template) => template.format === 'markdown');
+      expect(french.every((template) => /^## |\*\*/m.test(template.content))).toBe(true);
+    });
+
+    it('falls back to English for a missing or unknown language', () => {
+      expect(getBuiltInEntryTemplates()).toEqual(getBuiltInEntryTemplates('en'));
+      expect(getBuiltInEntryTemplates('de')[0]?.name).toBe('Gratitude journal');
+    });
+
+    it('leaves the writer’s own templates exactly as saved', () => {
+      const custom = { id: 'custom-1', name: 'Evening walk', content: 'Where I walked:', tags: ['walks'], visibility: 'private', format: 'plain' };
+      const templates = getEntryTemplates(JSON.stringify([custom]), 'fr');
+
+      expect(templates.find((template) => template.id === 'custom-1')).toEqual({ ...custom, builtIn: false });
+      expect(templates.filter((template) => template.builtIn)).toEqual(getBuiltInEntryTemplates('fr'));
+    });
+
+    it('resolves a diary’s default template, stored by ID, in the writer’s language', () => {
+      const diaries = [{ id: 1, isDefault: true, defaultTemplateId: 'builtin-daily-reflection' }];
+      const t = (key: string, params?: Record<string, string | number>) => `${key}:${params?.name}`;
+
+      expect(diaryDefaultTemplate(diaries, null, getEntryTemplates(undefined, 'fr'))?.content).toMatch(/^Que s'est-il passé aujourd'hui \?/);
+      expect(describeDiaryTemplate('builtin-daily-reflection', getEntryTemplates(undefined, 'fr'), t)).toBe('diaryDefaultTemplateSummary:Réflexion du jour');
+    });
   });
 });
