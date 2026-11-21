@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { Entry, EntryComment } from '@/database/entities';
 import { CommentPolicyService } from './comment-policy.service';
 import { LikesService, type LikeSummary } from './likes.service';
-import { findFeedVisibleEntry } from './public-feed-visibility';
+import { excludeHiddenWriters, findFeedVisibleEntry } from './public-feed-visibility';
 import type { EntryCommentDeletedDto, EntryCommentDto, EntryCommentsResponseDto } from './dto';
 
 /** Newest comments returned per entry; older ones are counted in `total`. */
@@ -47,10 +47,10 @@ export class CommentsService {
 
   /**
    * The pinned comment first, then the newest others, oldest first. A hidden comment is listed only
-   * to the entry's writer and its own writer.
+   * to the entry's writer and its own writer, and none by a writer the reader muted or has a block with.
    */
   async list(userId: number, entryId: number): Promise<EntryCommentsResponseDto> {
-    const entry = await findFeedVisibleEntry(this.entryRepository, entryId);
+    const entry = await findFeedVisibleEntry(this.entryRepository, entryId, userId);
     const qb = this.commentRepository
       .createQueryBuilder('c')
       .innerJoinAndSelect('c.user', 'u')
@@ -70,6 +70,7 @@ export class CommentsService {
     if (entry.userId !== userId) {
       qb.andWhere('(c.hidden_at IS NULL OR c.user_id = :userId)', { userId });
     }
+    excludeHiddenWriters(qb, 'c.user_id', userId, { muted: true });
     const [comments, total] = await qb
       .orderBy('c.pinnedAt', 'DESC', 'NULLS LAST')
       .addOrderBy('c.createdAt', 'DESC')
@@ -97,7 +98,7 @@ export class CommentsService {
   }
 
   async create(userId: number, entryId: number, content: string): Promise<EntryCommentDto> {
-    const entry = await findFeedVisibleEntry(this.entryRepository, entryId);
+    const entry = await findFeedVisibleEntry(this.entryRepository, entryId, userId);
     await this.commentPolicyService.assertMayComment(userId, entry);
     const saved = await this.commentRepository.save(
       this.commentRepository.create({ entryId, userId, content }),

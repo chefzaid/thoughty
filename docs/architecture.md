@@ -300,6 +300,8 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 |  | `SOCIAL_CANNOT_LIKE_OWN_ENTRY` | You cannot like your own entry |
 |  | `SOCIAL_CANNOT_LIKE_OWN_COMMENT` | You cannot like your own comment |
 |  | `SOCIAL_CANNOT_SAVE_OWN_ENTRY` | You cannot save your own entry |
+|  | `SOCIAL_CANNOT_MUTE_SELF` | You cannot mute yourself |
+|  | `SOCIAL_CANNOT_BLOCK_SELF` | You cannot block yourself |
 |  | `COMMENT_NOT_FOUND` | Comment not found |
 |  | `COMMENTS_CLOSED` | Comments are closed on this entry |
 |  | `COMMENTS_FOLLOWERS_ONLY` | Only followers of its writer can comment on this entry |

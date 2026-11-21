@@ -13,11 +13,17 @@ export function orderComments(comments: readonly EntryComment[]): EntryComment[]
     || left.id - right.id);
 }
 
-/** Loads one entry's comments and keeps them in step with what the reader posts, deletes, hides and pins. */
+const NO_WRITERS: ReadonlySet<number> = new Set();
+
+/**
+ * Loads one entry's comments and keeps them in step with what the reader posts, deletes, hides and pins,
+ * and drops those by writers the reader mutes or blocks meanwhile (`hiddenAuthorIds`).
+ */
 export function useCommentThread(
   entryId: number,
   feedService: FeedService,
   onTotalChange: Dispatch<SetStateAction<number>>,
+  hiddenAuthorIds: ReadonlySet<number> = NO_WRITERS,
 ) {
   const [comments, setComments] = useState<EntryComment[]>([]);
   const [policy, setPolicy] = useState<CommentThreadPolicy | null>(null);
@@ -42,6 +48,13 @@ export function useCommentThread(
       active = false;
     };
   }, [entryId, feedService, onTotalChange]);
+
+  useEffect(() => {
+    const gone = comments.filter((comment) => hiddenAuthorIds.has(comment.author.id)).length;
+    if (gone === 0) return;
+    setComments((current) => current.filter((comment) => !hiddenAuthorIds.has(comment.author.id)));
+    onTotalChange((total) => Math.max(0, total - gone));
+  }, [comments, hiddenAuthorIds, onTotalChange]);
 
   /** Resolves whether the comment was posted; a refusal says why (comments closed, followers only). */
   const post = async (content: string): Promise<boolean> => {

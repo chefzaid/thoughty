@@ -1,4 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
+import { AuthenticatedUser, CurrentUser } from '@/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { GetLeaderboardQueryDto, LeaderboardResponseDto } from './dto';
 import { LeaderboardService } from './leaderboard.service';
@@ -18,7 +19,10 @@ export class LeaderboardController {
     description: 'Most active authors, most liked entries, and most commented entries',
     type: LeaderboardResponseDto,
   })
-  getLeaderboard(@Query() query: GetLeaderboardQueryDto): Promise<LeaderboardResponseDto> {
-    return this.leaderboardService.getLeaderboard(query.period);
+  getLeaderboard(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: GetLeaderboardQueryDto,
+  ): Promise<LeaderboardResponseDto> {
+    return this.leaderboardService.getLeaderboard(user.userId, query.period);
   }
 }

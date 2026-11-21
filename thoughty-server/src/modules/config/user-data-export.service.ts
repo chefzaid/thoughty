@@ -26,7 +26,9 @@ import {
   User,
   SavedEntry,
   TopicFollow,
+  UserBlock,
   UserFollow,
+  UserMute,
 } from '@/database/entities';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 import { toPersonDate, type PersonDateColumns } from '@/modules/people/person-dates';
@@ -102,6 +104,10 @@ export class UserDataExportService {
     private readonly savedEntryRepository: Repository<SavedEntry>,
     @InjectRepository(TopicFollow)
     private readonly topicFollowRepository: Repository<TopicFollow>,
+    @InjectRepository(UserMute)
+    private readonly muteRepository: Repository<UserMute>,
+    @InjectRepository(UserBlock)
+    private readonly blockRepository: Repository<UserBlock>,
   ) {}
 
   /**
@@ -355,7 +361,7 @@ export class UserDataExportService {
 
   private async collectSocialData(userId: number) {
     const order = { createdAt: 'ASC' } as const;
-    const [follows, topics, comments, entryLikes, commentLikes, savedEntries] = await Promise.all([
+    const [follows, topics, comments, entryLikes, commentLikes, savedEntries, mutes, blocks] = await Promise.all([
       this.followRepository.find({
         where: { followerId: userId },
         relations: { followed: true },
@@ -366,6 +372,8 @@ export class UserDataExportService {
       this.entryLikeRepository.find({ where: { userId }, order }),
       this.commentLikeRepository.find({ where: { userId }, order }),
       this.savedEntryRepository.find({ where: { userId }, order }),
+      this.muteRepository.find({ where: { userId }, relations: { muted: true }, order }),
+      this.blockRepository.find({ where: { blockerId: userId }, relations: { blocked: true }, order }),
     ]);
 
     return {
@@ -375,6 +383,16 @@ export class UserDataExportService {
         followedAt: follow.createdAt,
       })),
       followedTopics: topics.map((topic) => ({ tag: topic.tag, followedAt: topic.createdAt })),
+      mutedWriters: mutes.map((mute) => ({
+        userId: mute.mutedId,
+        username: mute.muted.username,
+        mutedAt: mute.createdAt,
+      })),
+      blockedWriters: blocks.map((block) => ({
+        userId: block.blockedId,
+        username: block.blocked.username,
+        blockedAt: block.createdAt,
+      })),
       comments: comments.map((comment) => ({
         id: comment.id,
         entryId: comment.entryId,

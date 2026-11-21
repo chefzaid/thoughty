@@ -41,7 +41,7 @@ const page = (entries: ReturnType<typeof entry>[]) => ({
 describe('FeedPage in quiet mode', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    fetchFollows.mockResolvedValue({ data: { following: [{ id: 101, username: 'Ada', avatarUrl: null, followedAt: '2026-08-01T00:00:00.000Z' }], topics: [], followerCount: 4 }, error: null });
+    fetchFollows.mockResolvedValue({ data: { following: [{ id: 101, username: 'Ada', avatarUrl: null, followedAt: '2026-08-01T00:00:00.000Z' }], topics: [], followers: [], followerCount: 4 }, error: null });
   });
 
   it('keeps liking, comments and follows, without a count', async () => {

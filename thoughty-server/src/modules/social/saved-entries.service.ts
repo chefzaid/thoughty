@@ -21,7 +21,7 @@ export class SavedEntriesService {
   ) {}
 
   async setSaved(userId: number, entryId: number, save: boolean): Promise<SavedStateDto> {
-    const entry = await findFeedVisibleEntry(this.entryRepository, entryId);
+    const entry = await findFeedVisibleEntry(this.entryRepository, entryId, userId);
     if (save && entry.userId === userId) {
       throw apiError(BadRequestException, 'SOCIAL_CANNOT_SAVE_OWN_ENTRY');
     }

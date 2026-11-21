@@ -15,6 +15,7 @@ export function useFollows(feedService: FeedService) {
   const [following, setFollowing] = useState<FollowedUser[]>([]);
   const [topics, setTopics] = useState<FollowedTopic[]>([]);
   const [pendingTopics, setPendingTopics] = useState<ReadonlySet<string>>(new Set());
+  const [followers, setFollowers] = useState<FollowedUser[]>([]);
   const [followerCount, setFollowerCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -29,6 +30,7 @@ export function useFollows(feedService: FeedService) {
       if (result.data) {
         setFollowing([...result.data.following].sort(byUsername));
         setTopics([...result.data.topics].sort(byTag));
+        setFollowers([...result.data.followers].sort(byUsername));
         setFollowerCount(result.data.followerCount);
       }
       setLoadError(!result.data);
@@ -101,11 +103,40 @@ export function useFollows(feedService: FeedService) {
     });
   }, [feedService]);
 
+  /** Drops a follower; they are not told. */
+  const removeFollower = useCallback(async (follower: FollowedUser) => {
+    setPendingIds((current) => new Set(current).add(follower.id));
+    setUpdateError(false);
+    const result = await feedService.removeFollower(follower.id);
+    setPendingIds((current) => {
+      const next = new Set(current);
+      next.delete(follower.id);
+      return next;
+    });
+    if (!result.data) {
+      setUpdateError(true);
+      return;
+    }
+    setFollowers((current) => current.filter((user) => user.id !== follower.id));
+    setFollowerCount((count) => Math.max(0, count - 1));
+  }, [feedService]);
+
+  /** A blocked writer: the follows ended both ways on the server, so they leave both lists here too. */
+  const forgetWriter = useCallback((writerId: number) => {
+    setOverrides((current) => new Map(current).set(writerId, false));
+    setFollowing((current) => current.filter((user) => user.id !== writerId));
+    if (followers.some((user) => user.id === writerId)) {
+      setFollowers((current) => current.filter((user) => user.id !== writerId));
+      setFollowerCount((count) => Math.max(0, count - 1));
+    }
+  }, [followers]);
+
   const isTopicPending = useCallback((tag: string) => pendingTopics.has(tag.toLowerCase()), [pendingTopics]);
 
   return {
     following,
     topics,
+    followers,
     followerCount,
     loaded,
     loadError,
@@ -116,5 +147,7 @@ export function useFollows(feedService: FeedService) {
     isTopicFollowed,
     isTopicPending,
     setTopicFollow,
+    removeFollower,
+    forgetWriter,
   };
 }

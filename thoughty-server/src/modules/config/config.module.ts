@@ -25,6 +25,8 @@ import {
   ComposerDraft,
   SavedEntry,
   TopicFollow,
+  UserMute,
+  UserBlock,
 } from '@/database/entities';
 import { ConfigController } from './config.controller';
 import { ConfigService } from './config.service';
@@ -58,6 +60,8 @@ import { TimeCapsulesModule } from '@/modules/time-capsules/time-capsules.module
       ComposerDraft,
       SavedEntry,
       TopicFollow,
+      UserMute,
+      UserBlock,
     ]),
     TimeCapsulesModule,
   ],

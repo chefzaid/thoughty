@@ -9,7 +9,11 @@ import type {
   LeaderboardPeriod,
   LeaderboardResponseDto,
 } from './dto';
-import { applyPublicFeedVisibility, joinEngagementByOthers } from './public-feed-visibility';
+import {
+  applyPublicFeedVisibility,
+  excludeHiddenWriters,
+  joinEngagementByOthers,
+} from './public-feed-visibility';
 
 export const LEADERBOARD_SIZE = 10;
 export const EXCERPT_LENGTH = 280;
@@ -54,7 +58,8 @@ const toEntryRank = (row: EntryRankRow): LeaderboardEntryRankDto => ({
 
 /**
  * Ranks only what the public feed can show, so private journaling activity and moderated,
- * archived, or deleted-account content never influence or appear in the rankings.
+ * archived, or deleted-account content never influence or appear in the rankings. A writer the
+ * viewer has a block with, either way, is left out of what that viewer sees.
  */
 @Injectable()
 export class LeaderboardService {
@@ -64,15 +69,16 @@ export class LeaderboardService {
   ) {}
 
   async getLeaderboard(
+    viewerId: number,
     period: LeaderboardPeriod = 'month',
     now = new Date(),
   ): Promise<LeaderboardResponseDto> {
     const since =
       period === 'all' ? null : new Date(now.getTime() - PERIOD_DAYS[period] * 86_400_000);
     const [authors, liked, commented] = await Promise.all([
-      this.mostActiveAuthors(since),
-      this.mostEngagedEntries(since, 'entry_likes'),
-      this.mostEngagedEntries(since, 'entry_comments'),
+      this.mostActiveAuthors(viewerId, since),
+      this.mostEngagedEntries(viewerId, since, 'entry_likes'),
+      this.mostEngagedEntries(viewerId, since, 'entry_comments'),
     ]);
 
     return {
@@ -86,16 +92,23 @@ export class LeaderboardService {
     };
   }
 
-  private publicEntries(since: Date | null): SelectQueryBuilder<Entry> {
-    const qb = applyPublicFeedVisibility(
-      this.entryRepository.createQueryBuilder('e').innerJoin('e.user', 'u'),
+  private publicEntries(viewerId: number, since: Date | null): SelectQueryBuilder<Entry> {
+    const qb = excludeHiddenWriters(
+      applyPublicFeedVisibility(
+        this.entryRepository.createQueryBuilder('e').innerJoin('e.user', 'u'),
+      ),
+      'e.user_id',
+      viewerId,
     );
     if (since) qb.andWhere('e.created_at >= :since', { since });
     return qb;
   }
 
-  private mostActiveAuthors(since: Date | null): Promise<Array<AuthorRow & { count: string }>> {
-    return this.publicEntries(since)
+  private mostActiveAuthors(
+    viewerId: number,
+    since: Date | null,
+  ): Promise<Array<AuthorRow & { count: string }>> {
+    return this.publicEntries(viewerId, since)
       .select('u.id', 'authorId')
       .addSelect('u.username', 'username')
       .addSelect('u.avatar_url', 'avatarUrl')
@@ -111,11 +124,12 @@ export class LeaderboardService {
 
   /** Entries published in the period, ranked by likes or by comments from other active users. */
   private mostEngagedEntries(
+    viewerId: number,
     since: Date | null,
     table: 'entry_likes' | 'entry_comments',
   ): Promise<EntryRankRow[]> {
     return (
-      joinEngagementByOthers(this.publicEntries(since), table)
+      joinEngagementByOthers(this.publicEntries(viewerId, since), table)
         .select('e.id', 'id')
         // Raw DATE values would be parsed into time-zone-dependent Date objects.
         .addSelect("TO_CHAR(e.date, 'YYYY-MM-DD')", 'date')

@@ -20,6 +20,38 @@ export function applyPublicFeedVisibility<T extends ObjectLiteral>(
 }
 
 /**
+ * The writer in `column` and the viewer (`:viewerId`) have not blocked one another, either way. A block
+ * takes each writer out of everything social the other sees.
+ */
+export function notBlockedWith(column: string): string {
+  return `NOT EXISTS (
+    SELECT 1 FROM user_blocks ub
+     WHERE (ub.blocker_id = :viewerId AND ub.blocked_id = ${column})
+        OR (ub.blocked_id = :viewerId AND ub.blocker_id = ${column})
+  )`;
+}
+
+/** The viewer (`:viewerId`) has not muted the writer in `column`. */
+export function notMutedBy(column: string): string {
+  return `NOT EXISTS (SELECT 1 FROM user_mutes um WHERE um.user_id = :viewerId AND um.muted_id = ${column})`;
+}
+
+/**
+ * Leaves out what the viewer must not see from the writer in `column`: anyone they have blocked or who has
+ * blocked them, and, with `muted`, the writers they muted.
+ */
+export function excludeHiddenWriters<T extends ObjectLiteral>(
+  qb: SelectQueryBuilder<T>,
+  column: string,
+  viewerId: number,
+  { muted = false }: { muted?: boolean } = {},
+): SelectQueryBuilder<T> {
+  qb.andWhere(notBlockedWith(column), { viewerId });
+  if (muted) qb.andWhere(notMutedBy(column), { viewerId });
+  return qb;
+}
+
+/**
  * Joins likes or comments on the queried entries (alias `e`) that come from other people
  * whose accounts are not deleted, as `x` (the interaction) and `xu` (its author). A comment
  * the entry's writer hid does not count.
@@ -40,20 +72,22 @@ export function joinEngagementByOthers<T extends ObjectLiteral>(
 }
 
 /**
- * Social interactions exist only around entries the feed may show; anything else
- * answers as missing so private entries cannot be probed.
+ * Social interactions exist only around entries the feed may show the viewer; anything else, an entry
+ * by a writer blocked either way included, answers as missing so private entries and blocks cannot be probed.
  */
 export async function findFeedVisibleEntry(
   entryRepository: Repository<Entry>,
   entryId: number,
+  viewerId: number,
 ): Promise<Pick<Entry, 'id' | 'userId' | 'commentPolicy'>> {
-  const entry = await applyPublicFeedVisibility(
+  const qb = applyPublicFeedVisibility(
     entryRepository
       .createQueryBuilder('e')
       .innerJoin('e.user', 'u')
       .select(['e.id', 'e.userId', 'e.commentPolicy'])
       .where('e.id = :entryId', { entryId }),
-  ).getOne();
+  );
+  const entry = await excludeHiddenWriters(qb, 'e.user_id', viewerId).getOne();
   if (!entry) {
     throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
   }

@@ -42,7 +42,7 @@ const page = (entries: ReturnType<typeof entry>[]) => ({
 });
 
 const follows = (topics: string[] = []) => ({
-  data: { following: [], topics: topics.map((tag) => ({ tag, followedAt: '2026-08-01T00:00:00.000Z' })), followerCount: 0 },
+  data: { following: [], topics: topics.map((tag) => ({ tag, followedAt: '2026-08-01T00:00:00.000Z' })), followers: [], followerCount: 0 },
   error: null,
 });
 

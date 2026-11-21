@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import type { ObjectLiteral, Repository } from 'typeorm';
 import { CommentLike, Entry, EntryComment, EntryLike } from '@/database/entities';
 import type { LikeStateDto } from './dto';
-import { findFeedVisibleEntry } from './public-feed-visibility';
+import { excludeHiddenWriters, findFeedVisibleEntry } from './public-feed-visibility';
 
 export type LikeSummary = LikeStateDto;
 
@@ -30,7 +30,7 @@ export class LikesService {
   ) {}
 
   async setEntryLike(userId: number, entryId: number, like: boolean): Promise<LikeStateDto> {
-    const entry = await findFeedVisibleEntry(this.entryRepository, entryId);
+    const entry = await findFeedVisibleEntry(this.entryRepository, entryId, userId);
     if (like && entry.userId === userId) {
       throw apiError(BadRequestException, 'SOCIAL_CANNOT_LIKE_OWN_ENTRY');
     }
@@ -55,16 +55,20 @@ export class LikesService {
     commentId: number,
     like: boolean,
   ): Promise<LikeStateDto> {
-    const entry = await findFeedVisibleEntry(this.entryRepository, entryId);
-    const comment = await this.commentRepository
-      .createQueryBuilder('c')
-      .innerJoin('c.user', 'u')
-      .select(['c.id', 'c.userId', 'c.hiddenAt'])
-      .where('c.id = :commentId', { commentId })
-      .andWhere('c.entry_id = :entryId', { entryId })
-      .andWhere('u.deleted_at IS NULL')
-      .getOne();
-    // A hidden comment is there only for the entry's writer and its own writer, who cannot like it
+    const entry = await findFeedVisibleEntry(this.entryRepository, entryId, userId);
+    const comment = await excludeHiddenWriters(
+      this.commentRepository
+        .createQueryBuilder('c')
+        .innerJoin('c.user', 'u')
+        .select(['c.id', 'c.userId', 'c.hiddenAt'])
+        .where('c.id = :commentId', { commentId })
+        .andWhere('c.entry_id = :entryId', { entryId })
+        .andWhere('u.deleted_at IS NULL'),
+      'c.user_id',
+      userId,
+    ).getOne();
+    // A hidden comment is there only for the entry's writer and its own writer, who cannot like it; a
+    // comment by a writer blocked either way is not there at all
     if (!comment || (comment.hiddenAt && entry.userId !== userId && comment.userId !== userId)) {
       throw apiError(NotFoundException, 'COMMENT_NOT_FOUND');
     }

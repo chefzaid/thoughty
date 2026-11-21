@@ -16,11 +16,16 @@ function mayComment(entry: MockEntry, state: MockAppState, policy: CommentPolicy
   return policy === 'everyone' || writer === state.user.id || state.followedUserIds.includes(writer);
 }
 
-/** A hidden comment shows only to the entry's writer and its own writer; the pinned one comes first. */
+/**
+ * A hidden comment shows only to the entry's writer and its own writer, and none by a writer the reader
+ * muted or blocked; the pinned one comes first.
+ */
 export function visibleComments(state: MockAppState, entry: MockEntry): MockComment[] {
   const isEntryOwner = authorId(entry, state) === state.user.id;
+  const { muted, blocked } = state.writers;
   return state.comments
     .filter((comment) => comment.entryId === entry.id)
+    .filter((comment) => !muted.includes(comment.userId) && !blocked.includes(comment.userId))
     .filter((comment) => !comment.hidden || isEntryOwner || comment.userId === state.user.id)
     .sort((left, right) => Number(Boolean(right.pinned)) - Number(Boolean(left.pinned))
       || left.createdAt.localeCompare(right.createdAt) || left.id - right.id);

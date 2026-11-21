@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import type { PublicFeedAuthor } from '../../services/api';
 
 type Translate = (key: string, params?: Record<string, string | number>) => string;
@@ -28,9 +30,11 @@ interface FeedAuthorProps {
     readonly pending: boolean;
     readonly onToggle: () => void;
   };
+  /** After the follow button: what else the reader can do about this writer (mute, block). */
+  readonly menu?: ReactNode;
 }
 
-function FeedAuthor({ author, date, time, t, follow }: FeedAuthorProps) {
+function FeedAuthor({ author, date, time, t, follow, menu }: FeedAuthorProps) {
   return (
     <div className="feed-author">
       <FeedAvatar author={author} />
@@ -51,6 +55,7 @@ function FeedAuthor({ author, date, time, t, follow }: FeedAuthorProps) {
           <span className="sr-only"> {author.username}</span>
         </button>
       )}
+      {menu}
     </div>
   );
 }

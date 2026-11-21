@@ -3,6 +3,8 @@ import type { TranslationFunction } from './types';
 import { PASSWORD_SYMBOLS } from '../AuthPage/types';
 import './DataPrivacySection.css';
 import ActiveSessionsSection from './ActiveSessionsSection';
+import HiddenWritersSection from './HiddenWritersSection';
+import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import TwoFactorSection from './TwoFactorSection';
 import PinLockSection from '../ContentLock/PinLockSection';
 import { useContentLock } from '../ContentLock/contentLockContext';
@@ -270,6 +272,7 @@ interface DataPrivacySectionProps {
 }
 
 function DataPrivacySection({ t, isDark, onDownloadData, showDeleteConfirm, setShowDeleteConfirm, deleteConfirmText, setDeleteConfirmText, deletePassword, setDeletePassword, deleteError, setDeleteError, deletingAccount, handleDeleteAccount, isLocalAuth, handlePasswordChange, currentPassword, setCurrentPassword, newPassword, setNewPassword, confirmNewPassword, setConfirmNewPassword, passwordError, passwordSuccess, changingPassword }: Readonly<DataPrivacySectionProps>) {
+  const sharingOn = useFeatureFlag('publicSharing');
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState('');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -349,6 +352,13 @@ function DataPrivacySection({ t, isDark, onDownloadData, showDeleteConfirm, setS
         <div className="download-data-divider" />
 
         <ActiveSessionsSection isDark={isDark} t={t} />
+
+        {sharingOn && (
+          <>
+            <div className="download-data-divider" />
+            <HiddenWritersSection isDark={isDark} t={t} />
+          </>
+        )}
 
         <div className="delete-account-section">
           <div className="setting-row">

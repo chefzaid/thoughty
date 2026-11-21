@@ -28,6 +28,7 @@ import { privacyBlurTranslations, type PrivacyBlurTranslationKey } from "./trans
 import { contentLockTranslations, type ContentLockTranslationKey } from "./translations.contentLock";
 import { journalFeedTranslations, type JournalFeedTranslationKey } from "./translations.journalFeed";
 import { savedEntriesTranslations, type SavedEntriesTranslationKey } from "./translations.savedEntries";
+import { writerControlsTranslations, type WriterControlsTranslationKey } from "./translations.writerControls";
 import { feedTopicsTranslations, type FeedTopicsTranslationKey } from "./translations.feedTopics";
 import { commentControlsTranslations, type CommentControlsTranslationKey } from "./translations.commentControls";
 import { peopleCheckTranslations, type PeopleCheckTranslationKey } from "./translations.peopleCheck";
@@ -106,6 +107,7 @@ export type TranslationKey =
   | ContentLockTranslationKey
   | JournalFeedTranslationKey
   | SavedEntriesTranslationKey
+  | WriterControlsTranslationKey
   | CommentControlsTranslationKey
   | PeopleCheckTranslationKey
   | FeedTopicsTranslationKey
@@ -189,6 +191,7 @@ export const translations: Translations = {
     ...contentLockTranslations.en,
     ...journalFeedTranslations.en,
     ...savedEntriesTranslations.en,
+    ...writerControlsTranslations.en,
     ...feedTopicsTranslations.en,
     ...commentControlsTranslations.en,
     ...peopleCheckTranslations.en,
@@ -265,6 +268,7 @@ export const translations: Translations = {
     ...contentLockTranslations.fr,
     ...journalFeedTranslations.fr,
     ...savedEntriesTranslations.fr,
+    ...writerControlsTranslations.fr,
     ...feedTopicsTranslations.fr,
     ...commentControlsTranslations.fr,
     ...peopleCheckTranslations.fr,

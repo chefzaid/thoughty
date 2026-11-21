@@ -32,3 +32,5 @@ export * from './content-pin.entity';
 export * from './content-unlock.entity';
 export * from './saved-entry.entity';
 export * from './topic-follow.entity';
+export * from './user-mute.entity';
+export * from './user-block.entity';

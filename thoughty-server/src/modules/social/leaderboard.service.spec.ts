@@ -58,7 +58,7 @@ describe('LeaderboardService', () => {
       .mockReturnValueOnce(liked)
       .mockReturnValueOnce(commented);
 
-    await expect(service.getLeaderboard('week', now)).resolves.toEqual({
+    await expect(service.getLeaderboard(1, 'week', now)).resolves.toEqual({
       period: 'week',
       mostActiveAuthors: [
         { author: { id: 2, username: 'maya', avatarUrl: null }, publicEntries: 5 },
@@ -88,6 +88,10 @@ describe('LeaderboardService', () => {
         visibility: 'public',
       });
       expect(qb.andWhere).toHaveBeenCalledWith('u.deleted_at IS NULL');
+      // Writers the viewer has a block with, either way, are left out of what they see
+      expect(qb.andWhere).toHaveBeenCalledWith(expect.stringContaining('user_blocks'), {
+        viewerId: 1,
+      });
       expect(qb.andWhere).toHaveBeenCalledWith('e.created_at >= :since', {
         since: new Date('2026-09-20T12:00:00Z'),
       });
@@ -114,7 +118,7 @@ describe('LeaderboardService', () => {
     const builders = [createQueryBuilder([]), createQueryBuilder([]), createQueryBuilder([])];
     entryRepository.createQueryBuilder.mockImplementation(() => builders.shift());
 
-    const all = await service.getLeaderboard('all', now);
+    const all = await service.getLeaderboard(1, 'all', now);
     expect(all.mostActiveAuthors).toEqual([]);
     expect(
       entryRepository.createQueryBuilder.mock.results[0].value.andWhere,
@@ -122,7 +126,7 @@ describe('LeaderboardService', () => {
 
     const monthly = [createQueryBuilder([]), createQueryBuilder([]), createQueryBuilder([])];
     builders.push(...monthly);
-    await expect(service.getLeaderboard(undefined, now)).resolves.toEqual(
+    await expect(service.getLeaderboard(1, undefined, now)).resolves.toEqual(
       expect.objectContaining({ period: 'month' }),
     );
     expect(monthly[0].andWhere).toHaveBeenCalledWith('e.created_at >= :since', {
@@ -141,7 +145,7 @@ describe('LeaderboardService', () => {
       )
       .mockReturnValueOnce(createQueryBuilder([]));
 
-    const result = await service.getLeaderboard('year', now);
+    const result = await service.getLeaderboard(1, 'year', now);
 
     expect(result.mostLikedEntries[0].excerpt).toHaveLength(EXCERPT_LENGTH);
     expect(result.mostLikedEntries[0].excerpt).not.toMatch(/\s{2}/);

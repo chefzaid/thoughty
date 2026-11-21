@@ -193,4 +193,38 @@ describe('feedService', () => {
     await expect(createFeedService(authFetch).fetchAchievements()).resolves.toEqual({ data: payload, error: null });
     expect(authFetch).toHaveBeenCalledWith('/api/achievements');
   });
+
+  it('mutes, blocks and removes a follower with the matching method, and lists hidden writers', async () => {
+    const ok = (body: unknown) => new Response(JSON.stringify(body), { status: 200 });
+    const authFetch = vi.fn()
+      .mockResolvedValueOnce(ok({ userId: 4, muted: true }))
+      .mockResolvedValueOnce(ok({ userId: 4, muted: false }))
+      .mockResolvedValueOnce(ok({ userId: 4, blocked: true }))
+      .mockResolvedValueOnce(ok({ userId: 4, blocked: false }))
+      .mockResolvedValueOnce(ok({ userId: 6, following: false }))
+      .mockResolvedValueOnce(ok({ muted: [], blocked: [] }));
+    const service = createFeedService(authFetch);
+
+    await expect(service.setWriterMuted(4, true)).resolves.toEqual({ data: { userId: 4, muted: true }, error: null });
+    await service.setWriterMuted(4, false);
+    await expect(service.setWriterBlocked(4, true)).resolves.toEqual({ data: { userId: 4, blocked: true }, error: null });
+    await service.setWriterBlocked(4, false);
+    await service.removeFollower(6);
+    await expect(service.fetchHiddenWriters()).resolves.toEqual({ data: { muted: [], blocked: [] }, error: null });
+    expect(authFetch.mock.calls).toEqual([
+      ['/api/writers/4/mute', { method: 'PUT' }],
+      ['/api/writers/4/mute', { method: 'DELETE' }],
+      ['/api/writers/4/block', { method: 'PUT' }],
+      ['/api/writers/4/block', { method: 'DELETE' }],
+      ['/api/follows/followers/6', { method: 'DELETE' }],
+      ['/api/writers/hidden'],
+    ]);
+  });
+
+  it('reports a refused block with its fallback key', async () => {
+    const authFetch = vi.fn().mockRejectedValue(new Error('offline'));
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    await expect(createFeedService(authFetch).setWriterBlocked(4, true)).resolves.toEqual({ data: null, error: 'writerBlockError' });
+  });
 });

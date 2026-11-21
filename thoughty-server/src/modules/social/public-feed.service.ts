@@ -7,7 +7,7 @@ import type { GetPublicFeedQueryDto, PublicFeedResponseDto } from './dto';
 import { LikesService } from './likes.service';
 import { applyEntrySearchMatch, EntrySearchService } from '@/modules/entries';
 import { applyFeedScope, applyFeedTopic } from './public-feed-filters';
-import { applyPublicFeedVisibility } from './public-feed-visibility';
+import { applyPublicFeedVisibility, excludeHiddenWriters } from './public-feed-visibility';
 import { SavedEntriesService } from './saved-entries.service';
 
 @Injectable()
@@ -46,6 +46,10 @@ export class PublicFeedService {
         'u.avatarUrl',
       ]);
     applyPublicFeedVisibility(qb);
+    // Muting keeps a writer out of the stream tabs; the reader's own Saved list keeps what they chose
+    excludeHiddenWriters(qb, 'e.user_id', userId, {
+      muted: scope === 'community' || scope === 'following',
+    });
     applyFeedScope(qb, scope, userId);
     if (query.tag !== undefined) {
       applyFeedTopic(qb, query.tag);
@@ -116,11 +120,14 @@ export class PublicFeedService {
     return new Set(follows.map((follow) => follow.followedId));
   }
 
-  /** Comments the reader may see: hidden ones count only for the entry's writer and their own writer. */
+  /**
+   * Comments the reader may see: hidden ones count only for the entry's writer and their own writer, and
+   * none by a writer the reader muted or has a block with.
+   */
   private async countComments(userId: number, entryIds: number[]): Promise<Map<number, number>> {
     if (entryIds.length === 0) return new Map();
 
-    const rows = await this.commentRepository
+    const qb = this.commentRepository
       .createQueryBuilder('c')
       .innerJoin('c.user', 'u')
       .innerJoin('c.entry', 'ce')
@@ -129,8 +136,10 @@ export class PublicFeedService {
       .where('c.entry_id IN (:...entryIds)', { entryIds })
       .andWhere('u.deleted_at IS NULL')
       .andWhere('(c.hidden_at IS NULL OR c.user_id = :userId OR ce.user_id = :userId)', { userId })
-      .groupBy('c.entry_id')
-      .getRawMany<{ entryId: number | string; count: number | string }>();
+      .groupBy('c.entry_id');
+    const rows = await excludeHiddenWriters(qb, 'c.user_id', userId, {
+      muted: true,
+    }).getRawMany<{ entryId: number | string; count: number | string }>();
     return new Map(rows.map((row) => [Number(row.entryId), Number(row.count)]));
   }
 }

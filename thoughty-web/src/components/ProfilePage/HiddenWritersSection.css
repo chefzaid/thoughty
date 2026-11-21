@@ -1,0 +1,26 @@
+.hidden-writers-group ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hidden-writers-group li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.hidden-writers-group h3 {
+  margin: 0;
+}
+
+.hidden-writers-name {
+  overflow: hidden;
+  min-width: 0;
+  font-size: 0.875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

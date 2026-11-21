@@ -12,8 +12,10 @@ export function setLiked(likedIds: number[], id: number, like: boolean) {
   return like ? [...new Set([...likedIds, id])] : likedIds.filter((candidate) => candidate !== id);
 }
 
+/** Feed-visible entries the reader may reach: never one by a writer they blocked (`state.writers`). */
 export function feedEligibleEntries(state: MockAppState) {
   return state.entries
+    .filter((entry) => !state.writers.blocked.includes(authorId(entry, state)))
     .filter((entry) => entry.visibility === 'public')
     .filter((entry) => !entry.is_archived)
     .filter((entry) => (entry.moderationStatus || 'visible') === 'visible');

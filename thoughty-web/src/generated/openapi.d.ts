@@ -1946,7 +1946,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List followed users and topics, and the follower count */
+        /** List followed users and topics, and the followers */
         get: operations["FollowsController_list"];
         put?: never;
         post?: never;
@@ -1969,6 +1969,23 @@ export interface paths {
         post?: never;
         /** Stop following a user */
         delete: operations["FollowsController_unfollow"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/follows/followers/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a follower, without telling them */
+        delete: operations["FollowsController_removeFollower"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2163,6 +2180,59 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/writers/hidden": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the writers the authenticated user muted and blocked */
+        get: operations["WriterControlsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/writers/{userId}/mute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mute a writer: their entries and comments leave your feed, and any follow stays */
+        put: operations["WriterControlsController_mute"];
+        post?: never;
+        /** Unmute a writer */
+        delete: operations["WriterControlsController_unmute"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/writers/{userId}/block": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Block a writer: the follows end both ways, and each leaves the other’s feed, comments, followers, leaderboard and Saved list; they are not told */
+        put: operations["WriterControlsController_block"];
+        post?: never;
+        /** Unblock a writer; the follows that ended stay ended */
+        delete: operations["WriterControlsController_unblock"];
         options?: never;
         head?: never;
         patch?: never;
@@ -8248,6 +8318,14 @@ export interface components {
          *           "followedAt": "2026-09-01T08:30:00.000Z"
          *         }
          *       ],
+         *       "followers": [
+         *         {
+         *           "id": 2,
+         *           "username": "maya",
+         *           "avatarUrl": null,
+         *           "followedAt": "2026-09-01T08:30:00.000Z"
+         *         }
+         *       ],
          *       "followerCount": 3
          *     }
          */
@@ -8256,6 +8334,8 @@ export interface components {
             following: components["schemas"]["FollowedUserDto"][];
             /** @description Topics (tags) the current user follows, by name */
             topics: components["schemas"]["FollowedTopicDto"][];
+            /** @description Active users following the current user, by name, listed to them alone; `followedAt` is when each started following */
+            followers: components["schemas"]["FollowedUserDto"][];
             /**
              * @description Number of active users following the current user
              * @example 3
@@ -8672,6 +8752,77 @@ export interface components {
             karma: number;
             stats: components["schemas"]["AchievementStatsDto"];
             badges: components["schemas"]["AchievementBadgeDto"][];
+        };
+        /**
+         * @example {
+         *       "id": 2,
+         *       "username": "maya",
+         *       "avatarUrl": null,
+         *       "since": "2026-09-01T08:30:00.000Z"
+         *     }
+         */
+        HiddenWriterDto: {
+            /** @example 2 */
+            id: number;
+            /** @example maya */
+            username: string;
+            /** @example null */
+            avatarUrl: string | null;
+            /**
+             * @description When the writer was muted or blocked
+             * @example 2026-09-01T08:30:00.000Z
+             */
+            since: string;
+        };
+        /**
+         * @example {
+         *       "muted": [
+         *         {
+         *           "id": 2,
+         *           "username": "maya",
+         *           "avatarUrl": null,
+         *           "since": "2026-09-01T08:30:00.000Z"
+         *         }
+         *       ],
+         *       "blocked": [
+         *         {
+         *           "id": 2,
+         *           "username": "maya",
+         *           "avatarUrl": null,
+         *           "since": "2026-09-01T08:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        HiddenWritersResponseDto: {
+            /** @description Writers whose entries and comments the current user keeps out of their feed, by name */
+            muted: components["schemas"]["HiddenWriterDto"][];
+            /** @description Writers the current user blocked, by name */
+            blocked: components["schemas"]["HiddenWriterDto"][];
+        };
+        /**
+         * @example {
+         *       "userId": 2,
+         *       "muted": true
+         *     }
+         */
+        WriterMuteStateDto: {
+            /** @example 2 */
+            userId: number;
+            /** @example true */
+            muted: boolean;
+        };
+        /**
+         * @example {
+         *       "userId": 2,
+         *       "blocked": true
+         *     }
+         */
+        WriterBlockStateDto: {
+            /** @example 2 */
+            userId: number;
+            /** @example true */
+            blocked: boolean;
         };
         /**
          * @example {
@@ -10428,7 +10579,7 @@ export interface components {
          * @example VALIDATION_FAILED
          * @enum {string}
          */
-        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "FEATURE_DISABLED" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_WEAK_PASSWORD" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "AUTH_INVALID_SIGN_UP_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "CONTENT_LOCKED" | "CONTENT_LOCKED_PRIVATE" | "CONTENT_PIN_NOT_SET" | "CONTENT_PIN_INCORRECT" | "CONTENT_PIN_BLOCKED" | "CONTENT_PIN_PROOF_REQUIRED" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "COMPOSER_DRAFT_CONFLICT" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "SOCIAL_CANNOT_SAVE_OWN_ENTRY" | "COMMENT_NOT_FOUND" | "COMMENTS_CLOSED" | "COMMENTS_FOLLOWERS_ONLY" | "COMMENT_PIN_HIDDEN" | "FEATURE_REQUEST_NOT_FOUND";
+        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "FEATURE_DISABLED" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_WEAK_PASSWORD" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "AUTH_INVALID_SIGN_UP_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "CONTENT_LOCKED" | "CONTENT_LOCKED_PRIVATE" | "CONTENT_PIN_NOT_SET" | "CONTENT_PIN_INCORRECT" | "CONTENT_PIN_BLOCKED" | "CONTENT_PIN_PROOF_REQUIRED" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "COMPOSER_DRAFT_CONFLICT" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "SOCIAL_CANNOT_SAVE_OWN_ENTRY" | "SOCIAL_CANNOT_MUTE_SELF" | "SOCIAL_CANNOT_BLOCK_SELF" | "COMMENT_NOT_FOUND" | "COMMENTS_CLOSED" | "COMMENTS_FOLLOWERS_ONLY" | "COMMENT_PIN_HIDDEN" | "FEATURE_REQUEST_NOT_FOUND";
         /**
          * @example {
          *       "statusCode": 401,
@@ -18645,7 +18796,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Users and topics followed by the authenticated user, and how many follow them */
+            /** @description Users and topics followed by the authenticated user, and who follows them */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -18664,6 +18815,14 @@ export interface operations {
                      *       "topics": [
                      *         {
                      *           "tag": "gratitude",
+                     *           "followedAt": "2026-09-01T08:30:00.000Z"
+                     *         }
+                     *       ],
+                     *       "followers": [
+                     *         {
+                     *           "id": 2,
+                     *           "username": "maya",
+                     *           "avatarUrl": null,
                      *           "followedAt": "2026-09-01T08:30:00.000Z"
                      *         }
                      *       ],
@@ -18783,6 +18942,51 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The user is no longer followed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "userId": 2,
+                     *       "following": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["FollowStateDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    FollowsController_removeFollower: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The user no longer follows the authenticated user (`following` is false) */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -20094,6 +20298,311 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["AchievementsResponseDto"];
+                };
+            };
+        };
+    };
+    WriterControlsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Muted and blocked writers, by name */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "muted": [
+                     *         {
+                     *           "id": 2,
+                     *           "username": "maya",
+                     *           "avatarUrl": null,
+                     *           "since": "2026-09-01T08:30:00.000Z"
+                     *         }
+                     *       ],
+                     *       "blocked": [
+                     *         {
+                     *           "id": 2,
+                     *           "username": "maya",
+                     *           "avatarUrl": null,
+                     *           "since": "2026-09-01T08:30:00.000Z"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["HiddenWritersResponseDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    WriterControlsController_mute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The writer is muted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "userId": 2,
+                     *       "muted": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["WriterMuteStateDto"];
+                };
+            };
+            /** @description Users cannot mute themselves */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "Users cannot mute themselves",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description No writer with this id in the feed, its comments or your followers */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "No writer with this id in the feed, its comments or your followers",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    WriterControlsController_unmute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The writer is no longer muted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "userId": 2,
+                     *       "muted": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["WriterMuteStateDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    WriterControlsController_block: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The writer is blocked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "userId": 2,
+                     *       "blocked": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["WriterBlockStateDto"];
+                };
+            };
+            /** @description Users cannot block themselves */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "Users cannot block themselves",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description No writer with this id in the feed, its comments or your followers */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "No writer with this id in the feed, its comments or your followers",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    WriterControlsController_unblock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The writer is no longer blocked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "userId": 2,
+                     *       "blocked": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["WriterBlockStateDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };

@@ -14,7 +14,7 @@ function build(entries: ReturnType<typeof emptyRepository>, comments: ReturnType
   repositories[3] = entries;
   repositories[7] = comments;
   const Service = UserDataExportService as unknown as new (...dependencies: unknown[]) => UserDataExportService;
-  return new Service(...repositories, timeCapsules, ...Array.from({ length: 5 }, emptyRepository));
+  return new Service(...repositories, timeCapsules, ...Array.from({ length: 7 }, emptyRepository));
 }
 
 describe('UserDataExportService comment controls', () => {

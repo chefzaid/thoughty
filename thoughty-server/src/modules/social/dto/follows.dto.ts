@@ -30,6 +30,13 @@ export class FollowsResponseDto {
   @ApiProperty({ type: [FollowedTopicDto], description: 'Topics (tags) the current user follows, by name' })
   topics!: FollowedTopicDto[];
 
+  @ApiProperty({
+    type: [FollowedUserDto],
+    description:
+      'Active users following the current user, by name, listed to them alone; `followedAt` is when each started following',
+  })
+  followers!: FollowedUserDto[];
+
   @ApiProperty({ example: 3, description: 'Number of active users following the current user' })
   followerCount!: number;
 }

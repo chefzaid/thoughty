@@ -126,6 +126,7 @@ export interface SetupMockAppOptions {
   cloudFiles?: MockCloudFile[];
   followedUserIds?: number[];
   followerCount?: number;
+  writers?: Partial<MockAppState["writers"]>;
   comments?: MockComment[];
   likedEntryIds?: number[];
   likedCommentIds?: number[];
@@ -195,6 +196,7 @@ export interface MockAppState {
   featureRequestVotes: number[];
   followedUserIds: number[];
   followerCount: number;
+  writers: { muted: number[]; blocked: number[]; followers: components["schemas"]["FollowedUserDto"][] };
   comments: MockComment[];
   likedEntryIds: number[];
   likedCommentIds: number[];
@@ -434,6 +436,7 @@ export function createMockAppState(
     featureRequestVotes: [],
     followedUserIds: [...(options.followedUserIds || [])],
     followerCount: options.followerCount ?? 0,
+    writers: { muted: [...(options.writers?.muted || [])], blocked: [...(options.writers?.blocked || [])], followers: [...(options.writers?.followers || [])] },
     comments: [...(options.comments || [])],
     likedEntryIds: [...(options.likedEntryIds || [])],
     likedCommentIds: [...(options.likedCommentIds || [])],

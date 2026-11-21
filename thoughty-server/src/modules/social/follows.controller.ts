@@ -18,10 +18,10 @@ export class FollowsController {
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'List followed users and topics, and the follower count' })
+  @ApiOperation({ summary: 'List followed users and topics, and the followers' })
   @ApiResponse({
     status: 200,
-    description: 'Users and topics followed by the authenticated user, and how many follow them',
+    description: 'Users and topics followed by the authenticated user, and who follows them',
     type: FollowsResponseDto,
   })
   list(@CurrentUser() user: AuthenticatedUser): Promise<FollowsResponseDto> {
@@ -50,6 +50,21 @@ export class FollowsController {
     @Param('userId', ParseIntPipe) userId: number,
   ): Promise<FollowStateDto> {
     return this.followsService.unfollow(user.userId, userId);
+  }
+
+  @Delete('followers/:userId')
+  @Throttle(throttleDefault(RATE_LIMITS.socialWrite))
+  @ApiOperation({ summary: 'Remove a follower, without telling them' })
+  @ApiResponse({
+    status: 200,
+    description: 'The user no longer follows the authenticated user (`following` is false)',
+    type: FollowStateDto,
+  })
+  removeFollower(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('userId', ParseIntPipe) userId: number,
+  ): Promise<FollowStateDto> {
+    return this.followsService.removeFollower(user.userId, userId);
   }
 
   @Put('topics/:tag')

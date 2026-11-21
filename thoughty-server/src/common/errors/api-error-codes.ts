@@ -196,6 +196,8 @@ export const API_ERROR_MESSAGES = {
   SOCIAL_CANNOT_LIKE_OWN_ENTRY: 'You cannot like your own entry',
   SOCIAL_CANNOT_LIKE_OWN_COMMENT: 'You cannot like your own comment',
   SOCIAL_CANNOT_SAVE_OWN_ENTRY: 'You cannot save your own entry',
+  SOCIAL_CANNOT_MUTE_SELF: 'You cannot mute yourself',
+  SOCIAL_CANNOT_BLOCK_SELF: 'You cannot block yourself',
   COMMENT_NOT_FOUND: 'Comment not found',
   // Comment controls: who may comment on an entry, and its hidden and pinned comments.
   COMMENTS_CLOSED: 'Comments are closed on this entry',

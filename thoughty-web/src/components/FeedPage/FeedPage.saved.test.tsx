@@ -42,7 +42,7 @@ const page = (entries: ReturnType<typeof entry>[]) => ({
 describe('FeedPage saved entries', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    fetchFollows.mockResolvedValue({ data: { following: [], topics: [], followerCount: 0 }, error: null });
+    fetchFollows.mockResolvedValue({ data: { following: [], topics: [], followers: [], followerCount: 0 }, error: null });
   });
 
   it('saves and unsaves another writer’s entry', async () => {

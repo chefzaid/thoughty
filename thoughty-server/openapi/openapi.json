@@ -11159,7 +11159,7 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Users and topics followed by the authenticated user, and how many follow them",
+            "description": "Users and topics followed by the authenticated user, and who follows them",
             "content": {
               "application/json": {
                 "schema": {
@@ -11177,6 +11177,14 @@
                   "topics": [
                     {
                       "tag": "gratitude",
+                      "followedAt": "2026-09-01T08:30:00.000Z"
+                    }
+                  ],
+                  "followers": [
+                    {
+                      "id": 2,
+                      "username": "maya",
+                      "avatarUrl": null,
                       "followedAt": "2026-09-01T08:30:00.000Z"
                     }
                   ],
@@ -11207,7 +11215,7 @@
             "bearer": []
           }
         ],
-        "summary": "List followed users and topics, and the follower count",
+        "summary": "List followed users and topics, and the followers",
         "tags": [
           "Social"
         ]
@@ -11350,6 +11358,62 @@
           }
         ],
         "summary": "Stop following a user",
+        "tags": [
+          "Social"
+        ]
+      }
+    },
+    "/api/follows/followers/{userId}": {
+      "delete": {
+        "operationId": "FollowsController_removeFollower",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The user no longer follows the authenticated user (`following` is false)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowStateDto"
+                },
+                "example": {
+                  "userId": 2,
+                  "following": true
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a follower, without telling them",
         "tags": [
           "Social"
         ]
@@ -12858,6 +12922,351 @@
           }
         ],
         "summary": "Get your karma, activity stats, and badges",
+        "tags": [
+          "Social"
+        ]
+      }
+    },
+    "/api/writers/hidden": {
+      "get": {
+        "operationId": "WriterControlsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Muted and blocked writers, by name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HiddenWritersResponseDto"
+                },
+                "example": {
+                  "muted": [
+                    {
+                      "id": 2,
+                      "username": "maya",
+                      "avatarUrl": null,
+                      "since": "2026-09-01T08:30:00.000Z"
+                    }
+                  ],
+                  "blocked": [
+                    {
+                      "id": 2,
+                      "username": "maya",
+                      "avatarUrl": null,
+                      "since": "2026-09-01T08:30:00.000Z"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the writers the authenticated user muted and blocked",
+        "tags": [
+          "Social"
+        ]
+      }
+    },
+    "/api/writers/{userId}/mute": {
+      "put": {
+        "operationId": "WriterControlsController_mute",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The writer is muted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriterMuteStateDto"
+                },
+                "example": {
+                  "userId": 2,
+                  "muted": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Users cannot mute themselves",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Users cannot mute themselves",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No writer with this id in the feed, its comments or your followers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "No writer with this id in the feed, its comments or your followers",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mute a writer: their entries and comments leave your feed, and any follow stays",
+        "tags": [
+          "Social"
+        ]
+      },
+      "delete": {
+        "operationId": "WriterControlsController_unmute",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The writer is no longer muted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriterMuteStateDto"
+                },
+                "example": {
+                  "userId": 2,
+                  "muted": true
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unmute a writer",
+        "tags": [
+          "Social"
+        ]
+      }
+    },
+    "/api/writers/{userId}/block": {
+      "put": {
+        "operationId": "WriterControlsController_block",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The writer is blocked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriterBlockStateDto"
+                },
+                "example": {
+                  "userId": 2,
+                  "blocked": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Users cannot block themselves",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Users cannot block themselves",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No writer with this id in the feed, its comments or your followers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "No writer with this id in the feed, its comments or your followers",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Block a writer: the follows end both ways, and each leaves the other’s feed, comments, followers, leaderboard and Saved list; they are not told",
+        "tags": [
+          "Social"
+        ]
+      },
+      "delete": {
+        "operationId": "WriterControlsController_unblock",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The writer is no longer blocked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriterBlockStateDto"
+                },
+                "example": {
+                  "userId": 2,
+                  "blocked": true
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unblock a writer; the follows that ended stay ended",
         "tags": [
           "Social"
         ]
@@ -24858,6 +25267,13 @@
               "$ref": "#/components/schemas/FollowedTopicDto"
             }
           },
+          "followers": {
+            "description": "Active users following the current user, by name, listed to them alone; `followedAt` is when each started following",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FollowedUserDto"
+            }
+          },
           "followerCount": {
             "type": "number",
             "example": 3,
@@ -24867,6 +25283,7 @@
         "required": [
           "following",
           "topics",
+          "followers",
           "followerCount"
         ],
         "example": {
@@ -24881,6 +25298,14 @@
           "topics": [
             {
               "tag": "gratitude",
+              "followedAt": "2026-09-01T08:30:00.000Z"
+            }
+          ],
+          "followers": [
+            {
+              "id": 2,
+              "username": "maya",
+              "avatarUrl": null,
               "followedAt": "2026-09-01T08:30:00.000Z"
             }
           ],
@@ -25533,6 +25958,124 @@
               "earned": false
             }
           ]
+        }
+      },
+      "HiddenWriterDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 2
+          },
+          "username": {
+            "type": "string",
+            "example": "maya"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "since": {
+            "type": "string",
+            "example": "2026-09-01T08:30:00.000Z",
+            "description": "When the writer was muted or blocked"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "avatarUrl",
+          "since"
+        ],
+        "example": {
+          "id": 2,
+          "username": "maya",
+          "avatarUrl": null,
+          "since": "2026-09-01T08:30:00.000Z"
+        }
+      },
+      "HiddenWritersResponseDto": {
+        "type": "object",
+        "properties": {
+          "muted": {
+            "description": "Writers whose entries and comments the current user keeps out of their feed, by name",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HiddenWriterDto"
+            }
+          },
+          "blocked": {
+            "description": "Writers the current user blocked, by name",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HiddenWriterDto"
+            }
+          }
+        },
+        "required": [
+          "muted",
+          "blocked"
+        ],
+        "example": {
+          "muted": [
+            {
+              "id": 2,
+              "username": "maya",
+              "avatarUrl": null,
+              "since": "2026-09-01T08:30:00.000Z"
+            }
+          ],
+          "blocked": [
+            {
+              "id": 2,
+              "username": "maya",
+              "avatarUrl": null,
+              "since": "2026-09-01T08:30:00.000Z"
+            }
+          ]
+        }
+      },
+      "WriterMuteStateDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "number",
+            "example": 2
+          },
+          "muted": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "userId",
+          "muted"
+        ],
+        "example": {
+          "userId": 2,
+          "muted": true
+        }
+      },
+      "WriterBlockStateDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "number",
+            "example": 2
+          },
+          "blocked": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "userId",
+          "blocked"
+        ],
+        "example": {
+          "userId": 2,
+          "blocked": true
         }
       },
       "MemoirProgramDto": {
@@ -28425,6 +28968,8 @@
           "SOCIAL_CANNOT_LIKE_OWN_ENTRY",
           "SOCIAL_CANNOT_LIKE_OWN_COMMENT",
           "SOCIAL_CANNOT_SAVE_OWN_ENTRY",
+          "SOCIAL_CANNOT_MUTE_SELF",
+          "SOCIAL_CANNOT_BLOCK_SELF",
           "COMMENT_NOT_FOUND",
           "COMMENTS_CLOSED",
           "COMMENTS_FOLLOWERS_ONLY",

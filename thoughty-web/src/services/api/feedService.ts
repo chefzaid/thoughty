@@ -24,6 +24,10 @@ export type SavedState = components['schemas']['SavedStateDto'];
 export type Leaderboard = components['schemas']['LeaderboardResponseDto'];
 export type LeaderboardPeriod = Leaderboard['period'];
 export type Achievements = components['schemas']['AchievementsResponseDto'];
+export type HiddenWriter = components['schemas']['HiddenWriterDto'];
+export type HiddenWriters = components['schemas']['HiddenWritersResponseDto'];
+export type WriterMuteState = components['schemas']['WriterMuteStateDto'];
+export type WriterBlockState = components['schemas']['WriterBlockStateDto'];
 
 export type PublicFeedResult = ServiceResult<PublicFeedResponse>;
 
@@ -49,6 +53,35 @@ export const createFeedService = (authFetch: (url: string, options?: RequestInit
       ? authFetch(`/api/follows/${userId}`, { method: 'PUT' })
       : authFetch(`/api/follows/${userId}`, { method: 'DELETE' });
     return requestJson(request, 'Failed to update the follow');
+  },
+
+  /** Drops someone from the reader's followers; they are not told. */
+  removeFollower(userId: number): Promise<ServiceResult<FollowState>> {
+    return requestJson(
+      authFetch(`/api/follows/followers/${userId}`, { method: 'DELETE' }),
+      'followerRemoveError',
+    );
+  },
+
+  /** The writers the reader muted and blocked, for Profile › Privacy. */
+  fetchHiddenWriters(): Promise<ServiceResult<HiddenWriters>> {
+    return requestJson(authFetch('/api/writers/hidden'), 'hiddenWritersLoadError');
+  },
+
+  /** Keeps a writer's entries and comments out of the reader's feed, or brings them back. */
+  setWriterMuted(userId: number, mute: boolean): Promise<ServiceResult<WriterMuteState>> {
+    const request = mute
+      ? authFetch(`/api/writers/${userId}/mute`, { method: 'PUT' })
+      : authFetch(`/api/writers/${userId}/mute`, { method: 'DELETE' });
+    return requestJson(request, 'writerMuteError');
+  },
+
+  /** Blocks a writer both ways (the follows end, each leaves the other's feed), or unblocks them. */
+  setWriterBlocked(userId: number, block: boolean): Promise<ServiceResult<WriterBlockState>> {
+    const request = block
+      ? authFetch(`/api/writers/${userId}/block`, { method: 'PUT' })
+      : authFetch(`/api/writers/${userId}/block`, { method: 'DELETE' });
+    return requestJson(request, 'writerBlockError');
   },
 
   /** Follows a topic, whose public entries then join the Following tab, or stops following it. */

@@ -62,7 +62,7 @@ describe('FeedPage reading aloud', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     spoken.length = 0;
-    fetchFollows.mockResolvedValue({ data: { following: [], topics: [], followerCount: 0 }, error: null });
+    fetchFollows.mockResolvedValue({ data: { following: [], topics: [], followers: [], followerCount: 0 }, error: null });
     (synth.speak as ReturnType<typeof vi.fn>).mockImplementation((utterance: FakeUtterance) => spoken.push(utterance));
     (synth.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
       { voiceURI: 'chosen', lang: 'en-GB', name: 'Chosen', default: false },

@@ -38,6 +38,8 @@ import {
   ContentUnlock,
   SavedEntry,
   TopicFollow,
+  UserMute,
+  UserBlock,
 } from './entities';
 import { buildPostgresConnectionOptions } from './postgres-connection-options';
 import { buildPostgresPoolOptions } from './postgres-pool-options';
@@ -100,6 +102,8 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
           ContentUnlock,
           SavedEntry,
           TopicFollow,
+          UserMute,
+          UserBlock,
         ],
         extra: buildPostgresPoolOptions({
           POSTGRES_POOL_MAX: configService.get<string>('POSTGRES_POOL_MAX'),

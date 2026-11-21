@@ -17,4 +17,6 @@ export * from './leaderboard.controller';
 export * from './leaderboard.service';
 export * from './achievements.controller';
 export * from './achievements.service';
+export * from './writer-controls.controller';
+export * from './writer-controls.service';
 export * from './dto';

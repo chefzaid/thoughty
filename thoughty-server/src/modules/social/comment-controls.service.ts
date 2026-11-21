@@ -81,7 +81,7 @@ export class CommentControlsService {
 
   /** Only the entry's writer controls its comments; to anyone else the entry is not there. */
   private async findOwnEntry(userId: number, entryId: number): Promise<void> {
-    const entry = await findFeedVisibleEntry(this.entryRepository, entryId);
+    const entry = await findFeedVisibleEntry(this.entryRepository, entryId, userId);
     if (entry.userId !== userId) {
       throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }

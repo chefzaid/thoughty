@@ -20,6 +20,7 @@ interface CommentThreadProps {
   readonly feedService: FeedService;
   readonly theme: 'light' | 'dark';
   readonly onTotalChange: Dispatch<SetStateAction<number>>;
+  readonly hiddenAuthorIds?: ReadonlySet<number>;
   readonly t: Translate;
 }
 
@@ -32,9 +33,9 @@ function closedNote(policy: CommentThreadPolicy, authorName: string, t: Translat
 }
 
 /** Loads, posts, deletes, hides and pins the comments of one entry; mounted only while the thread is open. */
-function CommentThread({ entryId, authorName, currentUserId, feedService, theme, onTotalChange, t }: CommentThreadProps) {
+function CommentThread({ entryId, authorName, currentUserId, feedService, theme, onTotalChange, hiddenAuthorIds, t }: CommentThreadProps) {
   const inputId = useId();
-  const thread = useCommentThread(entryId, feedService, onTotalChange);
+  const thread = useCommentThread(entryId, feedService, onTotalChange, hiddenAuthorIds);
   const { comments, policy, loading, loadError, actionError } = thread;
   const [draft, setDraft] = useState('');
   const [posting, setPosting] = useState(false);
@@ -127,10 +128,12 @@ interface EntryCommentsProps {
   readonly actions?: ReactNode;
   readonly feedService: FeedService;
   readonly theme: 'light' | 'dark';
+  /** Writers the reader muted or blocked on this page, whose comments leave an open thread. */
+  readonly hiddenAuthorIds?: ReadonlySet<number>;
   readonly t: Translate;
 }
 
-function EntryComments({ entryId, authorName, commentCount, currentUserId, actions, feedService, theme, t }: EntryCommentsProps) {
+function EntryComments({ entryId, authorName, commentCount, currentUserId, actions, feedService, theme, hiddenAuthorIds, t }: EntryCommentsProps) {
   const threadId = useId();
   const quiet = useQuietMode();
   const [open, setOpen] = useState(false);
@@ -160,6 +163,7 @@ function EntryComments({ entryId, authorName, commentCount, currentUserId, actio
             feedService={feedService}
             theme={theme}
             onTotalChange={setTotal}
+            hiddenAuthorIds={hiddenAuthorIds}
             t={t}
           />
         )}

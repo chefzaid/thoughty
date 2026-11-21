@@ -2,6 +2,7 @@ import { fulfillJson, type RouteContext } from './mockApp.route-utils';
 import type { MockEntry } from './mockApp.shared';
 import { handleCommentRoutes, visibleComments } from './mockApp.routes.comments';
 import { authorId, feedEligibleEntries, likeState, setLiked } from './mockApp.social-shared';
+import { handleWriterControlRoutes } from './mockApp.routes.writer-controls';
 import {
   carriesFollowedTopic,
   carriesTopic,
@@ -29,10 +30,14 @@ async function handlePublicFeedRoute({ route, request, pathname, searchParams, s
     if (scope === 'saved') return id !== state.user.id && state.savedEntryIds.includes(entry.id);
     return id !== state.user.id;
   };
+  // Muting keeps a writer out of the stream tabs; the Saved list keeps what the reader chose
+  const unmuted = (entry: MockEntry) => !['community', 'following'].includes(scope)
+    || !state.writers.muted.includes(authorId(entry, state));
   // The Saved list goes by when each entry was saved, the newest first; the rest by when it was written
   const savedOrder = (entry: MockEntry) => state.savedEntryIds.indexOf(entry.id);
   const eligibleEntries = feedEligibleEntries(state)
     .filter(inScope)
+    .filter(unmuted)
     .filter((entry) => !tag || carriesTopic(entry, tag))
     .filter((entry) => !search || matchesFeedSearch(entry, search))
     .sort((left, right) => {
@@ -86,6 +91,7 @@ async function handleFollowRoutes({ route, request, pathname, state }: RouteCont
         }))
         .sort((left, right) => left.username.localeCompare(right.username)),
       topics: followedTopicsResponse(state),
+      followers: state.writers.followers,
       followerCount: state.followerCount,
     });
     return true;
@@ -255,6 +261,7 @@ export async function handleSocialRoutes(context: RouteContext): Promise<boolean
     || (await handleAchievementsRoute(context))
     || (await handleLeaderboardRoute(context))
     || (await handleTopicFollowRoutes(context))
+    || (await handleWriterControlRoutes(context))
     || (await handleFollowRoutes(context))
     || (await handleLikeRoutes(context))
     || (await handleSaveRoute(context))

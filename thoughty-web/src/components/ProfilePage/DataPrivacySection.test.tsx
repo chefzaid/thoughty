@@ -6,6 +6,7 @@ import { PASSWORD_SYMBOLS } from '../AuthPage/types';
 
 vi.mock('./ActiveSessionsSection', () => ({ default: () => null }));
 vi.mock('./TwoFactorSection', () => ({ default: () => null }));
+vi.mock('./HiddenWritersSection', () => ({ default: () => null }));
 
 const t = (key: string, params?: Record<string, string | number>): string =>
   params ? `${key} ${JSON.stringify(params)}` : key;

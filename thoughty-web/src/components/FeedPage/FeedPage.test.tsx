@@ -42,7 +42,7 @@ const createEntry = (id: number, username: string, isFollowed = false) => ({
 describe('FeedPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    fetchFollows.mockResolvedValue({ data: { following: [], topics: [], followerCount: 0 }, error: null });
+    fetchFollows.mockResolvedValue({ data: { following: [], topics: [], followers: [], followerCount: 0 }, error: null });
   });
 
   it('loads community entries and appends the next page', async () => {
@@ -191,6 +191,7 @@ describe('FeedPage', () => {
           { id: 101, username: 'Ada', avatarUrl: '/ada.png', followedAt: '2026-08-02T00:00:00.000Z' },
         ],
         topics: [],
+        followers: [],
         followerCount: 4,
       },
       error: null,

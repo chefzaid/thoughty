@@ -16,8 +16,11 @@ import SaveButton from './SaveButton';
 import FeedAuthor from './FeedAuthor';
 import FollowingPanel from './FollowingPanel';
 import FeedTopicBar from './FeedTopicBar';
+import ConfirmModal from '../ConfirmModal/ConfirmModal';
+import WriterMenu from './WriterMenu';
 import { useFeedSpeech } from './useFeedSpeech';
 import { useFollows } from './useFollows';
+import { useWriterControls } from './useWriterControls';
 import './FeedPage.css';
 
 const PAGE_SIZE = 10;
@@ -123,6 +126,15 @@ function FeedPage({
     void fetchPage(scope, 1, true, generation);
   }, [fetchPage, scope]);
 
+  /** A muted or blocked writer's entries leave the page at once; the next pages come without them. */
+  const dropWriter = useCallback((writer: { id: number }, blocked: boolean) => {
+    const gone = entries.filter((entry) => entry.author.id === writer.id).length;
+    setEntries((current) => current.filter((entry) => entry.author.id !== writer.id));
+    setTotal((current) => Math.max(0, current - gone));
+    if (blocked) follows.forgetWriter(writer.id);
+  }, [entries, follows]);
+  const writers = useWriterControls(feedService, dropWriter);
+
   const loadNextPage = useCallback(() => {
     if (!loading && hasMore) {
       void fetchPage(scope, page + 1, false, generationRef.current);
@@ -227,6 +239,8 @@ function FeedPage({
           topics={follows.topics}
           isTopicPending={follows.isTopicPending}
           onUnfollowTopic={(topic) => void follows.setTopicFollow(topic, false)}
+          followers={follows.followers}
+          onRemoveFollower={(user) => void follows.removeFollower(user)}
           followerCount={follows.followerCount}
           loaded={follows.loaded}
           loadError={follows.loadError}
@@ -236,6 +250,10 @@ function FeedPage({
         />
       )}
       {follows.updateError && <p className="feed-follow-error" role="alert">{t('followUpdateError')}</p>}
+      {writers.error && <p className="feed-follow-error" role="alert">{t(writers.error)}</p>}
+      <p className="feed-writer-notice" role="status">
+        {writers.notice ? t(writers.notice.key, { username: writers.notice.username }) : ''}
+      </p>
 
       <p className="feed-count" aria-live="polite">
         {entries.length > 0 ? pluralPhrase(t, 'feedCount', entries.length, uiLanguage, { total: total.toLocaleString(uiLanguage) }) : ''}
@@ -254,6 +272,15 @@ function FeedPage({
                 pending: follows.pendingIds.has(entry.author.id),
                 onToggle: () => void follows.setFollow(entry.author, !follows.isFollowed(entry.author)),
               }}
+              menu={entry.author.id === currentUserId ? undefined : (
+                <WriterMenu
+                  username={entry.author.username}
+                  disabled={writers.pendingIds.has(entry.author.id)}
+                  onMute={() => writers.mute(entry.author)}
+                  onBlock={() => writers.requestBlock(entry.author)}
+                  t={t}
+                />
+              )}
             />
             {entry.title && <h2 className="feed-entry-title">{entry.title}</h2>}
             <div className="feed-content privacy-text">
@@ -284,6 +311,7 @@ function FeedPage({
               currentUserId={currentUserId}
               feedService={feedService}
               theme={theme}
+              hiddenAuthorIds={writers.hiddenIds}
               t={t}
               actions={(
                 <>
@@ -369,6 +397,16 @@ function FeedPage({
           t={t}
         />
       )}
+      <ConfirmModal
+        isOpen={writers.pendingBlock !== null}
+        onClose={writers.cancelBlock}
+        onConfirm={writers.confirmBlock}
+        title={t('blockWriterTitle', { username: writers.pendingBlock?.username ?? '' })}
+        message={t('blockWriterMessage', { username: writers.pendingBlock?.username ?? '' })}
+        confirmLabel={t('blockWriterConfirm')}
+        theme={theme}
+        t={t}
+      />
       {!error && hasMore && (
         <button type="button" className="feed-load-more" onClick={loadNextPage} disabled={loading}>
           <span className="codicon codicon-chevron-down" aria-hidden="true" />

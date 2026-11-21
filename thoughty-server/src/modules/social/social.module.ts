@@ -8,7 +8,9 @@ import {
   SavedEntry,
   Setting,
   TopicFollow,
+  UserBlock,
   UserFollow,
+  UserMute,
 } from '@/database/entities';
 import { EntriesModule } from '@/modules/entries';
 import { AchievementsController } from './achievements.controller';
@@ -29,6 +31,8 @@ import { PublicFeedService } from './public-feed.service';
 import { SavedEntriesController } from './saved-entries.controller';
 import { SavedEntriesService } from './saved-entries.service';
 import { TopicFollowsService } from './topic-follows.service';
+import { WriterControlsController } from './writer-controls.controller';
+import { WriterControlsService } from './writer-controls.service';
 
 @Module({
   imports: [
@@ -41,6 +45,8 @@ import { TopicFollowsService } from './topic-follows.service';
       SavedEntry,
       Setting,
       Entry,
+      UserMute,
+      UserBlock,
     ]),
     EntriesModule,
   ],
@@ -53,6 +59,7 @@ import { TopicFollowsService } from './topic-follows.service';
     SavedEntriesController,
     LeaderboardController,
     AchievementsController,
+    WriterControlsController,
   ],
   providers: [
     PublicFeedService,
@@ -65,6 +72,7 @@ import { TopicFollowsService } from './topic-follows.service';
     SavedEntriesService,
     LeaderboardService,
     AchievementsService,
+    WriterControlsService,
   ],
 })
 export class SocialModule {}

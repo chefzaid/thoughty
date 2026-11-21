@@ -195,6 +195,14 @@ export const CONTRACT_SUITES = {
     'PUT /api/entries/{entryId}/comments/{commentId}/pin',
     'DELETE /api/entries/{entryId}/comments/{commentId}/pin',
   ],
+  'writer-controls': [
+    'GET /api/writers/hidden',
+    'PUT /api/writers/{userId}/mute',
+    'DELETE /api/writers/{userId}/mute',
+    'PUT /api/writers/{userId}/block',
+    'DELETE /api/writers/{userId}/block',
+    'DELETE /api/follows/followers/{userId}',
+  ],
   featureFlags: ['GET /api/config/feature-flags'],
   account: [
     'GET /api/health',
