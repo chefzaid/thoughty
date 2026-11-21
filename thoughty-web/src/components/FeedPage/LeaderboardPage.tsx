@@ -90,7 +90,7 @@ function LeaderboardPage({ theme = 'dark', onBack, t }: LeaderboardPageProps) {
         back={{ label: t('backToFeed'), onClick: onBack }}
         theme={theme}
         actions={(
-          <fieldset className="feed-scope leaderboard-periods" aria-label={t('leaderboardPeriod')}>
+          <fieldset className="feed-scope" aria-label={t('leaderboardPeriod')}>
             {PERIODS.map((option) => (
               <button
                 key={option.period}

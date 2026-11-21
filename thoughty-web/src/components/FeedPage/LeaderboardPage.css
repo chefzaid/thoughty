@@ -3,10 +3,6 @@
   color: #4b5563;
 }
 
-.leaderboard-periods {
-  grid-template-columns: repeat(4, minmax(0, auto));
-}
-
 .leaderboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
@@ -121,10 +117,6 @@
 }
 
 @media (max-width: 640px) {
-  .leaderboard-periods {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
   .leaderboard-list > li.leaderboard-author {
     grid-template-columns: 1.75rem auto minmax(0, 1fr);
   }

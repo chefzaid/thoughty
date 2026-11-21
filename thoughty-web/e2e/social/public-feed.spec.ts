@@ -83,4 +83,29 @@ test.describe('public feed', () => {
     }));
     expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth);
   });
+
+  for (const { language, labels } of [
+    { language: 'en', labels: ['Community', 'Following', 'My public entries', 'Saved'] },
+    { language: 'fr', labels: ['Communauté', 'Abonnements', 'Mes entrées publiques', 'Enregistrées'] },
+  ] as const) {
+    for (const width of [1280, 360]) {
+      test(`keeps every ${language} feed tab on one row at ${width}px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 800 });
+        await setupMockApp(page, { startAuthenticated: true, config: { language }, initialEntries: communityEntries.slice(0, 1) });
+        await page.goto('/feed');
+
+        const tabs = page.locator('.feed-scope button');
+        await expect(tabs).toHaveText(labels);
+        const boxes = await tabs.evaluateAll((buttons) => buttons.map((button) => {
+          const rect = button.getBoundingClientRect();
+          return { top: rect.top, right: rect.right, fits: button.scrollWidth <= button.clientWidth };
+        }));
+        expect(new Set(boxes.map((box) => box.top)).size).toBe(1);
+        for (const box of boxes) {
+          expect(box.fits).toBe(true);
+          expect(box.right).toBeLessThanOrEqual(width);
+        }
+      });
+    }
+  }
 });

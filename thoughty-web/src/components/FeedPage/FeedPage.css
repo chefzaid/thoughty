@@ -37,7 +37,8 @@
 
 .feed-scope {
   display: inline-grid;
-  grid-template-columns: repeat(3, minmax(0, auto));
+  grid-auto-columns: minmax(0, auto);
+  grid-auto-flow: column;
   min-width: 18rem;
   margin: 0;
   padding: 0.2rem;
@@ -385,15 +386,14 @@
   .feed-scope {
     width: 100%;
     min-width: 0;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-columns: 1fr;
   }
 
   .feed-scope button {
-    min-width: 0;
     flex-direction: column;
     gap: 0.15rem;
-    padding: 0.4rem 0.3rem;
-    font-size: 0.875rem;
+    padding: 0.4rem 0.15rem;
+    font-size: 0.75rem;
     line-height: 1.2;
     white-space: normal;
   }
