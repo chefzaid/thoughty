@@ -36,3 +36,4 @@ export * from './topic-follow.entity';
 export * from './user-mute.entity';
 export * from './user-block.entity';
 export * from './account-event.entity';
+export * from './personal-access-token.entity';

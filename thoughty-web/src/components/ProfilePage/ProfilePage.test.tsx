@@ -36,6 +36,10 @@ vi.mock('./AccountActivitySection', () => ({
   default: () => <section aria-label="account activity" />,
 }));
 
+vi.mock('./AccessTokensSection', () => ({
+  default: () => <section aria-label="access tokens" />,
+}));
+
 vi.mock('../LifeEras/LifeErasSection', () => ({
   default: ({ language }: { language: string }) => <div data-testid="life-eras-section">{language}</div>,
 }));

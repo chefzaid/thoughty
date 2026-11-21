@@ -36,7 +36,7 @@ const AUTHENTICATED_ROUTES: Record<string, RouteContent> = {
   '/memoir': (page) => [page.getByRole('form', { name: 'Start your memoir' })],
   '/tags': (page) => [page.getByRole('textbox', { name: 'New tag' }), page.getByRole('heading', { name: 'Tag Organization' })],
   // Every section, including those that load their own data: achievements, two-factor, sessions,
-  // life eras, the opt-in emails, the AI models and key, cloud storage and the plan
+  // life eras, the opt-in emails, the AI models and key, cloud storage, the plan and the access tokens
   '/profile': (page) => [
     page.getByRole('region', { name: 'Achievements' }).getByRole('progressbar', { name: 'Progress: 0 of 1', exact: true }),
     page.getByRole('combobox', { name: 'Gender' }),
@@ -50,6 +50,7 @@ const AUTHENTICATED_ROUTES: Record<string, RouteContent> = {
     page.getByRole('button', { name: /^Model / }),
     page.getByText(/^Connected since/).first(),
     page.getByRole('combobox', { name: 'Plan' }),
+    page.getByText('You have no access tokens.'),
   ],
   '/diaries': (page) => [page.getByRole('textbox', { name: 'Diary Name' }), page.getByText('Default Diary')],
   '/stats': (page) => [

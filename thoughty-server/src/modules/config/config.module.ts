@@ -28,6 +28,7 @@ import {
   TopicFollow,
   UserMute,
   UserBlock,
+  PersonalAccessToken,
 } from '@/database/entities';
 import { ConfigController } from './config.controller';
 import { ConfigService } from './config.service';
@@ -65,6 +66,7 @@ import { AuthModule } from '@/modules/auth/auth.module';
       TopicFollow,
       UserMute,
       UserBlock,
+      PersonalAccessToken,
     ]),
     TimeCapsulesModule,
     AuthModule,

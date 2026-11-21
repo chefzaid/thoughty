@@ -53,6 +53,8 @@ export const accountActivityTranslations: Record<Language, Record<AccountActivit
     accountEvent_journal_exported: 'Journal exported',
     accountEvent_share_link_created: 'Private share link made',
     accountEvent_share_link_revoked: 'Private share link revoked',
+    accountEvent_access_token_created: 'Access token created',
+    accountEvent_access_token_revoked: 'Access token revoked',
   },
   fr: {
     accountActivity: 'Activité du compte',
@@ -87,5 +89,7 @@ export const accountActivityTranslations: Record<Language, Record<AccountActivit
     accountEvent_journal_exported: 'Journal exporté',
     accountEvent_share_link_created: 'Lien de partage privé créé',
     accountEvent_share_link_revoked: 'Lien de partage privé révoqué',
+    accountEvent_access_token_created: 'Jeton d’accès créé',
+    accountEvent_access_token_revoked: 'Jeton d’accès révoqué',
   },
 };

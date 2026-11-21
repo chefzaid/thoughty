@@ -27,6 +27,8 @@ export const ACCOUNT_EVENT_KINDS = [
   'journal_exported',
   'share_link_created',
   'share_link_revoked',
+  'access_token_created',
+  'access_token_revoked',
 ] as const;
 
 export type AccountEventKind = (typeof ACCOUNT_EVENT_KINDS)[number];

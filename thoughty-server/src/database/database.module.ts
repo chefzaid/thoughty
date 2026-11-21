@@ -42,6 +42,7 @@ import {
   UserMute,
   UserBlock,
   AccountEvent,
+  PersonalAccessToken,
 } from './entities';
 import { buildPostgresConnectionOptions } from './postgres-connection-options';
 import { buildPostgresPoolOptions } from './postgres-pool-options';
@@ -108,6 +109,7 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
           UserMute,
           UserBlock,
           AccountEvent,
+          PersonalAccessToken,
         ],
         extra: buildPostgresPoolOptions({
           POSTGRES_POOL_MAX: configService.get<string>('POSTGRES_POOL_MAX'),

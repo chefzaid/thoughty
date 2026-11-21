@@ -3,7 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { DataSource, type FindOperator } from 'typeorm';
-import { User, RefreshToken, Diary } from '@/database/entities';
+import { User, RefreshToken, Diary, PersonalAccessToken } from '@/database/entities';
 import { AuthService } from './auth.service';
 import { AuthSessionService, hashRefreshToken } from './auth-session.service';
 import { IdentityVerificationService } from './identity-verification.service';
@@ -18,6 +18,7 @@ import { accountActivityProvider, createAccountActivityMock, type AccountActivit
 export interface AuthServiceMocks {
   userRepository: Record<string, jest.Mock>;
   refreshTokenRepository: Record<string, jest.Mock>;
+  accessTokenRepository: Record<string, jest.Mock>;
   diaryRepository: Record<string, jest.Mock>;
   jwtService: Record<string, jest.Mock>;
   emailService: Record<string, jest.Mock>;
@@ -109,6 +110,7 @@ function createCollaboratorMocks() {
       delete: jest.fn(),
       createQueryBuilder: jest.fn(),
     },
+    accessTokenRepository: { delete: jest.fn().mockResolvedValue({ affected: 0 }) },
     jwtService: {
       sign: jest.fn().mockReturnValue('mock_token'),
       verify: jest.fn(),
@@ -144,6 +146,7 @@ export async function createAuthServices(mocks: AuthServiceMocks): Promise<AuthS
       { provide: getRepositoryToken(User), useValue: mocks.userRepository },
       { provide: getRepositoryToken(RefreshToken), useValue: mocks.refreshTokenRepository },
       { provide: getRepositoryToken(Diary), useValue: mocks.diaryRepository },
+      { provide: getRepositoryToken(PersonalAccessToken), useValue: mocks.accessTokenRepository },
       { provide: JwtService, useValue: mocks.jwtService },
       { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue('test-secret') } },
       { provide: EmailService, useValue: mocks.emailService },

@@ -12,6 +12,9 @@ const operationalOperations = new Map([
   ['GET /api/health', 'Kubernetes readiness and liveness probes'],
   ['GET /api/metrics', 'Prometheus monitoring scrape'],
   ['POST /api/on-this-day-email/unsubscribe', 'One-click unsubscribe (RFC 8058) that mail apps post from "On this day" emails'],
+  ['GET /api/v1/diaries', 'Public API for the writer’s scripts, called with a personal access token'],
+  ['GET /api/v1/entries', 'Public API for the writer’s scripts, called with a personal access token'],
+  ['POST /api/v1/entries', 'Public API for the writer’s scripts, called with a personal access token'],
 ]);
 
 function collectSourceFiles(directory) {

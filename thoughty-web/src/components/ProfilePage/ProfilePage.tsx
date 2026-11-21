@@ -14,6 +14,7 @@ import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import CloudProvidersSection from './CloudProvidersSection';
 import ProfileActions from './ProfileActions';
 import DataPrivacySection from './DataPrivacySection';
+import AccessTokensSection from './AccessTokensSection';
 import SubscriptionSection from './SubscriptionSection';
 import PublicEntriesSection from './PublicEntriesSection';
 import AchievementsSection from './AchievementsSection';
@@ -317,6 +318,8 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats,
       ) : (
         <FeatureOffSection title={t('cloudProviders')} message="featureOffCloudSync" isDark={isDark} t={t} />
       )}
+
+      <AccessTokensSection isDark={isDark} t={t} />
 
       <SubscriptionSection
         localConfig={localConfig}

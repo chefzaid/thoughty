@@ -18,6 +18,7 @@ import {
   type OptInEmailSetting,
   YearReviewMood,
   WeeklyReflection,
+  PersonalAccessToken,
   SavedSearch,
   LifeEra,
   Person,
@@ -113,6 +114,8 @@ export class UserDataExportService {
     private readonly accountActivity: AccountActivityService,
     @InjectRepository(WeeklyReflection)
     private readonly weeklyReflectionRepository: Repository<WeeklyReflection>,
+    @InjectRepository(PersonalAccessToken)
+    private readonly accessTokenRepository: Repository<PersonalAccessToken>,
   ) {}
 
   /**
@@ -123,7 +126,7 @@ export class UserDataExportService {
     if (!isContentUnlocked(userId) && (await holdsLockedContent(this.entryRepository, userId))) {
       throw apiError(ContentLockedException, 'CONTENT_LOCKED');
     }
-    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people, onThisDayEmail, monthlyRecapEmail, capsules, shareLinks, composerDraft, accountEvents, newBrowserEmail, weeklyReflections] = await Promise.all([
+    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people, onThisDayEmail, monthlyRecapEmail, capsules, shareLinks, composerDraft, accountEvents, newBrowserEmail, weeklyReflections, accessTokens] = await Promise.all([
       this.userRepository.findOne({ where: { id: userId } }),
       this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
       // Entries in the recycle bin are still personal data until they are removed for good, and sealed
@@ -149,6 +152,8 @@ export class UserDataExportService {
       this.accountActivity.listForDownload(userId),
       this.accountActivity.newBrowserEmailEnabled(userId),
       this.weeklyReflectionRepository.find({ where: { userId }, order: { weekEnd: 'ASC', id: 'ASC' } }),
+      // The token's hash is never selected; the token itself was never kept
+      this.accessTokenRepository.find({ where: { userId }, order: { createdAt: 'ASC', id: 'ASC' } }),
     ]);
 
     const safeUser = user
@@ -320,6 +325,10 @@ export class UserDataExportService {
         newBrowserEmail,
         events: accountEvents.map(({ kind, browser, system, createdAt }) => ({ kind, browser, system, createdAt })),
       },
+      // Personal access tokens for the public API: names, scopes and dates, never a token or its hash
+      accessTokens: accessTokens.map(({ name, tokenHint, scopes, timeZone, expiresAt, lastUsedAt, createdAt }) => ({
+        name, hint: tokenHint, scopes, timeZone, expiresAt, lastUsedAt, createdAt,
+      })),
     };
   }
 

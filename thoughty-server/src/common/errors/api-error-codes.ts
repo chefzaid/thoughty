@@ -109,6 +109,12 @@ export const API_ERROR_MESSAGES = {
   SHARE_LINK_LIMIT_REACHED: 'Share link limit reached',
   SHARE_LINK_EXPIRY_INVALID: 'Choose an expiry from one hour up to a year ahead',
 
+  // Personal access tokens and the public API (`/api/v1`).
+  ACCESS_TOKEN_NOT_FOUND: 'Access token not found',
+  ACCESS_TOKEN_LIMIT_REACHED: 'Access token limit reached',
+  ACCESS_TOKEN_INVALID: 'The access token is missing, unknown, revoked or expired',
+  ACCESS_TOKEN_SCOPE_MISSING: 'The access token does not allow this',
+
   // Life eras.
   LIFE_ERA_NOT_FOUND: 'Life era not found',
   LIFE_ERA_NAME_TAKEN: 'A life era with this name already exists',

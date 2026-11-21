@@ -21,11 +21,12 @@ describe('AccountService', () => {
   let service: AccountService;
   let userRepository: any;
   let refreshTokenRepository: any;
+  let accessTokenRepository: any;
   let emailService: any;
 
   beforeEach(async () => {
     const mocks = createAuthServiceMocks();
-    ({ userRepository, refreshTokenRepository, emailService } = mocks);
+    ({ userRepository, refreshTokenRepository, accessTokenRepository, emailService } = mocks);
     ({ account: service } = await createAuthServices(mocks));
   });
 
@@ -62,6 +63,8 @@ describe('AccountService', () => {
       const result = await service.deleteAccount(1, 'password123');
 
       expect(result.success).toBe(true);
+      expect(refreshTokenRepository.delete).toHaveBeenCalledWith({ userId: 1 });
+      expect(accessTokenRepository.delete).toHaveBeenCalledWith({ userId: 1 });
       expect(emailService.sendAccountDeletionEmail).toHaveBeenCalled();
     });
 

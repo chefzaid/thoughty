@@ -16752,6 +16752,511 @@
           "PIN lock"
         ]
       }
+    },
+    "/api/access-tokens": {
+      "get": {
+        "operationId": "AccessTokensController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The tokens, without the tokens themselves",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonalAccessTokenListResponseDto"
+                },
+                "example": {
+                  "tokens": [
+                    {
+                      "id": 3,
+                      "name": "iPhone Shortcut",
+                      "hint": "thy_a1B2",
+                      "scopes": [
+                        "entries:write"
+                      ],
+                      "expiresAt": "2027-02-19T09:30:00.000Z",
+                      "lastUsedAt": "2026-11-21T08:12:00.000Z",
+                      "createdAt": "2026-11-21T08:00:00.000Z"
+                    }
+                  ],
+                  "limit": 10
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the writer’s unexpired personal access tokens, newest first",
+        "tags": [
+          "Access tokens"
+        ]
+      },
+      "post": {
+        "description": "The answer carries the token itself, this once; only its hash is kept.",
+        "operationId": "AccessTokensController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePersonalAccessTokenDto"
+              },
+              "example": {
+                "name": "iPhone Shortcut",
+                "scopes": [
+                  "entries:write"
+                ],
+                "expiresInDays": 90,
+                "timeZone": "Europe/Paris"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The token, shown once",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedPersonalAccessTokenResponseDto"
+                },
+                "example": {
+                  "id": 3,
+                  "name": "iPhone Shortcut",
+                  "hint": "thy_a1B2",
+                  "scopes": [
+                    "entries:write"
+                  ],
+                  "expiresAt": "2027-02-19T09:30:00.000Z",
+                  "lastUsedAt": "2026-11-21T08:12:00.000Z",
+                  "createdAt": "2026-11-21T08:00:00.000Z",
+                  "token": "thy_a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0u1V"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ACCESS_TOKEN_LIMIT_REACHED, or an invalid name, scope, expiry or time zone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "ACCESS_TOKEN_LIMIT_REACHED, or an invalid name, scope, expiry or time zone",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Make a personal access token for the public API",
+        "tags": [
+          "Access tokens"
+        ]
+      }
+    },
+    "/api/access-tokens/{id}": {
+      "delete": {
+        "operationId": "AccessTokensController_revoke",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ACCESS_TOKEN_NOT_FOUND",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "ACCESS_TOKEN_NOT_FOUND",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Revoke a personal access token, which deletes it",
+        "tags": [
+          "Access tokens"
+        ]
+      }
+    },
+    "/api/v1/diaries": {
+      "get": {
+        "operationId": "PublicApiController_listDiaries",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The diaries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicDiaryListResponseDto"
+                },
+                "example": {
+                  "diaries": [
+                    {
+                      "id": 2,
+                      "name": "Travel",
+                      "icon": "✈️",
+                      "isDefault": false,
+                      "isLocked": false
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "ACCESS_TOKEN_INVALID: no token, or one that is unknown, revoked or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "ACCESS_TOKEN_INVALID: no token, or one that is unknown, revoked or expired",
+                  "error": "Unauthorized",
+                  "code": "UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "ACCESS_TOKEN_SCOPE_MISSING: the token holds none of `entries:read`, `entries:write`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "ACCESS_TOKEN_SCOPE_MISSING: the token holds none of `entries:read`, `entries:write`",
+                  "error": "Forbidden",
+                  "code": "FORBIDDEN"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The writer’s diaries, to pick one to write in or list",
+        "tags": [
+          "Public API"
+        ]
+      }
+    },
+    "/api/v1/entries": {
+      "get": {
+        "description": "Optionally in one diary or matching a search (the journal’s search syntax). Entries in the recycle bin are left out; a locked or sealed entry comes without its text, tags, mood and feelings.",
+        "operationId": "PublicApiController_listEntries",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Full-text search over content and tags, with English and French word forms and accents ignored. Supports \"exact phrases\" in quotes, a leading minus to exclude a word or phrase, and OR between alternatives; the last word also matches the longer words it starts.",
+            "schema": {
+              "maxLength": 500,
+              "example": "\"morning run\" -rain OR swim",
+              "type": "string"
+            }
+          },
+          {
+            "name": "diaryId",
+            "required": false,
+            "in": "query",
+            "description": "Diary ID",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "after",
+            "required": false,
+            "in": "query",
+            "description": "The `nextCursor` of the batch before: this batch starts right after its last entry, even when entries were written or deleted meanwhile. Only one of `after`, `from`, `before` and `around`",
+            "schema": {
+              "example": "1_2026-10-21__1_42",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Entries in the page",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicEntryListResponseDto"
+                },
+                "example": {
+                  "entries": [
+                    {
+                      "id": 57,
+                      "diaryId": 2,
+                      "date": "2026-11-21",
+                      "index": 1,
+                      "title": "Morning walk",
+                      "timeOfDay": "08:30",
+                      "text": "Walked by the river.",
+                      "format": "plain",
+                      "tags": [
+                        "walk"
+                      ],
+                      "mood": 4,
+                      "feelings": [
+                        "calm"
+                      ],
+                      "visibility": "private",
+                      "withheld": false,
+                      "sealedUntil": null,
+                      "createdAt": "2026-11-21T08:31:00.000Z"
+                    }
+                  ],
+                  "nextCursor": "1_2026-10-21__1_42"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED: an invalid limit, diary, search or cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "VALIDATION_FAILED: an invalid limit, diary, search or cursor",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "ACCESS_TOKEN_INVALID: no token, or one that is unknown, revoked or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "ACCESS_TOKEN_INVALID: no token, or one that is unknown, revoked or expired",
+                  "error": "Unauthorized",
+                  "code": "UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "ACCESS_TOKEN_SCOPE_MISSING: the token holds none of `entries:read`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "ACCESS_TOKEN_SCOPE_MISSING: the token holds none of `entries:read`",
+                  "error": "Forbidden",
+                  "code": "FORBIDDEN"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "The writer’s entries, newest first, a page at a time",
+        "tags": [
+          "Public API"
+        ]
+      },
+      "post": {
+        "description": "Without a `date`, the entry is for today in the time zone of the browser that made the token. Without a `diaryId`, it goes to the default diary. Tags, mentions and automatic tagging work as in the composer.",
+        "operationId": "PublicApiController_createEntry",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicCreateEntryDto"
+              },
+              "example": {
+                "title": "Morning walk by the river",
+                "timeOfDay": "08:30",
+                "mood": 4,
+                "feelings": [
+                  "calm",
+                  "grateful"
+                ],
+                "text": "example",
+                "date": "2026-06-24",
+                "diaryId": 1,
+                "format": "plain",
+                "tags": [
+                  "walk"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The entry written",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCreatedEntryResponseDto"
+                },
+                "example": {
+                  "id": 58,
+                  "date": "2026-11-21"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED: an invalid text, date, tag, mood or diary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "VALIDATION_FAILED: an invalid text, date, tag, mood or diary",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "ACCESS_TOKEN_INVALID: no token, or one that is unknown, revoked or expired",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 401,
+                  "message": "ACCESS_TOKEN_INVALID: no token, or one that is unknown, revoked or expired",
+                  "error": "Unauthorized",
+                  "code": "UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "ACCESS_TOKEN_SCOPE_MISSING: the token holds none of `entries:write`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "ACCESS_TOKEN_SCOPE_MISSING: the token holds none of `entries:write`",
+                  "error": "Forbidden",
+                  "code": "FORBIDDEN"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "DIARY_NOT_FOUND: the diary is not the writer’s",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "DIARY_NOT_FOUND: the diary is not the writer’s",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "access-token": []
+          }
+        ],
+        "summary": "Write a new private entry",
+        "tags": [
+          "Public API"
+        ]
+      }
     }
   },
   "info": {
@@ -16773,6 +17278,12 @@
         "bearerFormat": "JWT",
         "type": "http",
         "description": "Enter your JWT access token"
+      },
+      "access-token": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "description": "A personal access token (thy_…) from Profile › Access tokens, for the public API under /api/v1"
       },
       "thoughty_refresh_token": {
         "type": "apiKey",
@@ -17339,7 +17850,9 @@
               "data_downloaded",
               "journal_exported",
               "share_link_created",
-              "share_link_revoked"
+              "share_link_revoked",
+              "access_token_created",
+              "access_token_revoked"
             ],
             "description": "What happened: a sign-in, a refused sign-in (wrong password or code), a sign-out, other sessions signed out, a password changed or reset, two-factor authentication turned on or off, the PIN set, changed, reset or removed, the data downloaded, the journal exported, or a private share link made or revoked",
             "example": "sign_in"
@@ -29405,6 +29918,603 @@
           "locked": true
         }
       },
+      "PersonalAccessTokenDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 3
+          },
+          "name": {
+            "type": "string",
+            "example": "iPhone Shortcut"
+          },
+          "hint": {
+            "type": "string",
+            "example": "thy_a1B2",
+            "description": "The token’s first characters, to tell tokens apart"
+          },
+          "scopes": {
+            "type": "array",
+            "example": [
+              "entries:write"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "entries:read",
+                "entries:write"
+              ]
+            }
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2027-02-19T09:30:00.000Z",
+            "description": "Null for a token that never expires"
+          },
+          "lastUsedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2026-11-21T08:12:00.000Z",
+            "description": "Null when never used"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-21T08:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "hint",
+          "scopes",
+          "expiresAt",
+          "lastUsedAt",
+          "createdAt"
+        ],
+        "example": {
+          "id": 3,
+          "name": "iPhone Shortcut",
+          "hint": "thy_a1B2",
+          "scopes": [
+            "entries:write"
+          ],
+          "expiresAt": "2027-02-19T09:30:00.000Z",
+          "lastUsedAt": "2026-11-21T08:12:00.000Z",
+          "createdAt": "2026-11-21T08:00:00.000Z"
+        }
+      },
+      "PersonalAccessTokenListResponseDto": {
+        "type": "object",
+        "properties": {
+          "tokens": {
+            "description": "Unexpired tokens, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PersonalAccessTokenDto"
+            }
+          },
+          "limit": {
+            "type": "number",
+            "example": 10,
+            "description": "How many tokens the writer can hold at once"
+          }
+        },
+        "required": [
+          "tokens",
+          "limit"
+        ],
+        "example": {
+          "tokens": [
+            {
+              "id": 3,
+              "name": "iPhone Shortcut",
+              "hint": "thy_a1B2",
+              "scopes": [
+                "entries:write"
+              ],
+              "expiresAt": "2027-02-19T09:30:00.000Z",
+              "lastUsedAt": "2026-11-21T08:12:00.000Z",
+              "createdAt": "2026-11-21T08:00:00.000Z"
+            }
+          ],
+          "limit": 10
+        }
+      },
+      "CreatePersonalAccessTokenDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "iPhone Shortcut",
+            "minLength": 1,
+            "maxLength": 60,
+            "description": "The writer’s own name for the token"
+          },
+          "scopes": {
+            "type": "array",
+            "example": [
+              "entries:write"
+            ],
+            "description": "`entries:read` lists diaries and entries; `entries:write` lists diaries and writes new entries",
+            "items": {
+              "type": "string",
+              "enum": [
+                "entries:read",
+                "entries:write"
+              ]
+            }
+          },
+          "expiresInDays": {
+            "type": "number",
+            "nullable": true,
+            "enum": [
+              30,
+              90,
+              365
+            ],
+            "example": 90,
+            "description": "Days until the token stops working; null for a token that never expires"
+          },
+          "timeZone": {
+            "type": "string",
+            "example": "Europe/Paris",
+            "description": "The browser’s IANA time zone: an entry written through the token without a date gets that zone’s day"
+          }
+        },
+        "required": [
+          "name",
+          "scopes",
+          "expiresInDays",
+          "timeZone"
+        ],
+        "example": {
+          "name": "iPhone Shortcut",
+          "scopes": [
+            "entries:write"
+          ],
+          "expiresInDays": 90,
+          "timeZone": "Europe/Paris"
+        }
+      },
+      "CreatedPersonalAccessTokenResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 3
+          },
+          "name": {
+            "type": "string",
+            "example": "iPhone Shortcut"
+          },
+          "hint": {
+            "type": "string",
+            "example": "thy_a1B2",
+            "description": "The token’s first characters, to tell tokens apart"
+          },
+          "scopes": {
+            "type": "array",
+            "example": [
+              "entries:write"
+            ],
+            "items": {
+              "type": "string",
+              "enum": [
+                "entries:read",
+                "entries:write"
+              ]
+            }
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2027-02-19T09:30:00.000Z",
+            "description": "Null for a token that never expires"
+          },
+          "lastUsedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2026-11-21T08:12:00.000Z",
+            "description": "Null when never used"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-21T08:00:00.000Z"
+          },
+          "token": {
+            "type": "string",
+            "example": "thy_a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0u1V",
+            "description": "The token, shown this once: send it as `Authorization: Bearer <token>` to `/api/v1`"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "hint",
+          "scopes",
+          "expiresAt",
+          "lastUsedAt",
+          "createdAt",
+          "token"
+        ],
+        "example": {
+          "id": 3,
+          "name": "iPhone Shortcut",
+          "hint": "thy_a1B2",
+          "scopes": [
+            "entries:write"
+          ],
+          "expiresAt": "2027-02-19T09:30:00.000Z",
+          "lastUsedAt": "2026-11-21T08:12:00.000Z",
+          "createdAt": "2026-11-21T08:00:00.000Z",
+          "token": "thy_a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0u1V"
+        }
+      },
+      "PublicDiaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 2
+          },
+          "name": {
+            "type": "string",
+            "example": "Travel"
+          },
+          "icon": {
+            "type": "string",
+            "example": "✈️"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "description": "Where an entry written without a diary goes",
+            "example": false
+          },
+          "isLocked": {
+            "type": "boolean",
+            "description": "Locked behind the writer’s PIN: its entries are listed without their text",
+            "example": false
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "icon",
+          "isDefault",
+          "isLocked"
+        ],
+        "example": {
+          "id": 2,
+          "name": "Travel",
+          "icon": "✈️",
+          "isDefault": false,
+          "isLocked": false
+        }
+      },
+      "PublicDiaryListResponseDto": {
+        "type": "object",
+        "properties": {
+          "diaries": {
+            "description": "In the writer’s order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicDiaryDto"
+            }
+          }
+        },
+        "required": [
+          "diaries"
+        ],
+        "example": {
+          "diaries": [
+            {
+              "id": 2,
+              "name": "Travel",
+              "icon": "✈️",
+              "isDefault": false,
+              "isLocked": false
+            }
+          ]
+        }
+      },
+      "PublicEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 57
+          },
+          "diaryId": {
+            "type": "number",
+            "nullable": true,
+            "example": 2
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-11-21",
+            "description": "The entry’s day (YYYY-MM-DD)"
+          },
+          "index": {
+            "type": "number",
+            "example": 1,
+            "description": "Its number among the day’s entries, as `[[2026-11-21#1]]` links to it"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "example": "Morning walk"
+          },
+          "timeOfDay": {
+            "type": "string",
+            "nullable": true,
+            "example": "08:30"
+          },
+          "text": {
+            "type": "string",
+            "description": "Empty while the entry is withheld or sealed",
+            "example": "Walked by the river."
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "plain",
+              "markdown"
+            ],
+            "example": "plain"
+          },
+          "tags": {
+            "example": [
+              "walk"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "mood": {
+            "type": "number",
+            "nullable": true,
+            "example": 4
+          },
+          "feelings": {
+            "example": [
+              "calm"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "example": "private"
+          },
+          "withheld": {
+            "type": "boolean",
+            "description": "Locked behind the writer’s PIN: the API never unlocks, so its text, tags, mood and feelings are left out",
+            "example": false
+          },
+          "sealedUntil": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "While a sealed time capsule, when it opens",
+            "example": null
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-21T08:31:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "diaryId",
+          "date",
+          "index",
+          "title",
+          "timeOfDay",
+          "text",
+          "format",
+          "tags",
+          "mood",
+          "feelings",
+          "visibility",
+          "withheld",
+          "sealedUntil",
+          "createdAt"
+        ],
+        "example": {
+          "id": 57,
+          "diaryId": 2,
+          "date": "2026-11-21",
+          "index": 1,
+          "title": "Morning walk",
+          "timeOfDay": "08:30",
+          "text": "Walked by the river.",
+          "format": "plain",
+          "tags": [
+            "walk"
+          ],
+          "mood": 4,
+          "feelings": [
+            "calm"
+          ],
+          "visibility": "private",
+          "withheld": false,
+          "sealedUntil": null,
+          "createdAt": "2026-11-21T08:31:00.000Z"
+        }
+      },
+      "PublicEntryListResponseDto": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "description": "Newest first, as the journal lists them",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicEntryDto"
+            }
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Pass as `after` for the next page; null on the last one",
+            "example": "1_2026-10-21__1_42"
+          }
+        },
+        "required": [
+          "entries",
+          "nextCursor"
+        ],
+        "example": {
+          "entries": [
+            {
+              "id": 57,
+              "diaryId": 2,
+              "date": "2026-11-21",
+              "index": 1,
+              "title": "Morning walk",
+              "timeOfDay": "08:30",
+              "text": "Walked by the river.",
+              "format": "plain",
+              "tags": [
+                "walk"
+              ],
+              "mood": 4,
+              "feelings": [
+                "calm"
+              ],
+              "visibility": "private",
+              "withheld": false,
+              "sealedUntil": null,
+              "createdAt": "2026-11-21T08:31:00.000Z"
+            }
+          ],
+          "nextCursor": "1_2026-10-21__1_42"
+        }
+      },
+      "PublicCreateEntryDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Optional one-line title; empty or null removes it",
+            "nullable": true,
+            "maxLength": 200,
+            "example": "Morning walk by the river"
+          },
+          "timeOfDay": {
+            "type": "string",
+            "description": "Optional time of day on a 24-hour clock (HH:MM); null removes it. Same-day entries without a time come first in their manual order, then those with one, earliest first. It never changes the same-day index that cross-references use.",
+            "nullable": true,
+            "example": "08:30"
+          },
+          "mood": {
+            "type": "number",
+            "description": "Optional mood check-in from 1 (very low) to 5 (very good); null removes it. It is private: the public feed never shows it.",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 5,
+            "example": 4
+          },
+          "feelings": {
+            "description": "Optional feeling words with the mood: curated ones by their English name, or the writer's own words. Stored lowercase without duplicates; an empty list removes them.",
+            "maxItems": 10,
+            "example": [
+              "calm",
+              "grateful"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "text": {
+            "type": "string",
+            "description": "Entry content. A Markdown entry places one of its attachments with `![alt text](attachment:<id>)`: a reference stays when the attachment is on this entry, is the writer's and on no entry yet (it then joins the entry), or was already in the saved text; any other becomes its alt text."
+          },
+          "date": {
+            "type": "string",
+            "description": "Entry date (YYYY-MM-DD)"
+          },
+          "diaryId": {
+            "type": "number",
+            "description": "Diary ID"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "plain",
+              "markdown"
+            ],
+            "default": "plain"
+          },
+          "tags": {
+            "description": "Tags for the entry; with automatic tagging on in the writer’s AI settings, more are added as in the composer",
+            "example": [
+              "walk"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "example": {
+          "title": "Morning walk by the river",
+          "timeOfDay": "08:30",
+          "mood": 4,
+          "feelings": [
+            "calm",
+            "grateful"
+          ],
+          "text": "example",
+          "date": "2026-06-24",
+          "diaryId": 1,
+          "format": "plain",
+          "tags": [
+            "walk"
+          ]
+        }
+      },
+      "PublicCreatedEntryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 58
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-11-21",
+            "description": "The day it was written for: the one sent, or the token’s time zone’s day"
+          }
+        },
+        "required": [
+          "id",
+          "date"
+        ],
+        "example": {
+          "id": 58,
+          "date": "2026-11-21"
+        }
+      },
       "ApiErrorCode": {
         "type": "string",
         "enum": [
@@ -29490,6 +30600,10 @@
           "SHARE_LINK_NOT_FOUND",
           "SHARE_LINK_LIMIT_REACHED",
           "SHARE_LINK_EXPIRY_INVALID",
+          "ACCESS_TOKEN_NOT_FOUND",
+          "ACCESS_TOKEN_LIMIT_REACHED",
+          "ACCESS_TOKEN_INVALID",
+          "ACCESS_TOKEN_SCOPE_MISSING",
           "LIFE_ERA_NOT_FOUND",
           "LIFE_ERA_NAME_TAKEN",
           "LIFE_ERA_LIMIT_REACHED",

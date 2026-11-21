@@ -51,6 +51,7 @@ flowchart TD
 | `people` | people mentioned with `@handle`: list with counts, rename and date (a birthday or an anniversary, checked in `person-dates.ts`; Highlights reads the day's people through `PersonDatesService` in `PersonDatesModule`, imported by the entries module), merge, delete, at most 1,000 per writer; mentions are parsed and linked on every entry save by `EntryMentionsService` in the entries module (composer, edits and both imports), and the journal's `personId` filter lives in `applyEntryListFilters` |
 | `attachments` | upload validation, object storage, audio transcription; `sendAttachmentFile` (`attachment-file-response.ts`) streams a stored file with its safe headers and byte ranges for both the owner's file route and a share link's |
 | `share-links` | private share links ([ADR 0024](./adr/0024-private-share-links.md)): `ShareLinksService` makes, lists and revokes the writer's links (`/api/share-links`, at most 100 unexpired), and `SharedContentService` answers the public `GET /api/shared/:token…` routes for a reader without an account (the entry, a book version's file, the entry's own attachments), counting views, with one `404` for every refusal; `sharedResponseHeaders` (an Express middleware `configureApp` mounts on `/api/shared`) sets their private link headers before any guard, pipe or filter runs |
+| `access-tokens` | personal access tokens and the public API: `AccessTokensService` makes (shown once, hash kept), lists and revokes a writer's tokens (`/api/access-tokens`, a session's routes, at most 10), and authenticates the `Authorization: Bearer thy_…` of a public API request for `AccessTokenGuard`; `PublicApiService` answers `/api/v1` (`GET diaries`, `GET entries`, `POST entries`) on the journal's own `EntriesService`, as the token's writer and within its scopes ([Security](./security.md#authentication-and-sessions)) |
 | `ai` | OpenRouter credentials and usage, tag suggestions, inspiration, rephrasing, summaries, chat, semantic search, duplicates, tag organization, writing insights |
 | `stats` | statistics, heatmap, writing goal progress, daily writing streak, mood stats (with the tags beside good and low moods), the words used most this month, connections graph, writing-tendency analysis |
 | `review` | year in review: totals, rhythm, themes, highlights, moods, and the on-request AI mood arc |
@@ -236,6 +237,10 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 | Private share links | `SHARE_LINK_NOT_FOUND` | This link is not available |
 |  | `SHARE_LINK_LIMIT_REACHED` | Share link limit reached |
 |  | `SHARE_LINK_EXPIRY_INVALID` | Choose an expiry from one hour up to a year ahead |
+| Personal access tokens and the public API (`/api/v1`) | `ACCESS_TOKEN_NOT_FOUND` | Access token not found |
+|  | `ACCESS_TOKEN_LIMIT_REACHED` | Access token limit reached |
+|  | `ACCESS_TOKEN_INVALID` | The access token is missing, unknown, revoked or expired |
+|  | `ACCESS_TOKEN_SCOPE_MISSING` | The access token does not allow this |
 | Life eras | `LIFE_ERA_NOT_FOUND` | Life era not found |
 |  | `LIFE_ERA_NAME_TAKEN` | A life era with this name already exists |
 |  | `LIFE_ERA_LIMIT_REACHED` | Life era limit reached |

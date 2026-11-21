@@ -30,6 +30,14 @@ describe('swagger helpers', () => {
         },
         'bearer',
       )
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          description: 'A personal access token (thy_…) from Profile › Access tokens, for the public API under /api/v1',
+        },
+        'access-token',
+      )
       .addCookieAuth(
         'thoughty_refresh_token',
         {

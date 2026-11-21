@@ -23,11 +23,13 @@ describe('AccountEvents1788739200000', () => {
     expect(statement).toContain('CREATE INDEX idx_account_events_created ON account_events(created_at)');
   });
 
-  it('allows exactly the kinds the entity knows', async () => {
+  it('allows exactly the kinds the entity knew then (access tokens came with PersonalAccessTokens1788912000000)', async () => {
     await new AccountEvents1788739200000().up(queryRunner);
 
     const allowed = /CHECK \(kind IN \(([^)]*)\)\)/.exec(sql())?.[1] ?? '';
-    expect(allowed.match(/'[a-z_]+'/g)?.map((kind) => kind.slice(1, -1))).toEqual([...ACCOUNT_EVENT_KINDS]);
+    expect(allowed.match(/'[a-z_]+'/g)?.map((kind) => kind.slice(1, -1))).toEqual(
+      ACCOUNT_EVENT_KINDS.filter((kind) => !kind.startsWith('access_token_')),
+    );
   });
 
   it('drops the table', async () => {

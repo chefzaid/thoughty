@@ -2859,6 +2859,85 @@ export interface paths {
         patch: operations["DiaryLockController_setLocked"];
         trace?: never;
     };
+    "/api/access-tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the writer’s unexpired personal access tokens, newest first */
+        get: operations["AccessTokensController_list"];
+        put?: never;
+        /**
+         * Make a personal access token for the public API
+         * @description The answer carries the token itself, this once; only its hash is kept.
+         */
+        post: operations["AccessTokensController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/access-tokens/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke a personal access token, which deletes it */
+        delete: operations["AccessTokensController_revoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/diaries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The writer’s diaries, to pick one to write in or list */
+        get: operations["PublicApiController_listDiaries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The writer’s entries, newest first, a page at a time
+         * @description Optionally in one diary or matching a search (the journal’s search syntax). Entries in the recycle bin are left out; a locked or sealed entry comes without its text, tags, mood and feelings.
+         */
+        get: operations["PublicApiController_listEntries"];
+        put?: never;
+        /**
+         * Write a new private entry
+         * @description Without a `date`, the entry is for today in the time zone of the browser that made the token. Without a `diaryId`, it goes to the default diary. Tags, mentions and automatic tagging work as in the composer.
+         */
+        post: operations["PublicApiController_createEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3189,7 +3268,7 @@ export interface components {
              * @example sign_in
              * @enum {string}
              */
-            kind: "sign_in" | "sign_in_refused" | "sign_out" | "sessions_revoked" | "password_changed" | "password_reset" | "two_factor_enabled" | "two_factor_disabled" | "pin_set" | "pin_changed" | "pin_reset" | "pin_removed" | "data_downloaded" | "journal_exported" | "share_link_created" | "share_link_revoked";
+            kind: "sign_in" | "sign_in_refused" | "sign_out" | "sessions_revoked" | "password_changed" | "password_reset" | "two_factor_enabled" | "two_factor_disabled" | "pin_set" | "pin_changed" | "pin_reset" | "pin_removed" | "data_downloaded" | "journal_exported" | "share_link_created" | "share_link_revoked" | "access_token_created" | "access_token_revoked";
             /**
              * @description Browser name, without its version; null when unknown
              * @example Firefox
@@ -10838,11 +10917,418 @@ export interface components {
             locked: boolean;
         };
         /**
+         * @example {
+         *       "id": 3,
+         *       "name": "iPhone Shortcut",
+         *       "hint": "thy_a1B2",
+         *       "scopes": [
+         *         "entries:write"
+         *       ],
+         *       "expiresAt": "2027-02-19T09:30:00.000Z",
+         *       "lastUsedAt": "2026-11-21T08:12:00.000Z",
+         *       "createdAt": "2026-11-21T08:00:00.000Z"
+         *     }
+         */
+        PersonalAccessTokenDto: {
+            /** @example 3 */
+            id: number;
+            /** @example iPhone Shortcut */
+            name: string;
+            /**
+             * @description The token’s first characters, to tell tokens apart
+             * @example thy_a1B2
+             */
+            hint: string;
+            /**
+             * @example [
+             *       "entries:write"
+             *     ]
+             */
+            scopes: ("entries:read" | "entries:write")[];
+            /**
+             * Format: date-time
+             * @description Null for a token that never expires
+             * @example 2027-02-19T09:30:00.000Z
+             */
+            expiresAt: string | null;
+            /**
+             * Format: date-time
+             * @description Null when never used
+             * @example 2026-11-21T08:12:00.000Z
+             */
+            lastUsedAt: string | null;
+            /**
+             * Format: date-time
+             * @example 2026-11-21T08:00:00.000Z
+             */
+            createdAt: string;
+        };
+        /**
+         * @example {
+         *       "tokens": [
+         *         {
+         *           "id": 3,
+         *           "name": "iPhone Shortcut",
+         *           "hint": "thy_a1B2",
+         *           "scopes": [
+         *             "entries:write"
+         *           ],
+         *           "expiresAt": "2027-02-19T09:30:00.000Z",
+         *           "lastUsedAt": "2026-11-21T08:12:00.000Z",
+         *           "createdAt": "2026-11-21T08:00:00.000Z"
+         *         }
+         *       ],
+         *       "limit": 10
+         *     }
+         */
+        PersonalAccessTokenListResponseDto: {
+            /** @description Unexpired tokens, newest first */
+            tokens: components["schemas"]["PersonalAccessTokenDto"][];
+            /**
+             * @description How many tokens the writer can hold at once
+             * @example 10
+             */
+            limit: number;
+        };
+        /**
+         * @example {
+         *       "name": "iPhone Shortcut",
+         *       "scopes": [
+         *         "entries:write"
+         *       ],
+         *       "expiresInDays": 90,
+         *       "timeZone": "Europe/Paris"
+         *     }
+         */
+        CreatePersonalAccessTokenDto: {
+            /**
+             * @description The writer’s own name for the token
+             * @example iPhone Shortcut
+             */
+            name: string;
+            /**
+             * @description `entries:read` lists diaries and entries; `entries:write` lists diaries and writes new entries
+             * @example [
+             *       "entries:write"
+             *     ]
+             */
+            scopes: ("entries:read" | "entries:write")[];
+            /**
+             * @description Days until the token stops working; null for a token that never expires
+             * @example 90
+             * @enum {number|null}
+             */
+            expiresInDays: 30 | 90 | 365 | null;
+            /**
+             * @description The browser’s IANA time zone: an entry written through the token without a date gets that zone’s day
+             * @example Europe/Paris
+             */
+            timeZone: string;
+        };
+        /**
+         * @example {
+         *       "id": 3,
+         *       "name": "iPhone Shortcut",
+         *       "hint": "thy_a1B2",
+         *       "scopes": [
+         *         "entries:write"
+         *       ],
+         *       "expiresAt": "2027-02-19T09:30:00.000Z",
+         *       "lastUsedAt": "2026-11-21T08:12:00.000Z",
+         *       "createdAt": "2026-11-21T08:00:00.000Z",
+         *       "token": "thy_a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0u1V"
+         *     }
+         */
+        CreatedPersonalAccessTokenResponseDto: {
+            /** @example 3 */
+            id: number;
+            /** @example iPhone Shortcut */
+            name: string;
+            /**
+             * @description The token’s first characters, to tell tokens apart
+             * @example thy_a1B2
+             */
+            hint: string;
+            /**
+             * @example [
+             *       "entries:write"
+             *     ]
+             */
+            scopes: ("entries:read" | "entries:write")[];
+            /**
+             * Format: date-time
+             * @description Null for a token that never expires
+             * @example 2027-02-19T09:30:00.000Z
+             */
+            expiresAt: string | null;
+            /**
+             * Format: date-time
+             * @description Null when never used
+             * @example 2026-11-21T08:12:00.000Z
+             */
+            lastUsedAt: string | null;
+            /**
+             * Format: date-time
+             * @example 2026-11-21T08:00:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description The token, shown this once: send it as `Authorization: Bearer <token>` to `/api/v1`
+             * @example thy_a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0u1V
+             */
+            token: string;
+        };
+        /**
+         * @example {
+         *       "id": 2,
+         *       "name": "Travel",
+         *       "icon": "✈️",
+         *       "isDefault": false,
+         *       "isLocked": false
+         *     }
+         */
+        PublicDiaryDto: {
+            /** @example 2 */
+            id: number;
+            /** @example Travel */
+            name: string;
+            /** @example ✈️ */
+            icon: string;
+            /**
+             * @description Where an entry written without a diary goes
+             * @example false
+             */
+            isDefault: boolean;
+            /**
+             * @description Locked behind the writer’s PIN: its entries are listed without their text
+             * @example false
+             */
+            isLocked: boolean;
+        };
+        /**
+         * @example {
+         *       "diaries": [
+         *         {
+         *           "id": 2,
+         *           "name": "Travel",
+         *           "icon": "✈️",
+         *           "isDefault": false,
+         *           "isLocked": false
+         *         }
+         *       ]
+         *     }
+         */
+        PublicDiaryListResponseDto: {
+            /** @description In the writer’s order */
+            diaries: components["schemas"]["PublicDiaryDto"][];
+        };
+        /**
+         * @example {
+         *       "id": 57,
+         *       "diaryId": 2,
+         *       "date": "2026-11-21",
+         *       "index": 1,
+         *       "title": "Morning walk",
+         *       "timeOfDay": "08:30",
+         *       "text": "Walked by the river.",
+         *       "format": "plain",
+         *       "tags": [
+         *         "walk"
+         *       ],
+         *       "mood": 4,
+         *       "feelings": [
+         *         "calm"
+         *       ],
+         *       "visibility": "private",
+         *       "withheld": false,
+         *       "sealedUntil": null,
+         *       "createdAt": "2026-11-21T08:31:00.000Z"
+         *     }
+         */
+        PublicEntryDto: {
+            /** @example 57 */
+            id: number;
+            /** @example 2 */
+            diaryId: number | null;
+            /**
+             * @description The entry’s day (YYYY-MM-DD)
+             * @example 2026-11-21
+             */
+            date: string;
+            /**
+             * @description Its number among the day’s entries, as `[[2026-11-21#1]]` links to it
+             * @example 1
+             */
+            index: number;
+            /** @example Morning walk */
+            title: string | null;
+            /** @example 08:30 */
+            timeOfDay: string | null;
+            /**
+             * @description Empty while the entry is withheld or sealed
+             * @example Walked by the river.
+             */
+            text: string;
+            /**
+             * @example plain
+             * @enum {string}
+             */
+            format: "plain" | "markdown";
+            /**
+             * @example [
+             *       "walk"
+             *     ]
+             */
+            tags: string[];
+            /** @example 4 */
+            mood: number | null;
+            /**
+             * @example [
+             *       "calm"
+             *     ]
+             */
+            feelings: string[];
+            /**
+             * @example private
+             * @enum {string}
+             */
+            visibility: "public" | "private";
+            /**
+             * @description Locked behind the writer’s PIN: the API never unlocks, so its text, tags, mood and feelings are left out
+             * @example false
+             */
+            withheld: boolean;
+            /**
+             * Format: date-time
+             * @description While a sealed time capsule, when it opens
+             * @example null
+             */
+            sealedUntil: string | null;
+            /**
+             * Format: date-time
+             * @example 2026-11-21T08:31:00.000Z
+             */
+            createdAt: string;
+        };
+        /**
+         * @example {
+         *       "entries": [
+         *         {
+         *           "id": 57,
+         *           "diaryId": 2,
+         *           "date": "2026-11-21",
+         *           "index": 1,
+         *           "title": "Morning walk",
+         *           "timeOfDay": "08:30",
+         *           "text": "Walked by the river.",
+         *           "format": "plain",
+         *           "tags": [
+         *             "walk"
+         *           ],
+         *           "mood": 4,
+         *           "feelings": [
+         *             "calm"
+         *           ],
+         *           "visibility": "private",
+         *           "withheld": false,
+         *           "sealedUntil": null,
+         *           "createdAt": "2026-11-21T08:31:00.000Z"
+         *         }
+         *       ],
+         *       "nextCursor": "1_2026-10-21__1_42"
+         *     }
+         */
+        PublicEntryListResponseDto: {
+            /** @description Newest first, as the journal lists them */
+            entries: components["schemas"]["PublicEntryDto"][];
+            /**
+             * @description Pass as `after` for the next page; null on the last one
+             * @example 1_2026-10-21__1_42
+             */
+            nextCursor: string | null;
+        };
+        /**
+         * @example {
+         *       "title": "Morning walk by the river",
+         *       "timeOfDay": "08:30",
+         *       "mood": 4,
+         *       "feelings": [
+         *         "calm",
+         *         "grateful"
+         *       ],
+         *       "text": "example",
+         *       "date": "2026-06-24",
+         *       "diaryId": 1,
+         *       "format": "plain",
+         *       "tags": [
+         *         "walk"
+         *       ]
+         *     }
+         */
+        PublicCreateEntryDto: {
+            /**
+             * @description Optional one-line title; empty or null removes it
+             * @example Morning walk by the river
+             */
+            title?: string | null;
+            /**
+             * @description Optional time of day on a 24-hour clock (HH:MM); null removes it. Same-day entries without a time come first in their manual order, then those with one, earliest first. It never changes the same-day index that cross-references use.
+             * @example 08:30
+             */
+            timeOfDay?: string | null;
+            /**
+             * @description Optional mood check-in from 1 (very low) to 5 (very good); null removes it. It is private: the public feed never shows it.
+             * @example 4
+             */
+            mood?: number | null;
+            /**
+             * @description Optional feeling words with the mood: curated ones by their English name, or the writer's own words. Stored lowercase without duplicates; an empty list removes them.
+             * @example [
+             *       "calm",
+             *       "grateful"
+             *     ]
+             */
+            feelings?: string[];
+            /** @description Entry content. A Markdown entry places one of its attachments with `![alt text](attachment:<id>)`: a reference stays when the attachment is on this entry, is the writer's and on no entry yet (it then joins the entry), or was already in the saved text; any other becomes its alt text. */
+            text: string;
+            /** @description Entry date (YYYY-MM-DD) */
+            date?: string;
+            /** @description Diary ID */
+            diaryId?: number;
+            /**
+             * @default plain
+             * @enum {string}
+             */
+            format: "plain" | "markdown";
+            /**
+             * @description Tags for the entry; with automatic tagging on in the writer’s AI settings, more are added as in the composer
+             * @example [
+             *       "walk"
+             *     ]
+             */
+            tags?: string[];
+        };
+        /**
+         * @example {
+         *       "id": 58,
+         *       "date": "2026-11-21"
+         *     }
+         */
+        PublicCreatedEntryResponseDto: {
+            /** @example 58 */
+            id: number;
+            /**
+             * @description The day it was written for: the one sent, or the token’s time zone’s day
+             * @example 2026-11-21
+             */
+            date: string;
+        };
+        /**
          * @description Stable machine-readable code (docs/architecture.md, "API error codes"). Every error the API raises carries one; only an unexpected server failure (500) may come without it.
          * @example VALIDATION_FAILED
          * @enum {string}
          */
-        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "FEATURE_DISABLED" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_WEAK_PASSWORD" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "AUTH_INVALID_SIGN_UP_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "CONTENT_LOCKED" | "CONTENT_LOCKED_PRIVATE" | "CONTENT_PIN_NOT_SET" | "CONTENT_PIN_INCORRECT" | "CONTENT_PIN_BLOCKED" | "CONTENT_PIN_PROOF_REQUIRED" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "COMPOSER_DRAFT_CONFLICT" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "REVIEW_WEEK_EMPTY" | "REVIEW_REFLECTION_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "SOCIAL_CANNOT_SAVE_OWN_ENTRY" | "SOCIAL_CANNOT_MUTE_SELF" | "SOCIAL_CANNOT_BLOCK_SELF" | "COMMENT_NOT_FOUND" | "COMMENTS_CLOSED" | "COMMENTS_FOLLOWERS_ONLY" | "COMMENT_PIN_HIDDEN" | "FEATURE_REQUEST_NOT_FOUND";
+        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "FEATURE_DISABLED" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_WEAK_PASSWORD" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "AUTH_INVALID_SIGN_UP_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "CONTENT_LOCKED" | "CONTENT_LOCKED_PRIVATE" | "CONTENT_PIN_NOT_SET" | "CONTENT_PIN_INCORRECT" | "CONTENT_PIN_BLOCKED" | "CONTENT_PIN_PROOF_REQUIRED" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "COMPOSER_DRAFT_CONFLICT" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "ACCESS_TOKEN_NOT_FOUND" | "ACCESS_TOKEN_LIMIT_REACHED" | "ACCESS_TOKEN_INVALID" | "ACCESS_TOKEN_SCOPE_MISSING" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "REVIEW_WEEK_EMPTY" | "REVIEW_REFLECTION_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "SOCIAL_CANNOT_SAVE_OWN_ENTRY" | "SOCIAL_CANNOT_MUTE_SELF" | "SOCIAL_CANNOT_BLOCK_SELF" | "COMMENT_NOT_FOUND" | "COMMENTS_CLOSED" | "COMMENTS_FOLLOWERS_ONLY" | "COMMENT_PIN_HIDDEN" | "FEATURE_REQUEST_NOT_FOUND";
         /**
          * @example {
          *       "statusCode": 401,
@@ -23964,6 +24450,444 @@ export interface operations {
                      *       "message": "Lifting the lock needs an unlocked request",
                      *       "error": "Locked",
                      *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    AccessTokensController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The tokens, without the tokens themselves */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "tokens": [
+                     *         {
+                     *           "id": 3,
+                     *           "name": "iPhone Shortcut",
+                     *           "hint": "thy_a1B2",
+                     *           "scopes": [
+                     *             "entries:write"
+                     *           ],
+                     *           "expiresAt": "2027-02-19T09:30:00.000Z",
+                     *           "lastUsedAt": "2026-11-21T08:12:00.000Z",
+                     *           "createdAt": "2026-11-21T08:00:00.000Z"
+                     *         }
+                     *       ],
+                     *       "limit": 10
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PersonalAccessTokenListResponseDto"];
+                };
+            };
+        };
+    };
+    AccessTokensController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "name": "iPhone Shortcut",
+                 *       "scopes": [
+                 *         "entries:write"
+                 *       ],
+                 *       "expiresInDays": 90,
+                 *       "timeZone": "Europe/Paris"
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreatePersonalAccessTokenDto"];
+            };
+        };
+        responses: {
+            /** @description The token, shown once */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": 3,
+                     *       "name": "iPhone Shortcut",
+                     *       "hint": "thy_a1B2",
+                     *       "scopes": [
+                     *         "entries:write"
+                     *       ],
+                     *       "expiresAt": "2027-02-19T09:30:00.000Z",
+                     *       "lastUsedAt": "2026-11-21T08:12:00.000Z",
+                     *       "createdAt": "2026-11-21T08:00:00.000Z",
+                     *       "token": "thy_a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0u1V"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CreatedPersonalAccessTokenResponseDto"];
+                };
+            };
+            /** @description ACCESS_TOKEN_LIMIT_REACHED, or an invalid name, scope, expiry or time zone */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "ACCESS_TOKEN_LIMIT_REACHED, or an invalid name, scope, expiry or time zone",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    AccessTokensController_revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessResponseDto"];
+                };
+            };
+            /** @description ACCESS_TOKEN_NOT_FOUND */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "ACCESS_TOKEN_NOT_FOUND",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    PublicApiController_listDiaries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The diaries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "diaries": [
+                     *         {
+                     *           "id": 2,
+                     *           "name": "Travel",
+                     *           "icon": "✈️",
+                     *           "isDefault": false,
+                     *           "isLocked": false
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PublicDiaryListResponseDto"];
+                };
+            };
+            /** @description ACCESS_TOKEN_INVALID: no token, or one that is unknown, revoked or expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 401,
+                     *       "message": "ACCESS_TOKEN_INVALID: no token, or one that is unknown, revoked or expired",
+                     *       "error": "Unauthorized",
+                     *       "code": "UNAUTHORIZED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description ACCESS_TOKEN_SCOPE_MISSING: the token holds none of `entries:read`, `entries:write` */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 403,
+                     *       "message": "ACCESS_TOKEN_SCOPE_MISSING: the token holds none of `entries:read`, `entries:write`",
+                     *       "error": "Forbidden",
+                     *       "code": "FORBIDDEN"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    PublicApiController_listEntries: {
+        parameters: {
+            query?: {
+                /** @description Full-text search over content and tags, with English and French word forms and accents ignored. Supports "exact phrases" in quotes, a leading minus to exclude a word or phrase, and OR between alternatives; the last word also matches the longer words it starts. */
+                search?: string;
+                /** @description Diary ID */
+                diaryId?: number;
+                /** @description The `nextCursor` of the batch before: this batch starts right after its last entry, even when entries were written or deleted meanwhile. Only one of `after`, `from`, `before` and `around` */
+                after?: string;
+                /** @description Entries in the page */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page of entries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "entries": [
+                     *         {
+                     *           "id": 57,
+                     *           "diaryId": 2,
+                     *           "date": "2026-11-21",
+                     *           "index": 1,
+                     *           "title": "Morning walk",
+                     *           "timeOfDay": "08:30",
+                     *           "text": "Walked by the river.",
+                     *           "format": "plain",
+                     *           "tags": [
+                     *             "walk"
+                     *           ],
+                     *           "mood": 4,
+                     *           "feelings": [
+                     *             "calm"
+                     *           ],
+                     *           "visibility": "private",
+                     *           "withheld": false,
+                     *           "sealedUntil": null,
+                     *           "createdAt": "2026-11-21T08:31:00.000Z"
+                     *         }
+                     *       ],
+                     *       "nextCursor": "1_2026-10-21__1_42"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PublicEntryListResponseDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED: an invalid limit, diary, search or cursor */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "VALIDATION_FAILED: an invalid limit, diary, search or cursor",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description ACCESS_TOKEN_INVALID: no token, or one that is unknown, revoked or expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 401,
+                     *       "message": "ACCESS_TOKEN_INVALID: no token, or one that is unknown, revoked or expired",
+                     *       "error": "Unauthorized",
+                     *       "code": "UNAUTHORIZED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description ACCESS_TOKEN_SCOPE_MISSING: the token holds none of `entries:read` */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 403,
+                     *       "message": "ACCESS_TOKEN_SCOPE_MISSING: the token holds none of `entries:read`",
+                     *       "error": "Forbidden",
+                     *       "code": "FORBIDDEN"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    PublicApiController_createEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "title": "Morning walk by the river",
+                 *       "timeOfDay": "08:30",
+                 *       "mood": 4,
+                 *       "feelings": [
+                 *         "calm",
+                 *         "grateful"
+                 *       ],
+                 *       "text": "example",
+                 *       "date": "2026-06-24",
+                 *       "diaryId": 1,
+                 *       "format": "plain",
+                 *       "tags": [
+                 *         "walk"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["PublicCreateEntryDto"];
+            };
+        };
+        responses: {
+            /** @description The entry written */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": 58,
+                     *       "date": "2026-11-21"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PublicCreatedEntryResponseDto"];
+                };
+            };
+            /** @description VALIDATION_FAILED: an invalid text, date, tag, mood or diary */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "VALIDATION_FAILED: an invalid text, date, tag, mood or diary",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description ACCESS_TOKEN_INVALID: no token, or one that is unknown, revoked or expired */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 401,
+                     *       "message": "ACCESS_TOKEN_INVALID: no token, or one that is unknown, revoked or expired",
+                     *       "error": "Unauthorized",
+                     *       "code": "UNAUTHORIZED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description ACCESS_TOKEN_SCOPE_MISSING: the token holds none of `entries:write` */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 403,
+                     *       "message": "ACCESS_TOKEN_SCOPE_MISSING: the token holds none of `entries:write`",
+                     *       "error": "Forbidden",
+                     *       "code": "FORBIDDEN"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description DIARY_NOT_FOUND: the diary is not the writer’s */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "DIARY_NOT_FOUND: the diary is not the writer’s",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];

@@ -14,7 +14,7 @@ describe('UserDataExportService opt-in email settings', () => {
     const others = Array.from({ length: 16 }, emptyRepository);
     const Service = UserDataExportService as unknown as new (...repositories: unknown[]) => UserDataExportService;
     const timeCapsules = { reveal: async (entries: unknown[]) => entries };
-    return new Service(...others, onThisDayEmail, monthlyRecapEmail, emptyRepository(), timeCapsules, emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), createAccountActivityMock(), emptyRepository());
+    return new Service(...others, onThisDayEmail, monthlyRecapEmail, emptyRepository(), timeCapsules, emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), createAccountActivityMock(), emptyRepository(), emptyRepository());
   };
 
   it.each(['onThisDayEmail', 'monthlyRecapEmail'] as const)('includes the %s setting, and null when it was never saved', async (key) => {

@@ -8,7 +8,7 @@ const emptyRepository = () => ({
   query: jest.fn().mockResolvedValue([]),
 });
 
-/** Constructor order: 19 repositories, the time capsules service, seven more repositories, the account activity, then the weekly reflections. */
+/** Constructor order: 19 repositories, the time capsules service, seven more repositories, the account activity, the weekly reflections, then the access tokens. */
 function build(activity: ReturnType<typeof createAccountActivityMock>) {
   const timeCapsules = { reveal: jest.fn(async (rows: unknown[]) => rows) };
   const Service = UserDataExportService as unknown as new (...dependencies: unknown[]) => UserDataExportService;
@@ -17,6 +17,7 @@ function build(activity: ReturnType<typeof createAccountActivityMock>) {
     timeCapsules,
     ...Array.from({ length: 7 }, emptyRepository),
     activity,
+    emptyRepository(),
     emptyRepository(),
   );
 }
@@ -42,5 +43,33 @@ describe('UserDataExportService account activity', () => {
     });
     expect(activity.listForDownload).toHaveBeenCalledWith(1);
     expect(activity.newBrowserEmailEnabled).toHaveBeenCalledWith(1);
+  });
+});
+
+describe('UserDataExportService access tokens', () => {
+  it('lists each token’s name, hint, scopes, time zone and dates, never a token or its hash', async () => {
+    const tokens = emptyRepository();
+    const createdAt = new Date('2026-11-21T08:00:00Z');
+    tokens.find.mockResolvedValue([{
+      id: 3, userId: 1, name: 'iPhone Shortcut', tokenHint: 'thy_a1B2', scopes: ['entries:write'],
+      timeZone: 'Europe/Paris', expiresAt: null, lastUsedAt: createdAt, createdAt,
+    }]);
+    const Service = UserDataExportService as unknown as new (...dependencies: unknown[]) => UserDataExportService;
+    const service = new Service(
+      ...Array.from({ length: 19 }, emptyRepository),
+      { reveal: jest.fn(async (rows: unknown[]) => rows) },
+      ...Array.from({ length: 7 }, emptyRepository),
+      createAccountActivityMock(),
+      emptyRepository(),
+      tokens,
+    );
+
+    const data = await service.downloadData(1);
+
+    expect(data.accessTokens).toEqual([{
+      name: 'iPhone Shortcut', hint: 'thy_a1B2', scopes: ['entries:write'], timeZone: 'Europe/Paris',
+      expiresAt: null, lastUsedAt: createdAt, createdAt,
+    }]);
+    expect(tokens.find).toHaveBeenCalledWith({ where: { userId: 1 }, order: { createdAt: 'ASC', id: 'ASC' } });
   });
 });

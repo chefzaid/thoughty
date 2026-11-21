@@ -157,6 +157,14 @@ export const CONTRACT_SUITES = {
     'GET /api/shared/{token}/attachments/{attachmentId}',
     'GET /api/shared/{token}/attachments/{attachmentId}/poster',
   ],
+  'access-tokens': [
+    'GET /api/access-tokens',
+    'POST /api/access-tokens',
+    'DELETE /api/access-tokens/{id}',
+    'GET /api/v1/diaries',
+    'GET /api/v1/entries',
+    'POST /api/v1/entries',
+  ],
   books: [
     'GET /api/books/versions',
     'POST /api/books/versions',

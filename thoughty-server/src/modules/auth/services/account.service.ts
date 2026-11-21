@@ -9,7 +9,7 @@ import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { RefreshToken, User } from '@/database/entities';
+import { PersonalAccessToken, RefreshToken, User } from '@/database/entities';
 import { UserResponseDto } from '../dto';
 import { EmailService } from './email.service';
 
@@ -23,6 +23,8 @@ export class AccountService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(RefreshToken)
     private readonly refreshTokenRepository: Repository<RefreshToken>,
+    @InjectRepository(PersonalAccessToken)
+    private readonly accessTokenRepository: Repository<PersonalAccessToken>,
     private readonly emailService: EmailService,
   ) {}
 
@@ -72,8 +74,9 @@ export class AccountService {
     user.deletionReason = 'User requested deletion';
     await this.userRepository.save(user);
 
-    // Invalidate all refresh tokens
+    // Invalidate all refresh tokens and personal access tokens
     await this.refreshTokenRepository.delete({ userId });
+    await this.accessTokenRepository.delete({ userId });
 
     // Send deletion email
     try {

@@ -3,7 +3,7 @@ import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User, RefreshToken, Diary, SignUpRequest, AccountEvent, Setting } from '@/database/entities';
+import { User, RefreshToken, Diary, SignUpRequest, AccountEvent, Setting, PersonalAccessToken } from '@/database/entities';
 import { AuthController } from './auth.controller';
 import { SignUpController } from './sign-up.controller';
 import {
@@ -29,7 +29,7 @@ import {
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, RefreshToken, Diary, SignUpRequest, AccountEvent, Setting]),
+    TypeOrmModule.forFeature([User, RefreshToken, Diary, SignUpRequest, AccountEvent, Setting, PersonalAccessToken]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

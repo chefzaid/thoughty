@@ -8,7 +8,7 @@ const emptyRepository = () => ({
   query: jest.fn().mockResolvedValue([]),
 });
 
-/** Constructor order: 19 repositories, the time capsules service, seven more repositories, the account activity, then the weekly reflections. */
+/** Constructor order: 19 repositories, the time capsules service, seven more repositories, the account activity, the weekly reflections, then the access tokens. */
 function build(weeklyReflectionRepository: ReturnType<typeof emptyRepository>) {
   const timeCapsules = { reveal: jest.fn(async (rows: unknown[]) => rows) };
   const Service = UserDataExportService as unknown as new (...dependencies: unknown[]) => UserDataExportService;
@@ -18,6 +18,7 @@ function build(weeklyReflectionRepository: ReturnType<typeof emptyRepository>) {
     ...Array.from({ length: 7 }, emptyRepository),
     createAccountActivityMock(),
     weeklyReflectionRepository,
+    emptyRepository(),
   );
 }
 
