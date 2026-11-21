@@ -195,6 +195,8 @@ export function buildAuthenticatedRoutesProps({
       language: config.language,
       diaries: diariesState.diaries,
       onDiariesChanged: diariesState.fetchDiaries,
+      simpleMode: config.memoirSimpleMode === true,
+      onSimpleModeChange: (memoirSimpleMode: boolean) => saveConfig({ ...config, memoirSimpleMode }),
       t,
     },
     reviewRouteProps: {

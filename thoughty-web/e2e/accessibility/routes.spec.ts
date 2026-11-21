@@ -34,6 +34,7 @@ const AUTHENTICATED_ROUTES: Record<string, RouteContent> = {
   ],
   '/feed': (page) => [page.getByText('No public entries from the community yet.')],
   '/memoir': (page) => [page.getByRole('form', { name: 'Start your memoir' })],
+  '/memoir/simple': (page) => [page.getByText('Your memoir has not started yet. Start it from the full app.')],
   '/tags': (page) => [page.getByRole('textbox', { name: 'New tag' }), page.getByRole('heading', { name: 'Tag Organization' })],
   // Every section, including those that load their own data: achievements, two-factor, sessions,
   // life eras, the opt-in emails, the AI models and key, cloud storage, the plan and the access tokens

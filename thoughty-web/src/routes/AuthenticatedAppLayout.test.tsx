@@ -99,6 +99,23 @@ describe('AuthenticatedAppLayout', () => {
     expect(screen.getByRole('dialog', { name: 'quickCapture' })).toBeInTheDocument();
   });
 
+  it('shows the simple memoir screen alone: no menu, quick capture box or footer', () => {
+    const quickCapture = {
+      isOpen: true, text: '', setText: vi.fn(), saving: false, error: '',
+      open: vi.fn(), close: vi.fn(), save: vi.fn(), openInFull: vi.fn(),
+    };
+    render(
+      <AuthenticatedAppLayout {...defaultProps} currentView="memoirSimple" quickCapture={quickCapture}>
+        <h1>What was home like?</h1>
+      </AuthenticatedAppLayout>,
+    );
+
+    expect(screen.getByRole('main')).toHaveTextContent('What was home like?');
+    expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByRole('contentinfo')).not.toBeInTheDocument();
+  });
+
   it('blurs entry text from any view with the privacy blur button or shortcut, until the app goes away', () => {
     const { unmount } = render(
       <AuthenticatedAppLayout {...defaultProps}>

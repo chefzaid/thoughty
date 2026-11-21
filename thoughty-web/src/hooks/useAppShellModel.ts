@@ -50,6 +50,8 @@ interface AppShellModel {
   authLoading: boolean;
   isAuthenticated: boolean;
   currentView: ViewType | null;
+  /** Where a signed-in writer lands (the journal, or simple memoir mode); null until the settings are read. */
+  landingView: ViewType | null;
   publicView: PublicViewType | null;
   authPageProps: AuthPageProps;
   aboutPageProps: AboutPageProps;
@@ -342,6 +344,9 @@ export function useAppShellModel(): AppShellModel {
     updateConfig,
   });
 
+  let landingView: ViewType | null = null;
+  if (configLoaded) landingView = config.memoirSimpleMode === true ? 'memoirSimple' : 'journal';
+
   const {
     introPageProps,
     aboutPageProps,
@@ -357,6 +362,7 @@ export function useAppShellModel(): AppShellModel {
   } = buildPublicShellProps({
     configTheme: config.theme,
     isAuthenticated,
+    landingView,
     publicView,
     routingState,
     t,
@@ -419,6 +425,7 @@ export function useAppShellModel(): AppShellModel {
     authLoading,
     isAuthenticated,
     currentView,
+    landingView,
     publicView,
     authPageProps,
     aboutPageProps,

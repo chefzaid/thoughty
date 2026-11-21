@@ -116,6 +116,10 @@
   gap: 0.85rem;
 }
 
+.memoir-simple-mode {
+  margin-top: 0.75rem;
+}
+
 .memoir-settings .memoir-form {
   max-width: 40rem;
 }

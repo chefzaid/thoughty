@@ -103,6 +103,8 @@ function AuthenticatedAppLayout({
     void lockApi.lock().finally(onLogout);
   };
   const isLight = config.theme === 'light';
+  // Simple memoir mode shows one question and nothing else of the app: no menu, quick capture or footer
+  const chromeless = currentView === 'memoirSimple';
   const toastClassName = `pointer-events-auto rounded-xl border px-4 py-3 shadow-xl backdrop-blur ${isLight ? 'border-amber-200 bg-white/95 text-gray-900' : 'border-amber-400/30 bg-gray-800/95 text-gray-100'}`;
   const toastTextClassName = isLight ? 'text-gray-600' : 'text-gray-300';
 
@@ -121,7 +123,7 @@ function AuthenticatedAppLayout({
             {t('skipToContent')}
           </a>
           <div className="max-w-7xl mx-auto">
-            <NavMenu
+            {!chromeless && <NavMenu
               currentView={currentView}
               onViewChange={onViewChange}
               theme={config.theme ?? 'dark'}
@@ -132,9 +134,9 @@ function AuthenticatedAppLayout({
               onLogout={logOut}
               privacyBlur={privacyBlur}
               quickCapture={quickCapture}
-            />
+            />}
 
-            {quickCapture && <QuickCaptureDialog quickCapture={quickCapture} theme={config.theme} t={t} />}
+            {quickCapture && !chromeless && <QuickCaptureDialog quickCapture={quickCapture} theme={config.theme} t={t} />}
 
             <ConfirmModal
               isOpen={deleteModalOpen}
@@ -185,7 +187,7 @@ function AuthenticatedAppLayout({
               {children}
             </main>
 
-            <Footer t={t} theme={config.theme ?? 'dark'} />
+            {!chromeless && <Footer t={t} theme={config.theme ?? 'dark'} />}
           </div>
         </div>
       </ContentLockContext.Provider>

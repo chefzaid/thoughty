@@ -5,15 +5,17 @@ import { describe, expect, it, vi } from 'vitest';
 import MemoirRoute from './MemoirRoute';
 
 vi.mock('../components/MemoirPage/MemoirPage', () => ({
-  default: ({ initialQuestionId, onOpenEntry, onOpenBook }: {
+  default: ({ initialQuestionId, onOpenEntry, onOpenBook, onOpenSimpleMode }: {
     initialQuestionId: string | null;
     onOpenEntry: (entryId: number) => void;
     onOpenBook: (diaryId: number) => void;
+    onOpenSimpleMode: () => void;
   }) => (
     <>
       <p>{`question ${initialQuestionId ?? 'none'}`}</p>
       <button type="button" onClick={() => onOpenEntry(81)}>open entry</button>
       <button type="button" onClick={() => onOpenBook(6)}>open book</button>
+      <button type="button" onClick={onOpenSimpleMode}>open simple mode</button>
     </>
   ),
 }));
@@ -23,13 +25,13 @@ function LocationProbe() {
   return <output>{`${location.pathname}${location.search}`}</output>;
 }
 
-function renderRoute(initialEntry: string) {
+function renderRoute(initialEntry: string, simpleMode = false) {
   render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
         <Route
           path="*"
-          element={<><MemoirRoute t={(key) => key} diaries={[]} onDiariesChanged={vi.fn()} /><LocationProbe /></>}
+          element={<><MemoirRoute t={(key) => key} diaries={[]} onDiariesChanged={vi.fn()} simpleMode={simpleMode} /><LocationProbe /></>}
         />
       </Routes>
     </MemoryRouter>,
@@ -51,5 +53,21 @@ describe('MemoirRoute', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'open book' }));
     expect(screen.getByRole('status')).toHaveTextContent('/import-export?diary=6&section=book&format=txt');
+  });
+
+  it('opens the simple screen from the page', () => {
+    renderRoute('/memoir');
+    fireEvent.click(screen.getByRole('button', { name: 'open simple mode' }));
+    expect(screen.getByRole('status')).toHaveTextContent('/memoir/simple');
+  });
+
+  it('sends the weekly email link to the simple screen in simple mode', () => {
+    renderRoute('/memoir?question=places-journey', true);
+    expect(screen.getByRole('status')).toHaveTextContent('/memoir/simple?question=places-journey');
+  });
+
+  it('keeps the full page in simple mode when no question is asked', () => {
+    renderRoute('/memoir', true);
+    expect(screen.getByText('question none')).toBeInTheDocument();
   });
 });

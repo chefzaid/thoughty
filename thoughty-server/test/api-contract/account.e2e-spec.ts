@@ -36,6 +36,7 @@ describeContract('account', (context) => {
         streakCard: true,
         quietMode: true,
         comfortReads: false,
+        memoirSimpleMode: true,
         readDates: false,
         promptCardsDrawn: 'gratitude-3,smallJoys-12',
         fontFamily: 'legible',
@@ -54,6 +55,7 @@ describeContract('account', (context) => {
       streakCard: 'true',
       quietMode: 'true',
       comfortReads: 'false',
+      memoirSimpleMode: 'true',
       promptCardsDrawn: 'gratitude-3,smallJoys-12',
       fontFamily: 'legible',
       lineSpacing: 'loose',
@@ -61,7 +63,7 @@ describeContract('account', (context) => {
     });
     const other = await call('GET /api/config', { as: bob, status: 200 });
     // Quiet mode is off until the writer turns it on
-    expect(other.body).toMatchObject({ theme: 'dark', language: 'en', quietMode: 'false' });
+    expect(other.body).toMatchObject({ theme: 'dark', language: 'en', quietMode: 'false', memoirSimpleMode: 'false' });
     // Reading comfort keeps today's look until the writer picks a step
     expect(other.body).toMatchObject({ fontFamily: 'system', lineSpacing: 'normal', letterSpacing: 'normal' });
     for (const json of [{ lineSpacing: '2.5' }, { lineSpacing: 2 }, { letterSpacing: '0.12em' }, { fontFamily: 'comic' }]) {

@@ -164,6 +164,8 @@ export interface MockAppState {
     quietMode?: boolean;
     /** The comfort reads offer after a very low mood; offered unless false. */
     comfortReads?: boolean;
+    /** Simple memoir mode: signing in and the weekly email link open the simple screen; off unless true. */
+    memoirSimpleMode?: boolean;
     defaultVisibility?: "public" | "private";
     defaultCommentPolicy?: "everyone" | "followers" | "closed";
     ttsVoiceUri?: string;

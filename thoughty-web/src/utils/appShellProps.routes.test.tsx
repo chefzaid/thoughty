@@ -112,6 +112,17 @@ describe('appShellProps', () => {
     expect(fetchDiaries).toHaveBeenCalled();
   });
 
+  it('gives the memoir simple mode and saves it with the other settings', async () => {
+    const saveConfig = vi.fn().mockResolvedValue(true);
+    const config = { theme: 'dark' as const, name: 'Zaid', tagMetadata: '{}', memoirSimpleMode: true };
+    const { memoirRouteProps } = buildAuthenticatedRoutesProps(createRoutesParams({ config, saveConfig }));
+
+    expect(memoirRouteProps.simpleMode).toBe(true);
+    await expect(memoirRouteProps.onSimpleModeChange?.(false)).resolves.toBe(true);
+    expect(saveConfig).toHaveBeenCalledWith({ ...config, memoirSimpleMode: false });
+    expect(buildAuthenticatedRoutesProps(createRoutesParams()).memoirRouteProps.simpleMode).toBe(false);
+  });
+
   it('wires profile, tag manager, diary management, and import-export callbacks', async () => {
     const saveConfig = vi.fn().mockResolvedValue(true);
     const downloadUserData = vi.fn().mockResolvedValue(true);

@@ -18,6 +18,7 @@ export class UserConfigDto extends OmitType(UpdateConfigDto, [
   'streakCard',
   'quietMode',
   'comfortReads',
+  'memoirSimpleMode',
 ] as const) {
   @NumberText('Font size in pixels')
   fontSize?: string;
@@ -42,6 +43,9 @@ export class UserConfigDto extends OmitType(UpdateConfigDto, [
 
   @BooleanText('Offer a few favorite or gratitude entries to reread after a very low mood; offered unless false')
   comfortReads?: string;
+
+  @BooleanText('Simple memoir mode: signing in and the weekly question link open one large question with a record button; off unless true')
+  memoirSimpleMode?: string;
 }
 
 /** The runtime feature flags by name: `ai`, `bookConverter`, `cloudSync`, `publicSharing`, and any the provider adds; a missing one is on. */

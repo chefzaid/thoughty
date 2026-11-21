@@ -10,6 +10,7 @@ import MemoirRoute from './MemoirRoute';
 import PeopleRoute from './PeopleRoute';
 import ProfileRoute from './ProfileRoute';
 import RecycleBinRoute from './RecycleBinRoute';
+import SimpleMemoirRoute from './SimpleMemoirRoute';
 import ReviewRoute from './ReviewRoute';
 import StatsRoute from './StatsRoute';
 import TagManagerRoute from './TagManagerRoute';
@@ -53,6 +54,7 @@ function AuthenticatedRoutes({
       <Route path={getPathForView('diaries')} element={<DiariesRoute {...diariesRouteProps} />} />
       <Route path={getPathForView('feed')} element={<FeedRoute {...feedRouteProps} />} />
       <Route path={getPathForView('memoir')} element={<MemoirRoute {...memoirRouteProps} />} />
+      <Route path={getPathForView('memoirSimple')} element={<SimpleMemoirRoute {...memoirRouteProps} />} />
       <Route path={getPathForView('stats')} element={<StatsRoute {...statsRouteProps} />} />
       <Route path={getPathForView('review')} element={<ReviewRoute {...reviewRouteProps} />} />
       <Route path={getPathForView('recycleBin')} element={<RecycleBinRoute {...recycleBinRouteProps} />} />

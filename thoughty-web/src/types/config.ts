@@ -30,6 +30,8 @@ export interface Config {
   quietMode?: boolean;
   /** After a very low mood, offer favorite or gratitude entries to reread; offered unless false. */
   comfortReads?: boolean;
+  /** Simple memoir mode: signing in and the weekly question link open one large question with a record button; off unless true. */
+  memoirSimpleMode?: boolean;
   openRouterModel?: string;
   openRouterSummaryModel?: string;
   openRouterPromptModel?: string;

@@ -1,11 +1,11 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 
-import { useAuthenticatedService } from '../../hooks/useAuthenticatedService';
-import { createAttachmentsService, type AnswerMemoirRequest, type LifeEra } from '../../services/api';
+import type { AnswerMemoirRequest, LifeEra } from '../../services/api';
 import type { TranslationFunction } from '../../types';
 import { EMPTY_CAPTIONS_TRACK_URL } from '../../utils/attachments';
 import type { Language } from '../../utils/translations';
 import MemoirEraField from './MemoirEraField';
+import { useRecordingUpload } from './useRecordingUpload';
 import { formatRecordingTime, isVoiceRecordingSupported, useVoiceRecorder } from './useVoiceRecorder';
 import './MemoirAnswerForm.css';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
@@ -37,7 +37,7 @@ interface MemoirAnswerFormProps {
 }
 
 function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras = [], answerDate = '', language = 'en', t }: MemoirAnswerFormProps) {
-  const attachmentsService = useAuthenticatedService(createAttachmentsService);
+  const { upload, attachmentsService } = useRecordingUpload();
   const recorder = useVoiceRecorder();
   const [text, setText] = useState('');
   const [eraId, setEraId] = useState<number | null>(null);
@@ -45,21 +45,11 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
   const [busy, setBusy] = useState<'transcribing' | 'saving' | null>(null);
   // Transcribing a recording is AI, left out while AI is switched off
   const aiOn = useFeatureFlag('ai');
-  const uploaded = useRef<{ file: File; id: number } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const fieldId = `memoir-answer-${questionId}`;
   const recordingAvailable = isVoiceRecordingSupported() && recorder.status !== 'unavailable';
 
-  /** Uploads the current recording once, however many times it is transcribed or saved. */
-  const uploadRecording = async (): Promise<number | null> => {
-    const recording = recorder.recording;
-    if (!recording) return null;
-    if (uploaded.current?.file === recording.file) return uploaded.current.id;
-    const attachment = await attachmentsService.uploadAttachment(recording.file);
-    if (!attachment) return null;
-    uploaded.current = { file: recording.file, id: attachment.id };
-    return attachment.id;
-  };
+  const uploadRecording = async (): Promise<number | null> => (recorder.recording ? upload(recorder.recording.file) : null);
 
   const handleFile = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

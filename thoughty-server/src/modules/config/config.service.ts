@@ -34,6 +34,7 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   letterSpacing: 'normal',
   highContrast: 'false',
   quietMode: 'false',
+  memoirSimpleMode: 'false',
   maxPinnedEntries: '3',
   defaultVisibility: 'private',
   defaultCommentPolicy: 'everyone',

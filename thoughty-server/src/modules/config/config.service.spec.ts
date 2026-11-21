@@ -45,6 +45,7 @@ describe('ConfigService', () => {
         letterSpacing: 'normal',
         highContrast: 'false',
         quietMode: 'false',
+        memoirSimpleMode: 'false',
         maxPinnedEntries: '3',
         defaultVisibility: 'private',
         defaultCommentPolicy: 'everyone',
@@ -73,6 +74,7 @@ describe('ConfigService', () => {
       expect(result.language).toBe('en'); // default
       expect(result.autoTagMaxTags).toBe('0');
       expect(result.quietMode).toBe('false'); // off by default
+      expect(result.memoirSimpleMode).toBe('false'); // off by default
     });
 
     it('should override all defaults when all settings exist', async () => {
@@ -85,6 +87,7 @@ describe('ConfigService', () => {
         { key: 'letterSpacing', value: 'wide' },
         { key: 'highContrast', value: 'true' },
         { key: 'quietMode', value: 'true' },
+        { key: 'memoirSimpleMode', value: 'true' },
         { key: 'defaultVisibility', value: 'public' },
         { key: 'defaultCommentPolicy', value: 'followers' },
         { key: 'language', value: 'fr' },
@@ -102,6 +105,7 @@ describe('ConfigService', () => {
         letterSpacing: 'wide',
         highContrast: 'true',
         quietMode: 'true',
+        memoirSimpleMode: 'true',
         maxPinnedEntries: '3',
         defaultVisibility: 'public',
         defaultCommentPolicy: 'followers',

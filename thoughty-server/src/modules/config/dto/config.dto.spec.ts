@@ -39,6 +39,7 @@ describe('UpdateConfigDto', () => {
       streakCard: false,
       quietMode: true,
       comfortReads: false,
+      memoirSimpleMode: true,
       openRouterModel: 'anthropic/claude-sonnet-4:beta',
       openRouterTagModel: '',
       openRouterWritingModel: '',
@@ -63,6 +64,7 @@ describe('UpdateConfigDto', () => {
       streakCard: 'false',
       quietMode: 'true',
       comfortReads: 'false',
+      memoirSimpleMode: 'true',
     });
   });
 
@@ -109,6 +111,7 @@ describe('UpdateConfigDto', () => {
     ['quietMode', 'on'],
     ['quietMode', 1],
     ['comfortReads', 'no'],
+    ['memoirSimpleMode', 'yes'],
     ['fontColor', 'red'],
     ['fontSize', '1e9'],
     ['fontFamily', 'comic'],

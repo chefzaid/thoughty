@@ -11,7 +11,7 @@ import type IntroPage from '../components/IntroPage/IntroPage';
 import type LegalPage from '../components/LegalPage/LegalPage';
 import type UnsubscribePage from '../components/UnsubscribePage/UnsubscribePage';
 import type VerifyEmailPage from '../components/VerifyEmailPage/VerifyEmailPage';
-import type { PublicViewType, TranslationFunction } from '../types';
+import type { PublicViewType, TranslationFunction, ViewType } from '../types';
 
 export type IntroPageProps = ComponentProps<typeof IntroPage>;
 export type AboutPageProps = ComponentProps<typeof AboutPage>;
@@ -30,6 +30,8 @@ type AppShellRoutingState = ReturnType<typeof import('../hooks/useAppShellRoutin
 interface BuildPublicShellPropsParams {
   configTheme?: 'light' | 'dark';
   isAuthenticated?: boolean;
+  /** Where a signed-in writer goes from the presentation page; the journal while the settings load. */
+  landingView?: ViewType | null;
   publicView: PublicViewType | null;
   routingState: Pick<AppShellRoutingState, 'handleAuthSuccess' | 'handlePublicViewChange' | 'handleViewChange'>;
   t: TranslationFunction;
@@ -38,6 +40,7 @@ interface BuildPublicShellPropsParams {
 export function buildPublicShellProps({
   configTheme,
   isAuthenticated,
+  landingView,
   publicView,
   routingState,
   t,
@@ -48,7 +51,7 @@ export function buildPublicShellProps({
     theme,
     t,
     isAuthenticated,
-    onOpenJournal: () => routingState.handleViewChange('journal'),
+    onOpenJournal: () => routingState.handleViewChange(landingView ?? 'journal'),
     onSignIn: () => routingState.handlePublicViewChange('login'),
     onSignUp: () => routingState.handlePublicViewChange('register'),
   };

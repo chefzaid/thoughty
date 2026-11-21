@@ -487,7 +487,7 @@ The market splits three ways, and no product spans all of them. Everyday journal
 ### Memoir for Older Writers
 
 - [ ] Phone answering: the writer calls a number or receives a scheduled call, hears the question and records the answer, which becomes a transcribed entry with the recording attached. Voice-first is the main reason families choose Remento and Storyworth's call-in option.
-- [ ] Simple memoir mode: a large-text, single-question screen with one record button and no journal chrome, usable by someone who will never open the rest of the app.
+- [x] Simple memoir mode: `/memoir/simple` shows one question in large text and one large **Record my answer** button (stop, listen back, **Save my answer** or **Record again**; a large text field where the browser cannot record or the microphone is refused), without the menu, quick capture or footer, then thanks the writer with the day the next question comes, with **Open the full app** as the only way out. The Memoir page's **Simple mode** card opens it and sets `memoirSimpleMode` (off by default), which makes signing in, **Open your journal** and the weekly email's link land there; stopping the memoir turns it off. English and French.
 - [ ] Custom questions from the gift giver or family, mixed into the weekly schedule, and a larger question bank by theme (migration, careers, faith, war and history, parenthood).
 - [ ] Photo prompts: upload an old photo and answer "what is happening here?", with the photo placed next to the answer in the book.
 - [ ] Voice in the printed book: a QR code beside each spoken answer that plays the original recording from a private, long-lived link, tied to the legacy settings.

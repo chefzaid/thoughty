@@ -37,6 +37,7 @@ function AppShell() {
     authLoading,
     isAuthenticated,
     currentView,
+    landingView,
     publicView,
     authPageProps,
     aboutPageProps,
@@ -106,8 +107,9 @@ function AppShell() {
     return renderPublic(renderLazy(<AuthPage {...authPageProps} />), authPageProps.t);
   }
 
+  // Signing in lands in the journal, or in simple memoir mode once the settings say so
   if (!currentView) {
-    return <Navigate to={getPathForView('journal')} replace />;
+    return landingView ? <Navigate to={getPathForView(landingView)} replace /> : <LoadingSpinner />;
   }
 
   return renderLazy(

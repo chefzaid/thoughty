@@ -4934,7 +4934,8 @@ export interface components {
          *       "readDates": "true",
          *       "streakCard": "true",
          *       "quietMode": "true",
-         *       "comfortReads": "true"
+         *       "comfortReads": "true",
+         *       "memoirSimpleMode": "true"
          *     }
          */
         UserConfigDto: {
@@ -5049,6 +5050,11 @@ export interface components {
              * @enum {string}
              */
             comfortReads?: "true" | "false";
+            /**
+             * @description Simple memoir mode: signing in and the weekly question link open one large question with a record button; off unless true
+             * @enum {string}
+             */
+            memoirSimpleMode?: "true" | "false";
         };
         /**
          * @example {
@@ -5074,6 +5080,7 @@ export interface components {
          *       "streakCard": "true",
          *       "quietMode": "true",
          *       "comfortReads": "true",
+         *       "memoirSimpleMode": "true",
          *       "openRouterModel": "example",
          *       "openRouterTagModel": "reflection",
          *       "openRouterWritingModel": "example",
@@ -5156,6 +5163,8 @@ export interface components {
             quietMode?: ("true" | "false") | boolean;
             /** @description Offer a few favorite or gratitude entries to reread after a very low mood; offered unless false */
             comfortReads?: ("true" | "false") | boolean;
+            /** @description Simple memoir mode: signing in and the weekly question link open one large question with a record button; off unless true */
+            memoirSimpleMode?: ("true" | "false") | boolean;
             /** @description OpenRouter model id, or empty for the default */
             openRouterModel?: string;
             /** @description OpenRouter model id, or empty for the default */
@@ -14962,7 +14971,8 @@ export interface operations {
                      *       "readDates": "true",
                      *       "streakCard": "true",
                      *       "quietMode": "true",
-                     *       "comfortReads": "true"
+                     *       "comfortReads": "true",
+                     *       "memoirSimpleMode": "true"
                      *     }
                      */
                     "application/json": components["schemas"]["UserConfigDto"];
@@ -15003,6 +15013,7 @@ export interface operations {
                  *       "streakCard": "true",
                  *       "quietMode": "true",
                  *       "comfortReads": "true",
+                 *       "memoirSimpleMode": "true",
                  *       "openRouterModel": "example",
                  *       "openRouterTagModel": "reflection",
                  *       "openRouterWritingModel": "example",

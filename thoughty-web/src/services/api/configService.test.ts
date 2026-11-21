@@ -36,10 +36,10 @@ describe('configService', () => {
     it('turns the API\'s true/false text into the on/off preferences the app reads', async () => {
       mockAuthFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ theme: 'light', maxPinnedEntries: '5', readDates: 'false', highContrast: 'true', streakCard: 'false', quietMode: 'true', comfortReads: 'false' }),
+        json: () => Promise.resolve({ theme: 'light', maxPinnedEntries: '5', readDates: 'false', highContrast: 'true', streakCard: 'false', quietMode: 'true', comfortReads: 'false', memoirSimpleMode: 'true' }),
       });
 
-      expect(await service.fetchConfig()).toEqual({ theme: 'light', maxPinnedEntries: '5', readDates: false, highContrast: true, streakCard: false, quietMode: true, comfortReads: false });
+      expect(await service.fetchConfig()).toEqual({ theme: 'light', maxPinnedEntries: '5', readDates: false, highContrast: true, streakCard: false, quietMode: true, comfortReads: false, memoirSimpleMode: true });
     });
 
     it('returns null when response is not ok', async () => {

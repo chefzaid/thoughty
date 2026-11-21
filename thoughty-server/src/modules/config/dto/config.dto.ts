@@ -135,6 +135,9 @@ export class UpdateConfigDto {
   @SettingChoice(BOOLEAN_TEXT, 'Offer a few favorite or gratitude entries to reread after a very low mood; offered unless false')
   comfortReads?: string;
 
+  @SettingChoice(BOOLEAN_TEXT, 'Simple memoir mode: signing in and the weekly question link open one large question with a record button; off unless true')
+  memoirSimpleMode?: string;
+
   @SettingText(MODEL_ID_MAX_LENGTH, MODEL_DESCRIPTION)
   openRouterModel?: string;
 
@@ -206,6 +209,7 @@ export const USER_CONFIG_KEYS: ReadonlySet<string> = new Set<keyof UpdateConfigD
   'streakCard',
   'quietMode',
   'comfortReads',
+  'memoirSimpleMode',
   'openRouterModel',
   'openRouterTagModel',
   'openRouterWritingModel',

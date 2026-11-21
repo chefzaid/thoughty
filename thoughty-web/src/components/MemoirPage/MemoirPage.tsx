@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { useTransientMessage } from '../../hooks/useTransientMessage';
-import type { AnswerMemoirRequest, MemoirChapter, StartMemoirRequest, UpdateMemoirRequest } from '../../services/api';
+import type { AnswerMemoirRequest, StartMemoirRequest, UpdateMemoirRequest } from '../../services/api';
 import type { Diary, TranslationFunction } from '../../types';
 import AutoDismiss from '../AutoDismiss/AutoDismiss';
 import PageHeader from '../PageHeader/PageHeader';
@@ -11,8 +11,10 @@ import MemoirIntro from './MemoirIntro';
 import MemoirProgress from './MemoirProgress';
 import MemoirQuestionCard, { type MemoirWeekAction } from './MemoirQuestionCard';
 import MemoirSettings from './MemoirSettings';
+import MemoirSimpleModeCard from './MemoirSimpleModeCard';
 import { resolveLanguage } from '../../utils/language';
 import { formatMemoirDay, localize, todayIn } from './memoirFormat';
+import { findQuestion, firstReturnDay } from './memoirQuestions';
 import { useMemoir } from './useMemoir';
 import { useLifeEraList } from '../LifeEras/useLifeEras';
 import './MemoirPage.css';
@@ -26,21 +28,12 @@ export interface MemoirPageProps {
   readonly onOpenEntry: (entryId: number) => void;
   readonly onOpenBook: (diaryId: number) => void;
   readonly onDiariesChanged: () => Promise<unknown> | void;
+  /** Simple mode: signing in and the weekly email open one large question with a record button. */
+  readonly simpleMode?: boolean;
+  /** Saves simple mode; false when it could not be saved. */
+  readonly onSimpleModeChange?: (enabled: boolean) => Promise<boolean>;
+  readonly onOpenSimpleMode?: () => void;
   readonly t: TranslationFunction;
-}
-
-function findQuestion(chapters: readonly MemoirChapter[], questionId: string | null) {
-  for (const chapter of chapters) {
-    const question = chapter.questions.find((candidate) => candidate.id === questionId);
-    if (question) return { chapter, question };
-  }
-  return null;
-}
-
-/** The first day a question set aside with "Not this week" comes back, among those still unanswered. */
-function firstReturnDay(chapters: readonly MemoirChapter[]): string | null {
-  const days = chapters.flatMap((chapter) => chapter.questions.map((question) => question.snoozedUntil)).filter((day) => day !== null);
-  return days.length > 0 ? days.reduce((first, day) => (day < first ? day : first)) : null;
 }
 
 function MemoirPage({
@@ -51,6 +44,9 @@ function MemoirPage({
   onOpenEntry,
   onOpenBook,
   onDiariesChanged,
+  simpleMode = false,
+  onSimpleModeChange,
+  onOpenSimpleMode,
   t,
 }: MemoirPageProps) {
   const language = resolveLanguage(rawLanguage);
@@ -81,7 +77,11 @@ function MemoirPage({
 
   const handleLeave = async () => {
     const result = await memoir.leave();
-    if (result.data) setActiveQuestionId(null);
+    if (result.data) {
+      setActiveQuestionId(null);
+      // With no memoir left, signing in goes back to the journal
+      if (simpleMode) void onSimpleModeChange?.(false);
+    }
     return Boolean(result.data);
   };
 
@@ -206,6 +206,10 @@ function MemoirPage({
             onLeave={handleLeave}
             t={t}
           />
+
+          {onSimpleModeChange && onOpenSimpleMode && (
+            <MemoirSimpleModeCard enabled={simpleMode} onChange={onSimpleModeChange} onOpen={onOpenSimpleMode} t={t} />
+          )}
         </>
       )}
 

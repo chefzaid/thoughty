@@ -1,6 +1,6 @@
 // Navigation and view types
 
-export type ViewType = 'journal' | 'feed' | 'memoir' | 'tags' | 'people' | 'tasks' | 'profile' | 'diaries' | 'stats' | 'review' | 'importExport' | 'recycleBin';
+export type ViewType = 'journal' | 'feed' | 'memoir' | 'memoirSimple' | 'tags' | 'people' | 'tasks' | 'profile' | 'diaries' | 'stats' | 'review' | 'importExport' | 'recycleBin';
 export type PublicViewType = 'intro' | 'login' | 'register' | 'completeSignUp' | 'resetPassword' | 'verifyEmail' | 'unsubscribe' | 'about' | 'privacy' | 'terms' | 'contact' | 'feedback' | 'blog';
 export type DiaryScopedViewType = 'journal' | 'diaries' | 'tasks' | 'stats' | 'importExport';
 export type DiaryReturnViewType = Exclude<DiaryScopedViewType, 'diaries'>;
@@ -31,6 +31,7 @@ export const VIEW_PATHS: Record<ViewType, string> = {
   journal: '/journal',
   feed: '/feed',
   memoir: '/memoir',
+  memoirSimple: '/memoir/simple',
   tags: '/tags',
   people: '/people',
   tasks: '/tasks',

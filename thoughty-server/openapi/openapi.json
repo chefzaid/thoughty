@@ -4644,7 +4644,8 @@
                   "readDates": "true",
                   "streakCard": "true",
                   "quietMode": "true",
-                  "comfortReads": "true"
+                  "comfortReads": "true",
+                  "memoirSimpleMode": "true"
                 }
               }
             }
@@ -4694,6 +4695,7 @@
                 "streakCard": "true",
                 "quietMode": "true",
                 "comfortReads": "true",
+                "memoirSimpleMode": "true",
                 "openRouterModel": "example",
                 "openRouterTagModel": "reflection",
                 "openRouterWritingModel": "example",
@@ -20474,6 +20476,14 @@
               "false"
             ],
             "description": "Offer a few favorite or gratitude entries to reread after a very low mood; offered unless false"
+          },
+          "memoirSimpleMode": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "description": "Simple memoir mode: signing in and the weekly question link open one large question with a record button; off unless true"
           }
         },
         "example": {
@@ -20512,7 +20522,8 @@
           "readDates": "true",
           "streakCard": "true",
           "quietMode": "true",
-          "comfortReads": "true"
+          "comfortReads": "true",
+          "memoirSimpleMode": "true"
         }
       },
       "UpdateConfigDto": {
@@ -20728,6 +20739,21 @@
             ],
             "description": "Offer a few favorite or gratitude entries to reread after a very low mood; offered unless false"
           },
+          "memoirSimpleMode": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "true",
+                  "false"
+                ]
+              },
+              {
+                "type": "boolean"
+              }
+            ],
+            "description": "Simple memoir mode: signing in and the weekly question link open one large question with a record button; off unless true"
+          },
           "openRouterModel": {
             "type": "string",
             "maxLength": 300,
@@ -20837,6 +20863,7 @@
           "streakCard": "true",
           "quietMode": "true",
           "comfortReads": "true",
+          "memoirSimpleMode": "true",
           "openRouterModel": "example",
           "openRouterTagModel": "reflection",
           "openRouterWritingModel": "example",
