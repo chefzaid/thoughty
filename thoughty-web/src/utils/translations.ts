@@ -9,6 +9,7 @@ import { moodTranslations, type MoodTranslationKey } from "./translations.mood";
 import { writingTimesTranslations, type WritingTimesTranslationKey } from "./translations.writingTimes";
 import { recordsTranslations, type RecordsTranslationKey } from "./translations.records";
 import { topWordsTranslations, type TopWordsTranslationKey } from "./translations.topWords";
+import { weeklyReflectionTranslations, type WeeklyReflectionTranslationKey } from "./translations.weeklyReflection";
 import { taskListTranslations, type TaskListTranslationKey } from "./translations.taskList";
 import { openTasksTranslations, type OpenTasksTranslationKey } from "./translations.openTasks";
 import { promptCardsTranslations, type PromptCardsTranslationKey } from "./translations.promptCards";
@@ -89,6 +90,7 @@ export type TranslationKey =
   | WritingTimesTranslationKey
   | RecordsTranslationKey
   | TopWordsTranslationKey
+  | WeeklyReflectionTranslationKey
   | TaskListTranslationKey
   | OpenTasksTranslationKey
   | PromptCardsTranslationKey
@@ -174,6 +176,7 @@ export const translations: Translations = {
     ...writingTimesTranslations.en,
     ...recordsTranslations.en,
     ...topWordsTranslations.en,
+    ...weeklyReflectionTranslations.en,
     ...taskListTranslations.en,
     ...openTasksTranslations.en,
     ...promptCardsTranslations.en,
@@ -252,6 +255,7 @@ export const translations: Translations = {
     ...writingTimesTranslations.fr,
     ...recordsTranslations.fr,
     ...topWordsTranslations.fr,
+    ...weeklyReflectionTranslations.fr,
     ...taskListTranslations.fr,
     ...openTasksTranslations.fr,
     ...promptCardsTranslations.fr,

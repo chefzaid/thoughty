@@ -18,6 +18,9 @@ vi.mock('../../contexts/AuthContext', () => {
     return { useAuth: () => ({ authFetch }) };
 });
 
+// The weekly reflection has its own spec
+vi.mock('./WeeklyReflectionSection', () => ({ default: () => null }));
+
 vi.mock('../EntryContentRenderer/EntryContentRenderer', () => ({
     default: ({ content }: { content: string }) => <div>{content}</div>,
 }));

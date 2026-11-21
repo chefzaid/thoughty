@@ -1,5 +1,5 @@
 import { describeContract } from './contract-suite';
-import { createEntry, defaultDiaryId } from './contract-fixtures';
+import { createEntry, defaultDiaryId, todayIso } from './contract-fixtures';
 
 describeContract('external', (context) => {
   const call: typeof context.client.call = (operation, options) =>
@@ -112,6 +112,26 @@ describeContract('external', (context) => {
     await call('POST /api/review/mood', {
       as: bob,
       json: { year: 2024, diaryId },
+      status: 404,
+      code: 'DIARY_NOT_FOUND',
+    });
+    await call('POST /api/review/week', {
+      as: alice,
+      json: { today: '2024-06-01', diaryId },
+      status: 400,
+      code: 'VALIDATION_FAILED',
+    });
+    await call('POST /api/review/week', { as: bob, json: { today: todayIso() }, status: 400, code: 'REVIEW_WEEK_EMPTY' });
+    await createEntry(context, alice, { text: 'A week worth reflecting on' });
+    await call('POST /api/review/week', {
+      as: alice,
+      json: { today: todayIso(), diaryId },
+      status: 503,
+      code: 'REVIEW_REFLECTION_UNAVAILABLE',
+    });
+    await call('POST /api/review/week', {
+      as: bob,
+      json: { today: todayIso(), diaryId },
       status: 404,
       code: 'DIARY_NOT_FOUND',
     });

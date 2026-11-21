@@ -92,6 +92,11 @@ describePostgres('PostgreSQL account purge', () => {
       `INSERT INTO year_review_moods (user_id, diary_id, year, months, summary, analyzed_entries) VALUES ($1, $2, 2026, '[]', 'Calm', 1)`,
       [userId, diaryId],
     );
+    await dataSource.query(
+      `INSERT INTO weekly_reflections (user_id, diary_id, week_start, week_end, themes, summary, question, analyzed_entries)
+       VALUES ($1, $2, '2026-11-15', '2026-11-21', '["garden"]', 'Calm', 'What next?', 1)`,
+      [userId, diaryId],
+    );
     await dataSource.query(`INSERT INTO saved_searches (user_id, name, diary_id, filters) VALUES ($1, 'Family', $2, '{}')`, [userId, diaryId]);
     await dataSource.query(`INSERT INTO life_eras (user_id, name, start_date) VALUES ($1, 'University', '2010-09-01')`, [userId]);
     await dataSource.query(`INSERT INTO composer_drafts (user_id, content) VALUES ($1, 'Half a thought')`, [userId]);

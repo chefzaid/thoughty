@@ -18,6 +18,7 @@ export * from './memoir-program.entity';
 export * from './memoir-answer.entity';
 export * from './memoir-snooze.entity';
 export * from './year-review-mood.entity';
+export * from './weekly-reflection.entity';
 export * from './saved-search.entity';
 export * from './life-era.entity';
 export * from './person.entity';

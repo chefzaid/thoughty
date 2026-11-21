@@ -3,6 +3,7 @@ import HighlightCard from './HighlightCard';
 import OpenedCapsulesSection from './OpenedCapsulesSection';
 import RereadRemindersSection from './RereadRemindersSection';
 import PersonDatesSection from './PersonDatesSection';
+import WeeklyReflectionSection from './WeeklyReflectionSection';
 import { writersToday } from '../../utils/entryDate';
 import OnThisDaySection from './OnThisDaySection';
 import type { Language } from '../../utils/translations';
@@ -141,13 +142,17 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
             );
         }
 
+        const weeklyReflection = <WeeklyReflectionSection diaryId={diaryId ?? null} language={language} t={t} />;
         if (!hasRandomEntry && !hasOnThisDay && openedCapsules.length === 0 && dueRereads.length === 0 && personDates.length === 0) {
             return (
-                <div className="thought-of-day-empty">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                    <p>{t('noHighlights')}</p>
+                <div className="thought-of-day-content">
+                    <div className="thought-of-day-empty">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                            <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                        <p>{t('noHighlights')}</p>
+                    </div>
+                    {weeklyReflection}
                 </div>
             );
         }
@@ -183,6 +188,8 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
                         t={t}
                     />
                 )}
+                {/* About the days just written, so after what is due today and before the entries to rediscover */}
+                {weeklyReflection}
                 {hasRandomEntry && randomEntry && (
                     <div className="highlight-section random-thought">
                         <h3 className="section-title">

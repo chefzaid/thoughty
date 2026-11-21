@@ -26,6 +26,7 @@ erDiagram
     User ||--o{ MemoirAnswer : writes
     MemoirProgram ||--o{ MemoirSnooze : "sets aside"
     User ||--o{ YearReviewMood : keeps
+    User ||--o{ WeeklyReflection : keeps
     User ||--o{ SavedSearch : saves
     User ||--o{ LifeEra : names
     User ||--o{ Person : mentions
@@ -40,6 +41,7 @@ erDiagram
     Diary ||--o{ BookVersion : scopes
     Diary ||--o{ MemoirProgram : collects
     Diary ||--o{ YearReviewMood : scopes
+    Diary ||--o{ WeeklyReflection : scopes
     Diary ||--o{ SavedSearch : scopes
     Diary ||--o{ OnThisDayEmail : scopes
     Diary ||--o{ MonthlyRecapEmail : scopes
@@ -77,6 +79,7 @@ Every table except `users` and `sign_up_requests` (sign-ups that have no account
 | `MemoirAnswer` | Deleted with the user or the entry. Kept when the memoir is stopped. While the entry is in the recycle bin the question counts as unanswered; answering it again points the row at the new entry. |
 | `BookVersion` | Deleted with the user. A diary's journal versions (`diary:<id>`) go with the diary (`ON DELETE CASCADE`); the all-diaries history (`all`) stays. A saved search's versions (`search:<id>`) are deleted with the saved search, in the same transaction, after its delete confirmation says how many go. Hand-picked versions (`picked`) stay listed and downloadable when their entries are deleted; only a new version from the same picks is refused (`400 BOOK_PICKED_ENTRIES_UNAVAILABLE`) until the missing picks are removed. |
 | `YearReviewMood` | Deleted with the user or their diary. |
+| `WeeklyReflection` | Deleted with the user or their diary. |
 | `SavedSearch` | Deleted with the user, and with it the book versions saved from it. Deleting its diary keeps the search, its book versions, and widens it to all diaries (`SET NULL`). |
 | `LifeEra` | Deleted with the user. Deleting one leaves entries untouched and sets `eraId` to null in the writer's saved searches filtered by it, in the same transaction, so they cover every date. |
 | `Person`, `PersonHandle`, `EntryPerson` | Deleted with the user. An entry's links (`entry_people`) are rebuilt from its text on every save and go with the entry when it is purged; they stay while it is in the recycle bin, which only counts leave out. Deleting a person deletes their handles and links, keeps the text, and sets `personId` to null in saved searches filtered by them; merging moves the duplicate's handles and links to the person kept and points those saved searches at them. |
@@ -315,6 +318,7 @@ People are the writer's own records of someone they mention with `@handle` in an
 - **Time capsules.** `entries.sealed_until` (`TIMESTAMPTZ`) is set while an entry is a sealed capsule and is null otherwise; `chk_entries_sealed_private` keeps such an entry private. `time_capsules` holds one row per capsule (`entry_id` unique, cascading with the entry, `user_id` with the account): the local day `opens_on`, `open_hour` (0 to 23, `chk_time_capsules_hour`), the IANA `time_zone`, the instant `open_at`, `created_at` (when it was sealed), `opened_at`, and while sealed the entry's `sealed_title`, `sealed_content`, `sealed_tags`, `sealed_mood` and `sealed_feelings`, which the entry row does not hold. `chk_time_capsules_sealed_copy` ties the copy to the state: `sealed_content` is set exactly while `opened_at` is null. Opening moves the copy back into the entry (keeping tags given since after the sealed ones), relinks its mentions, clears the copy and sets `opened_at`; the row stays as the record Highlights reads for seven days. `idx_time_capsules_due` (on `open_at` where `opened_at` is null) feeds the worker and `idx_time_capsules_user_opened` Highlights. Purging the entry (recycle bin) or the account deletes the capsule; rolling the migration back moves still-sealed copies back into their entries first.
 - **Reread reminders.** `entries.reread_on` (`DATE`, migration `1787529600000-reread-reminders`) is the writer's own day on which they asked to reread the entry, null without a reminder: one per entry, so it lives on the entry row and goes with it (recycle bin included, where it waits hidden; purge and account deletion remove it with the row). `chk_entries_reread_open` keeps it off sealed time capsules, and the partial index `idx_entries_user_reread_on (user_id, reread_on) WHERE reread_on IS NOT NULL` finds the due ones for Highlights. Setting or clearing it moves the entry list version (the trigger fires on every entries update), so cached journal lists refresh. It is part of the data download (`rereadOn`).
 - **Year in review.** Everything is computed from entries on request except the AI mood arc. `YearReviewMood` keeps the latest reading per scope (diary null for all diaries): one `{month, mood, valence}` item per month in JSONB (valence -2 to 2), a summary, and the number of entries read. Reading again replaces it in one transaction.
+- **Weekly reflection.** `WeeklyReflection` (`weekly_reflections`) keeps the latest AI reflection per scope (diary null for all diaries, one row per `user_id` and `COALESCE(diary_id, 0)`): the seven days it read (`week_start`, `week_end`, the writer's day it was asked on, checked to be six days apart), one to four themes in JSONB, a summary, the question for the week ahead and the number of entries read. Asking again replaces it in one transaction. `GET /api/review/week` returns it only while its `week_end` is one of the seven days ending on the writer's `today`.
 
 ## Schema Migrations
 

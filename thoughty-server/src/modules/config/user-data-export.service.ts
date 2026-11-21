@@ -17,6 +17,7 @@ import {
   MonthlyRecapEmail,
   type OptInEmailSetting,
   YearReviewMood,
+  WeeklyReflection,
   SavedSearch,
   LifeEra,
   Person,
@@ -110,6 +111,8 @@ export class UserDataExportService {
     @InjectRepository(UserBlock)
     private readonly blockRepository: Repository<UserBlock>,
     private readonly accountActivity: AccountActivityService,
+    @InjectRepository(WeeklyReflection)
+    private readonly weeklyReflectionRepository: Repository<WeeklyReflection>,
   ) {}
 
   /**
@@ -120,7 +123,7 @@ export class UserDataExportService {
     if (!isContentUnlocked(userId) && (await holdsLockedContent(this.entryRepository, userId))) {
       throw apiError(ContentLockedException, 'CONTENT_LOCKED');
     }
-    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people, onThisDayEmail, monthlyRecapEmail, capsules, shareLinks, composerDraft, accountEvents, newBrowserEmail] = await Promise.all([
+    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people, onThisDayEmail, monthlyRecapEmail, capsules, shareLinks, composerDraft, accountEvents, newBrowserEmail, weeklyReflections] = await Promise.all([
       this.userRepository.findOne({ where: { id: userId } }),
       this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
       // Entries in the recycle bin are still personal data until they are removed for good, and sealed
@@ -145,6 +148,7 @@ export class UserDataExportService {
       this.composerDraftRepository.findOne({ where: { userId } }),
       this.accountActivity.listForDownload(userId),
       this.accountActivity.newBrowserEmailEnabled(userId),
+      this.weeklyReflectionRepository.find({ where: { userId }, order: { weekEnd: 'ASC', id: 'ASC' } }),
     ]);
 
     const safeUser = user
@@ -241,6 +245,16 @@ export class UserDataExportService {
         summary: mood.summary,
         analyzedEntries: mood.analyzedEntries,
         generatedAt: mood.createdAt,
+      })),
+      weeklyReflections: weeklyReflections.map((reflection) => ({
+        diaryId: reflection.diaryId,
+        weekStart: reflection.weekStart,
+        weekEnd: reflection.weekEnd,
+        themes: reflection.themes,
+        summary: reflection.summary,
+        question: reflection.question,
+        analyzedEntries: reflection.analyzedEntries,
+        generatedAt: reflection.createdAt,
       })),
       savedSearches: savedSearches.map((saved) => ({
         name: saved.name,

@@ -14212,6 +14212,189 @@
         ]
       }
     },
+    "/api/review/week": {
+      "get": {
+        "operationId": "ReviewController_getWeek",
+        "parameters": [
+          {
+            "name": "today",
+            "required": true,
+            "in": "query",
+            "description": "The writer’s own day (the UTC day or the one before or after it); the week is that day and the six before it",
+            "schema": {
+              "format": "date",
+              "example": "2026-11-21",
+              "type": "string"
+            }
+          },
+          {
+            "name": "diaryId",
+            "required": false,
+            "in": "query",
+            "description": "Reflect on one diary instead of all of them",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The week and its saved reflection, if any",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeeklyReflectionStateDto"
+                },
+                "example": {
+                  "weekStart": "2026-11-15",
+                  "weekEnd": "2026-11-21",
+                  "entries": 5,
+                  "reflection": {
+                    "weekStart": "2026-11-15",
+                    "weekEnd": "2026-11-21",
+                    "themes": [
+                      "garden",
+                      "tired evenings"
+                    ],
+                    "summary": "You found calm in the garden despite long days at work.",
+                    "question": "What would make one evening this week feel like your own?",
+                    "analyzedEntries": 5,
+                    "generatedAt": "2026-06-24T10:00:00.000Z"
+                  },
+                  "aiAvailable": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Diary not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Diary not found",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The past seven days on the writer’s clock: how many entries a weekly reflection would read, and the one saved for them",
+        "tags": [
+          "Year in review"
+        ]
+      },
+      "post": {
+        "operationId": "ReviewController_reflectOnWeek",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WeeklyReflectionRequestDto"
+              },
+              "example": {
+                "today": "2026-11-21",
+                "diaryId": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The reflection, saved for this diary scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeeklyReflectionResponseDto"
+                },
+                "example": {
+                  "reflection": {
+                    "weekStart": "2026-11-15",
+                    "weekEnd": "2026-11-21",
+                    "themes": [
+                      "garden",
+                      "tired evenings"
+                    ],
+                    "summary": "You found calm in the garden despite long days at work.",
+                    "question": "What would make one evening this week feel like your own?",
+                    "analyzedEntries": 5,
+                    "generatedAt": "2026-06-24T10:00:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No entries to read in those seven days",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "No entries to read in those seven days",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Diary not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Diary not found",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server\n\nAI is turned off (FEATURE_DISABLED), not available, or could not read the week",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server\n\nAI is turned off (FEATURE_DISABLED), not available, or could not read the week",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reflect on the past seven days with AI: recurring themes, a short summary and one question for the week ahead, kept until asked again",
+        "tags": [
+          "Year in review"
+        ]
+      }
+    },
     "/api/recycle-bin": {
       "get": {
         "operationId": "RecycleBinController_list",
@@ -27353,6 +27536,180 @@
           }
         }
       },
+      "WeeklyReflectionDto": {
+        "type": "object",
+        "properties": {
+          "weekStart": {
+            "type": "string",
+            "example": "2026-11-15",
+            "format": "date",
+            "description": "The first of the seven days read"
+          },
+          "weekEnd": {
+            "type": "string",
+            "example": "2026-11-21",
+            "format": "date",
+            "description": "The writer’s day the reflection was asked on, the last of the seven"
+          },
+          "themes": {
+            "example": [
+              "garden",
+              "tired evenings"
+            ],
+            "description": "One to four themes that came back, the most present first",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "summary": {
+            "type": "string",
+            "example": "You found calm in the garden despite long days at work."
+          },
+          "question": {
+            "type": "string",
+            "example": "What would make one evening this week feel like your own?",
+            "description": "One question for the week ahead"
+          },
+          "analyzedEntries": {
+            "type": "number",
+            "example": 5,
+            "description": "How many entries were read"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "weekStart",
+          "weekEnd",
+          "themes",
+          "summary",
+          "question",
+          "analyzedEntries",
+          "generatedAt"
+        ],
+        "example": {
+          "weekStart": "2026-11-15",
+          "weekEnd": "2026-11-21",
+          "themes": [
+            "garden",
+            "tired evenings"
+          ],
+          "summary": "You found calm in the garden despite long days at work.",
+          "question": "What would make one evening this week feel like your own?",
+          "analyzedEntries": 5,
+          "generatedAt": "2026-06-24T10:00:00.000Z"
+        }
+      },
+      "WeeklyReflectionStateDto": {
+        "type": "object",
+        "properties": {
+          "weekStart": {
+            "type": "string",
+            "example": "2026-11-15",
+            "format": "date",
+            "description": "The first of the seven days ending on `today`"
+          },
+          "weekEnd": {
+            "type": "string",
+            "example": "2026-11-21",
+            "format": "date"
+          },
+          "entries": {
+            "type": "number",
+            "example": 5,
+            "description": "The entries of those seven days a reflection can read (with words, not archived, not locked, outside the recycle bin); it reads up to 21 of them, spread across the week"
+          },
+          "reflection": {
+            "nullable": true,
+            "description": "The saved reflection for this scope, when it was asked on one of these seven days; null otherwise",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeeklyReflectionDto"
+              }
+            ]
+          },
+          "aiAvailable": {
+            "type": "boolean",
+            "description": "Whether the week can be read with AI"
+          }
+        },
+        "required": [
+          "weekStart",
+          "weekEnd",
+          "entries",
+          "reflection",
+          "aiAvailable"
+        ],
+        "example": {
+          "weekStart": "2026-11-15",
+          "weekEnd": "2026-11-21",
+          "entries": 5,
+          "reflection": {
+            "weekStart": "2026-11-15",
+            "weekEnd": "2026-11-21",
+            "themes": [
+              "garden",
+              "tired evenings"
+            ],
+            "summary": "You found calm in the garden despite long days at work.",
+            "question": "What would make one evening this week feel like your own?",
+            "analyzedEntries": 5,
+            "generatedAt": "2026-06-24T10:00:00.000Z"
+          },
+          "aiAvailable": true
+        }
+      },
+      "WeeklyReflectionRequestDto": {
+        "type": "object",
+        "properties": {
+          "today": {
+            "type": "string",
+            "example": "2026-11-21",
+            "format": "date",
+            "description": "The writer’s own day (the UTC day or the one before or after it); the week is that day and the six before it"
+          },
+          "diaryId": {
+            "type": "number",
+            "description": "Reflect on one diary instead of all of them"
+          }
+        },
+        "required": [
+          "today"
+        ],
+        "example": {
+          "today": "2026-11-21",
+          "diaryId": 1
+        }
+      },
+      "WeeklyReflectionResponseDto": {
+        "type": "object",
+        "properties": {
+          "reflection": {
+            "$ref": "#/components/schemas/WeeklyReflectionDto"
+          }
+        },
+        "required": [
+          "reflection"
+        ],
+        "example": {
+          "reflection": {
+            "weekStart": "2026-11-15",
+            "weekEnd": "2026-11-21",
+            "themes": [
+              "garden",
+              "tired evenings"
+            ],
+            "summary": "You found calm in the garden despite long days at work.",
+            "question": "What would make one evening this week feel like your own?",
+            "analyzedEntries": 5,
+            "generatedAt": "2026-06-24T10:00:00.000Z"
+          }
+        }
+      },
       "TrashedEntryDto": {
         "type": "object",
         "properties": {
@@ -29193,6 +29550,8 @@
           "STATS_INVALID_DATE_RANGE",
           "REVIEW_YEAR_EMPTY",
           "REVIEW_MOOD_UNAVAILABLE",
+          "REVIEW_WEEK_EMPTY",
+          "REVIEW_REFLECTION_UNAVAILABLE",
           "SOCIAL_CANNOT_FOLLOW_SELF",
           "SOCIAL_CANNOT_LIKE_OWN_ENTRY",
           "SOCIAL_CANNOT_LIKE_OWN_COMMENT",

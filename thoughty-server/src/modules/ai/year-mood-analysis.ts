@@ -25,7 +25,8 @@ export interface YearMoodReading {
 
 const MAX_MOOD_LENGTH = 32;
 const MAX_SUMMARY_LENGTH = 400;
-const CLINICAL_TERMS = /\b(?:depress(?:ion|ed)|anxiety disorder|bipolar|diagnos\w*|disorder|therapy needed)\b|(?:^|[^\p{L}])(?:dépression|trouble anxieux|bipolaire|diagnostic)(?=$|[^\p{L}])/iu;
+/** Words that would read as a diagnosis: an answer carrying them is discarded. */
+export const CLINICAL_TERMS = /\b(?:depress(?:ion|ed)|anxiety disorder|bipolar|diagnos\w*|disorder|therapy needed)\b|(?:^|[^\p{L}])(?:dépression|trouble anxieux|bipolaire|diagnostic)(?=$|[^\p{L}])/iu;
 
 export const YEAR_MOOD_INSTRUCTIONS = [
   'You read samples of one person\'s journal entries, grouped by month, and describe the emotional arc of their year.',

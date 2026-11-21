@@ -65,7 +65,7 @@ test.describe('Birthdays and anniversaries', () => {
     await page.getByRole('button', { name: 'Highlights' }).click();
 
     const dialog = page.getByRole('dialog', { name: 'Highlights' });
-    await expect(dialog.getByRole('heading', { level: 3 })).toHaveText(['Birthdays and anniversaries', 'Random Thought']);
+    await expect(dialog.getByRole('heading', { level: 3 })).toHaveText(['Birthdays and anniversaries', 'Your week', 'Random Thought']);
     const people = dialog.locator('.person-date');
     await expect(people).toHaveCount(2);
     await expect(people.nth(0)).toContainText('Marie · Birthday · Turns 34 today');

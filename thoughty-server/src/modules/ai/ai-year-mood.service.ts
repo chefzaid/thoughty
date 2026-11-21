@@ -1,8 +1,7 @@
 import { Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@/modules/config';
-import { resolveAiModel } from './ai-model.util';
 import { AiUsageService } from './ai-usage.service';
-import { resolveOpenRouterCredential } from './openrouter-credential.util';
+import { completeOpenRouterChat } from './openrouter-chat';
 import {
   buildYearMoodPrompt,
   parseYearMood,
@@ -11,15 +10,10 @@ import {
   type YearMoodSample,
 } from './year-mood-analysis';
 
-interface OpenRouterResponse {
-  choices?: Array<{ message?: { content?: string } }>;
-}
-
 /** Reads the mood of each month of a year from a sample of its entries. */
 @Injectable()
 export class AiYearMoodService {
   private readonly defaultModel = process.env.OPENROUTER_TAG_MODEL || 'openai/gpt-4o-mini';
-  private readonly openRouterUrl = 'https://openrouter.ai/api/v1/chat/completions';
 
   constructor(
     private readonly configService: ConfigService,
@@ -32,36 +26,13 @@ export class AiYearMoodService {
       return null;
     }
 
-    try {
-      const credential = await resolveOpenRouterCredential(this.configService, userId);
-      if (!credential) return null;
-      const model = await resolveAiModel(this.configService, userId, this.defaultModel, 'openRouterToneModel');
-      const response = await fetch(this.openRouterUrl, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${credential.apiKey}`,
-          'Content-Type': 'application/json',
-          'X-Title': 'Thoughty',
-        },
-        body: JSON.stringify({
-          model,
-          temperature: 0.2,
-          messages: [
-            { role: 'system', content: YEAR_MOOD_INSTRUCTIONS },
-            { role: 'user', content: buildYearMoodPrompt(samples) },
-          ],
-        }),
-      });
-      if (!response.ok) {
-        return null;
-      }
-
-      const data = (await response.json()) as OpenRouterResponse;
-      await this.usageService?.recordResponse(userId, credential.source, model, data);
-      const rawContent = data.choices?.[0]?.message?.content?.trim();
-      return rawContent ? parseYearMood(rawContent, samples.map((sample) => sample.month)) : null;
-    } catch {
-      return null;
-    }
+    const rawContent = await completeOpenRouterChat({ configService: this.configService, usageService: this.usageService }, userId, {
+      defaultModel: this.defaultModel,
+      modelSetting: 'openRouterToneModel',
+      temperature: 0.2,
+      system: YEAR_MOOD_INSTRUCTIONS,
+      user: buildYearMoodPrompt(samples),
+    });
+    return rawContent ? parseYearMood(rawContent, samples.map((sample) => sample.month)) : null;
   }
 }

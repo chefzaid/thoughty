@@ -149,12 +149,13 @@ AI is optional and uses OpenRouter. A user's personal key, when set, replaces th
 | Meaning search | the query and the 100 newest entries, up to 1,200 characters each |
 | Organize tags | the 300 newest entries, up to 400 characters each |
 | Year mood arc | on request: up to 5 entries per month, 600 characters each. The reading is stored. |
+| Weekly reflection | on request: up to 21 entries of the past seven days, spread across them, 1,000 characters each, never a locked entry (even while unlocked) or an archived one. The reflection is stored. |
 | Book weaving | on by default in book export (strict or creative): the date and full text of each chapter's entries, in parts of about 20,000 characters. No images. |
 | Book chapter framing | when chosen: each chapter's dates and text, cut to 20,000 characters, for the introduction and summary |
 | Audio transcription | the one selected audio attachment, up to 5 MB |
 
 - Every prompt treats journal text as untrusted data: it is wrapped in tagged blocks (`ai/untrusted-content.ts`, which escapes a closing tag inside the text) and the system prompt tells the model to ignore instructions inside them. New prompts must use the same helper.
-- Mood readings with clinical labels are discarded. Applying a tag plan does not call the provider again.
+- Mood readings with clinical labels are discarded, and so is a weekly reflection whose summary or question uses one (a theme that does is dropped). Applying a tag plan does not call the provider again.
 - Usage rows store metadata only (model, tokens, cost, time), never prompts or completions.
 
 ## Container Images

@@ -240,6 +240,23 @@ describeContract('account', (context) => {
     });
   });
 
+  it('tells the past seven days of the writer’s own entries a weekly reflection can read, and refuses another writer’s diary', async () => {
+    const { alice, bob } = context;
+    const diaryId = await defaultDiaryId(context, alice);
+    const weekOf = async (as: typeof alice) =>
+      (await call('GET /api/review/week', { as, query: { today: todayIso() }, status: 200 })).body as { entries: number };
+    const [aliceBefore, bobBefore] = [await weekOf(alice), await weekOf(bob)];
+    await createEntry(context, alice, { text: 'Planted tulips this week', date: todayIso(-2) });
+    await createEntry(context, alice, { text: 'Long ago', date: todayIso(-30) });
+    const week = await call('GET /api/review/week', { as: alice, query: { today: todayIso(), diaryId: String(diaryId) }, status: 200 });
+    expect(week.body).toMatchObject({ weekStart: todayIso(-6), weekEnd: todayIso(), reflection: null, aiAvailable: false });
+    // Only the entry of these seven days counts, and never for another writer
+    expect((await weekOf(alice)).entries).toBe(aliceBefore.entries + 1);
+    expect(await weekOf(bob)).toEqual(bobBefore);
+    await call('GET /api/review/week', { as: bob, query: { today: todayIso(), diaryId: String(diaryId) }, status: 404, code: 'DIARY_NOT_FOUND' });
+    await call('GET /api/review/week', { as: alice, query: { today: todayIso(5) }, status: 400, code: 'VALIDATION_FAILED' });
+  });
+
   it('runs the memoir program from start to stop', async () => {
     const { alice, bob } = context;
     const before = await call('GET /api/memoir', { as: alice, status: 200 });

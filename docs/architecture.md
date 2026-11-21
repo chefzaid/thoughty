@@ -96,7 +96,7 @@ Routes take `@RequireFeature(flag)`, on a controller or a handler; the global `F
 
 | Flag | Refused while off | Kept working | Elsewhere |
 |---|---|---|---|
-| `ai` | every `/api/ai` route but reading and removing the personal key (`GET`/`DELETE /api/ai/credentials`), audio transcription, the year's AI mood reading (`POST /api/review/mood`), writing tendencies (`POST /api/stats/personality-analysis`) | the stored key, models and transcripts; the saved mood arc | auto-tagging on save adds no tag; a book's AI narrative or chapter framing answers `FEATURE_DISABLED` (a plain book still works) |
+| `ai` | every `/api/ai` route but reading and removing the personal key (`GET`/`DELETE /api/ai/credentials`), audio transcription, the year's AI mood reading (`POST /api/review/mood`), the weekly reflection (`POST /api/review/week`), writing tendencies (`POST /api/stats/personality-analysis`) | the stored key, models and transcripts; the saved mood arc and weekly reflection | auto-tagging on save adds no tag; a book's AI narrative or chapter framing answers `FEATURE_DISABLED` (a plain book still works) |
 | `bookConverter` | every `/api/books` route | saved versions and their private links (governed by `publicSharing`) | |
 | `cloudSync` | every `/api/cloud-sync` route but `POST /disconnect` | connections, schedules, queued jobs | the worker neither turns due schedules into jobs nor runs queued ones; they run once the flag is back |
 | `publicSharing` | the feed, comments and their controls, likes, saves, follows (of writers and topics) and leaderboard; making a private link (`POST /api/share-links`); the reader's side of every link (`/api/shared/…`) | listing and revoking one's own links; achievements | nothing becomes public (below) |
@@ -296,6 +296,8 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 | Stats and the year in review | `STATS_INVALID_DATE_RANGE` | The start date must be before or equal to the end date |
 |  | `REVIEW_YEAR_EMPTY` | There are no entries to read in this year |
 |  | `REVIEW_MOOD_UNAVAILABLE` | The mood of the year could not be read right now |
+|  | `REVIEW_WEEK_EMPTY` | There are no entries to read in the past seven days |
+|  | `REVIEW_REFLECTION_UNAVAILABLE` | The week could not be reflected on right now |
 | Social features and feature requests | `SOCIAL_CANNOT_FOLLOW_SELF` | You cannot follow yourself |
 |  | `SOCIAL_CANNOT_LIKE_OWN_ENTRY` | You cannot like your own entry |
 |  | `SOCIAL_CANNOT_LIKE_OWN_COMMENT` | You cannot like your own comment |

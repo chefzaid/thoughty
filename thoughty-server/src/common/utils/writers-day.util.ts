@@ -26,3 +26,8 @@ export function dayParts(day: string): { year: number; month: number; day: numbe
   const [year, month, date] = day.split('-').map(Number);
   return { year, month, day: date };
 }
+
+/** The day `days` after `day` (before it when negative), both `YYYY-MM-DD`. */
+export function shiftDay(day: string, days: number): string {
+  return utcDay(new Date(Date.parse(`${day}T00:00:00Z`) + days * DAY_MS));
+}

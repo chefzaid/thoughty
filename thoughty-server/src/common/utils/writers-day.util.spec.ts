@@ -1,5 +1,5 @@
 import { localDateIn } from './time-zone.util';
-import { dayParts, isWritersDay, utcDay, writersDayOr } from './writers-day.util';
+import { dayParts, isWritersDay, shiftDay, utcDay, writersDayOr } from './writers-day.util';
 
 describe('the writer’s day', () => {
   it('takes the UTC day, or the day before or after it, as the writer’s day', () => {
@@ -32,5 +32,12 @@ describe('the writer’s day', () => {
 
   it('splits a day into its year, month and day', () => {
     expect(dayParts('2026-03-09')).toEqual({ year: 2026, month: 3, day: 9 });
+  });
+
+  it('moves a day forward or back across months, years and leap days', () => {
+    expect(shiftDay('2026-11-21', -6)).toBe('2026-11-15');
+    expect(shiftDay('2026-03-03', -6)).toBe('2026-02-25');
+    expect(shiftDay('2024-03-01', -1)).toBe('2024-02-29');
+    expect(shiftDay('2026-12-29', 6)).toBe('2027-01-04');
   });
 });

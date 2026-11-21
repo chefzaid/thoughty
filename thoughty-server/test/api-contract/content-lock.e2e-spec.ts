@@ -111,6 +111,7 @@ describeContract('content-lock', (context) => {
       { operation: 'GET /api/attachments/file/{filename}', request: { params: { filename: alice.photo } }, locked: { status: 423, code: 'CONTENT_LOCKED' }, unlocked: { status: 200, contentType: /^image\/png/, binary: true }, reveals: false },
       { operation: 'GET /api/stats', request: {}, locked: { status: 200 }, unlocked: { status: 200 }, reveals: true },
       { operation: 'GET /api/review', request: { query: { year: alice.month.slice(0, 4) } }, locked: { status: 200 }, unlocked: { status: 200 }, reveals: true },
+      { operation: 'GET /api/review/week', request: { query: { today: todayIso() } }, locked: { status: 200 }, unlocked: { status: 200 }, reveals: false },
       { operation: 'GET /api/people', request: {}, locked: { status: 200 }, unlocked: { status: 200 }, reveals: false },
       { operation: 'GET /api/recycle-bin', request: {}, locked: { status: 200 }, unlocked: { status: 200 }, reveals: true },
       { operation: 'GET /api/books/preview', request: { query: { narrative: 'false' } }, locked: { status: 200 }, unlocked: { status: 200 }, reveals: false },

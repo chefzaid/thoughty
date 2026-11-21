@@ -190,6 +190,8 @@ export const API_ERROR_MESSAGES = {
   STATS_INVALID_DATE_RANGE: 'The start date must be before or equal to the end date',
   REVIEW_YEAR_EMPTY: 'There are no entries to read in this year',
   REVIEW_MOOD_UNAVAILABLE: 'The mood of the year could not be read right now',
+  REVIEW_WEEK_EMPTY: 'There are no entries to read in the past seven days',
+  REVIEW_REFLECTION_UNAVAILABLE: 'The week could not be reflected on right now',
 
   // Social features and feature requests.
   SOCIAL_CANNOT_FOLLOW_SELF: 'You cannot follow yourself',

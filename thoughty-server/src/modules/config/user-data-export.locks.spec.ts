@@ -17,6 +17,7 @@ describe('UserDataExportService with locked content', () => {
     { reveal: jest.fn(async (entries: unknown[]) => entries) },
     ...repositories.slice(19),
     createAccountActivityMock(),
+    emptyRepository(),
   );
 
   beforeEach(() => entryRepository.query.mockResolvedValue([{ locked: true }]));

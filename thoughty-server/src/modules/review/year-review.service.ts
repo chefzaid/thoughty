@@ -14,7 +14,7 @@ import type {
 } from './dto';
 import { plainExcerpt } from '@/common/utils/plain-excerpt.util';
 import { countWords, isoWeekdayIndex, longestStreak, rankTags } from './year-review-stats';
-import { readableEntrySql } from '@/common/content-lock';
+import { lockedEntrySql, readableEntrySql } from '@/common/content-lock';
 
 const TOP_TAGS = 10;
 const NEW_TAGS = 10;
@@ -114,15 +114,24 @@ export class YearReviewService {
     return this.loadEntries(userId, yearRange(year), diaryId);
   }
 
-  /** The entries dated from `from` to `to` (YYYY-MM-DD, both included), oldest first, with word counts; the recycle bin is left out. */
-  async loadEntries(userId: number, { from, to }: { from: string; to: string }, diaryId?: number): Promise<YearEntry[]> {
+  /**
+   * The entries dated from `from` to `to` (YYYY-MM-DD, both included), oldest first, with word counts; the
+   * recycle bin is left out, and so are locked entries unless the request is unlocked, or always with
+   * `leaveLockedOut` (for what is kept and shown later, when the unlock may have ended).
+   */
+  async loadEntries(
+    userId: number,
+    { from, to }: { from: string; to: string },
+    diaryId?: number,
+    { leaveLockedOut = false }: { leaveLockedOut?: boolean } = {},
+  ): Promise<YearEntry[]> {
     const query = addSameDayOrder(
       this.entryRepository
         .createQueryBuilder('e')
         .select(['e.id', 'e.index', 'e.content', 'e.tags', 'e.isFavorite', 'e.isArchived', 'e.mood', 'e.feelings'])
         .addSelect(`to_char(e.date, 'YYYY-MM-DD')`, 'day')
         .where('e.user_id = :userId', { userId })
-        .andWhere(readableEntrySql(userId))
+        .andWhere(leaveLockedOut ? `NOT ${lockedEntrySql('e')}` : readableEntrySql(userId))
         .andWhere('e.date BETWEEN :from AND :to', { from, to })
         .orderBy('e.date', 'ASC'),
       'e',

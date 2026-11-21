@@ -12,6 +12,7 @@ import { AiCredentialsService } from './ai-credentials.service';
 import { AiUsageService } from './ai-usage.service';
 import { AiJournalRetagService } from './ai-journal-retag.service';
 import { AiYearMoodService } from './ai-year-mood.service';
+import { AiWeeklyReflectionService } from './ai-weekly-reflection.service';
 
 @Module({
   imports: [UserConfigModule, TypeOrmModule.forFeature([Entry, AiChatHistory, AiUsageEvent])],
@@ -26,7 +27,8 @@ import { AiYearMoodService } from './ai-year-mood.service';
     AiUsageService,
     AiJournalRetagService,
     AiYearMoodService,
+    AiWeeklyReflectionService,
   ],
-  exports: [AiService, AiBookComposerService, AiPersonalityService, AiUsageService, AiCredentialsService, AiYearMoodService],
+  exports: [AiService, AiBookComposerService, AiPersonalityService, AiUsageService, AiCredentialsService, AiYearMoodService, AiWeeklyReflectionService],
 })
 export class AiModule {}

@@ -21,7 +21,7 @@ function build(
   const timeCapsules = { reveal: jest.fn(async (rows: unknown[]) => rows) };
   const repositories = Array.from({ length: 19 }, emptyRepository);
   const Service = UserDataExportService as unknown as new (...dependencies: unknown[]) => UserDataExportService;
-  return new Service(...repositories, timeCapsules, emptyRepository(), emptyRepository(), emptyRepository(), savedEntryRepository, topicFollowRepository, muteRepository, blockRepository, createAccountActivityMock());
+  return new Service(...repositories, timeCapsules, emptyRepository(), emptyRepository(), emptyRepository(), savedEntryRepository, topicFollowRepository, muteRepository, blockRepository, createAccountActivityMock(), emptyRepository());
 }
 
 describe('UserDataExportService saved entries, followed topics, muted and blocked writers', () => {

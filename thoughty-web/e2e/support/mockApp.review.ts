@@ -9,15 +9,41 @@ export interface MockYearMood {
   generatedAt: string;
 }
 
+export interface MockWeeklyReflection {
+  weekStart: string;
+  weekEnd: string;
+  themes: string[];
+  summary: string;
+  question: string;
+  analyzedEntries: number;
+  generatedAt: string;
+}
+
 export interface MockReviewState {
   aiAvailable: boolean;
   /** Saved mood readings by `year:diary`. */
   moods: Record<string, MockYearMood>;
   moodRequests: unknown[];
+  /** Saved weekly reflections by diary scope (`all` or the diary id). */
+  reflections: Record<string, MockWeeklyReflection>;
+  reflectionRequests: unknown[];
+  /** When set, reflecting on the week answers 503 REVIEW_REFLECTION_UNAVAILABLE, as when the AI cannot read it. */
+  reflectionUnavailable: boolean;
 }
 
 export function createMockReviewState(): MockReviewState {
-  return { aiAvailable: true, moods: {}, moodRequests: [] };
+  return { aiAvailable: true, moods: {}, moodRequests: [], reflections: {}, reflectionRequests: [], reflectionUnavailable: false };
+}
+
+const shiftDay = (day: string, days: number) => new Date(Date.parse(`${day}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+
+/** The seven days ending on the writer's day, and how many entries with words they hold in the scope. */
+export function mockReflectionWeek(entries: MockEntry[], today: string, diaryId: number | null) {
+  const weekStart = shiftDay(today, -6);
+  const inWeek = entries.filter(
+    (entry) => (diaryId === null || (entry.diaryId ?? 1) === diaryId) && entry.date >= weekStart && entry.date <= today && entry.content.trim() !== '',
+  );
+  return { weekStart, weekEnd: today, entries: inWeek.length };
 }
 
 const countWords = (text: string) => (text.trim() ? text.trim().split(/\s+/).length : 0);
