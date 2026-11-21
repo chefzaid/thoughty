@@ -7,12 +7,12 @@ const emptyRepository = () => ({
   query: jest.fn().mockResolvedValue([]),
 });
 
-/** Constructor order: 19 repositories, the time capsules service, share links, memoir snoozes, then the draft. */
+/** Constructor order: 19 repositories, the time capsules service, share links, memoir snoozes, the draft, then saved entries. */
 function build(composerDraftRepository: ReturnType<typeof emptyRepository>) {
   const timeCapsules = { reveal: jest.fn(async (rows: unknown[]) => rows) };
   const repositories = Array.from({ length: 19 }, emptyRepository);
   const Service = UserDataExportService as unknown as new (...dependencies: unknown[]) => UserDataExportService;
-  return new Service(...repositories, timeCapsules, emptyRepository(), emptyRepository(), composerDraftRepository);
+  return new Service(...repositories, timeCapsules, emptyRepository(), emptyRepository(), composerDraftRepository, emptyRepository());
 }
 
 describe('UserDataExportService composer draft', () => {

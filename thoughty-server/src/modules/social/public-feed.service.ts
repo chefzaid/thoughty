@@ -6,6 +6,7 @@ import { inlineImagesToAltText } from '@/common/utils';
 import type { GetPublicFeedQueryDto, PublicFeedResponseDto } from './dto';
 import { LikesService } from './likes.service';
 import { applyPublicFeedVisibility } from './public-feed-visibility';
+import { SavedEntriesService } from './saved-entries.service';
 
 @Injectable()
 export class PublicFeedService {
@@ -17,6 +18,7 @@ export class PublicFeedService {
     @InjectRepository(EntryComment)
     private readonly commentRepository: Repository<EntryComment>,
     private readonly likesService: LikesService,
+    private readonly savedEntriesService: SavedEntriesService,
   ) {}
 
   async getFeed(userId: number, query: GetPublicFeedQueryDto): Promise<PublicFeedResponseDto> {
@@ -52,22 +54,31 @@ export class PublicFeedService {
     } else {
       qb.andWhere('e.user_id != :userId', { userId });
     }
+    if (scope === 'saved') {
+      qb.innerJoin('saved_entries', 's', 's.entry_id = e.id AND s.user_id = :userId', { userId });
+      qb.orderBy('s.created_at', 'DESC');
+    } else {
+      qb.orderBy('e.createdAt', 'DESC');
+    }
 
     const total = await qb.getCount();
-    qb.orderBy('e.createdAt', 'DESC')
-      .addOrderBy('e.id', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit);
+    // Each row is one entry (its author and the reader's save are one each), so a plain LIMIT pages it
+    qb.addOrderBy('e.id', 'DESC')
+      .offset((page - 1) * limit)
+      .limit(limit);
     const entries = await qb.getMany();
     const totalPages = Math.ceil(total / limit);
     const entryIds = entries.map((entry) => entry.id);
-    const [followedIds, commentCounts, likes] = await Promise.all([
+    const [followedIds, commentCounts, likes, savedIds] = await Promise.all([
       this.findFollowedAuthorIds(
         userId,
         entries.map((entry) => entry.user.id),
       ),
       this.countComments(entryIds),
       this.likesService.summarizeEntryLikes(userId, entryIds),
+      scope === 'saved'
+        ? Promise.resolve(new Set(entryIds))
+        : this.savedEntriesService.findSavedIds(userId, entryIds),
     ]);
 
     return {
@@ -85,6 +96,7 @@ export class PublicFeedService {
         commentCount: commentCounts.get(entry.id) ?? 0,
         likeCount: likes.get(entry.id)?.likeCount ?? 0,
         liked: likes.get(entry.id)?.liked ?? false,
+        saved: savedIds.has(entry.id),
         author: {
           id: entry.user.id,
           username: entry.user.username,

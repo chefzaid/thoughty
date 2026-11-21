@@ -195,6 +195,7 @@ export const API_ERROR_MESSAGES = {
   SOCIAL_CANNOT_FOLLOW_SELF: 'You cannot follow yourself',
   SOCIAL_CANNOT_LIKE_OWN_ENTRY: 'You cannot like your own entry',
   SOCIAL_CANNOT_LIKE_OWN_COMMENT: 'You cannot like your own comment',
+  SOCIAL_CANNOT_SAVE_OWN_ENTRY: 'You cannot save your own entry',
   COMMENT_NOT_FOUND: 'Comment not found',
   FEATURE_REQUEST_NOT_FOUND: 'Feature request not found',
 } as const;

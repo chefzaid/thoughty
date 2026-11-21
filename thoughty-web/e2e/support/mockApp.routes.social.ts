@@ -31,11 +31,15 @@ async function handlePublicFeedRoute({ route, request, pathname, searchParams, s
     const id = authorId(entry, state);
     if (scope === 'mine') return id === state.user.id;
     if (scope === 'following') return state.followedUserIds.includes(id);
+    if (scope === 'saved') return id !== state.user.id && state.savedEntryIds.includes(entry.id);
     return id !== state.user.id;
   };
+  // The Saved list goes by when each entry was saved, the newest first; the rest by when it was written
+  const savedOrder = (entry: MockEntry) => state.savedEntryIds.indexOf(entry.id);
   const eligibleEntries = feedEligibleEntries(state)
     .filter(inScope)
     .sort((left, right) => {
+      if (scope === 'saved') return savedOrder(left) - savedOrder(right);
       const dateComparison = (right.createdAt || right.date).localeCompare(left.createdAt || left.date);
       return dateComparison || right.id - left.id;
     });
@@ -56,6 +60,7 @@ async function handlePublicFeedRoute({ route, request, pathname, searchParams, s
       createdAt: entry.createdAt || `${entry.date}T12:00:00.000Z`,
       commentCount: state.comments.filter((comment) => comment.entryId === entry.id).length,
       ...likeState(entry.likeCount, state.likedEntryIds, entry.id),
+      saved: state.savedEntryIds.includes(entry.id),
       author: {
         id: authorId(entry, state),
         username: entry.authorUsername || state.user.username,
@@ -196,6 +201,28 @@ async function handleLikeRoutes({ route, request, pathname, state }: RouteContex
   return true;
 }
 
+async function handleSaveRoute({ route, request, pathname, state }: RouteContext): Promise<boolean> {
+  const match = /^\/api\/entries\/(\d+)\/save$/.exec(pathname);
+  if (!match || !['PUT', 'DELETE'].includes(request.method())) {
+    return false;
+  }
+
+  const save = request.method() === 'PUT';
+  const entry = feedEligibleEntries(state).find((candidate) => candidate.id === Number(match[1]));
+  if (!entry) {
+    await fulfillJson(route, { message: 'Entry not found', statusCode: 404, code: 'ENTRY_NOT_FOUND' }, { status: 404 });
+    return true;
+  }
+  if (save && authorId(entry, state) === state.user.id) {
+    await fulfillJson(route, { message: 'You cannot save your own entry', statusCode: 400, code: 'SOCIAL_CANNOT_SAVE_OWN_ENTRY' }, { status: 400 });
+    return true;
+  }
+  state.savedEntryIds = state.savedEntryIds.filter((id) => id !== entry.id);
+  if (save) state.savedEntryIds.unshift(entry.id);
+  await fulfillJson(route, { saved: save });
+  return true;
+}
+
 async function handleLeaderboardRoute({ route, request, pathname, searchParams, state }: RouteContext): Promise<boolean> {
   if (pathname !== '/api/leaderboard' || request.method() !== 'GET') {
     return false;
@@ -285,5 +312,6 @@ export async function handleSocialRoutes(context: RouteContext): Promise<boolean
     || (await handleLeaderboardRoute(context))
     || (await handleFollowRoutes(context))
     || (await handleLikeRoutes(context))
+    || (await handleSaveRoute(context))
     || handleCommentRoutes(context);
 }

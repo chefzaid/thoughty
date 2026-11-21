@@ -12,6 +12,7 @@ import ShareImageDialog from '../ShareImageCard/ShareImageDialog';
 import { formatCardDate } from '../ShareImageCard/shareCardLayout';
 import EntryComments from './EntryComments';
 import LikeButton from './LikeButton';
+import SaveButton from './SaveButton';
 import FeedAuthor from './FeedAuthor';
 import FollowingPanel from './FollowingPanel';
 import { useFeedSpeech } from './useFeedSpeech';
@@ -24,6 +25,7 @@ const SCOPES: ReadonlyArray<{ scope: PublicFeedScope; icon: string; label: strin
   { scope: 'community', icon: 'globe', label: 'feedCommunity', empty: 'feedEmptyCommunity' },
   { scope: 'following', icon: 'organization', label: 'feedFollowing', empty: 'feedEmptyFollowing' },
   { scope: 'mine', icon: 'eye', label: 'feedMine', empty: 'feedEmptyMine' },
+  { scope: 'saved', icon: 'bookmark', label: 'feedSaved', empty: 'feedEmptySaved' },
 ];
 
 interface FeedPageProps {
@@ -34,10 +36,12 @@ interface FeedPageProps {
   /** The voice chosen in the profile for reading aloud. */
   readonly ttsVoiceUri?: string;
   readonly onOpenLeaderboard?: () => void;
+  /** **Write about this**: opens the journal's composer on a quote of another writer's entry. */
+  readonly onWriteAbout?: (entry: PublicFeedEntry) => void;
   readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-function FeedPage({ theme = 'dark', language, readDates = true, ttsVoiceUri, onOpenLeaderboard, t }: Readonly<FeedPageProps>) {
+function FeedPage({ theme = 'dark', language, readDates = true, ttsVoiceUri, onOpenLeaderboard, onWriteAbout, t }: Readonly<FeedPageProps>) {
   const uiLanguage = resolveLanguage(language);
   const feedService = useFeedService();
   const currentUserId = useAuth().user?.id;
@@ -241,6 +245,27 @@ function FeedPage({ theme = 'dark', language, readDates = true, ttsVoiceUri, onO
                       label={t('listenEntryBy', { username: entry.author.username })}
                       t={t}
                     />
+                  )}
+                  {entry.author.id !== currentUserId && (
+                    <>
+                      <SaveButton
+                        saved={entry.saved}
+                        label={t('saveEntryBy', { username: entry.author.username })}
+                        onChange={(save) => feedService.setEntrySaved(entry.id, save)}
+                        t={t}
+                      />
+                      {onWriteAbout && (
+                        <button
+                          type="button"
+                          className="feed-entry-action"
+                          aria-label={t('writeAboutEntryBy', { username: entry.author.username })}
+                          onClick={() => onWriteAbout(entry)}
+                        >
+                          <span className="codicon codicon-edit" aria-hidden="true" />
+                          {t('writeAboutThis')}
+                        </button>
+                      )}
+                    </>
                   )}
                   {entry.author.id === currentUserId && (
                     <button

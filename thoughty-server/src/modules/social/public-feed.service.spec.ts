@@ -6,11 +6,12 @@ function createQueryBuilder() {
     andWhere: jest.fn(() => qb),
     getCount: jest.fn(),
     getMany: jest.fn(),
+    innerJoin: jest.fn(() => qb),
     leftJoinAndSelect: jest.fn(() => qb),
+    limit: jest.fn(() => qb),
+    offset: jest.fn(() => qb),
     orderBy: jest.fn(() => qb),
     select: jest.fn(() => qb),
-    skip: jest.fn(() => qb),
-    take: jest.fn(() => qb),
     where: jest.fn(() => qb),
   };
   return qb;
@@ -22,6 +23,7 @@ describe('PublicFeedService', () => {
   const commentQb: Record<string, jest.Mock> = {};
   const commentRepository = { createQueryBuilder: jest.fn(() => commentQb) };
   const likesService = { summarizeEntryLikes: jest.fn() };
+  const savedEntriesService = { findSavedIds: jest.fn() };
   let service: PublicFeedService;
 
   beforeEach(() => {
@@ -32,11 +34,13 @@ describe('PublicFeedService', () => {
     commentQb.getRawMany = jest.fn().mockResolvedValue([]);
     followRepository.find.mockResolvedValue([]);
     likesService.summarizeEntryLikes.mockResolvedValue(new Map());
+    savedEntriesService.findSavedIds.mockResolvedValue(new Set());
     service = new PublicFeedService(
       repository as never,
       followRepository as never,
       commentRepository as never,
       likesService as never,
+      savedEntriesService as never,
     );
   });
 
@@ -66,6 +70,7 @@ describe('PublicFeedService', () => {
     likesService.summarizeEntryLikes.mockResolvedValue(
       new Map([[8, { likeCount: 6, liked: true }]]),
     );
+    savedEntriesService.findSavedIds.mockResolvedValue(new Set([8]));
 
     await expect(service.getFeed(7, { page: 2, limit: 5 })).resolves.toEqual({
       entries: [
@@ -83,6 +88,7 @@ describe('PublicFeedService', () => {
           commentCount: 4,
           likeCount: 6,
           liked: true,
+          saved: true,
           author: { id: 3, username: 'writer', avatarUrl: '/avatar.png', isFollowed: true },
         },
       ],
@@ -92,7 +98,14 @@ describe('PublicFeedService', () => {
       hasMore: true,
     });
     expect(qb.select).toHaveBeenCalledWith(
-      expect.arrayContaining(['e.title', 'e.timeOfDay', 'e.content', 'u.id', 'u.username', 'u.avatarUrl']),
+      expect.arrayContaining([
+        'e.title',
+        'e.timeOfDay',
+        'e.content',
+        'u.id',
+        'u.username',
+        'u.avatarUrl',
+      ]),
     );
     // Recorded moods are private: the feed neither reads nor returns them
     expect(qb.select.mock.calls[0][0]).not.toEqual(expect.arrayContaining(['e.mood']));
@@ -102,11 +115,12 @@ describe('PublicFeedService', () => {
     });
     expect(qb.andWhere).toHaveBeenCalledWith('e.user_id != :userId', { userId: 7 });
     expect(qb.andWhere).toHaveBeenCalledWith('u.deleted_at IS NULL');
-    // A property path, not a column name: TypeORM cannot resolve column names
-    // when ordering a joined, paginated query.
     expect(qb.orderBy).toHaveBeenCalledWith('e.createdAt', 'DESC');
-    expect(qb.skip).toHaveBeenCalledWith(5);
-    expect(qb.take).toHaveBeenCalledWith(5);
+    expect(qb.addOrderBy).toHaveBeenCalledWith('e.id', 'DESC');
+    expect(qb.offset).toHaveBeenCalledWith(5);
+    expect(qb.limit).toHaveBeenCalledWith(5);
+    expect(qb.innerJoin).not.toHaveBeenCalled();
+    expect(savedEntriesService.findSavedIds).toHaveBeenCalledWith(7, [8]);
     expect(followRepository.find).toHaveBeenCalledWith(
       expect.objectContaining({ select: { followedId: true } }),
     );
@@ -168,7 +182,41 @@ describe('PublicFeedService', () => {
     expect(result.entries[0].author.isFollowed).toBe(false);
     expect(result.entries[0].content).toBe('Mine ![as typed](attachment:5)');
     expect(result.entries[0].commentCount).toBe(0);
-    expect(result.entries[0]).toEqual(expect.objectContaining({ likeCount: 0, liked: false }));
+    expect(result.entries[0]).toEqual(
+      expect.objectContaining({ likeCount: 0, liked: false, saved: false }),
+    );
     expect(followRepository.find).not.toHaveBeenCalled();
+  });
+
+  it('lists the reader’s saved entries by others, the most recently saved first', async () => {
+    const qb = createQueryBuilder();
+    qb.getCount.mockResolvedValue(1);
+    qb.getMany.mockResolvedValue([
+      {
+        id: 4,
+        date: '2026-08-02',
+        index: 1,
+        tags: [],
+        content: 'Kept for later',
+        format: 'plain',
+        createdAt: new Date(),
+        user: { id: 3, username: 'writer', avatarUrl: null },
+      },
+    ]);
+    repository.createQueryBuilder.mockReturnValue(qb);
+
+    const result = await service.getFeed(7, { scope: 'saved' });
+
+    expect(qb.andWhere).toHaveBeenCalledWith('e.user_id != :userId', { userId: 7 });
+    expect(qb.innerJoin).toHaveBeenCalledWith(
+      'saved_entries',
+      's',
+      's.entry_id = e.id AND s.user_id = :userId',
+      { userId: 7 },
+    );
+    expect(qb.orderBy).toHaveBeenCalledWith('s.created_at', 'DESC');
+    expect(qb.addOrderBy).toHaveBeenCalledWith('e.id', 'DESC');
+    expect(result.entries[0].saved).toBe(true);
+    expect(savedEntriesService.findSavedIds).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,7 @@
 import type { Entry, TranslationFunction } from '../../types';
 import type { Language } from '../../utils/translations';
 import { formatJournalDate, writersToday } from '../../utils/entryDate';
+import { withoutMentions } from '../../utils/mentions';
 import { extractDate } from './EntriesList.utils';
 import { splitGraphemes, toCardText } from '../ShareImageCard/shareCardLayout';
 
@@ -81,14 +82,40 @@ export function entryReplyDraft(
   }
 
   const format = entry.format ?? 'plain';
-  const quote = replyQuote(entry.content, format);
-  const reference = entryReference(entry);
+  return quotedDraft(replyQuote(entry.content, format), entryReference(entry), format, language);
+}
+
+/**
+ * A quote followed by where it comes from, then an empty line to write on: a Markdown blockquote with
+ * the source below it, or the writer's quotation marks for plain text; the source alone without a quote.
+ */
+function quotedDraft(quote: string, source: string, format: 'plain' | 'markdown', language: Language): EntryReplyDraft {
   if (!quote) {
-    return { text: `${reference}\n\n`, format };
+    return { text: `${source}\n\n`, format };
   }
   if (format === 'markdown') {
-    return { text: `> ${quote}\n\n— ${reference}\n\n`, format };
+    return { text: `> ${quote}\n\n— ${source}\n\n`, format };
   }
   const [open, close] = PLAIN_QUOTE_MARKS[language];
-  return { text: `${open}${quote}${close} — ${reference}\n\n`, format };
+  return { text: `${open}${quote}${close} — ${source}\n\n`, format };
+}
+
+const MARKDOWN_SPECIAL = /[\\`*_[\]#<>~|]/g;
+
+/** What **Write about this** gives the reader's own entry from another writer's feed entry. */
+export interface FeedEntrySource {
+  readonly content: string;
+  readonly format: 'plain' | 'markdown';
+  readonly username: string;
+}
+
+/**
+ * The text **Write about this** puts in the new entry form for another writer's public entry: a short
+ * quote of it (as `replyQuote` cuts it) and its author's name, written as **Write a reply** quotes the
+ * writer's own entries. Its mentions lose their `@`: they are the author's people, not the reader's.
+ */
+export function feedEntryDraft(entry: FeedEntrySource, language: Language): EntryReplyDraft {
+  const quote = withoutMentions(replyQuote(entry.content, entry.format));
+  const author = entry.format === 'markdown' ? entry.username.replace(MARKDOWN_SPECIAL, '\\$&') : entry.username;
+  return quotedDraft(quote, author, entry.format, language);
 }

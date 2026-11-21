@@ -10,6 +10,7 @@ import {
     personJournalPath,
     suggestPeople,
     typedMention,
+    withoutMentions,
 } from './mentions';
 
 const person = (id: number, name: string, handles: string[], entryCount = 1): Person => ({
@@ -33,6 +34,12 @@ describe('mentions', () => {
         expect(handles(`@${'a'.repeat(MENTION_HANDLE_MAX_LENGTH + 1)} @${'b'.repeat(MENTION_HANDLE_MAX_LENGTH)}`))
             .toEqual(['b'.repeat(MENTION_HANDLE_MAX_LENGTH)]);
         expect(findMentions('')).toEqual([]);
+    });
+
+    it('writes each mention as its bare handle, leaving what is no mention as it is', () => {
+        expect(withoutMentions('Lunch with @Marie and @Jean-Paul.')).toBe('Lunch with Marie and Jean-Paul.');
+        expect(withoutMentions('marie@example.com and `@code`')).toBe('marie@example.com and `@code`');
+        expect(withoutMentions('')).toBe('');
     });
 
     it('compares handles without case, in their composed form', () => {

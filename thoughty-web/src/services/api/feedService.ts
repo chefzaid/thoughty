@@ -1,7 +1,8 @@
 import { requestJson, type ServiceResult } from './base';
 import type { components, paths } from '../../generated/openapi';
 
-export type PublicFeedScope = 'community' | 'following' | 'mine';
+type PublicFeedQuery = NonNullable<paths['/api/entries/feed']['get']['parameters']['query']>;
+export type PublicFeedScope = NonNullable<PublicFeedQuery['scope']>;
 export type PublicFeedEntry = components['schemas']['PublicFeedEntryDto'];
 export type PublicFeedAuthor = components['schemas']['PublicFeedAuthorDto'];
 export type PublicFeedResponse = paths['/api/entries/feed']['get']['responses'][200]['content']['application/json'];
@@ -12,6 +13,7 @@ export type EntryComment = components['schemas']['EntryCommentDto'];
 export type EntryCommentsResponse = components['schemas']['EntryCommentsResponseDto'];
 export type EntryCommentDeleted = components['schemas']['EntryCommentDeletedDto'];
 export type LikeState = components['schemas']['LikeStateDto'];
+export type SavedState = components['schemas']['SavedStateDto'];
 export type Leaderboard = components['schemas']['LeaderboardResponseDto'];
 export type LeaderboardPeriod = Leaderboard['period'];
 export type Achievements = components['schemas']['AchievementsResponseDto'];
@@ -70,6 +72,14 @@ export const createFeedService = (authFetch: (url: string, options?: RequestInit
       ? authFetch(`/api/entries/${entryId}/like`, { method: 'PUT' })
       : authFetch(`/api/entries/${entryId}/like`, { method: 'DELETE' });
     return requestJson(request, 'Failed to update the like');
+  },
+
+  /** Adds another writer's public entry to the reader's private Saved list, or takes it out. */
+  setEntrySaved(entryId: number, save: boolean): Promise<ServiceResult<SavedState>> {
+    const request = save
+      ? authFetch(`/api/entries/${entryId}/save`, { method: 'PUT' })
+      : authFetch(`/api/entries/${entryId}/save`, { method: 'DELETE' });
+    return requestJson(request, 'Failed to update the Saved list');
   },
 
   setCommentLike(entryId: number, commentId: number, like: boolean): Promise<ServiceResult<LikeState>> {

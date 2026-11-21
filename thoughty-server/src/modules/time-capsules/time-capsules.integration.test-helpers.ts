@@ -1,5 +1,5 @@
 import type { DataSource } from 'typeorm';
-import { Attachment, CommentLike, Diary, Entry, EntryComment, EntryLike, EntryRevision, Person, UserFollow } from '@/database/entities';
+import { Attachment, CommentLike, Diary, Entry, EntryComment, EntryLike, EntryRevision, Person, SavedEntry, UserFollow } from '@/database/entities';
 import { EntriesCommandService } from '@/modules/entries/entries-command.service';
 import { EntriesQueryService } from '@/modules/entries/entries-query.service';
 import { EntriesService } from '@/modules/entries/entries.service';
@@ -19,6 +19,7 @@ import { RecycleBinService } from '@/modules/recycle-bin/recycle-bin.service';
 import { CommentsService } from '@/modules/social/comments.service';
 import { LikesService } from '@/modules/social/likes.service';
 import { PublicFeedService } from '@/modules/social/public-feed.service';
+import { SavedEntriesService } from '@/modules/social/saved-entries.service';
 import { TimeCapsuleDeliveryService } from './time-capsule-delivery.service';
 import { timeCapsuleServiceOn } from './time-capsules.test-helpers';
 import { rereadReminderServiceOn } from '@/modules/reread-reminders/reread-reminders.test-helpers';
@@ -85,7 +86,13 @@ export function buildTimeCapsuleBed(dataSource: DataSource) {
       configService as never,
     ),
     people: new PeopleService(dataSource.getRepository(Person)),
-    feed: new PublicFeedService(entries, dataSource.getRepository(UserFollow), comments, likes),
+    feed: new PublicFeedService(
+      entries,
+      dataSource.getRepository(UserFollow),
+      comments,
+      likes,
+      new SavedEntriesService(dataSource.getRepository(SavedEntry), entries),
+    ),
     comments: new CommentsService(comments, entries, likes),
   };
 }

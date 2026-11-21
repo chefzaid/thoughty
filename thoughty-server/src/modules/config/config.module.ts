@@ -23,6 +23,7 @@ import {
   TimeCapsule,
   ShareLink,
   ComposerDraft,
+  SavedEntry,
 } from '@/database/entities';
 import { ConfigController } from './config.controller';
 import { ConfigService } from './config.service';
@@ -54,6 +55,7 @@ import { TimeCapsulesModule } from '@/modules/time-capsules/time-capsules.module
       TimeCapsule,
       ShareLink,
       ComposerDraft,
+      SavedEntry,
     ]),
     TimeCapsulesModule,
   ],

@@ -177,6 +177,8 @@ export const CONTRACT_SUITES = {
     'DELETE /api/entries/{entryId}/like',
     'PUT /api/entries/{entryId}/comments/{commentId}/like',
     'DELETE /api/entries/{entryId}/comments/{commentId}/like',
+    'PUT /api/entries/{entryId}/save',
+    'DELETE /api/entries/{entryId}/save',
     'GET /api/leaderboard',
     'GET /api/achievements',
     'GET /api/feature-requests',

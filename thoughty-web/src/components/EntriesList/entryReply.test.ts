@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getTranslation } from '../../utils/translations';
-import { canReplyToEntry, entryReference, entryReplyDraft, replyLabel, replyQuote, REPLY_QUOTE_LENGTH } from './entryReply';
+import { canReplyToEntry, entryReference, entryReplyDraft, feedEntryDraft, replyLabel, replyQuote, REPLY_QUOTE_LENGTH } from './entryReply';
 
 const NOW = new Date(2026, 10, 1, 9, 30);
 
@@ -55,6 +55,24 @@ describe('entryReplyDraft', () => {
 
   it('links to entry #1 when the entry has no number', () => {
     expect(entryReference({ date: '2024-03-04' })).toBe('[[2024-03-04#1]]');
+  });
+});
+
+describe('feedEntryDraft', () => {
+  it('quotes a plain entry in the language’s quotation marks, then names its author', () => {
+    const entry = { content: 'Walked with @Marie. Then rain.', format: 'plain' as const, username: 'maya_r' };
+    // The author's people are not the reader's: their mentions stay plain names
+    expect(feedEntryDraft(entry, 'en')).toEqual({ text: '“Walked with Marie.” — maya_r\n\n', format: 'plain' });
+    expect(feedEntryDraft(entry, 'fr')).toEqual({ text: '« Walked with Marie. » — maya_r\n\n', format: 'plain' });
+  });
+
+  it('quotes a Markdown entry as a blockquote, the author’s name escaped below it', () => {
+    expect(feedEntryDraft({ content: '**Big** day [[2024-01-02]].', format: 'markdown', username: '_maya_' }, 'en'))
+      .toEqual({ text: '> Big day 2024-01-02.\n\n— \\_maya\\_\n\n', format: 'markdown' });
+  });
+
+  it('names the author alone when there is nothing to quote', () => {
+    expect(feedEntryDraft({ content: '', format: 'plain', username: 'maya' }, 'en')).toEqual({ text: 'maya\n\n', format: 'plain' });
   });
 });
 

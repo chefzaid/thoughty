@@ -86,6 +86,7 @@
 .feed-follow:focus-visible,
 .feed-comments-toggle:focus-visible,
 .feed-share-image:focus-visible,
+.feed-entry-action:focus-visible,
 .feed-comment-delete:focus-visible,
 .feed-comment-form button:focus-visible,
 .feed-comment-form textarea:focus-visible,
@@ -96,7 +97,8 @@
   outline-offset: 2px;
 }
 
-.feed-share-image {
+.feed-share-image,
+.feed-entry-action {
   display: inline-flex;
   min-height: 1.75rem;
   align-items: center;
@@ -111,12 +113,27 @@
   cursor: pointer;
 }
 
-.feed-page.light .feed-share-image {
+.feed-page.light .feed-share-image,
+.feed-page.light .feed-entry-action {
   color: #374151;
 }
 
-.feed-share-image:hover {
+.feed-share-image:hover,
+.feed-entry-action:hover {
   background: rgba(148, 163, 184, 0.2);
+}
+
+.feed-entry-action:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.feed-save.saved {
+  color: #7dd3fc;
+}
+
+.feed-page.light .feed-save.saved {
+  color: #0369a1;
 }
 
 .feed-count {

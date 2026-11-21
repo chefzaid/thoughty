@@ -59,7 +59,7 @@ flowchart TD
 | `cloud-sync` | provider connections, file browsing, schedules, queued jobs |
 | `config` | user preferences and profile, encrypted settings, data export, the feature-flag endpoint (`GET /api/config/feature-flags`; the flags themselves are `src/common/feature-flags`) |
 | `feature-requests` | community idea board and votes |
-| `social` | public feed, follows, comments, likes, leaderboard, achievements (karma and badges) |
+| `social` | public feed, follows, comments, likes, saved entries, leaderboard, achievements (karma and badges) |
 | `account-purge` | permanent deletion of deleted accounts after the grace period |
 | `memoir` | guided memoir: question catalogue, program settings, answers as entries, skipping or setting aside this week's question (`POST /api/memoir/skip`, `POST /api/memoir/snooze`), weekly delivery and email |
 | `opt-in-email` | what the opt-in emails share: the setting table's columns (`OptInEmailSetting`, one table per email), the settings service (`get`/`update`, validating the zone and the diary), the delivery base (`OptInEmailDeliveryService`: claim due rows, one email per writer and schedule period, verified addresses of live accounts, language, unsubscribe links, ID-only logs), the worker loop base, the email layout (HTML and plain text, entry cards of at most 200 characters), the signed unsubscribe token carrying the email's kind, and the public `POST /api/email-unsubscribe` that turns off whichever email a token names |
@@ -99,7 +99,7 @@ Routes take `@RequireFeature(flag)`, on a controller or a handler; the global `F
 | `ai` | every `/api/ai` route but reading and removing the personal key (`GET`/`DELETE /api/ai/credentials`), audio transcription, the year's AI mood reading (`POST /api/review/mood`), writing tendencies (`POST /api/stats/personality-analysis`) | the stored key, models and transcripts; the saved mood arc | auto-tagging on save adds no tag; a book's AI narrative or chapter framing answers `FEATURE_DISABLED` (a plain book still works) |
 | `bookConverter` | every `/api/books` route | saved versions and their private links (governed by `publicSharing`) | |
 | `cloudSync` | every `/api/cloud-sync` route but `POST /disconnect` | connections, schedules, queued jobs | the worker neither turns due schedules into jobs nor runs queued ones; they run once the flag is back |
-| `publicSharing` | the feed, comments, likes, follows and leaderboard; making a private link (`POST /api/share-links`); the reader's side of every link (`/api/shared/…`) | listing and revoking one's own links; achievements | nothing becomes public (below) |
+| `publicSharing` | the feed, comments, likes, saves, follows and leaderboard; making a private link (`POST /api/share-links`); the reader's side of every link (`/api/shared/…`) | listing and revoking one's own links; achievements | nothing becomes public (below) |
 
 While `publicSharing` is off nothing becomes public: a new public entry, a private entry changed to public (`PUT /api/entries/:id`, `PATCH …/visibility`) and making entries public in bulk answer `503 FEATURE_DISABLED` (`entries/entry-publishing.ts`), and an import saves every entry private. An entry already public keeps its stored visibility, can be edited as it is or made private, and is simply shown to no one while the flag is off; links keep their expiry and views, and both come back as they were once the flag is on. Diary and settings defaults stay as saved.
 
@@ -299,6 +299,7 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 | Social features and feature requests | `SOCIAL_CANNOT_FOLLOW_SELF` | You cannot follow yourself |
 |  | `SOCIAL_CANNOT_LIKE_OWN_ENTRY` | You cannot like your own entry |
 |  | `SOCIAL_CANNOT_LIKE_OWN_COMMENT` | You cannot like your own comment |
+|  | `SOCIAL_CANNOT_SAVE_OWN_ENTRY` | You cannot save your own entry |
 |  | `COMMENT_NOT_FOUND` | Comment not found |
 |  | `FEATURE_REQUEST_NOT_FOUND` | Feature request not found |
 

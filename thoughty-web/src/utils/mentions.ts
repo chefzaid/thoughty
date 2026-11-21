@@ -67,6 +67,14 @@ export function findMentions(content: string): MentionMatch[] {
     return mentions;
 }
 
+/** The text with each mention written as its bare handle (`@Marie` → `Marie`), so it mentions no one. */
+export function withoutMentions(content: string): string {
+    return findMentions(content).reduceRight(
+        (text, mention) => `${text.slice(0, mention.start)}${text.slice(mention.start + 1)}`,
+        content,
+    );
+}
+
 /** Each of the people's handles, to the person it mentions. */
 export function peopleByHandle(people: readonly Person[]): ReadonlyMap<string, Person> {
     const byHandle = new Map<string, Person>();

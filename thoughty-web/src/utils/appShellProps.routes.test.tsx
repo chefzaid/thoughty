@@ -76,6 +76,19 @@ describe('appShellProps', () => {
     expect(defaultProps.readDates).toBe(true);
   });
 
+  it('writes about a feed entry in the journal’s composer', () => {
+    const params = createRoutesParams();
+    const { feedRouteProps } = buildAuthenticatedRoutesProps(params);
+    feedRouteProps.onWriteAbout?.({
+      id: 4, date: '2026-08-01', index: 1, title: null, timeOfDay: null, tags: ['walks'], content: 'A walk', format: 'plain',
+      createdAt: '2026-08-01T12:00:00.000Z', commentCount: 0, likeCount: 0, liked: false, saved: false,
+      author: { id: 2, username: 'maya', avatarUrl: null, isFollowed: false },
+    });
+    expect(params.routingState.handleViewChange).toHaveBeenCalledWith('journal', {
+      writeAbout: { content: 'A walk', format: 'plain', username: 'maya' },
+    });
+  });
+
   it('offers created tags in the composer and editor but filters only by used tags', () => {
     const props = buildAuthenticatedRoutesProps(createRoutesParams({
       tagMetadata: { gratitude: { color: '#2563EB' }, focus: { color: '#DC2626' } },

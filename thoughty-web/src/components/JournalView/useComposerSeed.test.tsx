@@ -55,7 +55,7 @@ function Harness({ initialText = '', defaultVisibility, swapFieldOnFill = false,
     const [format, setFormat] = useState<'plain' | 'markdown'>('plain');
     const [selectedDate, setSelectedDate] = useState(new Date(2024, 0, 2));
     const [swapped, setSwapped] = useState(false);
-    const { startFromEntry, replyToEntry, focusComposer, dialog } = useComposerSeed({
+    const { startFromEntry, replyToEntry, writeAbout, focusComposer, dialog } = useComposerSeed({
         composer: {
             newEntryText, setNewEntryText: (value) => {
                 setNewEntryText(value);
@@ -85,6 +85,9 @@ function Harness({ initialText = '', defaultVisibility, swapFieldOnFill = false,
             <button type="button" onClick={() => replyToEntry(packingList)}>Reply</button>
             <button type="button" onClick={() => replyToEntry({ ...markdownNote, visibility: 'private' })}>Reply private</button>
             <button type="button" onClick={() => replyToEntry({ ...packingList, sealed_until: '2030-01-01T00:00:00Z' })}>Reply sealed</button>
+            <button type="button" onClick={() => writeAbout({ content: 'Rain on the **pier**. Then sun.', format: 'markdown', username: 'maya' })}>
+                Write about
+            </button>
             {dialog}
         </>
     );
@@ -218,5 +221,21 @@ describe('useComposerSeed', () => {
         expect(dialog).toHaveAccessibleDescription(/short quote of this entry and a link to it, dated today/);
         await user.click(screen.getByRole('button', { name: 'Replace draft' }));
         expect(screen.getByLabelText('Writing')).toHaveValue('“Packing” — [[2024-05-01#1]]\n\n');
+    });
+
+    it('writes about a feed entry on today: a quote and its author, no tags, always private', async () => {
+        const user = userEvent.setup();
+        render(<Harness defaultVisibility="public" initialText="My own draft" />);
+
+        await user.click(screen.getByRole('button', { name: 'Write about' }));
+        const dialog = screen.getByRole('alertdialog', { name: 'Replace your draft?' });
+        expect(dialog).toHaveAccessibleDescription(/short quote of it and its author's name, in a private entry dated today/);
+        await user.click(screen.getByRole('button', { name: 'Replace draft' }));
+
+        const field = screen.getByLabelText<HTMLTextAreaElement>('Writing');
+        expect(field).toHaveValue('> Rain on the pier.\n\n— maya\n\n');
+        expect(field).toHaveFocus();
+        expect(screen.getByTestId('date')).toHaveTextContent(formatEntryDate(new Date()));
+        expect(state()).toEqual({ title: '', timeOfDay: '', mood: null, tags: [], visibility: 'private', format: 'markdown', timeCapsule: null });
     });
 });

@@ -105,6 +105,21 @@ describe('feedService', () => {
     ]);
   });
 
+  it('saves and unsaves an entry', async () => {
+    const authFetch = vi.fn().mockImplementation(async (_url: string, options?: RequestInit) => new Response(
+      JSON.stringify({ saved: options?.method === 'PUT' }),
+      { status: 200 },
+    ));
+    const service = createFeedService(authFetch);
+
+    await expect(service.setEntrySaved(8, true)).resolves.toEqual({ data: { saved: true }, error: null });
+    await expect(service.setEntrySaved(8, false)).resolves.toEqual({ data: { saved: false }, error: null });
+    expect(authFetch.mock.calls).toEqual([
+      ['/api/entries/8/save', { method: 'PUT' }],
+      ['/api/entries/8/save', { method: 'DELETE' }],
+    ]);
+  });
+
   it('loads the leaderboard for a period', async () => {
     const payload = { period: 'week', mostActiveAuthors: [], mostLikedEntries: [], mostCommentedEntries: [] };
     const authFetch = vi.fn().mockResolvedValue(new Response(JSON.stringify(payload), { status: 200 }));

@@ -1,6 +1,7 @@
 import { Navigate, useSearchParams } from 'react-router-dom';
 
 import FeedPage from '../components/FeedPage/FeedPage';
+import type { PublicFeedEntry } from '../services/api';
 import LeaderboardPage from '../components/FeedPage/LeaderboardPage';
 import { useQuietMode } from '../components/QuietMode/quietMode';
 import { getPathForView } from '../types';
@@ -13,6 +14,8 @@ interface FeedRouteProps {
   readonly language?: string;
   readonly readDates?: boolean;
   readonly ttsVoiceUri?: string;
+  /** **Write about this** on another writer's entry: opens the journal's composer on a quote of it. */
+  readonly onWriteAbout?: (entry: PublicFeedEntry) => void;
   readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 

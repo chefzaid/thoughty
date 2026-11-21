@@ -137,6 +137,7 @@ export interface SetupMockAppOptions {
   comments?: MockComment[];
   likedEntryIds?: number[];
   likedCommentIds?: number[];
+  savedEntryIds?: number[];
   /** A started guided memoir (defaults filled in), or null/omitted for one not started yet. */
   memoirProgram?: Partial<MockMemoirProgram> | null;
   savedSearches?: MockSavedSearch[];
@@ -202,6 +203,7 @@ export interface MockAppState {
   comments: MockComment[];
   likedEntryIds: number[];
   likedCommentIds: number[];
+  savedEntryIds: number[];
   bookVersions: MockBookVersion[];
   /** What each saved version held, so the next one can count what it adds. */
   bookVersionManifests: Record<number, { entryIds: number[]; chapterTitles: string[] }>;
@@ -439,6 +441,7 @@ export function createMockAppState(
     comments: [...(options.comments || [])],
     likedEntryIds: [...(options.likedEntryIds || [])],
     likedCommentIds: [...(options.likedCommentIds || [])],
+    savedEntryIds: [...(options.savedEntryIds || [])],
     bookVersions: [],
     bookVersionManifests: {},
     savedSearches: (options.savedSearches || []).map((saved) => ({ ...saved, filters: { ...saved.filters } })),

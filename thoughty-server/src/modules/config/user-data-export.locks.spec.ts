@@ -9,7 +9,7 @@ function emptyRepository() {
 }
 
 describe('UserDataExportService with locked content', () => {
-  const repositories = Array.from({ length: 22 }, emptyRepository);
+  const repositories = Array.from({ length: 23 }, emptyRepository);
   const entryRepository = repositories[3]!;
   const service = new (UserDataExportService as unknown as new (...args: unknown[]) => UserDataExportService)(
     ...repositories.slice(0, 19),

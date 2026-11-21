@@ -30,3 +30,4 @@ export * from './composer-draft.entity';
 export * from './sign-up-request.entity';
 export * from './content-pin.entity';
 export * from './content-unlock.entity';
+export * from './saved-entry.entity';

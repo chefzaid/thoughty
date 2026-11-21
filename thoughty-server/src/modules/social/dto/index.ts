@@ -4,3 +4,4 @@ export * from './public-feed.dto';
 export * from './likes.dto';
 export * from './leaderboard.dto';
 export * from './achievements.dto';
+export * from './saved-entries.dto';

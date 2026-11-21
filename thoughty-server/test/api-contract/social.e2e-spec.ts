@@ -174,6 +174,76 @@ describeContract('social', (context) => {
     });
   });
 
+  it('keeps a private Saved list that an entry leaves once it is no longer public', async () => {
+    const { alice, bob } = context;
+    const savedId = await createEntry(context, alice, {
+      text: 'Worth keeping',
+      visibility: 'public',
+    });
+    const saved = await call('PUT /api/entries/{entryId}/save', {
+      as: bob,
+      params: { entryId: savedId },
+      status: 200,
+    });
+    expect(saved.body).toEqual({ saved: true });
+    await call('PUT /api/entries/{entryId}/save', {
+      as: bob,
+      params: { entryId: publicId },
+      status: 200,
+    });
+    await call('PUT /api/entries/{entryId}/save', {
+      as: alice,
+      params: { entryId: savedId },
+      status: 400,
+      code: 'SOCIAL_CANNOT_SAVE_OWN_ENTRY',
+    });
+    await call('PUT /api/entries/{entryId}/save', {
+      as: bob,
+      params: { entryId: privateId },
+      status: 404,
+      code: 'ENTRY_NOT_FOUND',
+    });
+    // The most recently saved first; nobody else's list holds them
+    expect(await feedIds('saved')).toEqual([publicId, savedId]);
+    expect(await feedIds('saved', alice)).toEqual([]);
+    const community = await call('GET /api/entries/feed', {
+      as: bob,
+      query: { scope: 'community' },
+      status: 200,
+    });
+    const flags = (community.body as { entries: { id: number; saved: boolean }[] }).entries;
+    expect(flags.find((entry) => entry.id === savedId)?.saved).toBe(true);
+
+    const unsaved = await call('DELETE /api/entries/{entryId}/save', {
+      as: bob,
+      params: { entryId: publicId },
+      status: 200,
+    });
+    expect(unsaved.body).toEqual({ saved: false });
+    expect(await feedIds('saved')).toEqual([savedId]);
+
+    // Made private, it leaves the list for good: publishing it again does not bring it back
+    await call('PATCH /api/entries/{id}/visibility', {
+      as: alice,
+      params: { id: savedId },
+      json: { visibility: 'private' },
+      status: 200,
+    });
+    await call('DELETE /api/entries/{entryId}/save', {
+      as: bob,
+      params: { entryId: savedId },
+      status: 404,
+      code: 'ENTRY_NOT_FOUND',
+    });
+    await call('PATCH /api/entries/{id}/visibility', {
+      as: alice,
+      params: { id: savedId },
+      json: { visibility: 'public' },
+      status: 200,
+    });
+    expect(await feedIds('saved')).toEqual([]);
+  });
+
   it('ranks writers for each period and lists the reader’s achievements', async () => {
     const { bob } = context;
     for (const period of ['week', 'month', 'year', 'all']) {

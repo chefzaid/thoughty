@@ -67,6 +67,7 @@ Every table except `users` and `sign_up_requests` (sign-ups that have no account
 | `Diary` | The default diary cannot be deleted. Deleting another first moves its entries, including those in the recycle bin, to the default diary, and drops its writing goal with the row. `entries.diary_id` is `ON DELETE SET NULL` as a safety net (the foreign key `fk_entries_diary`, which migration `1787097600000-entry-diary-foreign-key` added: the initial schema had left the column without one, and entries it found pointing at a missing diary or another writer's moved to their writer's default diary). |
 | `Entry` | Deleting moves it to the [recycle bin](#recycle-bin). Purging it hard-deletes the row, which cascades revisions, attachment rows, AI chat, comments, likes, and the memoir answer. |
 | `EntryRevision`, `AiChatHistory`, `EntryComment`, `EntryLike`, `CommentLike` | Deleted with their entry (or comment). Comments and likes also go with their author. A comment can be removed by its author or the entry owner. |
+| `SavedEntry` | `saved_entries` (`user_id`, `entry_id`, `created_at`; one row per reader and entry): a reader's private Saved list of other writers' public entries. Deleted with the entry or the reader, and by the trigger `trg_entries_drop_unshown_saves` as soon as the entry is made private, archived, moderated or moved to the recycle bin, so it does not come back if the entry is published again. An author's deleted account only hides the rows (the feed rules) until the purge removes them. |
 | `Attachment` | The row is deleted with its entry or user. Purging an entry, purging an account and deleting an attachment also remove the stored object and, for a video, its poster frame. Any other hard delete leaves the objects behind. |
 | `MemoirProgram` | Deleted with the user or when the memoir is stopped. Deleting its diary keeps the program with no diary (`SET NULL`) until another is chosen. |
 | `MemoirSnooze` | Deleted with its program, so stopping the memoir (or deleting the account) clears what was set aside, and when its question is offered again. |
@@ -290,6 +291,7 @@ People are the writer's own records of someone they mention with `@handle` in an
 - The feed reads entries and users directly and projects only feed-safe author fields.
 - The **Following** scope applies the same rules to followed authors. A user can be followed only while they have a feed-eligible entry, so follows cannot probe private accounts.
 - Comments and likes can be read or written only while their entry is feed-eligible. Nobody can like their own entry or comment. Content by deleted users is neither listed nor counted.
+- The **Saved** scope lists the reader's `saved_entries` with the same rules, the most recently saved first. An entry can be saved or unsaved only while it is feed-eligible, never by its own author, and saves are counted nowhere.
 - Reports and enforcement records do not exist yet. They will be separate entities, not new visibility values.
 
 ## Other Domains

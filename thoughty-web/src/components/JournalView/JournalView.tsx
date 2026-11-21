@@ -145,7 +145,7 @@ function JournalView({
     theme: config.theme,
     t,
   });
-  useComposerFocusRoute(composerSeed.focusComposer);
+  useComposerFocusRoute(composerSeed.focusComposer, composerSeed.writeAbout);
 
   const keywordSearch = filters.searchMode === 'keyword';
   const calendarFilters = {

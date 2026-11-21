@@ -7,6 +7,7 @@ import { type Config, type Entry, type ImportExportFormat, type ImportExportSect
 import type AuthenticatedAppLayout from '../routes/AuthenticatedAppLayout';
 import type AuthenticatedRoutes from '../routes/AuthenticatedRoutes';
 import type { DuplicateEntryScan, RephraseMode, SummaryGuidance } from '../services/api/aiService';
+import { writeAboutState } from '../components/JournalView/composerFocusRoute';
 import { buildEntriesListProps } from './entriesListProps';
 import { createEntryTemplate, getEntryTemplates, serializeCustomEntryTemplates, type EntryTemplateDraft } from './entryTemplates';
 import { listKnownTags, type TagMetadataMap } from './tagMetadata';
@@ -182,6 +183,11 @@ export function buildAuthenticatedRoutesProps({
       language: config.language,
       readDates: config.readDates !== false,
       ttsVoiceUri: config.ttsVoiceUri,
+      onWriteAbout: (entry) => routingState.handleViewChange('journal', writeAboutState({
+        content: entry.content,
+        format: entry.format,
+        username: entry.author.username,
+      })),
       t,
     },
     memoirRouteProps: {

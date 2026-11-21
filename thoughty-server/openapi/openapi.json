@@ -11032,7 +11032,8 @@
               "enum": [
                 "community",
                 "following",
-                "mine"
+                "mine",
+                "saved"
               ]
             }
           },
@@ -11083,6 +11084,7 @@
                       "commentCount": 3,
                       "likeCount": 3,
                       "liked": true,
+                      "saved": true,
                       "author": {
                         "id": 1,
                         "username": "Daily Journal",
@@ -11908,6 +11910,162 @@
           }
         ],
         "summary": "Remove your like from a comment",
+        "tags": [
+          "Social"
+        ]
+      }
+    },
+    "/api/entries/{entryId}/save": {
+      "put": {
+        "operationId": "SavedEntriesController_saveEntry",
+        "parameters": [
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The entry is saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedStateDto"
+                },
+                "example": {
+                  "saved": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Users cannot save their own entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Users cannot save their own entries",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entry is not visible in the public feed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "The entry is not visible in the public feed",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Save a public entry written by someone else to your private Saved list",
+        "tags": [
+          "Social"
+        ]
+      },
+      "delete": {
+        "operationId": "SavedEntriesController_unsaveEntry",
+        "parameters": [
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The entry is no longer saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedStateDto"
+                },
+                "example": {
+                  "saved": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entry is not visible in the public feed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "The entry is not visible in the public feed",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a public entry from your Saved list",
         "tags": [
           "Social"
         ]
@@ -23852,6 +24010,10 @@
             "type": "boolean",
             "description": "Whether the current user likes the entry"
           },
+          "saved": {
+            "type": "boolean",
+            "description": "Whether the entry is in the current user’s Saved list"
+          },
           "author": {
             "$ref": "#/components/schemas/PublicFeedAuthorDto"
           }
@@ -23869,6 +24031,7 @@
           "commentCount",
           "likeCount",
           "liked",
+          "saved",
           "author"
         ],
         "example": {
@@ -23886,6 +24049,7 @@
           "commentCount": 3,
           "likeCount": 3,
           "liked": true,
+          "saved": true,
           "author": {
             "id": 1,
             "username": "Daily Journal",
@@ -23940,6 +24104,7 @@
               "commentCount": 3,
               "likeCount": 3,
               "liked": true,
+              "saved": true,
               "author": {
                 "id": 1,
                 "username": "Daily Journal",
@@ -24222,6 +24387,22 @@
         "example": {
           "liked": true,
           "likeCount": 4
+        }
+      },
+      "SavedStateDto": {
+        "type": "object",
+        "properties": {
+          "saved": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether the entry is in the current user’s Saved list"
+          }
+        },
+        "required": [
+          "saved"
+        ],
+        "example": {
+          "saved": true
         }
       },
       "LeaderboardAuthorDto": {
@@ -27436,6 +27617,7 @@
           "SOCIAL_CANNOT_FOLLOW_SELF",
           "SOCIAL_CANNOT_LIKE_OWN_ENTRY",
           "SOCIAL_CANNOT_LIKE_OWN_COMMENT",
+          "SOCIAL_CANNOT_SAVE_OWN_ENTRY",
           "COMMENT_NOT_FOUND",
           "FEATURE_REQUEST_NOT_FOUND"
         ],

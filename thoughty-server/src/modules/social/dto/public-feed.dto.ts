@@ -2,7 +2,8 @@ import { IsIn, IsOptional, Max, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { StrictInt } from '@/common/validation';
 
-export const publicFeedScopes = ['community', 'following', 'mine'] as const;
+/** `saved` lists the entries the reader saved, the most recently saved first. */
+export const publicFeedScopes = ['community', 'following', 'mine', 'saved'] as const;
 export type PublicFeedScope = (typeof publicFeedScopes)[number];
 
 export class GetPublicFeedQueryDto {
@@ -75,6 +76,9 @@ export class PublicFeedEntryDto {
 
   @ApiProperty({ description: 'Whether the current user likes the entry' })
   liked: boolean;
+
+  @ApiProperty({ description: 'Whether the entry is in the current user’s Saved list' })
+  saved: boolean;
 
   @ApiProperty({ type: PublicFeedAuthorDto })
   author: PublicFeedAuthorDto;

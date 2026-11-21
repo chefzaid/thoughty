@@ -36,6 +36,7 @@ import {
   SignUpRequest,
   ContentPin,
   ContentUnlock,
+  SavedEntry,
 } from './entities';
 import { buildPostgresConnectionOptions } from './postgres-connection-options';
 import { buildPostgresPoolOptions } from './postgres-pool-options';
@@ -96,6 +97,7 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
           SignUpRequest,
           ContentPin,
           ContentUnlock,
+          SavedEntry,
         ],
         extra: buildPostgresPoolOptions({
           POSTGRES_POOL_MAX: configService.get<string>('POSTGRES_POOL_MAX'),

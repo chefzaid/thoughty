@@ -1,6 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { CommentLike, Entry, EntryComment, EntryLike, UserFollow } from '@/database/entities';
+import {
+  CommentLike,
+  Entry,
+  EntryComment,
+  EntryLike,
+  SavedEntry,
+  UserFollow,
+} from '@/database/entities';
 import { AchievementsController } from './achievements.controller';
 import { AchievementsService } from './achievements.service';
 import { CommentsController } from './comments.controller';
@@ -13,14 +20,19 @@ import { LeaderboardService } from './leaderboard.service';
 import { LikesController } from './likes.controller';
 import { LikesService } from './likes.service';
 import { PublicFeedService } from './public-feed.service';
+import { SavedEntriesController } from './saved-entries.controller';
+import { SavedEntriesService } from './saved-entries.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserFollow, EntryComment, EntryLike, CommentLike, Entry])],
+  imports: [
+    TypeOrmModule.forFeature([UserFollow, EntryComment, EntryLike, CommentLike, SavedEntry, Entry]),
+  ],
   controllers: [
     FeedController,
     FollowsController,
     CommentsController,
     LikesController,
+    SavedEntriesController,
     LeaderboardController,
     AchievementsController,
   ],
@@ -29,6 +41,7 @@ import { PublicFeedService } from './public-feed.service';
     FollowsService,
     CommentsService,
     LikesService,
+    SavedEntriesService,
     LeaderboardService,
     AchievementsService,
   ],

@@ -4,7 +4,7 @@ import type EntryForm from '../EntryForm/EntryForm';
 import type { Entry, TranslationFunction } from '../../types';
 import { entryStartingPoint, hasComposerDraft } from '../../utils/entryStartingPoint';
 import { resolveLanguage } from '../../utils/language';
-import { entryReplyDraft } from '../EntriesList/entryReply';
+import { entryReplyDraft, feedEntryDraft, type FeedEntrySource } from '../EntriesList/entryReply';
 
 type ComposerState = Pick<ComponentProps<typeof EntryForm>,
   'newEntryText' | 'setNewEntryText' | 'title' | 'setTitle' | 'timeOfDay' | 'setTimeOfDay' | 'mood' | 'setMood'
@@ -26,7 +26,7 @@ interface ComposerSeedOptions {
 
 /** What the new entry form is filled with, and why (which the replace warning says). */
 interface ComposerSeed {
-  readonly kind: 'startingPoint' | 'reply';
+  readonly kind: 'startingPoint' | 'reply' | 'writeAbout';
   readonly text: string;
   readonly tags: string[];
   readonly format: 'plain' | 'markdown';
@@ -42,6 +42,7 @@ const EDITOR_LOAD_WINDOW_MS = 3000;
 const REPLACE_MESSAGES = {
   startingPoint: 'startFromEntryReplaceMessage',
   reply: 'replyReplaceMessage',
+  writeAbout: 'writeAboutReplaceMessage',
 } as const;
 
 /**
@@ -52,10 +53,13 @@ const REPLACE_MESSAGES = {
  * - **Write a reply**: a short quote of the entry and a `[[date#n]]` link to it (see `entryReplyDraft`),
  *   on today, in the entry's format, with no tags, and private when the quoted entry is private, so a
  *   public default never publishes its words.
+ * - **Write about this** (from the feed): a short quote of another writer's entry and their name (see
+ *   `feedEntryDraft`), on today, in the entry's format, with no tags, and always private.
  */
 export function useComposerSeed({ composer, defaultVisibility, formRef, language, theme, t }: ComposerSeedOptions): {
   startFromEntry: (entry: Entry) => void;
   replyToEntry: (entry: Entry) => void;
+  writeAbout: (source: FeedEntrySource) => void;
   /** Scrolls to the form and focuses its writing field, the caret after the text. */
   focusComposer: () => void;
   dialog: ReactNode;
@@ -108,6 +112,11 @@ export function useComposerSeed({ composer, defaultVisibility, formRef, language
     seedComposer(draft && { kind: 'reply', ...draft, tags: [], privateOnly: entry.visibility === 'private', today: true });
   }, [seedComposer]);
 
+  const writeAbout = useCallback((source: FeedEntrySource) => {
+    const draft = feedEntryDraft(source, resolveLanguage(latest.current.language));
+    seedComposer({ kind: 'writeAbout', ...draft, tags: [], privateOnly: true, today: true });
+  }, [seedComposer]);
+
   useEffect(() => {
     const container = formRef.current;
     if (focusRequest === 0 || !container) {
@@ -154,5 +163,5 @@ export function useComposerSeed({ composer, defaultVisibility, formRef, language
     />
   );
 
-  return { startFromEntry, replyToEntry, focusComposer, dialog };
+  return { startFromEntry, replyToEntry, writeAbout, focusComposer, dialog };
 }
