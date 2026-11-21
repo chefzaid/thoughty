@@ -107,9 +107,10 @@ export function buildPublicShellProps({
   const completeSignUpPageProps: CompleteSignUpPageProps = {
     t,
     theme,
+    // The account was just created, so it starts on the welcome page that asks what it is here for
     onComplete: () => {
       routingState.handleAuthSuccess();
-      routingState.handleViewChange('journal');
+      routingState.handleViewChange('welcome');
     },
     onSignUp: () => routingState.handlePublicViewChange('register'),
     onSignIn: () => routingState.handlePublicViewChange('login'),

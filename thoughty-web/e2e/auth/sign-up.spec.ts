@@ -61,6 +61,9 @@ test.describe('Verify-first sign-up', () => {
     await page.getByRole('textbox', { name: 'Username' }).fill('NewWriter2');
     await page.getByRole('button', { name: 'Create my account' }).click();
 
+    // The new account is asked what it is here for (welcome.spec.ts), and can go straight to writing
+    await expect(page).toHaveURL(/\/welcome$/);
+    await page.getByRole('button', { name: 'Skip and open my journal' }).click();
     await expect(page.getByPlaceholder("What's on your mind?")).toBeVisible();
     await expect(page).toHaveURL(/\/journal/);
     expect(state.signUp.lastCompletePayload).toEqual({ token: MOCK_SIGN_UP_TOKEN, password: 'Writer123!', username: 'NewWriter2' });
@@ -128,7 +131,8 @@ test.describe('Verify-first sign-up', () => {
     await expect(page.getByText('Mot de passe incorrect.')).toBeVisible();
     await page.getByRole('textbox', { name: 'Mot de passe' }).fill('Ecrire123!');
     await page.getByRole('button', { name: 'Créer mon compte' }).click();
-    await expect(page).toHaveURL(/\/journal/);
+    await expect(page.getByRole('heading', { level: 1, name: 'Bienvenue sur Thoughty' })).toBeVisible();
+    await expect(page).toHaveURL(/\/welcome$/);
     expect(state.user).toMatchObject({ username: 'Nouvelle', email: 'nouvelle@example.com', emailVerified: true });
   });
 });

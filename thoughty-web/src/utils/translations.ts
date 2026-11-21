@@ -2,6 +2,7 @@ import { apiErrorsTranslations, type ApiErrorTranslationKey } from "./translatio
 import { appImportTranslations, type AppImportTranslationKey } from "./translations.appImport";
 import { memoirTranslations, type MemoirTranslationKey } from "./translations.memoir";
 import { memoirSimpleTranslations, type MemoirSimpleTranslationKey } from "./translations.memoirSimple";
+import { welcomeTranslations, type WelcomeTranslationKey } from "./translations.welcome";
 import { reviewTranslations, type ReviewTranslationKey } from "./translations.review";
 import { recycleBinTranslations, type RecycleBinTranslationKey } from "./translations.recycleBin";
 import { searchTranslations, type SearchTranslationKey } from "./translations.search";
@@ -85,6 +86,7 @@ export type TranslationKey =
   | AppImportTranslationKey
   | MemoirTranslationKey
   | MemoirSimpleTranslationKey
+  | WelcomeTranslationKey
   | ReviewTranslationKey
   | RecycleBinTranslationKey
   | SearchTranslationKey
@@ -173,6 +175,7 @@ export const translations: Translations = {
     ...appImportTranslations.en,
     ...memoirTranslations.en,
     ...memoirSimpleTranslations.en,
+    ...welcomeTranslations.en,
     ...reviewTranslations.en,
     ...recycleBinTranslations.en,
     ...searchTranslations.en,
@@ -254,6 +257,7 @@ export const translations: Translations = {
     ...appImportTranslations.fr,
     ...memoirTranslations.fr,
     ...memoirSimpleTranslations.fr,
+    ...welcomeTranslations.fr,
     ...reviewTranslations.fr,
     ...recycleBinTranslations.fr,
     ...searchTranslations.fr,

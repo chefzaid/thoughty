@@ -45,12 +45,13 @@ import {
 } from '../utils/appShellProps';
 import type { RephraseMode, SummaryGuidance } from '../services/api/aiService';
 import type { Entry, PublicViewType, ViewType } from '../types';
+import { landingViewFor } from '../utils/landingView';
 
 interface AppShellModel {
   authLoading: boolean;
   isAuthenticated: boolean;
   currentView: ViewType | null;
-  /** Where a signed-in writer lands (the journal, or simple memoir mode); null until the settings are read. */
+  /** Where a signed-in writer lands (the journal, simple memoir mode, or a new account's welcome page); null until the settings are read. */
   landingView: ViewType | null;
   publicView: PublicViewType | null;
   authPageProps: AuthPageProps;
@@ -345,7 +346,7 @@ export function useAppShellModel(): AppShellModel {
   });
 
   let landingView: ViewType | null = null;
-  if (configLoaded) landingView = config.memoirSimpleMode === true ? 'memoirSimple' : 'journal';
+  if (configLoaded) landingView = landingViewFor(config);
 
   const {
     introPageProps,

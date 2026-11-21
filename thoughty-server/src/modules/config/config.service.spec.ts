@@ -46,6 +46,7 @@ describe('ConfigService', () => {
         highContrast: 'false',
         quietMode: 'false',
         memoirSimpleMode: 'false',
+        onboardingDone: 'false',
         maxPinnedEntries: '3',
         defaultVisibility: 'private',
         defaultCommentPolicy: 'everyone',
@@ -75,6 +76,7 @@ describe('ConfigService', () => {
       expect(result.autoTagMaxTags).toBe('0');
       expect(result.quietMode).toBe('false'); // off by default
       expect(result.memoirSimpleMode).toBe('false'); // off by default
+      expect(result.onboardingDone).toBe('false'); // a new account is asked what it is here for
     });
 
     it('should override all defaults when all settings exist', async () => {
@@ -88,6 +90,7 @@ describe('ConfigService', () => {
         { key: 'highContrast', value: 'true' },
         { key: 'quietMode', value: 'true' },
         { key: 'memoirSimpleMode', value: 'true' },
+        { key: 'onboardingDone', value: 'true' },
         { key: 'defaultVisibility', value: 'public' },
         { key: 'defaultCommentPolicy', value: 'followers' },
         { key: 'language', value: 'fr' },
@@ -106,6 +109,7 @@ describe('ConfigService', () => {
         highContrast: 'true',
         quietMode: 'true',
         memoirSimpleMode: 'true',
+        onboardingDone: 'true',
         maxPinnedEntries: '3',
         defaultVisibility: 'public',
         defaultCommentPolicy: 'followers',

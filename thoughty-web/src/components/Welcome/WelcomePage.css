@@ -1,0 +1,215 @@
+.welcome-page {
+  display: grid;
+  width: 100%;
+  max-width: 56rem;
+  margin: 0 auto;
+  gap: 1rem;
+  color: #f3f4f6;
+}
+
+.welcome-page.light {
+  color: #111827;
+}
+
+.welcome-page > .page-header {
+  margin-bottom: 0.5rem;
+}
+
+.welcome-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.welcome-choice,
+.welcome-card {
+  border: 1px solid #374151;
+  border-radius: 0.75rem;
+  background: #1f2937;
+  color: inherit;
+}
+
+.welcome-page.light .welcome-choice,
+.welcome-page.light .welcome-card {
+  border-color: #e5e7eb;
+  background: #fff;
+}
+
+.welcome-choice {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  align-content: start;
+  gap: 0.4rem;
+  padding: 1.1rem 1.25rem;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.welcome-choice:hover:not(:disabled) {
+  border-color: #b45309;
+}
+
+.welcome-choice .codicon {
+  justify-self: start;
+  color: #fbbf24;
+  font-size: 1.5rem;
+}
+
+.welcome-page.light .welcome-choice .codicon {
+  color: #92400e;
+}
+
+.welcome-choice-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.welcome-choice-body,
+.welcome-hint {
+  color: #9ca3af;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.welcome-page.light .welcome-choice-body,
+.welcome-page.light .welcome-hint {
+  color: #4b5563;
+}
+
+.welcome-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+}
+
+.welcome-templates {
+  display: grid;
+  gap: 0.6rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.welcome-templates legend {
+  padding: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.welcome-hint {
+  margin: 0;
+}
+
+.welcome-template {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #374151;
+  border-radius: 0.6rem;
+  cursor: pointer;
+}
+
+.welcome-page.light .welcome-template {
+  border-color: #e5e7eb;
+}
+
+.welcome-template:has(input:checked) {
+  border-color: #b45309;
+}
+
+.welcome-template input {
+  margin-top: 0.25rem;
+  accent-color: #b45309;
+}
+
+.welcome-template-text {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.welcome-error {
+  margin: 0;
+  color: #fca5a5;
+  font-size: 0.875rem;
+}
+
+.welcome-page.light .welcome-error {
+  color: #b91c1c;
+}
+
+.welcome-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.welcome-primary,
+.welcome-secondary {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.95rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.welcome-primary {
+  background: #b45309;
+  color: #fff;
+}
+
+.welcome-primary:hover:not(:disabled) {
+  background: #92400e;
+}
+
+.welcome-secondary {
+  border-color: #4b5563;
+  background: transparent;
+  color: inherit;
+}
+
+.welcome-page.light .welcome-secondary {
+  border-color: #d1d5db;
+}
+
+.welcome-skip {
+  justify-self: start;
+  padding: 0.25rem 0.5rem;
+  border: 0;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: #fbbf24;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.welcome-page.light .welcome-skip {
+  color: #92400e;
+}
+
+.welcome-skip:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.welcome-page button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.welcome-page button:focus-visible,
+.welcome-template:has(input:focus-visible) {
+  outline: 3px solid #38bdf8;
+  outline-offset: 2px;
+}

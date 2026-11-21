@@ -43,6 +43,8 @@ export function createMockSignUpState(options: MockSignUpOptions = {}): MockSign
 function signIn(state: MockAppState, email: string, username: string, emailVerified: boolean) {
   state.authenticated = true;
   state.user = { id: 1, username, email, authProvider: "local", emailVerified, twoFactorEnabled: false, isNewUser: true };
+  // A new account has not seen the welcome page yet
+  state.config.onboardingDone = false;
 }
 
 /** Registration, verify-first by default, and the link that creates the account. */

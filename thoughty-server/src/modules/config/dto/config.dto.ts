@@ -138,6 +138,9 @@ export class UpdateConfigDto {
   @SettingChoice(BOOLEAN_TEXT, 'Simple memoir mode: signing in and the weekly question link open one large question with a record button; off unless true')
   memoirSimpleMode?: string;
 
+  @SettingChoice(BOOLEAN_TEXT, 'First-run onboarding answered or skipped: until true, signing in opens the welcome page that asks what the writer is here for')
+  onboardingDone?: string;
+
   @SettingText(MODEL_ID_MAX_LENGTH, MODEL_DESCRIPTION)
   openRouterModel?: string;
 
@@ -210,6 +213,7 @@ export const USER_CONFIG_KEYS: ReadonlySet<string> = new Set<keyof UpdateConfigD
   'quietMode',
   'comfortReads',
   'memoirSimpleMode',
+  'onboardingDone',
   'openRouterModel',
   'openRouterTagModel',
   'openRouterWritingModel',

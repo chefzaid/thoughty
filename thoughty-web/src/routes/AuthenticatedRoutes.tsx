@@ -15,6 +15,7 @@ import ReviewRoute from './ReviewRoute';
 import StatsRoute from './StatsRoute';
 import TagManagerRoute from './TagManagerRoute';
 import TasksRoute from './TasksRoute';
+import WelcomeRoute from './WelcomeRoute';
 
 interface AuthenticatedRoutesProps {
   diariesRouteProps: ComponentProps<typeof DiariesRoute>;
@@ -29,6 +30,7 @@ interface AuthenticatedRoutesProps {
   statsRouteProps: ComponentProps<typeof StatsRoute>;
   tagManagerRouteProps: ComponentProps<typeof TagManagerRoute>;
   tasksRouteProps: ComponentProps<typeof TasksRoute>;
+  welcomeRouteProps: ComponentProps<typeof WelcomeRoute>;
 }
 
 function AuthenticatedRoutes({
@@ -44,9 +46,11 @@ function AuthenticatedRoutes({
   statsRouteProps,
   tagManagerRouteProps,
   tasksRouteProps,
+  welcomeRouteProps,
 }: Readonly<AuthenticatedRoutesProps>) {
   return (
     <Routes>
+      <Route path={getPathForView('welcome')} element={<WelcomeRoute {...welcomeRouteProps} />} />
       <Route path={getPathForView('profile')} element={<ProfileRoute {...profileRouteProps} />} />
       <Route path={getPathForView('tags')} element={<TagManagerRoute {...tagManagerRouteProps} />} />
       <Route path={getPathForView('people')} element={<PeopleRoute {...peopleRouteProps} />} />

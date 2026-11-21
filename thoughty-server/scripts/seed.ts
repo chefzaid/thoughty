@@ -85,6 +85,8 @@ const MAIN_USER: SeedUser = {
         gender: 'other',
         theme: 'dark',
         language: 'en',
+        // The seeded writers have used the app for years; only newbie is asked what it is here for
+        onboardingDone: 'true',
         maxPinnedEntries: '3',
         defaultVisibility: 'private',
         readDates: 'true',
@@ -100,8 +102,8 @@ const MAIN_USER: SeedUser = {
 };
 
 const COMMUNITY_USERS: SeedUser[] = [
-    { id: 2, username: 'maya', email: 'maya@example.com', verified: true, diaries: [{ key: 'notes', name: 'Notes', icon: '📝', color: '#059669', visibility: 'public', isDefault: true }], settings: { name: 'Maya Chen', theme: 'light' } },
-    { id: 3, username: 'sam', email: 'sam@example.com', verified: true, diaries: [{ key: 'notes', name: 'Journal', icon: '📓', color: '#CA8A04', visibility: 'public', isDefault: true }], settings: { name: 'Sam Rivera' } },
+    { id: 2, username: 'maya', email: 'maya@example.com', verified: true, diaries: [{ key: 'notes', name: 'Notes', icon: '📝', color: '#059669', visibility: 'public', isDefault: true }], settings: { name: 'Maya Chen', theme: 'light', onboardingDone: 'true' } },
+    { id: 3, username: 'sam', email: 'sam@example.com', verified: true, diaries: [{ key: 'notes', name: 'Journal', icon: '📓', color: '#CA8A04', visibility: 'public', isDefault: true }], settings: { name: 'Sam Rivera', onboardingDone: 'true' } },
     { id: 4, username: 'leo', email: 'leo@example.com', verified: true, deleted: true, diaries: [{ key: 'notes', name: 'Journal', icon: '📓', color: '#6B7280', visibility: 'public', isDefault: true }], settings: {} },
 ];
 

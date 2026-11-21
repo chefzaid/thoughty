@@ -32,6 +32,8 @@ export interface Config {
   comfortReads?: boolean;
   /** Simple memoir mode: signing in and the weekly question link open one large question with a record button; off unless true. */
   memoirSimpleMode?: boolean;
+  /** The first-run welcome page was answered or skipped; false for a new account, which then lands on it. */
+  onboardingDone?: boolean;
   openRouterModel?: string;
   openRouterSummaryModel?: string;
   openRouterPromptModel?: string;

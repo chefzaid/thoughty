@@ -123,6 +123,27 @@ describe('appShellProps', () => {
     expect(buildAuthenticatedRoutesProps(createRoutesParams()).memoirRouteProps.simpleMode).toBe(false);
   });
 
+  it('marks the welcome page done with the other settings and gives a diary its first template', async () => {
+    const saveConfig = vi.fn().mockResolvedValue(true);
+    const handleUpdateDiary = vi.fn().mockResolvedValue(undefined);
+    const config = { theme: 'light' as const, name: 'Zaid', tagMetadata: '{}', onboardingDone: false };
+    const { welcomeRouteProps } = buildAuthenticatedRoutesProps(createRoutesParams({
+      config,
+      saveConfig,
+      diariesState: { ...createRoutesParams().diariesState, handleUpdateDiary },
+    }));
+
+    expect(welcomeRouteProps.theme).toBe('light');
+    await expect(welcomeRouteProps.onFinish()).resolves.toBe(true);
+    expect(saveConfig).toHaveBeenCalledWith({ ...config, onboardingDone: true });
+
+    await welcomeRouteProps.onSetDiaryTemplate(makeDiary({ id: 2, name: 'Notes', icon: 'N', color: '#2A9D8F' }), 'builtin-gratitude');
+    expect(handleUpdateDiary).toHaveBeenLastCalledWith(2, { name: 'Notes', icon: 'N', visibility: 'private', color: '#2A9D8F', defaultTemplateId: 'builtin-gratitude' });
+    // A diary without a colour keeps none: the API sets no colour it was not sent
+    await welcomeRouteProps.onSetDiaryTemplate(makeDiary({ id: 3, name: 'Plain' }), 'builtin-daily-reflection');
+    expect(handleUpdateDiary).toHaveBeenLastCalledWith(3, { name: 'Plain', icon: '📓', visibility: 'private', defaultTemplateId: 'builtin-daily-reflection' });
+  });
+
   it('wires profile, tag manager, diary management, and import-export callbacks', async () => {
     const saveConfig = vi.fn().mockResolvedValue(true);
     const downloadUserData = vi.fn().mockResolvedValue(true);

@@ -19,6 +19,7 @@ export class UserConfigDto extends OmitType(UpdateConfigDto, [
   'quietMode',
   'comfortReads',
   'memoirSimpleMode',
+  'onboardingDone',
 ] as const) {
   @NumberText('Font size in pixels')
   fontSize?: string;
@@ -46,6 +47,9 @@ export class UserConfigDto extends OmitType(UpdateConfigDto, [
 
   @BooleanText('Simple memoir mode: signing in and the weekly question link open one large question with a record button; off unless true')
   memoirSimpleMode?: string;
+
+  @BooleanText('First-run onboarding answered or skipped: until true, signing in opens the welcome page that asks what the writer is here for; false until saved (accounts that existed before the welcome page were marked true)')
+  onboardingDone?: string;
 }
 
 /** The runtime feature flags by name: `ai`, `bookConverter`, `cloudSync`, `publicSharing`, and any the provider adds; a missing one is on. */

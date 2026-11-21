@@ -3,7 +3,7 @@ import { setupMockApp } from '../support/mockApp';
 
 test.describe('Authentication onboarding', () => {
   // A server without email (outside production) signs in at once; sign-up.spec.ts has the verify-first flow
-  test('signs up from the public intro page and opens the journal when the server cannot send email', async ({ page }) => {
+  test('signs up from the public intro page and lands on the welcome page when the server cannot send email', async ({ page }) => {
     const { state } = await setupMockApp(page, { signUp: { instant: true } });
 
     await page.goto('/');
@@ -16,7 +16,8 @@ test.describe('Authentication onboarding', () => {
     await page.getByRole('button', { name: 'Sign Up' }).click();
 
     await expect.poll(() => state.signUp.lastRegisterPayload?.username).toBe('NewWriter');
-    await expect(page.getByPlaceholder("What's on your mind?")).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Welcome to Thoughty' })).toBeVisible();
+    await expect(page).toHaveURL(/\/welcome$/);
   });
 
   test('logs in with a username and lands on the journal route', async ({ page }) => {

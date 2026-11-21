@@ -63,7 +63,7 @@ Read replicas ([Data Model](./data-model.md#read-replicas)), request body limits
 | `maya` | Community member with mostly public entries, for the **Feed** |
 | `sam` | Public entries in every moderation state; only visible, active ones reach the feed |
 | `leo` | Deleted account whose entries must never appear; login is refused |
-| `newbie` | Unverified account with an empty journal, for onboarding and empty states |
+| `newbie` | Unverified account with an empty journal, for onboarding and empty states; signing in opens the first-run welcome page until it is answered (the other accounts have it done) |
 
 The `test` journal exercises every feature: Markdown, pins, archive, revisions, `[[date]]` cross-references, **On This Day**, planted duplicates, yearly tag themes, templates, AI chats, a guided memoir, and feature requests. `test`, `maya`, and `sam` follow, comment on, and like each other, which fills the social views. Attachments upload only when object storage is reachable. `cd thoughty-server && npm run db:validate-seed` checks the data without writing.
 

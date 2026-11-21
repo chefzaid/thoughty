@@ -4935,7 +4935,8 @@ export interface components {
          *       "streakCard": "true",
          *       "quietMode": "true",
          *       "comfortReads": "true",
-         *       "memoirSimpleMode": "true"
+         *       "memoirSimpleMode": "true",
+         *       "onboardingDone": "true"
          *     }
          */
         UserConfigDto: {
@@ -5055,6 +5056,11 @@ export interface components {
              * @enum {string}
              */
             memoirSimpleMode?: "true" | "false";
+            /**
+             * @description First-run onboarding answered or skipped: until true, signing in opens the welcome page that asks what the writer is here for; false until saved (accounts that existed before the welcome page were marked true)
+             * @enum {string}
+             */
+            onboardingDone?: "true" | "false";
         };
         /**
          * @example {
@@ -5081,6 +5087,7 @@ export interface components {
          *       "quietMode": "true",
          *       "comfortReads": "true",
          *       "memoirSimpleMode": "true",
+         *       "onboardingDone": "true",
          *       "openRouterModel": "example",
          *       "openRouterTagModel": "reflection",
          *       "openRouterWritingModel": "example",
@@ -5165,6 +5172,8 @@ export interface components {
             comfortReads?: ("true" | "false") | boolean;
             /** @description Simple memoir mode: signing in and the weekly question link open one large question with a record button; off unless true */
             memoirSimpleMode?: ("true" | "false") | boolean;
+            /** @description First-run onboarding answered or skipped: until true, signing in opens the welcome page that asks what the writer is here for */
+            onboardingDone?: ("true" | "false") | boolean;
             /** @description OpenRouter model id, or empty for the default */
             openRouterModel?: string;
             /** @description OpenRouter model id, or empty for the default */
@@ -15044,7 +15053,8 @@ export interface operations {
                      *       "streakCard": "true",
                      *       "quietMode": "true",
                      *       "comfortReads": "true",
-                     *       "memoirSimpleMode": "true"
+                     *       "memoirSimpleMode": "true",
+                     *       "onboardingDone": "true"
                      *     }
                      */
                     "application/json": components["schemas"]["UserConfigDto"];
@@ -15086,6 +15096,7 @@ export interface operations {
                  *       "quietMode": "true",
                  *       "comfortReads": "true",
                  *       "memoirSimpleMode": "true",
+                 *       "onboardingDone": "true",
                  *       "openRouterModel": "example",
                  *       "openRouterTagModel": "reflection",
                  *       "openRouterWritingModel": "example",

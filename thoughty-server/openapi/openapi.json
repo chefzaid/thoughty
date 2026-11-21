@@ -4645,7 +4645,8 @@
                   "streakCard": "true",
                   "quietMode": "true",
                   "comfortReads": "true",
-                  "memoirSimpleMode": "true"
+                  "memoirSimpleMode": "true",
+                  "onboardingDone": "true"
                 }
               }
             }
@@ -4696,6 +4697,7 @@
                 "quietMode": "true",
                 "comfortReads": "true",
                 "memoirSimpleMode": "true",
+                "onboardingDone": "true",
                 "openRouterModel": "example",
                 "openRouterTagModel": "reflection",
                 "openRouterWritingModel": "example",
@@ -20556,6 +20558,14 @@
               "false"
             ],
             "description": "Simple memoir mode: signing in and the weekly question link open one large question with a record button; off unless true"
+          },
+          "onboardingDone": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "description": "First-run onboarding answered or skipped: until true, signing in opens the welcome page that asks what the writer is here for; false until saved (accounts that existed before the welcome page were marked true)"
           }
         },
         "example": {
@@ -20595,7 +20605,8 @@
           "streakCard": "true",
           "quietMode": "true",
           "comfortReads": "true",
-          "memoirSimpleMode": "true"
+          "memoirSimpleMode": "true",
+          "onboardingDone": "true"
         }
       },
       "UpdateConfigDto": {
@@ -20826,6 +20837,21 @@
             ],
             "description": "Simple memoir mode: signing in and the weekly question link open one large question with a record button; off unless true"
           },
+          "onboardingDone": {
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "true",
+                  "false"
+                ]
+              },
+              {
+                "type": "boolean"
+              }
+            ],
+            "description": "First-run onboarding answered or skipped: until true, signing in opens the welcome page that asks what the writer is here for"
+          },
           "openRouterModel": {
             "type": "string",
             "maxLength": 300,
@@ -20936,6 +20962,7 @@
           "quietMode": "true",
           "comfortReads": "true",
           "memoirSimpleMode": "true",
+          "onboardingDone": "true",
           "openRouterModel": "example",
           "openRouterTagModel": "reflection",
           "openRouterWritingModel": "example",

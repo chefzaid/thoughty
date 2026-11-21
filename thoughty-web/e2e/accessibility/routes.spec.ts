@@ -27,6 +27,7 @@ const PUBLIC_ROUTES: Record<string, RouteContent> = {
 };
 
 const AUTHENTICATED_ROUTES: Record<string, RouteContent> = {
+  '/welcome': (page) => [page.getByRole('list', { name: 'What brings you here?' }), page.getByRole('button', { name: 'Skip and open my journal' })],
   '/journal': (page) => [
     page.getByRole('button', { name: 'Manage Diaries' }),
     page.getByRole('textbox', { name: 'Date of the entry' }),

@@ -92,8 +92,8 @@ describe('AppShell public flows', () => {
     expect(verifyEmail).toHaveBeenCalledWith('route-token');
   });
 
-  it('loads the sign-up link route and opens the journal once the account is created', async () => {
-    // Completing the sign-up signs the new writer in, as the auth context does, so the journal stays open
+  it('loads the sign-up link route and opens the welcome page once the account is created', async () => {
+    // Completing the sign-up signs the new writer in, as the auth context does, so the app stays open
     const completeSignUp = vi.fn(async () => {
       setMockAuthState({ completeSignUp });
       return { success: true, isNewUser: true };
@@ -107,8 +107,8 @@ describe('AppShell public flows', () => {
     await userEvent.type(screen.getByLabelText('Password'), 'Pass123!@');
     await userEvent.click(screen.getByRole('button', { name: 'Create my account' }));
     expect(completeSignUp).toHaveBeenCalledWith('link-token', 'Pass123!@', undefined);
-    await waitFor(() => expect(globalThis.location.pathname).toBe('/journal'));
-    expect(await screen.findByRole('feed', { name: 'Journal entries' })).toBeInTheDocument();
+    await waitFor(() => expect(globalThis.location.pathname).toBe('/welcome'));
+    expect(await screen.findByRole('heading', { name: 'Welcome to Thoughty' })).toBeInTheDocument();
   });
 
   it('loads the password reset link route, drops the token from the address and goes on to sign in', async () => {

@@ -199,6 +199,19 @@ export function buildAuthenticatedRoutesProps({
       onSimpleModeChange: (memoirSimpleMode: boolean) => saveConfig({ ...config, memoirSimpleMode }),
       t,
     },
+    welcomeRouteProps: {
+      theme: config.theme,
+      diaries: diariesState.diaries,
+      onFinish: () => saveConfig({ ...config, onboardingDone: true }),
+      onSetDiaryTemplate: (diary, templateId) => diariesState.handleUpdateDiary(diary.id, {
+        name: diary.name,
+        icon: diary.icon,
+        visibility: diary.visibility,
+        ...(diary.color ? { color: diary.color } : {}),
+        defaultTemplateId: templateId,
+      }),
+      t,
+    },
     reviewRouteProps: {
       theme: config.theme,
       language: config.language,
