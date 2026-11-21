@@ -1,3 +1,4 @@
+import { createAccountActivityMock } from '@/modules/auth/account-activity/account-activity.test-helpers';
 import { ContentLockedException } from '@/common/content-lock';
 import { asUnlocked } from '@/common/content-lock/content-lock.test-helpers';
 import { expectApiError } from '@/common/errors/api-error.test-helpers';
@@ -15,6 +16,7 @@ describe('UserDataExportService with locked content', () => {
     ...repositories.slice(0, 19),
     { reveal: jest.fn(async (entries: unknown[]) => entries) },
     ...repositories.slice(19),
+    createAccountActivityMock(),
   );
 
   beforeEach(() => entryRepository.query.mockResolvedValue([{ locked: true }]));

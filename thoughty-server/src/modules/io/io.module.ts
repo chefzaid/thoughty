@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Entry, Setting, Diary, User, Attachment } from '@/database/entities';
 import { AttachmentsModule } from '@/modules/attachments';
+import { AuthModule } from '@/modules/auth/auth.module';
 import { UserConfigModule } from '@/modules/config';
 import { DiariesModule } from '@/modules/diaries';
 import { EntriesModule } from '@/modules/entries';
@@ -15,6 +16,7 @@ import { MarkdownArchiveService } from './markdown-archive.service';
   imports: [
     TypeOrmModule.forFeature([Entry, Setting, Diary, User, Attachment]),
     AttachmentsModule,
+    AuthModule,
     DiariesModule,
     UserConfigModule,
     EntriesModule,

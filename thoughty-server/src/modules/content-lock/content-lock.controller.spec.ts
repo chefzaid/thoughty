@@ -1,11 +1,13 @@
 import { asUnlocked } from '@/common/content-lock/content-lock.test-helpers';
 import { ContentLockController } from './content-lock.controller';
+import { createAccountActivityMock } from '@/modules/auth/account-activity/account-activity.test-helpers';
 
 describe('ContentLockController', () => {
   const user = { userId: 3 } as never;
   const challenge = { twoFactorRequired: true as const, challengeToken: 'challenge', expiresInSeconds: 600 };
   let pins: Record<string, jest.Mock>;
   let unlocks: Record<string, jest.Mock>;
+  let activity: ReturnType<typeof createAccountActivityMock>;
   let controller: ContentLockController;
 
   beforeEach(() => {
@@ -17,7 +19,8 @@ describe('ContentLockController', () => {
       verify: jest.fn(),
     };
     unlocks = { endAll: jest.fn(), create: jest.fn().mockResolvedValue({ token: 't', expiresAt: new Date(0) }), end: jest.fn() };
-    controller = new ContentLockController(pins as never, unlocks as never);
+    activity = createAccountActivityMock();
+    controller = new ContentLockController(pins as never, unlocks as never, activity as never);
   });
 
   it('says whether a PIN is set, anything is locked, how many tries are left and whether the request is unlocked', async () => {
@@ -46,6 +49,16 @@ describe('ContentLockController', () => {
     await expect(controller.setPin(user, { pin: '1357', password: 'x' })).resolves.toBe(challenge);
     await expect(controller.removePin(user, { password: 'x' })).resolves.toBe(challenge);
     expect(unlocks.endAll).toHaveBeenCalledTimes(2);
+    expect(activity.record.mock.calls).toEqual([[3, 'pin_changed'], [3, 'pin_removed']]);
+  });
+
+  it('records a first PIN, a change with the current PIN and a reset with the password or emailed code', async () => {
+    await controller.setPin(user, { pin: '1357' });
+    await controller.setPin(user, { pin: '1357', currentPin: '2468' });
+    await controller.setPin(user, { pin: '1357', password: 'x' });
+    await controller.setPin(user, { pin: '1357', challengeToken: 'challenge', code: '123456' });
+
+    expect(activity.record.mock.calls.map(([, kind]) => kind)).toEqual(['pin_set', 'pin_changed', 'pin_reset', 'pin_reset']);
   });
 
   it('unlocks after the PIN is checked, and locks again by ending the request’s unlock', async () => {

@@ -3,7 +3,6 @@ import type {
   MockCloudProvider,
   MockCloudProviderStatus,
   MockCloudSchedule,
-  MockFeatureRequest,
 } from "./mockApp.shared";
 import { mockDiary, type MockDiary } from "./mockApp.diaries";
 
@@ -52,6 +51,15 @@ export const DEFAULT_CLOUD_FILES: MockCloudFile[] = [
     }),
   },
 ];
+
+export interface MockFeatureRequest {
+  id: number;
+  title: string;
+  details: string;
+  status: "open" | "reviewing" | "planned";
+  votes: number;
+  createdAt: string;
+}
 
 export const DEFAULT_FEATURE_REQUESTS: MockFeatureRequest[] = [
   {

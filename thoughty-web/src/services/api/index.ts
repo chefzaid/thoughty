@@ -29,3 +29,4 @@ export * from './openTasksService';
 export * from './entryReaderService';
 export * from './contentLockService';
 export * from './contentUnlockToken';
+export * from './accountActivityService';

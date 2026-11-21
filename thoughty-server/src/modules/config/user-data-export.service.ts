@@ -35,6 +35,7 @@ import { toPersonDate, type PersonDateColumns } from '@/modules/people/person-da
 import { isExportableSettingKey } from './config.service';
 import { ContentLockedException, holdsLockedContent, isContentUnlocked } from '@/common/content-lock';
 import { apiError } from '@/common/errors';
+import { AccountActivityService } from '@/modules/auth/account-activity/account-activity.service';
 
 /** An opt-in email setting as the data download writes it, null when it was never saved. */
 function exportOptInEmail(setting: OptInEmailSetting | null) {
@@ -108,6 +109,7 @@ export class UserDataExportService {
     private readonly muteRepository: Repository<UserMute>,
     @InjectRepository(UserBlock)
     private readonly blockRepository: Repository<UserBlock>,
+    private readonly accountActivity: AccountActivityService,
   ) {}
 
   /**
@@ -118,7 +120,7 @@ export class UserDataExportService {
     if (!isContentUnlocked(userId) && (await holdsLockedContent(this.entryRepository, userId))) {
       throw apiError(ContentLockedException, 'CONTENT_LOCKED');
     }
-    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people, onThisDayEmail, monthlyRecapEmail, capsules, shareLinks, composerDraft] = await Promise.all([
+    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people, onThisDayEmail, monthlyRecapEmail, capsules, shareLinks, composerDraft, accountEvents, newBrowserEmail] = await Promise.all([
       this.userRepository.findOne({ where: { id: userId } }),
       this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
       // Entries in the recycle bin are still personal data until they are removed for good, and sealed
@@ -141,6 +143,8 @@ export class UserDataExportService {
       // The token's hash is never selected; the token itself was never kept
       this.shareLinkRepository.find({ where: { userId }, order: { createdAt: 'ASC', id: 'ASC' } }),
       this.composerDraftRepository.findOne({ where: { userId } }),
+      this.accountActivity.listForDownload(userId),
+      this.accountActivity.newBrowserEmailEnabled(userId),
     ]);
 
     const safeUser = user
@@ -297,6 +301,11 @@ export class UserDataExportService {
             updatedAt: composerDraft.updatedAt,
           }
         : null,
+      // The past year's sign-ins and security changes, with browser and system names only
+      accountActivity: {
+        newBrowserEmail,
+        events: accountEvents.map(({ kind, browser, system, createdAt }) => ({ kind, browser, system, createdAt })),
+      },
     };
   }
 

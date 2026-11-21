@@ -1,3 +1,4 @@
+import { createAccountActivityMock } from '@/modules/auth/account-activity/account-activity.test-helpers';
 import { UserDataExportService } from './user-data-export.service';
 
 /** A repository with nothing in it, for the parts of the download these specs do not look at. */
@@ -20,7 +21,7 @@ function build(
   const timeCapsules = { reveal: jest.fn(async (rows: unknown[]) => rows) };
   const repositories = Array.from({ length: 19 }, emptyRepository);
   const Service = UserDataExportService as unknown as new (...dependencies: unknown[]) => UserDataExportService;
-  return new Service(...repositories, timeCapsules, emptyRepository(), emptyRepository(), emptyRepository(), savedEntryRepository, topicFollowRepository, muteRepository, blockRepository);
+  return new Service(...repositories, timeCapsules, emptyRepository(), emptyRepository(), emptyRepository(), savedEntryRepository, topicFollowRepository, muteRepository, blockRepository, createAccountActivityMock());
 }
 
 describe('UserDataExportService saved entries, followed topics, muted and blocked writers', () => {

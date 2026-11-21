@@ -414,6 +414,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the account’s activity of the past year
+         * @description Sign-ins and refused sign-ins, sign-outs, password and two-factor changes, PIN changes, data downloads and exports, and private share links made or revoked, each with its browser and system (no IP address).
+         */
+        get: operations["AccountActivityController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/activity/new-browser-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Turn the email about a sign-in from a new browser on or off */
+        put: operations["AccountActivityController_setNewBrowserEmail"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/entries": {
         parameters: {
             query?: never;
@@ -3116,6 +3153,87 @@ export interface components {
              * @example johndoe
              */
             username?: string;
+        };
+        /**
+         * @example {
+         *       "id": 121,
+         *       "kind": "sign_in",
+         *       "browser": "Firefox",
+         *       "system": "Windows",
+         *       "createdAt": "2026-11-21T09:15:00.000Z"
+         *     }
+         */
+        AccountEventDto: {
+            /** @example 121 */
+            id: number;
+            /**
+             * @description What happened: a sign-in, a refused sign-in (wrong password or code), a sign-out, other sessions signed out, a password changed or reset, two-factor authentication turned on or off, the PIN set, changed, reset or removed, the data downloaded, the journal exported, or a private share link made or revoked
+             * @example sign_in
+             * @enum {string}
+             */
+            kind: "sign_in" | "sign_in_refused" | "sign_out" | "sessions_revoked" | "password_changed" | "password_reset" | "two_factor_enabled" | "two_factor_disabled" | "pin_set" | "pin_changed" | "pin_reset" | "pin_removed" | "data_downloaded" | "journal_exported" | "share_link_created" | "share_link_revoked";
+            /**
+             * @description Browser name, without its version; null when unknown
+             * @example Firefox
+             */
+            browser: string | null;
+            /**
+             * @description System name, without its version; null when unknown
+             * @example Windows
+             */
+            system: string | null;
+            /**
+             * Format: date-time
+             * @example 2026-11-21T09:15:00.000Z
+             */
+            createdAt: string;
+        };
+        /**
+         * @example {
+         *       "events": [
+         *         {
+         *           "id": 121,
+         *           "kind": "sign_in",
+         *           "browser": "Firefox",
+         *           "system": "Windows",
+         *           "createdAt": "2026-11-21T09:15:00.000Z"
+         *         }
+         *       ],
+         *       "nextBefore": null,
+         *       "newBrowserEmail": true
+         *     }
+         */
+        AccountActivityResponseDto: {
+            /** @description The past year’s events, newest first, one page */
+            events: components["schemas"]["AccountEventDto"][];
+            /**
+             * @description Pass as `before` for the older events; null on the last page
+             * @example null
+             */
+            nextBefore: number | null;
+            /**
+             * @description Whether a sign-in from a new browser sends an email
+             * @example true
+             */
+            newBrowserEmail: boolean;
+        };
+        /**
+         * @example {
+         *       "enabled": true
+         *     }
+         */
+        NewBrowserEmailDto: {
+            /** @description Send an email when the account signs in from a browser it has not used before */
+            enabled: boolean;
+        };
+        /**
+         * @example {
+         *       "newBrowserEmail": false
+         *     }
+         */
+        NewBrowserEmailResponseDto: {
+            /** @example false */
+            newBrowserEmail: boolean;
         };
         /**
          * @example {
@@ -11918,6 +12036,78 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    AccountActivityController_list: {
+        parameters: {
+            query?: {
+                /** @description The `nextBefore` of the page before: this page holds the older events */
+                before?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One page of events, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "events": [
+                     *         {
+                     *           "id": 121,
+                     *           "kind": "sign_in",
+                     *           "browser": "Firefox",
+                     *           "system": "Windows",
+                     *           "createdAt": "2026-11-21T09:15:00.000Z"
+                     *         }
+                     *       ],
+                     *       "nextBefore": null,
+                     *       "newBrowserEmail": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AccountActivityResponseDto"];
+                };
+            };
+        };
+    };
+    AccountActivityController_setNewBrowserEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "enabled": true
+                 *     }
+                 */
+                "application/json": components["schemas"]["NewBrowserEmailDto"];
+            };
+        };
+        responses: {
+            /** @description The setting as saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "newBrowserEmail": false
+                     *     }
+                     */
+                    "application/json": components["schemas"]["NewBrowserEmailResponseDto"];
                 };
             };
         };

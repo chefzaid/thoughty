@@ -1,3 +1,4 @@
+import { accountActivityProvider } from '@/modules/auth/account-activity/account-activity.test-helpers';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import {
@@ -93,6 +94,7 @@ describe('UserDataExportService', () => {
         { provide: getRepositoryToken(MonthlyRecapEmail), useValue: monthlyRecapEmailRepository },
         { provide: getRepositoryToken(TimeCapsule), useValue: { find: jest.fn().mockResolvedValue([]) } },
         noTimeCapsules(),
+        accountActivityProvider(),
         ...[ShareLink, ComposerDraft, SavedEntry, TopicFollow, UserMute, UserBlock].map((entity) => ({ provide: getRepositoryToken(entity), useValue: { find: jest.fn().mockResolvedValue([]), findOne: jest.fn().mockResolvedValue(null) } })),
       ],
     }).compile();
@@ -100,9 +102,7 @@ describe('UserDataExportService', () => {
     service = module.get<UserDataExportService>(UserDataExportService);
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+  afterEach(() => jest.clearAllMocks());
 
   it('should return all user data', async () => {
     userRepository.findOne.mockResolvedValue({

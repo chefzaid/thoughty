@@ -37,6 +37,7 @@ import {
   MAX_IMPORT_FILES,
 } from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards';
+import { AccountActivityService } from '@/modules/auth/account-activity/account-activity.service';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { writersDayOr } from '@/common/utils';
 import { MULTIPART_FIELD_LIMITS } from '@/common/multipart-limits';
@@ -53,6 +54,7 @@ export class IoController {
     private readonly ioService: IoService,
     private readonly appImportService: AppImportService,
     private readonly markdownArchiveService: MarkdownArchiveService,
+    private readonly activity: AccountActivityService,
   ) {}
 
   @Get('format')
@@ -93,6 +95,7 @@ export class IoController {
       query.format,
       writersDayOr(query.today),
     );
+    await this.activity.record(user.userId, 'journal_exported');
 
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -175,6 +178,7 @@ export class IoController {
     try {
       await archive.write(responseSink(res));
       res.end();
+      await this.activity.record(userId, 'journal_exported');
     } catch (error) {
       // Headers are already sent, so the only signal left is a cut connection
       this.logger.warn(`Markdown archive for user ${userId} stopped: ${(error as Error).message}`);

@@ -1,3 +1,4 @@
+import { createAccountActivityMock } from '@/modules/auth/account-activity/account-activity.test-helpers';
 import { UserDataExportService } from './user-data-export.service';
 
 /** A repository with nothing in it, for the parts of the download these specs do not look at. */
@@ -24,7 +25,7 @@ describe('UserDataExportService time capsules', () => {
     // Constructor order: settings, user, diaries, entries, then 12 more repositories and the two opt-in emails
     const repositories = [emptyRepository(), emptyRepository(), emptyRepository(), entryRepository, ...Array.from({ length: 14 }, emptyRepository)];
     const Service = UserDataExportService as unknown as new (...dependencies: unknown[]) => UserDataExportService;
-    const service = new Service(...repositories, capsuleRepository, timeCapsules, emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository());
+    const service = new Service(...repositories, capsuleRepository, timeCapsules, emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), createAccountActivityMock());
 
     const data = await service.downloadData(1);
 

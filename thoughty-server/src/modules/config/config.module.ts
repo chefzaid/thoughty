@@ -32,6 +32,7 @@ import { ConfigController } from './config.controller';
 import { ConfigService } from './config.service';
 import { UserDataExportService } from './user-data-export.service';
 import { TimeCapsulesModule } from '@/modules/time-capsules/time-capsules.module';
+import { AuthModule } from '@/modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { TimeCapsulesModule } from '@/modules/time-capsules/time-capsules.module
       UserBlock,
     ]),
     TimeCapsulesModule,
+    AuthModule,
   ],
   controllers: [ConfigController],
   providers: [ConfigService, UserDataExportService],

@@ -1,3 +1,4 @@
+import { createAccountActivityMock } from '@/modules/auth/account-activity/account-activity.test-helpers';
 import { UserDataExportService } from './user-data-export.service';
 
 /** A repository with nothing in it, for the parts of the download these specs do not look at. */
@@ -14,7 +15,7 @@ function build(entries: ReturnType<typeof emptyRepository>, comments: ReturnType
   repositories[3] = entries;
   repositories[7] = comments;
   const Service = UserDataExportService as unknown as new (...dependencies: unknown[]) => UserDataExportService;
-  return new Service(...repositories, timeCapsules, ...Array.from({ length: 7 }, emptyRepository));
+  return new Service(...repositories, timeCapsules, ...Array.from({ length: 7 }, emptyRepository), createAccountActivityMock());
 }
 
 describe('UserDataExportService comment controls', () => {

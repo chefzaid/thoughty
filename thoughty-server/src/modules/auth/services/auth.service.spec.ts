@@ -20,10 +20,11 @@ describe('AuthService', () => {
   let userRepository: any;
   let refreshTokenRepository: any;
   let twoFactorService: any;
+  let activity: ReturnType<typeof createAuthServiceMocks>['activity'];
 
   beforeEach(async () => {
     const mocks = createAuthServiceMocks();
-    ({ userRepository, refreshTokenRepository, twoFactorService } = mocks);
+    ({ userRepository, refreshTokenRepository, twoFactorService, activity } = mocks);
     ({ auth: service } = await createAuthServices(mocks));
   });
 
@@ -55,6 +56,7 @@ describe('AuthService', () => {
       }
       expect(result.user.email).toBe('test@example.com');
       expect(result.user.emailVerified).toBe(false);
+      expect(activity.recordSignIn).toHaveBeenCalledWith(mockUser);
     });
 
     it('should require a two-factor challenge before creating a session', async () => {
@@ -140,6 +142,8 @@ describe('AuthService', () => {
       expect(bcrypt.compare).toHaveBeenCalledTimes(1);
       expect(bcrypt.compare).not.toHaveBeenCalledWith('password123', mockUser.passwordHash);
       expect(refreshTokenRepository.save).not.toHaveBeenCalled();
+      // Only the live account's wrong password is in an activity
+      expect(activity.record).toHaveBeenCalledTimes(1);
     });
 
     it('does not reveal that an account signs in with another provider', async () => {
@@ -151,6 +155,7 @@ describe('AuthService', () => {
       expect(error).toBeInstanceOf(UnauthorizedException);
       expect(error.message).toBe('Invalid email or password');
       expect(bcrypt.compare).toHaveBeenCalledTimes(1);
+      expect(activity.record).not.toHaveBeenCalled();
     });
 
     it('should throw UnauthorizedException for wrong password', async () => {
@@ -166,6 +171,8 @@ describe('AuthService', () => {
           identifier: 'test@example.com',
           password: 'wrongpassword',
         }), UnauthorizedException, 'AUTH_INVALID_CREDENTIALS');
+      expect(activity.record).toHaveBeenCalledWith(mockUser.id, 'sign_in_refused');
+      expect(activity.recordSignIn).not.toHaveBeenCalled();
     });
   });
 });

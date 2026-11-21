@@ -1435,6 +1435,101 @@
         ]
       }
     },
+    "/api/auth/activity": {
+      "get": {
+        "description": "Sign-ins and refused sign-ins, sign-outs, password and two-factor changes, PIN changes, data downloads and exports, and private share links made or revoked, each with its browser and system (no IP address).",
+        "operationId": "AccountActivityController_list",
+        "parameters": [
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "description": "The `nextBefore` of the page before: this page holds the older events",
+            "schema": {
+              "example": 120,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page of events, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountActivityResponseDto"
+                },
+                "example": {
+                  "events": [
+                    {
+                      "id": 121,
+                      "kind": "sign_in",
+                      "browser": "Firefox",
+                      "system": "Windows",
+                      "createdAt": "2026-11-21T09:15:00.000Z"
+                    }
+                  ],
+                  "nextBefore": null,
+                  "newBrowserEmail": true
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the account’s activity of the past year",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/activity/new-browser-email": {
+      "put": {
+        "operationId": "AccountActivityController_setNewBrowserEmail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewBrowserEmailDto"
+              },
+              "example": {
+                "enabled": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The setting as saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NewBrowserEmailResponseDto"
+                },
+                "example": {
+                  "newBrowserEmail": false
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Turn the email about a sign-in from a new browser on or off",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
     "/api/entries": {
       "get": {
         "description": "Reads the list a batch at a time for infinite scroll: from the start, `after` the `nextCursor` of the batch before, `before` the `prevCursor` of the batch after, or `around` an entry, to open the list at it.",
@@ -17034,6 +17129,140 @@
           "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
           "password": "Password123!",
           "username": "johndoe"
+        }
+      },
+      "AccountEventDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 121
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "sign_in",
+              "sign_in_refused",
+              "sign_out",
+              "sessions_revoked",
+              "password_changed",
+              "password_reset",
+              "two_factor_enabled",
+              "two_factor_disabled",
+              "pin_set",
+              "pin_changed",
+              "pin_reset",
+              "pin_removed",
+              "data_downloaded",
+              "journal_exported",
+              "share_link_created",
+              "share_link_revoked"
+            ],
+            "description": "What happened: a sign-in, a refused sign-in (wrong password or code), a sign-out, other sessions signed out, a password changed or reset, two-factor authentication turned on or off, the PIN set, changed, reset or removed, the data downloaded, the journal exported, or a private share link made or revoked",
+            "example": "sign_in"
+          },
+          "browser": {
+            "type": "string",
+            "nullable": true,
+            "description": "Browser name, without its version; null when unknown",
+            "example": "Firefox"
+          },
+          "system": {
+            "type": "string",
+            "nullable": true,
+            "description": "System name, without its version; null when unknown",
+            "example": "Windows"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-11-21T09:15:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "browser",
+          "system",
+          "createdAt"
+        ],
+        "example": {
+          "id": 121,
+          "kind": "sign_in",
+          "browser": "Firefox",
+          "system": "Windows",
+          "createdAt": "2026-11-21T09:15:00.000Z"
+        }
+      },
+      "AccountActivityResponseDto": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "description": "The past year’s events, newest first, one page",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AccountEventDto"
+            }
+          },
+          "nextBefore": {
+            "type": "number",
+            "nullable": true,
+            "description": "Pass as `before` for the older events; null on the last page",
+            "example": null
+          },
+          "newBrowserEmail": {
+            "type": "boolean",
+            "description": "Whether a sign-in from a new browser sends an email",
+            "example": true
+          }
+        },
+        "required": [
+          "events",
+          "nextBefore",
+          "newBrowserEmail"
+        ],
+        "example": {
+          "events": [
+            {
+              "id": 121,
+              "kind": "sign_in",
+              "browser": "Firefox",
+              "system": "Windows",
+              "createdAt": "2026-11-21T09:15:00.000Z"
+            }
+          ],
+          "nextBefore": null,
+          "newBrowserEmail": true
+        }
+      },
+      "NewBrowserEmailDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Send an email when the account signs in from a browser it has not used before"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "example": {
+          "enabled": true
+        }
+      },
+      "NewBrowserEmailResponseDto": {
+        "type": "object",
+        "properties": {
+          "newBrowserEmail": {
+            "type": "boolean",
+            "example": false
+          }
+        },
+        "required": [
+          "newBrowserEmail"
+        ],
+        "example": {
+          "newBrowserEmail": false
         }
       },
       "AttachmentResponseDto": {

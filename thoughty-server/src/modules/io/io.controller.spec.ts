@@ -1,3 +1,4 @@
+import { accountActivityProvider, createAccountActivityMock } from '@/modules/auth/account-activity/account-activity.test-helpers';
 import { Test, TestingModule } from '@nestjs/testing';
 import { IoController } from './io.controller';
 import { IoService } from './io.service';
@@ -9,6 +10,7 @@ describe('IoController', () => {
   let ioService: any;
   let appImportService: { importEntries: jest.Mock; attachFiles: jest.Mock };
   let markdownArchiveService: { prepare: jest.Mock };
+  let activity: ReturnType<typeof createAccountActivityMock>;
 
   const mockUser = { userId: 1, email: 'test@example.com' };
 
@@ -22,6 +24,7 @@ describe('IoController', () => {
     };
     appImportService = { importEntries: jest.fn(), attachFiles: jest.fn() };
     markdownArchiveService = { prepare: jest.fn() };
+    activity = createAccountActivityMock();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [IoController],
@@ -29,6 +32,7 @@ describe('IoController', () => {
         { provide: IoService, useValue: ioService },
         { provide: AppImportService, useValue: appImportService },
         { provide: MarkdownArchiveService, useValue: markdownArchiveService },
+        accountActivityProvider(activity),
       ],
     }).compile();
 
@@ -85,6 +89,7 @@ describe('IoController', () => {
         'attachment; filename="diary.txt"',
       );
       expect(mockRes.send).toHaveBeenCalledWith('exported data');
+      expect(activity.record).toHaveBeenCalledWith(1, 'journal_exported');
     });
   });
 
@@ -139,6 +144,7 @@ describe('IoController', () => {
       expect(res.setHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename="thoughty_all_diaries_2026-10-19.zip"');
       expect(res.write).toHaveBeenCalledWith(Buffer.from('PK'));
       expect(res.end).toHaveBeenCalled();
+      expect(activity.record).toHaveBeenCalledWith(1, 'journal_exported');
     });
 
     it('cuts the connection when the archive fails after the download started', async () => {
@@ -153,6 +159,7 @@ describe('IoController', () => {
       expect(markdownArchiveService.prepare).toHaveBeenCalledWith(1, 4, expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/));
       expect(res.destroy).toHaveBeenCalled();
       expect(res.end).not.toHaveBeenCalled();
+      expect(activity.record).not.toHaveBeenCalled();
     });
 
     it('answers with the error status when the diary is refused before streaming', async () => {

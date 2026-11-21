@@ -26,10 +26,11 @@ describe('PasswordService', () => {
   let userRepository: any;
   let refreshTokenRepository: any;
   let emailService: any;
+  let activity: ReturnType<typeof createAuthServiceMocks>['activity'];
 
   beforeEach(async () => {
     const mocks = createAuthServiceMocks();
-    ({ userRepository, refreshTokenRepository, emailService } = mocks);
+    ({ userRepository, refreshTokenRepository, emailService, activity } = mocks);
     ({ passwords: service } = await createAuthServices(mocks));
   });
 
@@ -52,6 +53,7 @@ describe('PasswordService', () => {
 
       expect(result.success).toBe(true);
       expect(refreshTokenRepository.delete).toHaveBeenCalledWith({ userId: 1 });
+      expect(activity.record).toHaveBeenCalledWith(1, 'password_changed');
     });
 
     it('should throw NotFoundException for non-existent user', async () => {
@@ -221,6 +223,7 @@ describe('PasswordService', () => {
       expect(queryBuilder.andWhere).toHaveBeenCalledWith('reset_token_expires > :now', { now: expect.any(Date) });
       expect(queryBuilder.andWhere).toHaveBeenCalledWith('deleted_at IS NULL');
       expect(manager.delete).toHaveBeenCalledWith(RefreshToken, { userId: 7 });
+      expect(activity.record).toHaveBeenCalledWith(7, 'password_reset');
     });
 
     it.each([
@@ -231,6 +234,7 @@ describe('PasswordService', () => {
 
       await expectApiError(service.resetPassword('invalid_token', 'NewPass1!'), BadRequestException, 'AUTH_INVALID_RESET_TOKEN');
       expect(manager.delete).not.toHaveBeenCalled();
+      expect(activity.record).not.toHaveBeenCalled();
     });
   });
 });

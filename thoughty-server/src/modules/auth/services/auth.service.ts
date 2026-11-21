@@ -22,6 +22,7 @@ import { AuthSessionService, type IssuedSession } from './auth-session.service';
 import { IdentityVerificationService } from './identity-verification.service';
 import { ProviderAccountService } from './provider-account.service';
 import { saveNewAccount } from './default-diary';
+import { AccountActivityService } from '../account-activity/account-activity.service';
 import {
   freeUsername,
   takenConflict,
@@ -53,6 +54,7 @@ export class AuthService {
     private readonly identityVerification: IdentityVerificationService,
     private readonly twoFactorService: TwoFactorService,
     private readonly providerAccounts: ProviderAccountService,
+    private readonly activity: AccountActivityService,
   ) {}
 
   async register(dto: RegisterDto): Promise<IssuedSession> {
@@ -103,6 +105,8 @@ export class AuthService {
     const usableHash = user && !user.deletedAt && user.passwordHash ? user.passwordHash : null;
     const validPassword = await bcrypt.compare(dto.password, usableHash ?? TIMING_EQUALIZER_HASH);
     if (!user || !usableHash || !validPassword) {
+      // A wrong password for a real account is in its activity; the answer stays the same
+      if (user && usableHash) await this.activity.record(user.id, 'sign_in_refused');
       throw apiError(UnauthorizedException, 'AUTH_INVALID_CREDENTIALS');
     }
 

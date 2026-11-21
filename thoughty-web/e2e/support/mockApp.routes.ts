@@ -33,6 +33,7 @@ import { handleFeatureFlagRoutes } from "./mockApp.feature-flags";
 import { handleSignUpRoutes } from "./mockApp.sign-up";
 import { handlePasswordResetRoutes } from "./mockApp.password-reset";
 import { handleContentLockRoutes, readMockUnlock } from "./mockApp.content-lock";
+import { handleAccountActivityRoutes } from "./mockApp.account-activity";
 
 async function handleAuthRoutes({
   route,
@@ -339,7 +340,7 @@ export async function registerMockAppRoutes(page: Page, state: MockAppState) {
     if (await handleSignUpRoutes(context) || await handlePasswordResetRoutes(context)) {
       return;
     }
-    if (await handleAuthRoutes(context)) {
+    if (await handleAccountActivityRoutes(context) || await handleAuthRoutes(context)) {
       return;
     }
     if (await handleFeatureFlagRoutes(context)) {

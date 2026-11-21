@@ -12,6 +12,7 @@ import { AccountService } from './account.service';
 import { EmailService } from './email.service';
 import { TwoFactorService } from './two-factor.service';
 import { ProviderAccountService } from './provider-account.service';
+import { accountActivityProvider, createAccountActivityMock, type AccountActivityMock } from '../account-activity/account-activity.test-helpers';
 
 /** The repository and collaborator mocks behind the auth services in their specs. */
 export interface AuthServiceMocks {
@@ -21,6 +22,7 @@ export interface AuthServiceMocks {
   jwtService: Record<string, jest.Mock>;
   emailService: Record<string, jest.Mock>;
   twoFactorService: Record<string, jest.Mock>;
+  activity: AccountActivityMock;
   /** The transaction's entity manager: saves reach the user or diary repository mock. */
   manager: Record<string, jest.Mock>;
   dataSource: { transaction: jest.Mock };
@@ -121,6 +123,7 @@ function createCollaboratorMocks() {
       startChallenge: jest.fn(),
       consumeLogin: jest.fn(),
     },
+    activity: createAccountActivityMock(),
   };
 }
 
@@ -145,6 +148,7 @@ export async function createAuthServices(mocks: AuthServiceMocks): Promise<AuthS
       { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue('test-secret') } },
       { provide: EmailService, useValue: mocks.emailService },
       { provide: TwoFactorService, useValue: mocks.twoFactorService },
+      accountActivityProvider(mocks.activity),
     ],
   }).compile();
 

@@ -3,6 +3,7 @@ import type { TranslationFunction } from './types';
 import { PASSWORD_SYMBOLS } from '../AuthPage/types';
 import './DataPrivacySection.css';
 import ActiveSessionsSection from './ActiveSessionsSection';
+import AccountActivitySection from './AccountActivitySection';
 import HiddenWritersSection from './HiddenWritersSection';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import TwoFactorSection from './TwoFactorSection';
@@ -352,6 +353,10 @@ function DataPrivacySection({ t, isDark, onDownloadData, showDeleteConfirm, setS
         <div className="download-data-divider" />
 
         <ActiveSessionsSection isDark={isDark} t={t} />
+
+        <div className="download-data-divider" />
+
+        <AccountActivitySection isDark={isDark} t={t} />
 
         {sharingOn && (
           <>

@@ -6,6 +6,7 @@ import { DownloadDataQueryDto, UpdateConfigDto } from './dto/config.dto';
 import { FEATURE_FLAGS_SCHEMA, UserConfigDto } from './dto/config-response.dto';
 import { SuccessResponseDto } from '@/common/dto';
 import { JwtAuthGuard } from '@/modules/auth/guards';
+import { AccountActivityService } from '@/modules/auth/account-activity/account-activity.service';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { Response } from 'express';
 import { FeatureFlagsService } from '@/common';
@@ -20,6 +21,7 @@ export class ConfigController {
     private readonly configService: ConfigService,
     private readonly featureFlagsService: FeatureFlagsService,
     private readonly userDataExportService: UserDataExportService,
+    private readonly activity: AccountActivityService,
   ) {}
 
   @Get()
@@ -73,6 +75,7 @@ export class ConfigController {
     @Res() res: Response,
   ) {
     const data = await this.userDataExportService.downloadData(user.userId);
+    await this.activity.record(user.userId, 'data_downloaded');
     const filename = `thoughty_data_${writersDayOr(query.today)}.json`;
 
     res.setHeader('Content-Type', 'application/json; charset=utf-8');

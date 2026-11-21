@@ -126,7 +126,7 @@ The worker runs seven loops, never in API pods:
 | Monthly recap emails (on the 1st of each local month, at most one per writer and local month, skipped for a month with no entries and no past memory) | 60s | `Monthly recap email for user <id> failed: <error name> <SMTP reply code>` (not retried that month); `Sent <n> monthly recap emails` after a run that sent some |
 | Time capsules (opened at their local day and hour, emailed once to a verified address; capsules in the recycle bin wait until restored) | 60s | `Time capsule email for user <id> failed: <error name> <SMTP reply code>` (the capsule is open; the email is not retried); `Sent <n> time capsule emails` after a run that sent some |
 | Recycle-bin purge (deleted over 30 days, with files) | hourly | `Failed to empty expired recycle bin entries` |
-| Account purge (accounts deleted over `ACCOUNT_PURGE_AFTER_DAYS`, default 30), after removing expired sign-up requests | hourly | `Failed to purge deleted account <id>` (retried next run); `Failed to remove expired sign-up requests` (the account purge still runs); `Removed <n> expired sign-up requests` |
+| Account purge (accounts deleted over `ACCOUNT_PURGE_AFTER_DAYS`, default 30), after removing expired sign-up requests and account activity older than a year | hourly | `Failed to purge deleted account <id>` (retried next run); `Failed to remove expired sign-up requests` or `Failed to remove account activity events older than a year` (the account purge still runs); `Removed <n> expired sign-up requests`, `Removed <n> account activity events older than a year` |
 
 A sync lease older than 15 minutes is requeued on the next scan, or failed after 3 attempts. Inspect before changing data:
 

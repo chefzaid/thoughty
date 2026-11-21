@@ -11,6 +11,7 @@ erDiagram
     User ||--o{ Attachment : owns
     User ||--o{ Setting : has
     User ||--o{ RefreshToken : has
+    User ||--o{ AccountEvent : records
     User ||--o{ CloudSyncJob : queues
     User ||--o{ AiUsageEvent : records
     User ||--o{ BookVersion : saves
@@ -82,6 +83,7 @@ Every table except `users` and `sign_up_requests` (sign-ups that have no account
 | `ShareLink` | Deleted with the user, its entry or its book version (`ON DELETE CASCADE`), and when revoked. Moving its entry to the recycle bin or sealing it deletes its links at once (trigger `trg_entries_drop_share_links`), so restoring the entry does not bring them back. Expired links are deleted as the writer next makes or lists links. |
 | `ComposerDraft` | Deleted with the user, when the entry it was is published, when the writer discards it or empties the composer, and from the other devices' local copies as they learn of it. |
 | `SignUpRequest` | Deleted when its link creates the account (in the same transaction), when the address got an account another way before the link was used, and by the worker once it has expired (24 hours after its last email). It references no user, so an account's deletion leaves it alone. |
+| `AccountEvent` | `account_events` (`user_id`, `kind`, `browser`, `system`, `created_at`; migration `1788739200000-account-events`, `chk_account_events_kind` lists the kinds `ACCOUNT_EVENT_KINDS` holds). One row per sign-in, refused sign-in, sign-out and security change of the account, with browser and system names only (no IP address). Deleted with the user, and by the worker a year after it was recorded (`idx_account_events_created`). |
 | `OnThisDayEmail`, `MonthlyRecapEmail` | Deleted with the user. Deleting its diary widens the email to all diaries (`SET NULL`). Unsubscribing only turns it off and keeps the hour, zone and diary. |
 | Everything else | Deleted with the user. Votes also go with their request. |
 

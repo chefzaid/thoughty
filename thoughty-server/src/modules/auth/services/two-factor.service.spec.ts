@@ -7,6 +7,7 @@ import * as bcrypt from 'bcryptjs';
 import { User } from '@/database/entities';
 import { EmailService } from './email.service';
 import { TwoFactorService } from './two-factor.service';
+import { accountActivityProvider, createAccountActivityMock } from '../account-activity/account-activity.test-helpers';
 
 jest.mock('bcryptjs', () => ({ compare: jest.fn() }));
 
@@ -14,6 +15,7 @@ describe('TwoFactorService', () => {
   let service: TwoFactorService;
   let userRepository: any;
   let emailService: any;
+  let activity: ReturnType<typeof createAccountActivityMock>;
 
   const createUser = (overrides: Partial<User> = {}) =>
     ({
@@ -43,9 +45,11 @@ describe('TwoFactorService', () => {
       sendTwoFactorCodeEmail: jest.fn().mockResolvedValue(undefined),
     };
 
+    activity = createAccountActivityMock();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TwoFactorService,
+        accountActivityProvider(activity),
         { provide: getRepositoryToken(User), useValue: userRepository },
         {
           provide: ConfigService,
@@ -157,6 +161,7 @@ describe('TwoFactorService', () => {
 
     await expectApiError(service.consumeLogin({ challengeToken: result.challengeToken, code: '000000' }), UnauthorizedException, 'AUTH_INVALID_2FA_CODE');
     expect(userRepository.update).not.toHaveBeenCalled();
+    expect(activity.record).toHaveBeenCalledWith(user.id, 'sign_in_refused');
 
     userRepository.findOne.mockResolvedValueOnce(null);
     await expect(
@@ -177,6 +182,7 @@ describe('TwoFactorService', () => {
     await expect(
       service.enable(user.id, { challengeToken: result.challengeToken, code }),
     ).resolves.toEqual({ success: true });
+    expect(activity.record).toHaveBeenCalledWith(user.id, 'two_factor_enabled');
     expect(user.twoFactorEnabled).toBe(true);
     expect(user.twoFactorChallengeTokenHash).toBeNull();
     expect(user.twoFactorChallengeCodeHash).toBeNull();
@@ -198,6 +204,9 @@ describe('TwoFactorService', () => {
     );
 
     await expect(service.consumeContentPinChallenge(user.id + 1, { challengeToken: result.challengeToken, code })).rejects.toThrow(UnauthorizedException);
+    await expectApiError(service.consumeContentPinChallenge(user.id, { challengeToken: result.challengeToken, code: code === '000000' ? '111111' : '000000' }), UnauthorizedException, 'AUTH_INVALID_2FA_CODE');
+    // Only a wrong code at sign-in is a refused sign-in
+    expect(activity.record).not.toHaveBeenCalled();
     await expect(service.consumeContentPinChallenge(user.id, { challengeToken: result.challengeToken, code })).resolves.toBeUndefined();
     await expect(service.startContentPinChallenge(createUser({ emailVerified: false }))).rejects.toThrow('Verify your email');
   });
@@ -208,7 +217,9 @@ describe('TwoFactorService', () => {
     (bcrypt.compare as jest.Mock).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
 
     await expectApiError(service.disable(user.id, 'wrong'), UnauthorizedException, 'AUTH_INVALID_PASSWORD');
+    expect(activity.record).not.toHaveBeenCalled();
     await expect(service.disable(user.id, 'correct')).resolves.toEqual({ success: true });
+    expect(activity.record).toHaveBeenCalledWith(user.id, 'two_factor_disabled');
     expect(user.twoFactorEnabled).toBe(false);
     expect(user.twoFactorChallengeCodeHash).toBeNull();
   });

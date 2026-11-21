@@ -1,11 +1,12 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { AccountActivityService } from '@/modules/auth/account-activity/account-activity.service';
 import { AccountPurgeService } from './account-purge.service';
 
 const PURGE_SCAN_INTERVAL_MS = 60 * 60 * 1000;
 
 /**
- * Purges deleted accounts past their grace period, and sign-up requests whose link expired, inside the
- * background worker process, never in API replicas.
+ * Purges deleted accounts past their grace period, sign-up requests whose link expired, and account
+ * activity older than a year, inside the background worker process, never in API replicas.
  */
 @Injectable()
 export class AccountPurgeWorkerService implements OnModuleDestroy {
@@ -14,7 +15,10 @@ export class AccountPurgeWorkerService implements OnModuleDestroy {
   private running: Promise<void> | null = null;
   private stopping = false;
 
-  constructor(private readonly accountPurgeService: AccountPurgeService) {}
+  constructor(
+    private readonly accountPurgeService: AccountPurgeService,
+    private readonly accountActivity: AccountActivityService,
+  ) {}
 
   async start(): Promise<void> {
     this.logger.log(`Starting deleted account purge after ${this.accountPurgeService.purgeAfterDays} days`);
@@ -34,15 +38,15 @@ export class AccountPurgeWorkerService implements OnModuleDestroy {
     await this.running;
   }
 
-  /** A failure is logged and does not hold up the account purge. */
-  private async purgeExpiredSignUps(): Promise<void> {
+  /** Removes what has expired (`what`, for the log); a failure is logged and does not hold up the account purge. */
+  private async removeExpired(what: string, remove: () => Promise<number>): Promise<void> {
     try {
-      const removed = await this.accountPurgeService.purgeExpiredSignUps();
+      const removed = await remove();
       if (removed > 0) {
-        this.logger.log(`Removed ${removed} expired sign-up requests`);
+        this.logger.log(`Removed ${removed} ${what}`);
       }
     } catch (error) {
-      this.logger.error('Failed to remove expired sign-up requests', error instanceof Error ? error.stack : undefined);
+      this.logger.error(`Failed to remove ${what}`, error instanceof Error ? error.stack : undefined);
     }
   }
 
@@ -52,7 +56,8 @@ export class AccountPurgeWorkerService implements OnModuleDestroy {
       return this.running ?? Promise.resolve();
     }
 
-    this.running = this.purgeExpiredSignUps()
+    this.running = this.removeExpired('expired sign-up requests', () => this.accountPurgeService.purgeExpiredSignUps())
+      .then(() => this.removeExpired('account activity events older than a year', () => this.accountActivity.purgeExpired()))
       .then(() => this.accountPurgeService.purgeExpired())
       .then(({ purgedUserIds, failedUserIds }) => {
         if (purgedUserIds.length > 0) {

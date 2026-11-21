@@ -15,6 +15,7 @@ import { RefreshToken, User } from '@/database/entities';
 import { AuthResponseDto, SessionResponseDto } from '../dto';
 import { getSigningSecret } from '../auth-secrets';
 import { REFRESH_TOKEN_TTL_MS } from '../refresh-token-cookie';
+import { AccountActivityService } from '../account-activity/account-activity.service';
 
 /** A newly issued session; the controller moves `refreshToken` into an httpOnly cookie. */
 export interface IssuedSession extends AuthResponseDto {
@@ -33,7 +34,8 @@ export function hashRefreshToken(refreshToken: string): string {
 
 /**
  * Signed-in sessions: issuing the access and refresh tokens of a new session, rotating a refresh
- * token, signing out, and listing or revoking a user's other sessions.
+ * token, signing out, and listing or revoking a user's other sessions. Starting a session, signing
+ * out and revoking sessions are recorded in the account activity; rotating a token is not.
  */
 @Injectable()
 export class AuthSessionService {
@@ -46,6 +48,7 @@ export class AuthSessionService {
     private readonly refreshTokenRepository: Repository<RefreshToken>,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly activity: AccountActivityService,
   ) {
     this.refreshSecret = getSigningSecret(this.configService, 'REFRESH_SECRET');
   }
@@ -62,8 +65,14 @@ export class AuthSessionService {
     );
   }
 
-  /** Starts a session for a signed-in user; `isNewUser` is reported only when it is given. */
+  /** Starts a session for a user who just signed in; `isNewUser` is reported only when it is given. */
   async createSession(user: User, isNewUser?: boolean): Promise<IssuedSession> {
+    const session = await this.issueSession(user, isNewUser);
+    await this.activity.recordSignIn(user);
+    return session;
+  }
+
+  private async issueSession(user: User, isNewUser?: boolean): Promise<IssuedSession> {
     const accessToken = this.generateAccessToken(user);
     const refreshToken = this.generateRefreshToken(user);
     await this.refreshTokenRepository.save({
@@ -124,13 +133,20 @@ export class AuthSessionService {
       throw apiError(ForbiddenException, 'AUTH_ACCOUNT_DELETED', 'This account has been deleted.');
     }
 
-    const { accessToken, refreshToken: rotatedRefreshToken } = await this.createSession(user);
+    const { accessToken, refreshToken: rotatedRefreshToken } = await this.issueSession(user);
     return { accessToken, refreshToken: rotatedRefreshToken };
   }
 
   async logout(refreshToken?: string): Promise<{ success: boolean }> {
     if (refreshToken) {
-      await this.refreshTokenRepository.delete({ tokenHash: hashRefreshToken(refreshToken) });
+      const ended = await this.refreshTokenRepository
+        .createQueryBuilder()
+        .delete()
+        .where('token_hash = :tokenHash', { tokenHash: hashRefreshToken(refreshToken) })
+        .returning('user_id')
+        .execute();
+      const userId = (ended.raw as Array<{ user_id?: number }> | undefined)?.[0]?.user_id;
+      if (userId) await this.activity.record(userId, 'sign_out');
     }
     return { success: true };
   }
@@ -168,6 +184,7 @@ export class AuthSessionService {
     }
 
     await this.refreshTokenRepository.delete({ id: sessionId, userId });
+    await this.activity.record(userId, 'sessions_revoked');
     return { success: true };
   }
 
@@ -187,6 +204,7 @@ export class AuthSessionService {
         currentTokenHash: hashRefreshToken(currentRefreshToken),
       })
       .execute();
+    await this.activity.record(userId, 'sessions_revoked');
 
     return { success: true };
   }

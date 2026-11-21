@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Query, UseGua
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '@/modules/auth/guards';
+import { AccountActivityService } from '@/modules/auth/account-activity/account-activity.service';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { SuccessResponseDto } from '@/common/dto';
 import { RATE_LIMITS, throttleDefault } from '@/common/rate-limit.constants';
@@ -19,7 +20,10 @@ import { RequireFeature } from '@/common/feature-flags';
 @UseGuards(JwtAuthGuard)
 @Controller('share-links')
 export class ShareLinksController {
-  constructor(private readonly shareLinksService: ShareLinksService) {}
+  constructor(
+    private readonly shareLinksService: ShareLinksService,
+    private readonly activity: AccountActivityService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'List the unexpired private share links of one of the writer’s entries or book versions' })
@@ -47,7 +51,9 @@ export class ShareLinksController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateShareLinkDto,
   ): Promise<CreatedShareLinkResponseDto> {
-    return this.shareLinksService.create(user.userId, dto);
+    const created = await this.shareLinksService.create(user.userId, dto);
+    await this.activity.record(user.userId, 'share_link_created');
+    return created;
   }
 
   @Delete(':id')
@@ -59,6 +65,8 @@ export class ShareLinksController {
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
   ): Promise<SuccessResponseDto> {
-    return this.shareLinksService.revoke(user.userId, id);
+    const revoked = await this.shareLinksService.revoke(user.userId, id);
+    await this.activity.record(user.userId, 'share_link_revoked');
+    return revoked;
   }
 }

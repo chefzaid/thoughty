@@ -10,6 +10,7 @@ import {
   POSTGRES_SETUP_TIMEOUT_MS,
   type PostgresTestDatabase,
 } from './postgres-test-database.test-helpers';
+import { createAccountActivityMock } from '@/modules/auth/account-activity/account-activity.test-helpers';
 
 describePostgres('HashedRefreshTokens1786233600000 on PostgreSQL', () => {
   let database: PostgresTestDatabase;
@@ -54,6 +55,7 @@ describePostgres('HashedRefreshTokens1786233600000 on PostgreSQL', () => {
       dataSource.getRepository(RefreshToken),
       new JwtService({ secret: 'integration-access-secret' }),
       { get: () => undefined } as unknown as ConfigService,
+      createAccountActivityMock() as never,
     );
     const user = await dataSource
       .getRepository(User)

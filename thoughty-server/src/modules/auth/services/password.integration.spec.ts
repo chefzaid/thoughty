@@ -10,6 +10,7 @@ import {
 } from '@/database/postgres-test-database.test-helpers';
 import { RefreshToken, User } from '@/database/entities';
 import { PasswordService } from './password.service';
+import { createAccountActivityMock } from '../account-activity/account-activity.test-helpers';
 
 const NEW_PASSWORD = 'Reset123!@';
 
@@ -41,6 +42,7 @@ describePostgres('PostgreSQL password reset', () => {
       dataSource.getRepository(RefreshToken),
       { get: (_key: string, fallback: string) => fallback } as never,
       email as never,
+      createAccountActivityMock() as never,
     );
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });

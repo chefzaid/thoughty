@@ -40,6 +40,7 @@ import {
   TopicFollow,
   UserMute,
   UserBlock,
+  AccountEvent,
 } from './entities';
 import { buildPostgresConnectionOptions } from './postgres-connection-options';
 import { buildPostgresPoolOptions } from './postgres-pool-options';
@@ -104,6 +105,7 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
           TopicFollow,
           UserMute,
           UserBlock,
+          AccountEvent,
         ],
         extra: buildPostgresPoolOptions({
           POSTGRES_POOL_MAX: configService.get<string>('POSTGRES_POOL_MAX'),

@@ -1,3 +1,4 @@
+import { accountActivityProvider, createAccountActivityMock } from '@/modules/auth/account-activity/account-activity.test-helpers';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigController } from './config.controller';
 import { ConfigService } from './config.service';
@@ -9,6 +10,7 @@ describe('ConfigController', () => {
   let configService: any;
   let featureFlagsService: any;
   let userDataExportService: any;
+  const activity = createAccountActivityMock();
 
   const mockUser = { userId: 1, email: 'test@example.com' };
 
@@ -30,6 +32,7 @@ describe('ConfigController', () => {
         { provide: ConfigService, useValue: configService },
         { provide: FeatureFlagsService, useValue: featureFlagsService },
         { provide: UserDataExportService, useValue: userDataExportService },
+        accountActivityProvider(activity),
       ],
     }).compile();
 
@@ -85,6 +88,7 @@ describe('ConfigController', () => {
       await controller.downloadData(mockUser as any, { today: '2026-11-01' }, res as any);
 
       expect(userDataExportService.downloadData).toHaveBeenCalledWith(1);
+      expect(activity.record).toHaveBeenCalledWith(1, 'data_downloaded');
       expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/json; charset=utf-8');
       expect(res.setHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename="thoughty_data_2026-11-01.json"');
       expect(res.send).toHaveBeenCalledWith(JSON.stringify(mockData, null, 2));

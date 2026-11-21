@@ -24,10 +24,11 @@ describe('AuthSessionService', () => {
   let userRepository: any;
   let refreshTokenRepository: any;
   let jwtService: any;
+  let activity: ReturnType<typeof createAuthServiceMocks>['activity'];
 
   beforeEach(async () => {
     const mocks = createAuthServiceMocks();
-    ({ userRepository, refreshTokenRepository, jwtService } = mocks);
+    ({ userRepository, refreshTokenRepository, jwtService, activity } = mocks);
     ({ sessions: service } = await createAuthServices(mocks));
   });
 
@@ -70,6 +71,8 @@ describe('AuthSessionService', () => {
         { userId: 1, jti: expect.any(String) },
         expect.objectContaining({ expiresIn: '7d' }),
       );
+      // Rotating a token is not a sign-in
+      expect(activity.recordSignIn).not.toHaveBeenCalled();
     });
 
     it('rejects a refresh token that was already used', async () => {
@@ -117,23 +120,52 @@ describe('AuthSessionService', () => {
     });
   });
 
+  it('records a new session as a sign-in in the account activity', async () => {
+    refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
+
+    const session = await service.createSession(mockUser as never, true);
+
+    expect(session.user).toEqual(expect.objectContaining({ id: 1, isNewUser: true }));
+    expect(activity.recordSignIn).toHaveBeenCalledWith(mockUser);
+  });
+
   describe('logout', () => {
-    it('should logout successfully with refresh token', async () => {
-      refreshTokenRepository.delete.mockResolvedValue({ affected: 1 });
+    const endRows = (rows: Array<{ user_id: number }>) => {
+      const builder = {
+        delete: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue({ raw: rows, affected: rows.length }),
+      };
+      refreshTokenRepository.createQueryBuilder.mockReturnValue(builder);
+      return builder;
+    };
+
+    it('ends the session of the refresh token and records the sign-out', async () => {
+      const builder = endRows([{ user_id: 1 }]);
 
       const result = await service.logout('refresh_token');
 
       expect(result).toEqual({ success: true });
-      expect(refreshTokenRepository.delete).toHaveBeenCalledWith({
+      expect(builder.where).toHaveBeenCalledWith('token_hash = :tokenHash', {
         tokenHash: hashRefreshToken('refresh_token'),
       });
+      expect(builder.returning).toHaveBeenCalledWith('user_id');
+      expect(activity.record).toHaveBeenCalledWith(1, 'sign_out');
+    });
+
+    it('records nothing for a refresh token that ended already', async () => {
+      endRows([]);
+
+      await expect(service.logout('ended_refresh_token')).resolves.toEqual({ success: true });
+      expect(activity.record).not.toHaveBeenCalled();
     });
 
     it('should logout successfully without refresh token', async () => {
       const result = await service.logout();
 
       expect(result).toEqual({ success: true });
-      expect(refreshTokenRepository.delete).not.toHaveBeenCalled();
+      expect(refreshTokenRepository.createQueryBuilder).not.toHaveBeenCalled();
     });
   });
 
@@ -211,6 +243,7 @@ describe('AuthSessionService', () => {
     expect(result).toEqual({ success: true });
     expect(refreshTokenRepository.findOne).toHaveBeenCalledWith({ where: { id: 2, userId: 1 } });
     expect(refreshTokenRepository.delete).toHaveBeenCalledWith({ id: 2, userId: 1 });
+    expect(activity.record).toHaveBeenCalledWith(1, 'sessions_revoked');
   });
 
   it('does not revoke the current session through session management', async () => {
@@ -249,6 +282,7 @@ describe('AuthSessionService', () => {
       currentTokenHash: hashRefreshToken('current_refresh_token'),
     });
     expect(execute).toHaveBeenCalled();
+    expect(activity.record).toHaveBeenCalledWith(1, 'sessions_revoked');
   });
 
   it('requires the current refresh token before revoking other sessions', async () => {

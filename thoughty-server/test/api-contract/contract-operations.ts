@@ -29,6 +29,7 @@ export const CONTRACT_SUITES = {
   registration: [],
   'provider-sign-in': ['POST /api/auth/oauth', 'GET /api/auth/sso'],
   'password-reset': ['POST /api/auth/forgot-password', 'POST /api/auth/reset-password'],
+  'account-activity': ['GET /api/auth/activity', 'PUT /api/auth/activity/new-browser-email'],
   entries: [
     'GET /api/entries',
     'POST /api/entries',

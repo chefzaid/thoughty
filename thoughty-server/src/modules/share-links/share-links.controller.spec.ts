@@ -3,6 +3,7 @@ import { NotFoundException } from '@nestjs/common';
 import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { ShareLinksController } from './share-links.controller';
 import { SharedContentController } from './shared-content.controller';
+import { createAccountActivityMock } from '@/modules/auth/account-activity/account-activity.test-helpers';
 
 function fakeResponse() {
   const headers: Record<string, string> = {};
@@ -18,7 +19,8 @@ function fakeResponse() {
 
 describe('ShareLinksController', () => {
   const service = { list: jest.fn(), create: jest.fn(), revoke: jest.fn() };
-  const controller = new ShareLinksController(service as never);
+  const activity = createAccountActivityMock();
+  const controller = new ShareLinksController(service as never, activity as never);
   const user = { userId: 7, email: 'writer@example.com' };
 
   it('passes every call on for the signed-in writer', async () => {
@@ -33,6 +35,7 @@ describe('ShareLinksController', () => {
     expect(service.create).toHaveBeenCalledWith(7, dto);
     await expect(controller.revoke(user as never, 1)).resolves.toEqual({ success: true });
     expect(service.revoke).toHaveBeenCalledWith(7, 1);
+    expect(activity.record.mock.calls).toEqual([[7, 'share_link_created'], [7, 'share_link_revoked']]);
   });
 });
 

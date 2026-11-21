@@ -1,3 +1,4 @@
+import { accountActivityProvider } from '@/modules/auth/account-activity/account-activity.test-helpers';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { createValidatedControllerApp, HTTP_SPEC_USER } from '@/common/validation/validation-http.test-helpers';
@@ -17,6 +18,7 @@ describe('IoController query flags over HTTP', () => {
       { provide: IoService, useValue: ioService },
       { provide: AppImportService, useValue: {} },
       { provide: MarkdownArchiveService, useValue: {} },
+      accountActivityProvider(),
     ]);
   });
 

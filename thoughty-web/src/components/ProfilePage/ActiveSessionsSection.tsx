@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { safeJsonParse } from '../../services/api/base';
 import { useAuth } from '../../contexts/AuthContext';
 import type { TranslationFunction } from './types';
+import { formatSessionDate } from './formatSessionDate';
 
 interface ActiveSession {
   id: number;
@@ -13,18 +14,6 @@ interface ActiveSession {
 interface ActiveSessionsSectionProps {
   isDark: boolean;
   t: TranslationFunction;
-}
-
-function formatSessionDate(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(date);
 }
 
 function ActiveSessionsSection({ isDark, t }: Readonly<ActiveSessionsSectionProps>) {

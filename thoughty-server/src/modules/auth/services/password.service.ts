@@ -14,6 +14,7 @@ import * as crypto from 'node:crypto';
 import { RefreshToken, User } from '@/database/entities';
 import { ChangePasswordDto } from '../dto';
 import { EmailService } from './email.service';
+import { AccountActivityService } from '../account-activity/account-activity.service';
 
 const FORGOT_PASSWORD_MESSAGE = 'If an account exists with this email, a reset link will be sent.';
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
@@ -38,6 +39,7 @@ export class PasswordService {
     private readonly refreshTokenRepository: Repository<RefreshToken>,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
+    private readonly activity: AccountActivityService,
   ) {}
 
   async changePassword(
@@ -64,6 +66,7 @@ export class PasswordService {
 
     // Invalidate all refresh tokens
     await this.refreshTokenRepository.delete({ userId });
+    await this.activity.record(userId, 'password_changed');
 
     return { success: true, message: 'Password changed successfully' };
   }
@@ -147,6 +150,7 @@ export class PasswordService {
     if (!userId) {
       throw apiError(BadRequestException, 'AUTH_INVALID_RESET_TOKEN');
     }
+    await this.activity.record(userId, 'password_reset');
 
     return { success: true, message: 'Password reset successfully' };
   }

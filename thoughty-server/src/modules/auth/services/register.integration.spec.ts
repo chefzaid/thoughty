@@ -12,6 +12,7 @@ import { Diary, User } from '@/database/entities';
 import { AuthService } from './auth.service';
 import { freeUsername } from './free-username';
 import { ProviderAccountService } from './provider-account.service';
+import { createAccountActivityMock } from '../account-activity/account-activity.test-helpers';
 
 const PASSWORD = 'Pass123!@';
 
@@ -30,7 +31,7 @@ describePostgres('PostgreSQL registration without email and case-insensitive use
     users = dataSource.getRepository(User);
     providerAccounts = new ProviderAccountService(users, dataSource);
     const sessions = { createSession: jest.fn(async (user: User) => ({ user })) };
-    auth = new AuthService(users, dataSource, sessions as never, {} as never, {} as never, providerAccounts);
+    auth = new AuthService(users, dataSource, sessions as never, {} as never, {} as never, providerAccounts, createAccountActivityMock() as never);
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });
 

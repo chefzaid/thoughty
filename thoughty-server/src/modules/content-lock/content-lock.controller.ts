@@ -6,6 +6,8 @@ import { RATE_LIMITS, throttleDefault } from '@/common';
 import { currentContentAccess } from '@/common/content-lock';
 import { SuccessResponseDto } from '@/common/dto';
 import { TwoFactorChallengeResponseDto } from '@/modules/auth/dto';
+import { AccountActivityService } from '@/modules/auth/account-activity/account-activity.service';
+import type { AccountEventKind } from '@/database/entities';
 import { FREE_PIN_ATTEMPTS, ContentPinService } from './content-pin.service';
 import { ContentUnlockService } from './content-unlock.service';
 import {
@@ -27,6 +29,12 @@ const PIN_CHANGE_RESPONSE = {
   },
 } as const;
 
+/** How a PIN change is recorded in the account activity: a first PIN, a change with the old one, or a reset. */
+function pinChangeKind(proof: ContentPinProofDto): AccountEventKind {
+  if (proof.currentPin) return 'pin_changed';
+  return proof.password || proof.challengeToken ? 'pin_reset' : 'pin_set';
+}
+
 @ApiTags('PIN lock')
 @ApiBearerAuth()
 @ApiExtraModels(ContentPinChangedDto, TwoFactorChallengeResponseDto)
@@ -35,6 +43,7 @@ export class ContentLockController {
   constructor(
     private readonly pins: ContentPinService,
     private readonly unlocks: ContentUnlockService,
+    private readonly activity: AccountActivityService,
   ) {}
 
   @Get()
@@ -79,6 +88,7 @@ export class ContentLockController {
     const challenge = await this.pins.set(user.userId, pin, proof);
     if (challenge) return challenge;
     await this.unlocks.endAll(user.userId);
+    await this.activity.record(user.userId, pinChangeKind(proof));
     return { success: true };
   }
 
@@ -102,6 +112,7 @@ export class ContentLockController {
     const challenge = await this.pins.remove(user.userId, dto);
     if (challenge) return challenge;
     await this.unlocks.endAll(user.userId);
+    await this.activity.record(user.userId, 'pin_removed');
     return { success: true };
   }
 

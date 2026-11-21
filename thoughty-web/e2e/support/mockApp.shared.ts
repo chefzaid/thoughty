@@ -9,7 +9,8 @@ import type { MockDiary } from "./mockApp.diaries";
 import type { MockFeatureFlags } from "./mockApp.feature-flags";
 import type { MockBookVersion } from "./mockApp.routes.books";
 import type { components } from "../../src/generated/openapi";
-import { DEFAULT_CLOUD_FILES, DEFAULT_CLOUD_SCHEDULES, DEFAULT_CLOUD_STATUS, DEFAULT_DIARIES, DEFAULT_FEATURE_REQUESTS } from "./mockApp.defaults";
+import { DEFAULT_CLOUD_FILES, DEFAULT_CLOUD_SCHEDULES, DEFAULT_CLOUD_STATUS, DEFAULT_DIARIES, DEFAULT_FEATURE_REQUESTS, type MockFeatureRequest } from "./mockApp.defaults";
+import { createMockAccountActivityState, type MockAccountActivityState } from "./mockApp.account-activity";
 import { createMockContentLockState, type MockContentLockState } from "./mockApp.content-lock";
 import type { MockCloudFile, MockCloudProvider, MockCloudProviderStatus, MockCloudSchedule } from "./mockApp.cloud";
 import { createMockSignUpState, type MockSignUpOptions, type MockSignUpState } from "./mockApp.sign-up";
@@ -90,15 +91,6 @@ export interface MockEntryRevision {
   createdAt: string;
 }
 
-export interface MockFeatureRequest {
-  id: number;
-  title: string;
-  details: string;
-  status: "open" | "reviewing" | "planned";
-  votes: number;
-  createdAt: string;
-}
-
 export interface MockComment {
   id: number;
   entryId: number;
@@ -127,6 +119,7 @@ export interface SetupMockAppOptions {
   followedUserIds?: number[];
   followerCount?: number;
   writers?: Partial<MockAppState["writers"]>;
+  accountActivity?: Partial<MockAccountActivityState>;
   comments?: MockComment[];
   likedEntryIds?: number[];
   likedCommentIds?: number[];
@@ -183,6 +176,8 @@ export interface MockAppState {
   diaries: MockDiary[];
   /** The PIN, its wrong tries and the unlock (`mockApp.content-lock.ts`). */
   contentLock: MockContentLockState;
+  /** The account's sign-ins and security changes (`mockApp.account-activity.ts`). */
+  accountActivity: MockAccountActivityState;
   featureFlags: MockFeatureFlags;
   /** Requests refused with 503 FEATURE_DISABLED, which a spec expects the web app not to send. */
   featureDisabledRequests: string[];
@@ -422,6 +417,7 @@ export function createMockAppState(
     // Copied, so diaries a test creates never leak into the next test's defaults
     diaries: (options.diaries || DEFAULT_DIARIES).map((diary) => ({ ...diary })),
     contentLock: createMockContentLockState(),
+    accountActivity: createMockAccountActivityState(options.accountActivity),
     featureFlags: { ...options.featureFlags },
     featureDisabledRequests: [],
     entries: sortEntries(options.initialEntries || []),

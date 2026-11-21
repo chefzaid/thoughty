@@ -1,5 +1,6 @@
 import type { MockAppState } from "./mockApp.shared";
 import { fulfillApiError, fulfillJson, type RouteContext } from "./mockApp.route-utils";
+import { recordMockAccountEvent } from "./mockApp.account-activity";
 
 /** The token of the link the mock "emails" on every forgot-password request. */
 export const MOCK_RESET_TOKEN = "reset-token";
@@ -70,6 +71,7 @@ export async function handlePasswordResetRoutes({ route, request, pathname, stat
     const payload = request.postDataJSON() as NonNullable<MockPasswordResetState["lastChangePayload"]>;
     reset.lastChangePayload = payload;
     if (await refuseWeakPassword(route, payload.newPassword)) return true;
+    recordMockAccountEvent(state.accountActivity, "password_changed");
     await fulfillJson(route, { success: true, message: "Password changed successfully" });
     return true;
   }

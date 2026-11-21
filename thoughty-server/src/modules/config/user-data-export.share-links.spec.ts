@@ -1,3 +1,4 @@
+import { createAccountActivityMock } from '@/modules/auth/account-activity/account-activity.test-helpers';
 import { UserDataExportService } from './user-data-export.service';
 
 /** A repository with nothing in it, for the parts of the download these specs do not look at. */
@@ -24,7 +25,7 @@ describe('UserDataExportService share links', () => {
     // Constructor order: 18 repositories, the time capsules repository and service, then the share links
     const repositories = Array.from({ length: 19 }, emptyRepository);
     const Service = UserDataExportService as unknown as new (...dependencies: unknown[]) => UserDataExportService;
-    const service = new Service(...repositories, timeCapsules, shareLinkRepository, emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository());
+    const service = new Service(...repositories, timeCapsules, shareLinkRepository, emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), createAccountActivityMock());
 
     const data = await service.downloadData(1);
 

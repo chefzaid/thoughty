@@ -32,6 +32,10 @@ vi.mock('./HiddenWritersSection', () => ({
   default: () => <section aria-label="hidden writers" />,
 }));
 
+vi.mock('./AccountActivitySection', () => ({
+  default: () => <section aria-label="account activity" />,
+}));
+
 vi.mock('../LifeEras/LifeErasSection', () => ({
   default: ({ language }: { language: string }) => <div data-testid="life-eras-section">{language}</div>,
 }));

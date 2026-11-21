@@ -18,6 +18,7 @@ import {
 } from '../dto';
 import { EmailService } from './email.service';
 import { getTwoFactorSecret } from '../auth-secrets';
+import { AccountActivityService } from '../account-activity/account-activity.service';
 
 /** `content-pin` confirms changing, removing or resetting the PIN of locked diaries and entries. */
 type TwoFactorPurpose = 'login' | 'enable' | 'content-pin';
@@ -34,6 +35,7 @@ export class TwoFactorService {
     private readonly userRepository: Repository<User>,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
+    private readonly activity: AccountActivityService,
   ) {
     this.challengeSecret = getTwoFactorSecret(this.configService);
   }
@@ -159,6 +161,8 @@ export class TwoFactorService {
   ): Promise<User> {
     const user = await this.findChallenge(dto.challengeToken, purpose, userId);
     if (!this.codesMatch(dto.code, user.twoFactorChallengeCodeHash!)) {
+      // A wrong code at sign-in means someone holds the password: it is in the account activity
+      if (purpose === 'login') await this.activity.record(user.id, 'sign_in_refused');
       throw apiError(UnauthorizedException, 'AUTH_INVALID_2FA_CODE');
     }
     if (!(await this.clearChallenge(user.id, this.tokenHash(dto.challengeToken)))) {
@@ -190,6 +194,7 @@ export class TwoFactorService {
     const user = await this.consumeChallenge(dto, 'enable', userId);
     user.twoFactorEnabled = true;
     await this.userRepository.save(user);
+    await this.activity.record(userId, 'two_factor_enabled');
     return { success: true };
   }
 
@@ -204,6 +209,7 @@ export class TwoFactorService {
     user.twoFactorChallengePurpose = null;
     user.twoFactorChallengeExpires = null;
     await this.userRepository.save(user);
+    await this.activity.record(userId, 'two_factor_disabled');
     return { success: true };
   }
 
