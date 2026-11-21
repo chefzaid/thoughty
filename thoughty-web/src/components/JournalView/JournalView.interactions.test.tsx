@@ -19,6 +19,7 @@ vi.mock('../SavedSearches/SavedSearches', async () => ({ default: (await import(
 vi.mock('./RandomEntryButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockRandomEntryButton }));
 vi.mock('../LifeEras/useLifeEras', async () => ({ useLifeEraList: (await import('./JournalView.test-helpers')).mockUseLifeEraList }));
 vi.mock('../People/usePeople', async () => ({ usePeopleList: (await import('./JournalView.test-helpers')).mockUsePeopleList }));
+vi.mock('../PeopleCheck/useRewriteEntries', async () => ({ ...(await vi.importActual('../PeopleCheck/useRewriteEntries')), useRewriteEntries: () => vi.fn() }));
 // These specs render without a router, so the person filter is left out of the address
 vi.mock('./usePersonFilterRoute', () => ({ usePersonFilterRoute: () => undefined }));
 vi.mock('./composerFocusRoute', () => ({ useComposerFocusRoute: () => undefined }));

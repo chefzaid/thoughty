@@ -7,6 +7,9 @@ import { cardFilename, formatCardDate, toCardText } from './shareCardLayout';
 import { drawShareCard } from './shareCardRenderer';
 import ShareImageOptions, { type ShareImageChoices } from './ShareImageOptions';
 import { useCardLogo } from './useCardLogo';
+import { useMentionPeople } from '../People/PeopleContext';
+import { usePeopleCheck } from '../PeopleCheck/usePeopleCheck';
+import { resolveLanguage } from '../../utils/language';
 import { useShareCardExport } from './useShareCardExport';
 
 /** The parts of an entry the card is made from; journal entries and feed entries both have them. */
@@ -23,6 +26,8 @@ interface ShareImageDialogProps {
   readonly entry: ShareableEntry;
   /** Text the person had selected in the entry; the card starts with it instead of the whole entry. */
   readonly initialExcerpt?: string;
+  /** Checks the people the card names before it leaves the dialog; the writer's own entries only. */
+  readonly checkPeople?: boolean;
   readonly isDark: boolean;
   readonly language: string;
   readonly onClose: () => void;
@@ -41,7 +46,7 @@ export default function ShareImageDialog(props: ShareImageDialogProps) {
   return props.isOpen ? <ShareImagePanel {...props} /> : null;
 }
 
-function ShareImagePanel({ entry, initialExcerpt, isDark, language, onClose, t }: ShareImageDialogProps) {
+function ShareImagePanel({ entry, initialExcerpt, checkPeople = false, isDark, language, onClose, t }: ShareImageDialogProps) {
   const wholeText = useMemo(() => toCardText(entry.content, entry.format), [entry.content, entry.format]);
   const [choices, setChoices] = useState<ShareImageChoices>(() => ({
     text: initialExcerpt?.trim() || wholeText,
@@ -50,6 +55,8 @@ function ShareImagePanel({ entry, initialExcerpt, isDark, language, onClose, t }
     theme: isDark ? 'dark' : 'light',
     size: 'square',
   }));
+  // The card's own title, which the people check can change without touching the entry
+  const [cardTitle, setCardTitle] = useState(entry.title?.trim() ?? '');
   const [altText, setAltText] = useState('');
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -58,7 +65,8 @@ function ShareImagePanel({ entry, initialExcerpt, isDark, language, onClose, t }
   const logo = useCardLogo();
   const date = formatCardDate(entry.date, language);
   const filename = cardFilename(entry.date);
-  const exporter = useShareCardExport({ canvasRef, filename, shareTitle: entry.title?.trim() || BRAND });
+  const exporter = useShareCardExport({ canvasRef, filename, shareTitle: cardTitle || BRAND });
+  const peopleCheck = usePeopleCheck({ people: useMentionPeople().people, theme: isDark ? 'dark' : 'light', language: resolveLanguage(language), t });
   const copySupported = useMemo(canCopyImage, []);
   const shareSupported = useMemo(canShareImages, []);
 
@@ -70,7 +78,7 @@ function ShareImagePanel({ entry, initialExcerpt, isDark, language, onClose, t }
     if (!canvas) return;
     const layout = drawShareCard(canvas, {
       text,
-      title: choices.includeTitle ? entry.title ?? undefined : undefined,
+      title: choices.includeTitle ? cardTitle || undefined : undefined,
       date,
       theme: choices.theme,
       size: choices.size,
@@ -79,7 +87,25 @@ function ShareImagePanel({ entry, initialExcerpt, isDark, language, onClose, t }
     }, logo);
     const shown = layout ? layout.quote.lines.join(' ') : text;
     setAltText(t('shareImagePreviewAlt', { text: shown, date }));
-  }, [choices, date, entry.title, logo, t, text]);
+  }, [cardTitle, choices, date, logo, t, text]);
+
+  /** Runs a way out of the dialog once the people the card names are checked; Replace changes only the card. */
+  const whenChecked = (action: () => Promise<void>) => {
+    if (!checkPeople) {
+      void action();
+      return;
+    }
+    peopleCheck.check({
+      texts: [{ key: 'card', title: choices.includeTitle ? cardTitle : '', text: choices.text }],
+      mode: 'card',
+      share: () => void action(),
+      replace: ([card]) => {
+        if (!card) return;
+        setChoices((current) => ({ ...current, text: card.text }));
+        if (choices.includeTitle) setCardTitle(card.title);
+      },
+    });
+  };
 
   const panelClass = isDark ? 'border-gray-700 bg-gray-800 text-gray-100' : 'border-gray-200 bg-white text-gray-900';
   const borderClass = isDark ? 'border-gray-700' : 'border-gray-200';
@@ -136,7 +162,7 @@ function ShareImagePanel({ entry, initialExcerpt, isDark, language, onClose, t }
             <ShareImageOptions
               choices={choices}
               wholeText={wholeText}
-              hasTitle={Boolean(entry.title?.trim())}
+              hasTitle={cardTitle !== ''}
               isDark={isDark}
               onChange={(changes) => setChoices((current) => ({ ...current, ...changes }))}
               t={t}
@@ -155,18 +181,18 @@ function ShareImagePanel({ entry, initialExcerpt, isDark, language, onClose, t }
             {t('close')}
           </button>
           {shareSupported && (
-            <button type="button" onClick={() => void exporter.share()} disabled={actionsDisabled} className={`rounded border px-4 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${secondaryButtonClass}`}>
+            <button type="button" onClick={() => whenChecked(exporter.share)} disabled={actionsDisabled} className={`rounded border px-4 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${secondaryButtonClass}`}>
               {t('shareImageShare')}
             </button>
           )}
           {copySupported && (
-            <button type="button" onClick={() => void exporter.copy()} disabled={actionsDisabled} className={`rounded border px-4 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${secondaryButtonClass}`}>
+            <button type="button" onClick={() => whenChecked(exporter.copy)} disabled={actionsDisabled} className={`rounded border px-4 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${secondaryButtonClass}`}>
               {t('shareImageCopy')}
             </button>
           )}
           <button
             type="button"
-            onClick={() => void exporter.download()}
+            onClick={() => whenChecked(exporter.download)}
             disabled={actionsDisabled}
             className="rounded bg-sky-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -174,6 +200,7 @@ function ShareImagePanel({ entry, initialExcerpt, isDark, language, onClose, t }
           </button>
         </footer>
       </div>
+      {peopleCheck.dialog}
     </div>,
     document.body,
   );

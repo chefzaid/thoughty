@@ -19,6 +19,10 @@ export interface ShareLinkDialogProps {
     readonly language: Language;
     readonly service: ShareLinksService;
     readonly onClose: () => void;
+    /** Runs before a link is made, which it makes by calling `create` (the people check); resolves whether one was made. */
+    readonly beforeCreate?: (create: () => Promise<boolean>) => Promise<boolean>;
+    /** A message about the dialog's subject to show above the form, such as the names the people check replaced. */
+    readonly notice?: string | null;
     readonly t: TranslationFunction;
 }
 
@@ -27,7 +31,7 @@ export interface ShareLinkDialogProps {
  * link's address is shown once, to copy, and each unexpired link can be revoked. While public sharing is
  * switched off no link is made, and the links already made can still be revoked.
  */
-export default function ShareLinkDialog({ isOpen, target, subject, isDark, language, service, onClose, t }: ShareLinkDialogProps) {
+export default function ShareLinkDialog({ isOpen, target, subject, isDark, language, service, onClose, beforeCreate, notice = null, t }: ShareLinkDialogProps) {
     const state = useShareLinks(service, target, isOpen);
     const publicSharing = useFeatureFlag('publicSharing');
     const [copied, setCopied] = useState<'idle' | 'copied' | 'failed'>('idle');
@@ -119,13 +123,14 @@ export default function ShareLinkDialog({ isOpen, target, subject, isDark, langu
                             {copied === 'failed' && <p role="alert" className={`text-sm ${tintedTextClass('red', isDark ? 'dark' : 'light')}`}>{t('shareLinkCopyFailed')}</p>}
                         </div>
                     )}
+                    <p role="status" aria-live="polite" className={notice ? 'text-sm font-medium' : 'sr-only'}>{notice ?? ''}</p>
                     {publicSharing ? (
                         <ShareLinkForm
                             forEntry={forEntry}
                             creating={state.creating}
                             fieldClass={fieldClass}
                             firstFieldRef={firstFieldRef}
-                            onCreate={state.create}
+                            onCreate={(draft) => (beforeCreate ? beforeCreate(() => state.create(draft)) : state.create(draft))}
                             t={t}
                         />
                     ) : (

@@ -34,6 +34,7 @@ import { readerScopeFromList, readerScopeOfMonth } from '../../services/api/entr
 import ComfortReadsCard from '../ComfortReads/ComfortReadsCard';
 import type { SavedEntry } from '../ComfortReads/comfortReadsState';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
+import { useJournalPeopleCheck } from './useJournalPeopleCheck';
 
 type DiaryTabsProps = Pick<ComponentProps<typeof DiaryTabs>, 'diaries' | 'currentDiaryId' | 'onDiaryChange' | 'onManageDiaries'>;
 interface ThoughtOfDayProps {
@@ -79,9 +80,9 @@ interface JournalViewProps {
 function JournalView({
   diaryTabs,
   thoughtOfDay,
-  entryForm,
+  entryForm: composerProps,
   filters,
-  entriesList,
+  entriesList: listProps,
   feed,
   yearMonthNavigator,
   duplicateReview,
@@ -119,6 +120,11 @@ function JournalView({
 
   const { list: peopleList, people } = usePeopleList();
   const mentionPeople = useMemo(() => ({ people, byHandle: peopleByHandle(people) }), [people]);
+  // Each way of making an entry public first lists the people it names
+  const peopleCheck = useJournalPeopleCheck({
+    people, entryForm: composerProps, entriesList: listProps, onNotify, theme, language, t,
+  });
+  const { entryForm, entriesList } = peopleCheck;
   usePersonFilterRoute(filters);
   const { filterPersonId, setFilterPersonId } = filters;
   const selectedPerson = people.find((person) => person.id === filterPersonId) ?? null;
@@ -222,6 +228,7 @@ function JournalView({
         />
       </div>
       {composerSeed.dialog}
+      {peopleCheck.dialog}
 
       <ComfortReadsCard
         saved={savedEntry}

@@ -351,6 +351,7 @@ function OpenEntryViewMode({
                 isOpen={shareImage !== null}
                 entry={entry}
                 initialExcerpt={shareImage?.excerpt}
+                checkPeople
                 isDark={isDark}
                 language={resolveLanguage(config.language)}
                 onClose={() => setShareImage(null)}
@@ -359,6 +360,7 @@ function OpenEntryViewMode({
             {sharePrivatelyOpen && (
                 <AuthenticatedShareLinkDialog
                     target={{ kind: 'entry', id: entry.id }}
+                    entry={entry}
                     subject={entry.title?.trim() || formatEntryDay(entry.date, resolveLanguage(config.language))}
                     isDark={isDark}
                     language={resolveLanguage(config.language)}

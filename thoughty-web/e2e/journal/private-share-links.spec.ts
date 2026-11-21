@@ -52,13 +52,19 @@ async function openAsReader(browser: Browser, state: MockAppState, url: string, 
   };
 }
 
-async function createLink(page: Page, options: { showTags?: boolean; maxViews?: string } = {}) {
+async function createLink(page: Page, options: { showTags?: boolean; maxViews?: string; namesSomeone?: boolean } = {}) {
   const dialog = page.getByRole('dialog', { name: 'Share privately' });
   await expect(dialog.getByLabel('Link expires')).toBeFocused();
   if (options.showTags) await dialog.getByLabel('Show the tags').check();
   if (options.maxViews) await dialog.getByLabel('View limit (optional)').fill(options.maxViews);
   await dialog.getByLabel('Note for yourself (optional)').fill('For Mum');
   await dialog.getByRole('button', { name: 'Create link' }).click();
+  if (options.namesSomeone) {
+    // The entry names someone, so the people check comes first
+    const check = page.getByRole('dialog', { name: 'People in what you share' });
+    await expect(check).toContainText('marie1 mention');
+    await check.getByRole('button', { name: 'Share anyway' }).click();
+  }
   await expect(dialog.getByText('Copy the link now: it is shown only this once.')).toBeVisible();
   const url = await dialog.getByLabel('Private link').inputValue();
   expect(url).toMatch(/^http:\/\/localhost:5173\/s\/[A-Za-z0-9_-]{43}$/);
@@ -73,7 +79,7 @@ test.describe('Private share links', () => {
     const entry = page.locator(`#entry-${ENTRY.id}`);
     await entry.getByLabel('More actions').click();
     await page.getByRole('menuitem', { name: 'Share privately…' }).click();
-    const { dialog, url } = await createLink(page, { showTags: true });
+    const { dialog, url } = await createLink(page, { showTags: true, namesSomeone: true });
     await expect(dialog.getByRole('button', { name: 'Copy link' })).toBeFocused();
     await expect(dialog.getByText('For Mum')).toBeVisible();
     await expectNoAxeViolations(page, '[role="dialog"]');
@@ -117,6 +123,7 @@ test.describe('Private share links', () => {
     await page.getByRole('menuitem', { name: 'Partager en privé…' }).click();
     const dialog = page.getByRole('dialog', { name: 'Partager en privé' });
     await dialog.getByRole('button', { name: 'Créer le lien' }).click();
+    await page.getByRole('dialog', { name: 'Les personnes dans ce que vous partagez' }).getByRole('button', { name: 'Partager quand même' }).click();
     const url = await dialog.getByLabel('Lien privé').inputValue();
     await expectNoAxeViolations(page, '[role="dialog"]');
 

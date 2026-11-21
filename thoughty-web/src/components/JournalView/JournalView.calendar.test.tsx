@@ -23,6 +23,7 @@ vi.mock('./RandomEntryButton', async () => ({ default: (await import('./JournalV
 vi.mock('../EntryReader/EntryReader', async () => ({ default: (await import('./JournalView.test-helpers')).MockEntryReader }));
 vi.mock('../LifeEras/useLifeEras', async () => ({ useLifeEraList: (await import('./JournalView.test-helpers')).mockUseLifeEraList }));
 vi.mock('../People/usePeople', async () => ({ usePeopleList: (await import('./JournalView.test-helpers')).mockUsePeopleList }));
+vi.mock('../PeopleCheck/useRewriteEntries', async () => ({ ...(await vi.importActual('../PeopleCheck/useRewriteEntries')), useRewriteEntries: () => vi.fn() }));
 
 type CalendarProps = ComponentProps<typeof JournalCalendar>;
 const calendarProps = vi.hoisted(() => ({ current: null as CalendarProps | null }));

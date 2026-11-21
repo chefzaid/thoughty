@@ -21,6 +21,7 @@ vi.mock('../SavedSearches/SavedSearches', async () => ({ default: (await import(
 vi.mock('./RandomEntryButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockRandomEntryButton }));
 vi.mock('../LifeEras/useLifeEras', async () => ({ useLifeEraList: (await import('./JournalView.test-helpers')).mockUseLifeEraList }));
 vi.mock('../People/usePeople', async () => ({ usePeopleList: (await import('./JournalView.test-helpers')).mockUsePeopleList }));
+vi.mock('../PeopleCheck/useRewriteEntries', async () => ({ ...(await vi.importActual('../PeopleCheck/useRewriteEntries')), useRewriteEntries: () => vi.fn() }));
 const personBook = vi.hoisted(() => ({ makeBook: vi.fn(), pendingPersonId: null as number | null, onNotify: null as unknown }));
 vi.mock('./usePersonBook', () => ({
   usePersonBook: ({ onNotify }: { onNotify: unknown }) => {
@@ -150,5 +151,19 @@ describe('JournalView people', () => {
 
     expect(screen.getByRole('region', { name: 'personViewTitle' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /personMakeBook/ })).not.toBeInTheDocument();
+  });
+
+  it('lists the people a public new entry names before it is saved, and saves it on Share anyway', () => {
+    const props = createProps({ entryForm: { newEntryText: 'Dinner with @marie', visibility: 'public' } });
+    renderJournal(props, '?diary=all');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    const check = screen.getByRole('dialog', { name: 'peopleCheckTitle' });
+    expect(check).toHaveTextContent('Marie');
+    expect(props.entryForm.onSubmit).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'peopleCheckShareAnyway' }));
+    expect(props.entryForm.onSubmit).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('dialog', { name: 'peopleCheckTitle' })).not.toBeInTheDocument();
   });
 });
