@@ -3,30 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, LessThan, Repository } from 'typeorm';
 import { CloudSyncJob, CLOUD_SYNC_JOB_STATUSES, CloudSyncJobStatus } from '@/database/entities';
 import { FeatureTelemetryService, FeatureTelemetrySnapshot, HttpMetricSnapshot, HttpMetricsService } from '@/common';
+import { metricLine } from './prometheus-text';
+import { renderWritingEngagement, WritingEngagementMetricsService } from './writing-engagement-metrics.service';
 
 const STUCK_JOB_THRESHOLD_MS = 15 * 60 * 1000;
-
-type MetricLabelValue = string | number;
-type MetricLabels = Record<string, MetricLabelValue>;
 
 interface CloudSyncStatusCount {
   status: CloudSyncJobStatus;
   count: string;
-}
-
-function escapeLabel(value: MetricLabelValue): string {
-  return String(value).replaceAll('\\', String.raw`\\`).replaceAll('\n', String.raw`\n`).replaceAll('"', String.raw`\"`);
-}
-
-function metricLine(name: string, value: number, labels: MetricLabels = {}): string {
-  const labelEntries = Object.entries(labels);
-  const formattedLabels = labelEntries.map(([key, labelValue]) => `${key}="${escapeLabel(labelValue)}"`).join(',');
-  const labelText =
-    labelEntries.length > 0
-      ? `{${formattedLabels}}`
-      : '';
-
-  return `${name}${labelText} ${Number.isFinite(value) ? value : 0}`;
 }
 
 function renderHttpMetrics(snapshot: HttpMetricSnapshot[]): string[] {
@@ -90,13 +74,15 @@ export class MetricsService {
     private readonly dataSource: DataSource,
     @InjectRepository(CloudSyncJob)
     private readonly cloudSyncJobs: Repository<CloudSyncJob>,
+    private readonly writingEngagement: WritingEngagementMetricsService,
   ) {}
 
   async renderPrometheusMetrics(): Promise<string> {
-    const [databaseUp, cloudSyncCounts, stuckCloudSyncJobs] = await Promise.all([
+    const [databaseUp, cloudSyncCounts, stuckCloudSyncJobs, writingEngagement] = await Promise.all([
       this.getDatabaseUp(),
       this.getCloudSyncCounts(),
       this.getStuckCloudSyncJobs(),
+      this.writingEngagement.getSnapshot(),
     ]);
 
     const memory = process.memoryUsage();
@@ -121,6 +107,7 @@ export class MetricsService {
       '# HELP thoughty_cloud_sync_stuck_jobs Running cloud sync jobs locked longer than the operational threshold.',
       '# TYPE thoughty_cloud_sync_stuck_jobs gauge',
       metricLine('thoughty_cloud_sync_stuck_jobs', stuckCloudSyncJobs),
+      ...renderWritingEngagement(writingEngagement),
     ];
 
     return `${lines.join('\n')}\n`;

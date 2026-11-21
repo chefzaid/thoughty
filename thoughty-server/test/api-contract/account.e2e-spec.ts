@@ -13,7 +13,9 @@ describeContract('account', (context) => {
     await call('GET /api/health', { status: 200 });
     // Supertest connects over loopback, which counts as the private network
     const metrics = await call('GET /api/metrics', { status: 200, contentType: /^text\/plain/ });
-    expect(metrics.text).toContain('thoughty_');
+    expect(metrics.text).toContain('thoughty_database_up 1');
+    expect(metrics.text).toMatch(/^thoughty_weekly_writing_days_per_active_writer \d/m);
+    expect(metrics.text).toMatch(/^thoughty_sign_up_funnel_accounts{stage="signed_up"} \d/m);
     await call('GET /api/metrics', {
       headers: { 'X-Forwarded-For': '203.0.113.9' },
       status: 200,

@@ -4,11 +4,12 @@ import { CloudSyncJob } from '@/database/entities';
 import { FeatureTelemetryService, HttpMetricsService } from '@/common';
 import { MetricsController } from './metrics.controller';
 import { MetricsService } from './metrics.service';
+import { WritingEngagementMetricsService } from './writing-engagement-metrics.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([CloudSyncJob])],
   controllers: [MetricsController],
-  providers: [FeatureTelemetryService, HttpMetricsService, MetricsService],
+  providers: [FeatureTelemetryService, HttpMetricsService, MetricsService, WritingEngagementMetricsService],
   exports: [FeatureTelemetryService, HttpMetricsService],
 })
 export class MetricsModule {}

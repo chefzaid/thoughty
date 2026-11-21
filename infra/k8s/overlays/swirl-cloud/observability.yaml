@@ -96,6 +96,32 @@ data:
           "targets": [{"refId": "A", "expr": "sum by (status) (thoughty_cloud_sync_jobs)", "legendFormat": "{{status}}"}],
           "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
           "options": {"legend": {"displayMode": "table", "placement": "bottom"}}
+        },
+        {
+          "id": 9,
+          "type": "timeseries",
+          "title": "Weekly Writing Days per Active Writer",
+          "description": "North-star metric: writing days in the last 7 days per writer active in the last 28 days (every API pod reports the same counts, so the panels take the max).",
+          "gridPos": {"x": 0, "y": 20, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {"refId": "A", "expr": "max(thoughty_weekly_writing_days_per_active_writer)", "legendFormat": "days per active writer"}
+          ],
+          "fieldConfig": {"defaults": {"unit": "short", "decimals": 2, "min": 0, "max": 7}, "overrides": []},
+          "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+        },
+        {
+          "id": 10,
+          "type": "bargauge",
+          "title": "Sign-up Funnel (accounts created 4-8 weeks ago)",
+          "description": "Share of the cohort reaching each stage in its first four weeks.",
+          "gridPos": {"x": 12, "y": 20, "w": 12, "h": 8},
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "targets": [
+            {"refId": "A", "expr": "max by (stage) (thoughty_sign_up_funnel_accounts) / scalar(clamp_min(max(thoughty_sign_up_funnel_accounts{stage=\"signed_up\"}), 1))", "legendFormat": "{{stage}}", "instant": true}
+          ],
+          "fieldConfig": {"defaults": {"unit": "percentunit", "min": 0, "max": 1}, "overrides": []},
+          "options": {"reduceOptions": {"calcs": ["lastNotNull"], "values": false}, "orientation": "horizontal", "displayMode": "basic"}
         }
       ]
     }
