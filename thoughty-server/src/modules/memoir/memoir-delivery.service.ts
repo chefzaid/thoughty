@@ -17,6 +17,7 @@ interface DueProgramRow {
   current_question_id: string | null;
   delivery_weekday: number;
   time_zone: string;
+  themes: string[];
   email_enabled: boolean;
   email: string | null;
   email_verified: boolean;
@@ -51,7 +52,7 @@ export class MemoirDeliveryService {
     const emails = await this.dataSource.transaction(async (manager) => {
       const due = await manager.query(
         `
-          SELECT p.id, p.user_id, p.current_question_id, p.delivery_weekday, p.time_zone,
+          SELECT p.id, p.user_id, p.current_question_id, p.delivery_weekday, p.time_zone, p.themes,
                  p.email_enabled, u.email, u.email_verified
           FROM memoir_programs p
           JOIN users u ON u.id = p.user_id
@@ -84,6 +85,7 @@ export class MemoirDeliveryService {
           new Set(answered.map((item) => item.question_id)),
           new Map(snoozes.map((item) => [item.question_id, item.snoozed_until])),
           localDateIn(now, timeZone),
+          row.themes,
         );
 
         await manager.query(

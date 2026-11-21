@@ -148,7 +148,7 @@ function MemoirPage({
       )}
 
       {overview && !program && (
-        <MemoirIntro chapters={overview.chapters} diaries={diaries} language={language} onStart={handleStart} t={t} />
+        <MemoirIntro chapters={overview.chapters} themes={overview.themes} diaries={diaries} language={language} onStart={handleStart} t={t} />
       )}
 
       {overview && program && (
@@ -199,6 +199,7 @@ function MemoirPage({
           <MemoirSettings
             key={program.startedAt}
             program={program}
+            themes={overview.themes}
             diaries={diaries}
             language={language}
             theme={theme}

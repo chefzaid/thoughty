@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { MemoirOverview, MemoirProgram } from '../../services/api';
 import { makeDiary } from '../../test/diaryFixture';
+import { memoirThemes } from '../../test/memoirFixture';
 import { createTestQueryClient } from '../../test/queryClient';
 import MemoirPage, { type MemoirPageProps } from './MemoirPage';
 
@@ -60,6 +61,7 @@ const program: MemoirProgram = {
   emailAvailable: true,
   deliveryWeekday: 0,
   timeZone: 'Europe/Paris',
+  themes: [],
   currentQuestionId: 'childhood-home',
   nextDeliveryAt: '2026-10-25T08:00:00.000Z',
   startedAt: '2026-10-04T15:20:00.000Z',
@@ -68,6 +70,7 @@ const program: MemoirProgram = {
 const overview = (programOverrides: Partial<MemoirProgram> | null = {}, answered = 1): MemoirOverview => ({
   program: programOverrides === null ? null : { ...program, ...programOverrides },
   chapters,
+  themes: memoirThemes,
   progress: { answered, total: 3, words: 1200, estimatedPages: 5 },
 });
 
@@ -112,9 +115,32 @@ describe('MemoirPage', () => {
       emailEnabled: false,
       deliveryWeekday: 3,
       timeZone: expect.any(String),
+      themes: [],
     }));
     expect(onDiariesChanged).toHaveBeenCalled();
     expect(await screen.findByRole('heading', { name: 'memoirThisWeek' })).toBeInTheDocument();
+  });
+
+  it('adds the chosen themes to the questions to come and starts with them', async () => {
+    memoirService.fetchOverview.mockResolvedValueOnce({ data: overview(null, 0), error: null });
+    memoirService.start.mockResolvedValue({ data: overview({ themes: ['migration'] }, 0), error: null });
+    renderPage({ language: 'fr' });
+
+    const themes = await screen.findByRole('group', { name: 'memoirThemesLegend' });
+    expect(themes).toHaveAccessibleDescription('memoirThemesHint');
+    expect(within(themes).getByRole('checkbox', { name: 'Être parent memoirThemeQuestions_other 7' })).not.toBeChecked();
+    expect(within(themes).getByRole('checkbox', { name: 'Migration memoirThemeQuestions_one 1' })).not.toBeChecked();
+
+    fireEvent.click(within(themes).getByRole('checkbox', { name: /^Migration/ }));
+    expect(screen.getByText('memoirIntroStats 4 3')).toBeInTheDocument();
+    fireEvent.click(within(themes).getByRole('checkbox', { name: /^Être parent/ }));
+    expect(screen.getByText('memoirIntroStats 11 4')).toBeInTheDocument();
+    fireEvent.click(within(themes).getByRole('checkbox', { name: /^Être parent/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'memoirStart' }));
+
+    await waitFor(() => expect(memoirService.start).toHaveBeenCalledWith(expect.objectContaining({ themes: ['migration'] })));
+    const settings = (await screen.findByRole('heading', { name: 'memoirSettings' })).closest('section')!;
+    expect(within(settings).getByRole('checkbox', { name: /^Migration/ })).toBeChecked();
   });
 
   it('starts in an existing diary and reports a failed start', async () => {
@@ -308,11 +334,15 @@ describe('MemoirPage', () => {
     const settings = (await screen.findByRole('heading', { name: 'memoirSettings' })).closest('section')!;
     fireEvent.change(within(settings).getByLabelText('memoirWeekdayLabel'), { target: { value: '5' } });
     fireEvent.change(within(settings).getByLabelText('memoirDiaryLabel'), { target: { value: '2' } });
+    // Themes go to the server in life order, whatever order they were ticked in
+    fireEvent.click(within(settings).getByRole('checkbox', { name: /^Migration/ }));
+    fireEvent.click(within(settings).getByRole('checkbox', { name: /^Parenthood/ }));
     fireEvent.click(within(settings).getByRole('button', { name: 'memoirSaveSettings' }));
     await waitFor(() => expect(memoirService.update).toHaveBeenCalledWith({
       deliveryWeekday: 5,
       emailEnabled: true,
       timeZone: expect.any(String),
+      themes: ['parenthood', 'migration'],
       diaryId: 2,
     }));
     expect(await within(settings).findByText('memoirSettingsSaved')).toBeInTheDocument();

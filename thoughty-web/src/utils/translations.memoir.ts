@@ -12,6 +12,10 @@ export type MemoirTranslationKey =
   | 'memoirDiaryNameLabel'
   | 'memoirDefaultDiaryName'
   | 'memoirWeeklyEmail'
+  | 'memoirThemesLegend'
+  | 'memoirThemesHint'
+  | 'memoirThemeQuestions_one'
+  | 'memoirThemeQuestions_other'
   | 'memoirWeekdayLabel'
   | 'memoirDeliveryHint'
   | 'memoirStart'
@@ -89,6 +93,10 @@ export const memoirTranslations: Record<Language, Record<MemoirTranslationKey, s
     memoirDiaryNameLabel: 'Diary name',
     memoirDefaultDiaryName: 'My memoir',
     memoirWeeklyEmail: 'Email me each week’s question',
+    memoirThemesLegend: 'Themes to add',
+    memoirThemesHint: 'Each theme adds its questions to your weekly ones, at its place in your life story.',
+    memoirThemeQuestions_one: '{count} question',
+    memoirThemeQuestions_other: '{count} questions',
     memoirWeekdayLabel: 'New question every',
     memoirDeliveryHint: 'Questions arrive at 9:00 in your time zone ({timeZone}).',
     memoirStart: 'Start my memoir',
@@ -166,6 +174,10 @@ export const memoirTranslations: Record<Language, Record<MemoirTranslationKey, s
     memoirDiaryNameLabel: 'Nom du journal',
     memoirDefaultDiaryName: 'Mes mémoires',
     memoirWeeklyEmail: 'M’envoyer la question de chaque semaine par e-mail',
+    memoirThemesLegend: 'Thèmes à ajouter',
+    memoirThemesHint: 'Chaque thème ajoute ses questions à celles de la semaine, à sa place dans le récit de votre vie.',
+    memoirThemeQuestions_one: '{count} question',
+    memoirThemeQuestions_other: '{count} questions',
     memoirWeekdayLabel: 'Nouvelle question chaque',
     memoirDeliveryHint: 'Les questions arrivent à 9 h dans votre fuseau horaire ({timeZone}).',
     memoirStart: 'Commencer mes mémoires',

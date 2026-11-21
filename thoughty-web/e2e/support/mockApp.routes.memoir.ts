@@ -2,6 +2,8 @@ import {
   createMockMemoirState,
   MOCK_MEMOIR_CHAPTERS,
   MOCK_MEMOIR_QUESTIONS as QUESTIONS,
+  MOCK_MEMOIR_THEME_IDS,
+  mockMemoirChaptersFor,
   mockSnoozeReturnDay,
   type MockMemoirProgram,
   type MockMemoirState,
@@ -10,19 +12,30 @@ import { mockDiary } from './mockApp.diaries';
 import { fulfillJson, type RouteContext } from './mockApp.route-utils';
 import { sortEntries } from './mockApp.shared';
 
-/** The next unanswered question after this week's, passing over those set aside (the mock never reaches their day). */
-function nextUnanswered(state: MockMemoirState): string | null {
-  const start = QUESTIONS.findIndex((question) => question.id === state.program?.currentQuestionId);
-  for (let offset = 1; offset <= QUESTIONS.length; offset++) {
-    const candidate = QUESTIONS[(start + offset) % QUESTIONS.length];
-    if (!state.answers[candidate.id] && !state.snoozed[candidate.id]) return candidate.id;
-  }
-  return null;
+/** The questions of the memoir with its chosen themes, in life order. */
+function scheduleOf(state: MockMemoirState) {
+  return QUESTIONS.filter((question) => mockMemoirChaptersFor(state.program?.themes ?? []).includes(question.chapter));
 }
+
+/**
+ * The next unanswered question of the memoir after this week's in life order, passing over those set aside (the
+ * mock never reaches their day); this week's question still marks the place when its theme was left out.
+ */
+function nextUnanswered(state: MockMemoirState): string | null {
+  const place = QUESTIONS.findIndex((question) => question.id === state.program?.currentQuestionId);
+  const schedule = scheduleOf(state);
+  const order = (id: string) => QUESTIONS.findIndex((question) => question.id === id);
+  const candidates = [...schedule.filter((question) => order(question.id) > place), ...schedule.filter((question) => order(question.id) < place)];
+  return candidates.find((candidate) => !state.answers[candidate.id] && !state.snoozed[candidate.id])?.id ?? null;
+}
+
+/** Known themes, each once, in life order, as the server keeps them. */
+const normalizeThemes = (themes: readonly string[] = []) => MOCK_MEMOIR_THEME_IDS.filter((id) => themes.includes(id));
 
 function overview({ state }: RouteContext) {
   const memoir = state.memoir;
-  const answered = Object.keys(memoir.answers).length;
+  const schedule = scheduleOf(memoir);
+  const answered = schedule.filter((question) => memoir.answers[question.id]).length;
   const words = Object.values(memoir.answers).reduce((total, answer) => {
     const entry = state.entries.find((candidate) => candidate.id === answer.entryId);
     return total + (entry?.content.split('\n\n').slice(1).join(' ').split(/\s+/).filter(Boolean).length ?? 0);
@@ -30,14 +43,16 @@ function overview({ state }: RouteContext) {
 
   return {
     program: memoir.program,
-    chapters: MOCK_MEMOIR_CHAPTERS.map((chapter) => ({
+    chapters: mockMemoirChaptersFor(memoir.program?.themes ?? []).map((chapter) => ({
       ...chapter,
       questions: chapter.questions.map((question) => {
         const answer = memoir.answers[question.id] ?? null;
         return { ...question, answer, snoozedUntil: answer ? null : (memoir.snoozed[question.id] ?? null) };
       }),
     })),
-    progress: { answered, total: QUESTIONS.length, words, estimatedPages: Math.ceil(words / 250) },
+    themes: MOCK_MEMOIR_CHAPTERS.filter((chapter) => MOCK_MEMOIR_THEME_IDS.includes(chapter.id))
+      .map((chapter) => ({ id: chapter.id, title: chapter.title, questionCount: chapter.questions.length })),
+    progress: { answered, total: schedule.length, words, estimatedPages: Math.ceil(words / 250) },
   };
 }
 
@@ -52,7 +67,14 @@ export async function handleMemoirRoutes(context: RouteContext): Promise<boolean
   }
 
   if (pathname === '/api/memoir' && method === 'POST') {
-    const payload = request.postDataJSON() as { diaryId?: number; diaryName?: string; emailEnabled: boolean; deliveryWeekday: number; timeZone: string };
+    const payload = request.postDataJSON() as {
+      diaryId?: number;
+      diaryName?: string;
+      emailEnabled: boolean;
+      deliveryWeekday: number;
+      timeZone: string;
+      themes?: string[];
+    };
     memoir.lastStartPayload = payload;
     let diaryId = payload.diaryId ?? null;
     if (!diaryId) {
@@ -65,6 +87,7 @@ export async function handleMemoirRoutes(context: RouteContext): Promise<boolean
       emailEnabled: payload.emailEnabled,
       deliveryWeekday: payload.deliveryWeekday,
       timeZone: payload.timeZone,
+      themes: normalizeThemes(payload.themes),
       currentQuestionId: QUESTIONS[0].id,
     };
     await fulfillJson(route, overview(context), { status: 201 });
@@ -74,7 +97,12 @@ export async function handleMemoirRoutes(context: RouteContext): Promise<boolean
   if (pathname === '/api/memoir' && method === 'PATCH' && memoir.program) {
     const payload = request.postDataJSON() as Partial<MockMemoirProgram>;
     memoir.lastUpdatePayload = payload;
-    memoir.program = { ...memoir.program, ...payload };
+    memoir.program = { ...memoir.program, ...payload, themes: normalizeThemes(payload.themes ?? memoir.program.themes) };
+    // This week's question leaves with its theme, or a new theme follows a finished memoir: the next one comes at once
+    const current = memoir.program.currentQuestionId;
+    if (payload.themes && !scheduleOf(memoir).some((question) => question.id === current)) {
+      memoir.program.currentQuestionId = nextUnanswered(memoir);
+    }
     await fulfillJson(route, overview(context));
     return true;
   }

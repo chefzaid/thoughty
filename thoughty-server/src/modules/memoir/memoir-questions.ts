@@ -14,15 +14,18 @@ export interface MemoirQuestion {
 export interface MemoirChapter {
   readonly id: string;
   readonly title: LocalizedText;
+  /** A theme the writer adds to their memoir by choice; the other chapters are every writer's year. */
+  readonly theme: boolean;
   readonly questions: readonly MemoirQuestion[];
 }
 
 type QuestionSeed = readonly [id: string, en: string, fr: string];
 
-function chapter(id: string, title: LocalizedText, seeds: readonly QuestionSeed[]): MemoirChapter {
+function chapter(id: string, title: LocalizedText, seeds: readonly QuestionSeed[], theme = false): MemoirChapter {
   return {
     id,
     title,
+    theme,
     questions: seeds.map(([questionId, en, fr]) => ({ id: questionId, chapterId: id, text: { en, fr } })),
   };
 }
@@ -30,6 +33,8 @@ function chapter(id: string, title: LocalizedText, seeds: readonly QuestionSeed[
 /**
  * The guided memoir: a year of weekly questions, ordered as a life story so that
  * chapters (one tag each) read in order when the memoir diary becomes a book.
+ * Themed chapters sit at their place in that story and join the weekly questions
+ * only for writers who choose them.
  */
 export const MEMOIR_CHAPTERS: readonly MemoirChapter[] = [
   chapter('childhood', { en: 'Childhood', fr: 'Enfance' }, [
@@ -70,6 +75,15 @@ export const MEMOIR_CHAPTERS: readonly MemoirChapter[] = [
     ['love-heartbreak', 'What did a heartbreak or a falling-out teach you?', 'Qu’est-ce qu’une rupture ou une brouille vous a appris ?'],
     ['love-advice', 'What do you know now about love that you wish you had known at twenty?', 'Que savez-vous aujourd’hui de l’amour que vous auriez aimé savoir à vingt ans ?'],
   ]),
+  chapter('parenthood', { en: 'Parenthood', fr: 'Être parent' }, [
+    ['parenthood-news', 'How did you learn you were going to be a parent, and how did you feel?', 'Comment avez-vous appris que vous alliez devenir parent, et qu’avez-vous ressenti ?'],
+    ['parenthood-first-days', 'What do you remember of the first days with your first child?', 'Que vous rappelez-vous des premiers jours avec votre premier enfant ?'],
+    ['parenthood-names', 'How did you choose your children’s names?', 'Comment avez-vous choisi les prénoms de vos enfants ?'],
+    ['parenthood-ordinary-day', 'Describe an ordinary day when your children were small.', 'Décrivez une journée ordinaire quand vos enfants étaient petits.'],
+    ['parenthood-hardest', 'What was the hardest part of being a parent, and what helped?', 'Qu’est-ce qui a été le plus difficile dans votre vie de parent, et qu’est-ce qui a aidé ?'],
+    ['parenthood-own-parents', 'What did you do the same as your own parents, and what did you do differently?', 'Qu’avez-vous fait comme vos propres parents, et qu’avez-vous fait autrement ?'],
+    ['parenthood-relive', 'Which moment with your children would you love to live again?', 'Quel moment avec vos enfants aimeriez-vous revivre ?'],
+  ], true),
   chapter('work', { en: 'Work', fr: 'Travail' }, [
     ['work-path', 'How did you come to do the work you did for most of your life?', 'Comment avez-vous trouvé le métier que vous avez exercé la plus grande partie de votre vie ?'],
     ['work-proudest', 'Which piece of work are you proudest of?', 'De quel travail tirez-vous le plus de fierté ?'],
@@ -80,6 +94,15 @@ export const MEMOIR_CHAPTERS: readonly MemoirChapter[] = [
     ['work-change', 'How did your field change over the years you worked in it?', 'Comment votre domaine a-t-il évolué au fil des années où vous y avez travaillé ?'],
     ['work-advice', 'What would you tell someone starting out in your line of work?', 'Que diriez-vous à quelqu’un qui débute dans votre métier ?'],
   ]),
+  chapter('careers', { en: 'Careers', fr: 'Parcours professionnel' }, [
+    ['careers-first-job', 'What was your very first job, and what did it teach you?', 'Quel a été votre tout premier emploi, et que vous a-t-il appris ?'],
+    ['careers-change', 'Did you ever change direction in your working life? What made you do it?', 'Avez-vous changé de voie au cours de votre vie professionnelle ? Qu’est-ce qui vous y a poussé ?'],
+    ['careers-hardest-decision', 'What was the hardest decision you made at work?', 'Quelle a été la décision la plus difficile que vous ayez prise au travail ?'],
+    ['careers-balance', 'How did you balance work with family and the rest of your life?', 'Comment avez-vous concilié le travail avec la famille et le reste de votre vie ?'],
+    ['careers-valued', 'When did you feel your work mattered most?', 'À quel moment avez-vous eu le sentiment que votre travail comptait le plus ?'],
+    ['careers-retirement', 'If you have retired, how did your last working day feel, and what filled the time after?', 'Si vous êtes à la retraite, comment avez-vous vécu votre dernier jour de travail, et qu’est-ce qui a rempli le temps ensuite ?'],
+    ['careers-other-path', 'Which other career might you have had, and do you ever wonder about it?', 'Quel autre métier auriez-vous pu exercer, et vous arrive-t-il d’y penser ?'],
+  ], true),
   chapter('places', { en: 'Places', fr: 'Lieux' }, [
     ['places-hometown', 'What was your town or neighborhood like back then, and how has it changed?', 'Comment était votre ville ou votre quartier à l’époque, et comment a-t-il changé ?'],
     ['places-homes', 'List the places you have lived. Which one felt most like home?', 'Énumérez les endroits où vous avez vécu. Lequel vous a le plus donné le sentiment d’être chez vous ?'],
@@ -89,6 +112,33 @@ export const MEMOIR_CHAPTERS: readonly MemoirChapter[] = [
     ['places-history', 'Which historic event did you live through, and where were you when it happened?', 'Quel événement historique avez-vous vécu, et où étiez-vous à ce moment-là ?'],
     ['places-return', 'Is there a place you would love to see one more time?', 'Y a-t-il un endroit que vous aimeriez revoir une dernière fois ?'],
   ]),
+  chapter('migration', { en: 'Migration', fr: 'Migration' }, [
+    ['migration-decision', 'If you or your family left one country for another, what led to that decision?', 'Si vous ou votre famille avez quitté un pays pour un autre, qu’est-ce qui a mené à cette décision ?'],
+    ['migration-journey', 'Tell the story of the journey itself: how you travelled and what you carried with you.', 'Racontez le voyage lui-même : comment vous êtes partis et ce que vous avez emporté.'],
+    ['migration-first-days', 'What do you remember of your first days in the new country?', 'Que vous rappelez-vous de vos premiers jours dans le nouveau pays ?'],
+    ['migration-language', 'How did you learn the language and the customs of your new home?', 'Comment avez-vous appris la langue et les usages de votre nouveau pays ?'],
+    ['migration-kept', 'Which habits, dishes, or words from where you came from have you kept?', 'Quelles habitudes, quels plats ou quels mots de votre pays d’origine avez-vous gardés ?'],
+    ['migration-left-behind', 'Who and what did you leave behind, and how did you stay in touch?', 'Qui et quoi avez-vous laissé derrière vous, et comment êtes-vous restés en contact ?'],
+    ['migration-roots', 'What would you want your grandchildren to know about where your family comes from?', 'Que voudriez-vous que vos petits-enfants sachent de l’endroit d’où vient votre famille ?'],
+  ], true),
+  chapter('history', { en: 'War and history', fr: 'Guerre et histoire' }, [
+    ['history-news', 'Which news do you remember hearing as a child, and how did the adults around you react?', 'De quelle nouvelle vous souvenez-vous avoir entendu parler enfant, et comment les adultes autour de vous ont-ils réagi ?'],
+    ['history-war-family', 'How did a war or conflict touch your family, whether you lived it or heard about it?', 'Comment une guerre ou un conflit a-t-il touché votre famille, que vous l’ayez vécu ou que l’on vous l’ait raconté ?'],
+    ['history-daily-life', 'How did everyday life change during a time of war, unrest, or hardship you lived through?', 'Comment la vie quotidienne a-t-elle changé pendant une période de guerre, de troubles ou de privations que vous avez traversée ?'],
+    ['history-service', 'If you or someone close to you served in the armed forces, what do you want remembered about it?', 'Si vous ou un proche avez servi dans l’armée, que souhaitez-vous que l’on en retienne ?'],
+    ['history-change', 'Which change in society did you witness that people today might find hard to believe?', 'De quel changement de société avez-vous été témoin que l’on aurait du mal à croire aujourd’hui ?'],
+    ['history-courage', 'Who showed courage in a difficult time you lived through?', 'Qui a fait preuve de courage pendant une période difficile que vous avez vécue ?'],
+    ['history-understand', 'What should younger generations understand about the times you lived through?', 'Que devraient comprendre les plus jeunes de l’époque que vous avez traversée ?'],
+  ], true),
+  chapter('faith', { en: 'Faith and beliefs', fr: 'Foi et convictions' }, [
+    ['faith-upbringing', 'What part did faith or spiritual practice play in the home you grew up in?', 'Quelle place la foi ou la pratique spirituelle avait-elle dans la maison de votre enfance ?'],
+    ['faith-own', 'How have your own beliefs about life and its meaning changed over the years?', 'Comment vos convictions sur la vie et son sens ont-elles évolué au fil des années ?'],
+    ['faith-ritual', 'Which ritual, prayer, or tradition has meant the most to you?', 'Quel rite, quelle prière ou quelle tradition a le plus compté pour vous ?'],
+    ['faith-doubt', 'Tell about a time of doubt or questioning, and what came of it.', 'Racontez une période de doute ou de questionnement, et ce qu’elle vous a apporté.'],
+    ['faith-community', 'Which community, of faith or otherwise, was there for you in hard times?', 'Quelle communauté, religieuse ou non, a été là pour vous dans les moments difficiles ?'],
+    ['faith-wonder', 'What fills you with wonder, or a sense of something larger than yourself?', 'Qu’est-ce qui vous émerveille, ou vous donne le sentiment de quelque chose de plus grand que vous ?'],
+    ['faith-pass-on', 'Which beliefs or questions would you like to pass on to the next generation?', 'Quelles convictions ou quelles questions aimeriez-vous transmettre à la génération suivante ?'],
+  ], true),
   chapter('lessons', { en: 'Lessons', fr: 'Leçons de vie' }, [
     ['lessons-turning-point', 'What was the biggest turning point in your life?', 'Quel a été le plus grand tournant de votre vie ?'],
     ['lessons-hardest', 'What is the hardest thing you have been through, and how did you get through it?', 'Quelle est l’épreuve la plus difficile que vous ayez traversée, et comment l’avez-vous surmontée ?'],
@@ -102,8 +152,12 @@ export const MEMOIR_CHAPTERS: readonly MemoirChapter[] = [
 
 export const MEMOIR_QUESTIONS: readonly MemoirQuestion[] = MEMOIR_CHAPTERS.flatMap((item) => item.questions);
 
+/** The themed chapters a writer can add to their memoir, in life order. */
+export const MEMOIR_THEME_IDS: readonly string[] = MEMOIR_CHAPTERS.filter((item) => item.theme).map((item) => item.id);
+
 const QUESTIONS_BY_ID = new Map(MEMOIR_QUESTIONS.map((question) => [question.id, question]));
 const CHAPTERS_BY_ID = new Map(MEMOIR_CHAPTERS.map((item) => [item.id, item]));
+const LIFE_ORDER = new Map(MEMOIR_QUESTIONS.map((question, index) => [question.id, index]));
 
 export function findMemoirQuestion(questionId: string): MemoirQuestion | undefined {
   return QUESTIONS_BY_ID.get(questionId);
@@ -117,25 +171,47 @@ export function resolveMemoirLanguage(language: string | undefined): MemoirLangu
   return language === 'fr' ? 'fr' : 'en';
 }
 
+/** The chosen themes that exist, each once, in life order (an unknown or retired theme is dropped). */
+export function normalizeMemoirThemes(themes: readonly string[]): string[] {
+  const chosen = new Set(themes);
+  return MEMOIR_THEME_IDS.filter((id) => chosen.has(id));
+}
+
+/** The chapters of a writer's memoir: every writer's year plus the themes they chose, in life order. */
+export function memoirChaptersFor(themes: readonly string[]): MemoirChapter[] {
+  const chosen = new Set(themes);
+  return MEMOIR_CHAPTERS.filter((item) => !item.theme || chosen.has(item.id));
+}
+
+/** The questions of a writer's memoir, in life order. */
+export function memoirQuestionsFor(themes: readonly string[]): MemoirQuestion[] {
+  return memoirChaptersFor(themes).flatMap((item) => item.questions);
+}
+
 /**
- * The next question to offer after `currentId`: the first unanswered one that
- * follows it in life order, wrapping around. The current question is kept when
- * it is the only one left unanswered, and null means every question is answered.
+ * The next question to offer after `currentId`: the first unanswered one of the writer's
+ * memoir (its year and chosen `themes`) that follows it in life order, wrapping around. A
+ * current question from a theme the writer has since left still marks the place. The current
+ * question is kept when it is the only one left unanswered, and null means every question is answered.
  */
 export function nextUnansweredQuestion(
   currentId: string | null,
   answeredIds: ReadonlySet<string>,
+  themes: readonly string[] = [],
 ): MemoirQuestion | null {
-  const currentIndex = currentId ? MEMOIR_QUESTIONS.findIndex((question) => question.id === currentId) : -1;
+  const schedule = memoirQuestionsFor(themes);
+  const place = currentId ? (LIFE_ORDER.get(currentId) ?? -1) : -1;
+  const order = (question: MemoirQuestion) => LIFE_ORDER.get(question.id) ?? -1;
   // Without a known current question every question is a candidate; otherwise all but the current one.
-  const candidates = currentIndex === -1 ? MEMOIR_QUESTIONS.length : MEMOIR_QUESTIONS.length - 1;
-  for (let offset = 0; offset < candidates; offset++) {
-    const candidate = MEMOIR_QUESTIONS[(currentIndex + 1 + offset) % MEMOIR_QUESTIONS.length];
-    if (!answeredIds.has(candidate.id)) {
-      return candidate;
-    }
+  const candidates = [
+    ...schedule.filter((question) => order(question) > place),
+    ...schedule.filter((question) => order(question) < place),
+  ];
+  const next = candidates.find((question) => !answeredIds.has(question.id));
+  if (next) {
+    return next;
   }
-  const current = currentId ? findMemoirQuestion(currentId) : undefined;
+  const current = schedule.find((question) => question.id === currentId);
   return current && !answeredIds.has(current.id) ? current : null;
 }
 
@@ -152,15 +228,17 @@ export function isSnoozed(questionId: string, snoozes: MemoirSnoozes, today: str
  * The question to offer after `currentId`. A set-aside question whose day has come goes first (the
  * earliest day first, then in life order), so "Not this week" brings it back a few weeks later rather
  * than after a whole round of the queue; otherwise the next unanswered one in life order, leaving out
- * every set-aside question. Null when every question is answered or set aside.
+ * every set-aside question. Only questions of the writer's memoir (its year and chosen `themes`) are
+ * offered. Null when every question is answered or set aside.
  */
 export function nextQueuedQuestion(
   currentId: string | null,
   answeredIds: ReadonlySet<string>,
   snoozes: MemoirSnoozes,
   today: string,
+  themes: readonly string[] = [],
 ): MemoirQuestion | null {
-  const returned = MEMOIR_QUESTIONS.filter(
+  const returned = memoirQuestionsFor(themes).filter(
     (question) =>
       question.id !== currentId &&
       !answeredIds.has(question.id) &&
@@ -170,5 +248,5 @@ export function nextQueuedQuestion(
   if (returned.length > 0) {
     return returned[0];
   }
-  return nextUnansweredQuestion(currentId, new Set([...answeredIds, ...snoozes.keys()]));
+  return nextUnansweredQuestion(currentId, new Set([...answeredIds, ...snoozes.keys()]), themes);
 }

@@ -1,6 +1,9 @@
 import { Logger } from '@nestjs/common';
 import { MemoirDeliveryService } from './memoir-delivery.service';
-import { MEMOIR_QUESTIONS } from './memoir-questions';
+import { memoirQuestionsFor } from './memoir-questions';
+
+// Every writer's year of questions, without themes
+const YEAR_QUESTIONS = memoirQuestionsFor([]);
 
 interface DueRow {
   id: number;
@@ -8,6 +11,7 @@ interface DueRow {
   current_question_id: string | null;
   delivery_weekday: number;
   time_zone: string;
+  themes: string[];
   email_enabled: boolean;
   email: string | null;
   email_verified: boolean;
@@ -26,9 +30,10 @@ describe('MemoirDeliveryService', () => {
   const row = (overrides: Partial<DueRow> = {}): DueRow => ({
     id: 1,
     user_id: 3,
-    current_question_id: MEMOIR_QUESTIONS[0].id,
+    current_question_id: YEAR_QUESTIONS[0].id,
     delivery_weekday: 0,
     time_zone: 'UTC',
+    themes: [],
     email_enabled: true,
     email: 'writer@example.com',
     email_verified: true,
@@ -91,21 +96,30 @@ describe('MemoirDeliveryService', () => {
   });
 
   it('moves to the next unanswered question, schedules next week, and emails it in the writer’s language', async () => {
-    withDue([row()], { 3: [MEMOIR_QUESTIONS[1].id] });
+    withDue([row()], { 3: [YEAR_QUESTIONS[1].id] });
 
     await expect(service.deliverDueQuestions(now)).resolves.toBe(1);
 
-    expect(updateCalls()[0][1]).toEqual([1, MEMOIR_QUESTIONS[2].id, now, new Date('2026-11-01T09:00:00Z')]);
+    expect(updateCalls()[0][1]).toEqual([1, YEAR_QUESTIONS[2].id, now, new Date('2026-11-01T09:00:00Z')]);
     expect(emailService.sendMemoirQuestionEmail).toHaveBeenCalledWith('writer@example.com', expect.objectContaining({
       subject: 'Votre question de la semaine pour vos mémoires',
-      question: MEMOIR_QUESTIONS[2].text.fr,
-      actionUrl: `https://thoughty.example.com/memoir?question=${MEMOIR_QUESTIONS[2].id}`,
+      question: YEAR_QUESTIONS[2].text.fr,
+      actionUrl: `https://thoughty.example.com/memoir?question=${YEAR_QUESTIONS[2].id}`,
     }));
     expect(programRepository.update).toHaveBeenCalledWith({ userId: 3 }, { lastEmailedAt: now });
   });
 
+  it('mixes the writer\'s chosen themes into the weekly questions', async () => {
+    withDue([row({ current_question_id: 'love-advice', themes: ['parenthood'] })]);
+
+    await service.deliverDueQuestions(now);
+
+    expect(manager.query.mock.calls[0][0]).toContain('p.themes');
+    expect(updateCalls()[0][1][1]).toBe('parenthood-news');
+  });
+
   it('rotates the question without email when email is off, unverified, or the memoir is complete', async () => {
-    const everyQuestion = MEMOIR_QUESTIONS.map((question) => question.id);
+    const everyQuestion = YEAR_QUESTIONS.map((question) => question.id);
     withDue(
       [
         row({ id: 1, user_id: 3, email_enabled: false }),
@@ -145,21 +159,21 @@ describe('MemoirDeliveryService', () => {
   });
   describe('questions set aside with “Not this week”', () => {
     const monday = (overrides: Partial<DueRow>) => row({ delivery_weekday: 1, ...overrides });
-    const away = { 1: { [MEMOIR_QUESTIONS[5].id]: '2026-11-30' } };
+    const away = { 1: { [YEAR_QUESTIONS[5].id]: '2026-11-30' } };
 
     it('passes over a question until its day and offers it first once that day comes in Kiritimati', async () => {
       // Sunday 29 November 19:00 UTC is Monday 30 November 09:00 in Kiritimati (UTC+14)
       const kiritimatiMonday = new Date('2026-11-29T19:00:30Z');
       withDue([monday({ time_zone: 'Pacific/Kiritimati' })], {}, away);
       await service.deliverDueQuestions(kiritimatiMonday);
-      expect(updateCalls()[0][1][1]).toBe(MEMOIR_QUESTIONS[5].id);
-      expect(snoozeDeletes()[0][1]).toEqual([1, MEMOIR_QUESTIONS[5].id]);
+      expect(updateCalls()[0][1][1]).toBe(YEAR_QUESTIONS[5].id);
+      expect(snoozeDeletes()[0][1]).toEqual([1, YEAR_QUESTIONS[5].id]);
 
       // In UTC it is still Sunday 29 November: the question is still away
       manager.query.mockClear();
       withDue([monday({ time_zone: 'UTC' })], {}, away);
       await service.deliverDueQuestions(kiritimatiMonday);
-      expect(updateCalls()[0][1][1]).toBe(MEMOIR_QUESTIONS[1].id);
+      expect(updateCalls()[0][1][1]).toBe(YEAR_QUESTIONS[1].id);
       expect(snoozeDeletes()).toHaveLength(0);
     });
 
@@ -167,19 +181,19 @@ describe('MemoirDeliveryService', () => {
       // Monday 30 November 09:00 UTC is Sunday 29 November 22:00 in Pago Pago (UTC-11)
       withDue([monday({ time_zone: 'Pacific/Pago_Pago' })], {}, away);
       await service.deliverDueQuestions(new Date('2026-11-30T09:00:30Z'));
-      expect(updateCalls()[0][1][1]).toBe(MEMOIR_QUESTIONS[1].id);
+      expect(updateCalls()[0][1][1]).toBe(YEAR_QUESTIONS[1].id);
 
       // Pago Pago's own Monday 09:00 is 20:00 UTC
       manager.query.mockClear();
       withDue([monday({ time_zone: 'Pacific/Pago_Pago' })], {}, away);
       await service.deliverDueQuestions(new Date('2026-11-30T20:00:30Z'));
-      expect(updateCalls()[0][1][1]).toBe(MEMOIR_QUESTIONS[5].id);
+      expect(updateCalls()[0][1][1]).toBe(YEAR_QUESTIONS[5].id);
     });
 
     it('gives the week no question, and sends no email, while every remaining question is away', async () => {
-      const allButTwo = MEMOIR_QUESTIONS.slice(2).map((question) => question.id);
+      const allButTwo = YEAR_QUESTIONS.slice(2).map((question) => question.id);
       withDue([row({ current_question_id: null })], { 3: allButTwo }, {
-        1: { [MEMOIR_QUESTIONS[0].id]: '2026-11-08', [MEMOIR_QUESTIONS[1].id]: '2026-11-15' },
+        1: { [YEAR_QUESTIONS[0].id]: '2026-11-08', [YEAR_QUESTIONS[1].id]: '2026-11-15' },
       });
 
       await expect(service.deliverDueQuestions(now)).resolves.toBe(0);

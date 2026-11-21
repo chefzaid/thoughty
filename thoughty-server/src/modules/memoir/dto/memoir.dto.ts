@@ -1,7 +1,9 @@
+import { applyDecorators } from '@nestjs/common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
   ArrayMaxSize,
+  ArrayUnique,
   IsArray,
   IsIn,
   IsOptional,
@@ -15,12 +17,24 @@ import {
 } from 'class-validator';
 import type { MemoirProgramStatus } from '@/database/entities';
 import { StrictBoolean, StrictInt } from '@/common/validation';
+import { MEMOIR_THEME_IDS } from '../memoir-questions';
 
 export const MEMOIR_ANSWER_MAX_LENGTH = 45_000;
 export const MEMOIR_ANSWER_MAX_ATTACHMENTS = 5;
 const MEMOIR_PROGRAM_STATUSES: MemoirProgramStatus[] = ['active', 'paused'];
 
 const trimmed = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
+const THEMES_DESCRIPTION = 'Themed chapters to add to the weekly questions, as listed in the overview\'s `themes`; an empty list keeps the year of questions alone';
+
+/** Validation shared by starting the memoir and changing its themes. */
+const ThemeList = () =>
+  applyDecorators(
+    IsOptional(),
+    IsArray(),
+    ArrayMaxSize(MEMOIR_THEME_IDS.length),
+    ArrayUnique(),
+    IsIn(MEMOIR_THEME_IDS, { each: true }),
+  );
 
 export class StartMemoirDto {
   @ApiPropertyOptional({ example: 4, description: 'An existing diary to collect the answers; omit to create one named diaryName' })
@@ -51,6 +65,10 @@ export class StartMemoirDto {
   @IsString()
   @MaxLength(64)
   timeZone!: string;
+
+  @ApiPropertyOptional({ enum: MEMOIR_THEME_IDS, isArray: true, example: ['migration'], description: THEMES_DESCRIPTION })
+  @ThemeList()
+  themes?: string[];
 }
 
 export class UpdateMemoirDto {
@@ -82,6 +100,15 @@ export class UpdateMemoirDto {
   @IsOptional()
   @IsIn(MEMOIR_PROGRAM_STATUSES)
   status?: MemoirProgramStatus;
+
+  @ApiPropertyOptional({
+    enum: MEMOIR_THEME_IDS,
+    isArray: true,
+    example: ['migration', 'faith'],
+    description: `${THEMES_DESCRIPTION}. When this week's question leaves with its theme, or every question was answered, the next question is offered at once`,
+  })
+  @ThemeList()
+  themes?: string[];
 }
 
 export class AnswerMemoirQuestionDto {
@@ -165,6 +192,17 @@ export class MemoirChapterDto {
   questions!: MemoirQuestionDto[];
 }
 
+export class MemoirThemeDto {
+  @ApiProperty({ enum: MEMOIR_THEME_IDS, example: 'migration' })
+  id!: string;
+
+  @ApiProperty({ type: LocalizedTextDto, description: 'The theme is also the chapter title and the tag of its answers' })
+  title!: LocalizedTextDto;
+
+  @ApiProperty({ example: 7 })
+  questionCount!: number;
+}
+
 export class MemoirProgramDto {
   @ApiProperty({ type: Number, nullable: true, example: 4, description: 'Null when the memoir diary was deleted' })
   diaryId!: number | null;
@@ -184,6 +222,9 @@ export class MemoirProgramDto {
   @ApiProperty({ example: 'Europe/Paris' })
   timeZone!: string;
 
+  @ApiProperty({ enum: MEMOIR_THEME_IDS, isArray: true, example: ['migration'], description: 'Themed chapters added to the weekly questions, in life order' })
+  themes!: string[];
+
   @ApiProperty({ type: String, nullable: true, example: 'childhood-play', description: "This week's question; null once every question is answered, or while every unanswered one is set aside" })
   currentQuestionId!: string | null;
 
@@ -198,7 +239,7 @@ export class MemoirProgressDto {
   @ApiProperty({ example: 12 })
   answered!: number;
 
-  @ApiProperty({ example: 52 })
+  @ApiProperty({ example: 52, description: "Questions in the writer's memoir: the year of questions and the chosen themes" })
   total!: number;
 
   @ApiProperty({ example: 8400, description: 'Words written in the answers, question headings excluded' })
@@ -212,8 +253,11 @@ export class MemoirOverviewDto {
   @ApiProperty({ type: MemoirProgramDto, nullable: true, description: 'Null until the program is started' })
   program!: MemoirProgramDto | null;
 
-  @ApiProperty({ type: [MemoirChapterDto] })
+  @ApiProperty({ type: [MemoirChapterDto], description: "The chapters of the writer's memoir in life order: the year of questions and the chosen themes" })
   chapters!: MemoirChapterDto[];
+
+  @ApiProperty({ type: [MemoirThemeDto], description: 'Every themed chapter that can be added, chosen or not, in life order' })
+  themes!: MemoirThemeDto[];
 
   @ApiProperty({ type: MemoirProgressDto })
   progress!: MemoirProgressDto;

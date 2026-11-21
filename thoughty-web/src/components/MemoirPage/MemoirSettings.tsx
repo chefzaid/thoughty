@@ -1,15 +1,17 @@
 import { useState, type FormEvent } from 'react';
 
 import { useTransientMessage } from '../../hooks/useTransientMessage';
-import type { MemoirProgram, UpdateMemoirRequest } from '../../services/api';
+import type { MemoirProgram, MemoirTheme, MemoirThemeId, UpdateMemoirRequest } from '../../services/api';
 import type { Diary, TranslationFunction } from '../../types';
 import AutoDismiss from '../AutoDismiss/AutoDismiss';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import MemoirScheduleFields from './MemoirScheduleFields';
+import MemoirThemeFields from './MemoirThemeFields';
 import { browserTimeZone, type MemoirLanguage } from './memoirFormat';
 
 interface MemoirSettingsProps {
   readonly program: MemoirProgram;
+  readonly themes: readonly MemoirTheme[];
   readonly diaries: readonly Diary[];
   readonly language: MemoirLanguage;
   readonly theme: 'light' | 'dark';
@@ -18,10 +20,11 @@ interface MemoirSettingsProps {
   readonly t: TranslationFunction;
 }
 
-function MemoirSettings({ program, diaries, language, theme, onUpdate, onLeave, t }: MemoirSettingsProps) {
+function MemoirSettings({ program, themes, diaries, language, theme, onUpdate, onLeave, t }: MemoirSettingsProps) {
   const timeZone = browserTimeZone();
   const [weekday, setWeekday] = useState(program.deliveryWeekday);
   const [emailEnabled, setEmailEnabled] = useState(program.emailEnabled);
+  const [chosenThemes, setChosenThemes] = useState<MemoirThemeId[]>(program.themes);
   const [diaryId, setDiaryId] = useState(program.diaryId ? String(program.diaryId) : '');
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -44,6 +47,7 @@ function MemoirSettings({ program, diaries, language, theme, onUpdate, onLeave, 
       deliveryWeekday: weekday,
       emailEnabled,
       timeZone,
+      themes: chosenThemes,
       ...(diaryId ? { diaryId: Number(diaryId) } : {}),
     }, true);
   };
@@ -77,6 +81,14 @@ function MemoirSettings({ program, diaries, language, theme, onUpdate, onLeave, 
           language={language}
           onWeekdayChange={setWeekday}
           onEmailEnabledChange={setEmailEnabled}
+          t={t}
+        />
+        <MemoirThemeFields
+          idPrefix="memoir-settings"
+          themes={themes}
+          selected={chosenThemes}
+          language={language}
+          onChange={setChosenThemes}
           t={t}
         />
         <div className="memoir-actions">

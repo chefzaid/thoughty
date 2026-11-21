@@ -1,6 +1,6 @@
 /** Guided-memoir state for the mock API; the handlers are in mockApp.routes.memoir.ts. */
 
-/** A short guided-memoir catalogue for browser tests; the real one lives on the server. */
+/** A short guided-memoir catalogue for browser tests, in life order; the real one lives on the server. */
 export const MOCK_MEMOIR_CHAPTERS = [
   {
     id: 'childhood',
@@ -17,9 +17,24 @@ export const MOCK_MEMOIR_CHAPTERS = [
       { id: 'work-path', text: { en: 'How did you come to do the work you did for most of your life?', fr: 'Comment avez-vous trouvé votre métier ?' } },
     ],
   },
+  {
+    id: 'migration',
+    title: { en: 'Migration', fr: 'Migration' },
+    questions: [
+      { id: 'migration-first-days', text: { en: 'What do you remember of your first days in the new country?', fr: 'Que vous rappelez-vous de vos premiers jours dans le nouveau pays ?' } },
+    ],
+  },
 ];
 
+/** The themed chapters a writer adds by choice; the others are every writer's year. */
+export const MOCK_MEMOIR_THEME_IDS = ['migration'];
+
 export const MOCK_MEMOIR_QUESTIONS = MOCK_MEMOIR_CHAPTERS.flatMap((chapter) => chapter.questions.map((question) => ({ ...question, chapter })));
+
+/** The chapters of a memoir with the given themes, in life order. */
+export function mockMemoirChaptersFor(themes: readonly string[]) {
+  return MOCK_MEMOIR_CHAPTERS.filter((chapter) => !MOCK_MEMOIR_THEME_IDS.includes(chapter.id) || themes.includes(chapter.id));
+}
 
 export interface MockMemoirProgram {
   diaryId: number | null;
@@ -28,6 +43,7 @@ export interface MockMemoirProgram {
   emailAvailable: boolean;
   deliveryWeekday: number;
   timeZone: string;
+  themes: string[];
   currentQuestionId: string | null;
   nextDeliveryAt: string;
   startedAt: string;
@@ -52,6 +68,7 @@ export function createMockMemoirState(program: Partial<MockMemoirProgram> | null
       emailAvailable: true,
       deliveryWeekday: 0,
       timeZone: 'Europe/Paris',
+      themes: [],
       currentQuestionId: 'childhood-home',
       nextDeliveryAt: '2026-10-25T08:00:00.000Z',
       startedAt: '2026-10-04T15:20:00.000Z',

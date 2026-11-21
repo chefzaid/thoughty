@@ -1,29 +1,34 @@
 import { useState, type FormEvent } from 'react';
 
-import type { MemoirChapter, StartMemoirRequest } from '../../services/api';
+import type { MemoirChapter, MemoirTheme, MemoirThemeId, StartMemoirRequest } from '../../services/api';
 import type { Diary, TranslationFunction } from '../../types';
 import MemoirScheduleFields from './MemoirScheduleFields';
+import MemoirThemeFields from './MemoirThemeFields';
 import { browserTimeZone, localize, type MemoirLanguage } from './memoirFormat';
 
 const NEW_DIARY = 'new';
 
 interface MemoirIntroProps {
   readonly chapters: readonly MemoirChapter[];
+  readonly themes: readonly MemoirTheme[];
   readonly diaries: readonly Diary[];
   readonly language: MemoirLanguage;
   readonly onStart: (request: StartMemoirRequest) => Promise<boolean>;
   readonly t: TranslationFunction;
 }
 
-function MemoirIntro({ chapters, diaries, language, onStart, t }: MemoirIntroProps) {
+function MemoirIntro({ chapters, themes, diaries, language, onStart, t }: MemoirIntroProps) {
   const timeZone = browserTimeZone();
   const [diaryChoice, setDiaryChoice] = useState(NEW_DIARY);
   const [diaryName, setDiaryName] = useState(() => t('memoirDefaultDiaryName'));
   const [weekday, setWeekday] = useState(() => new Date().getDay());
   const [emailEnabled, setEmailEnabled] = useState(true);
+  const [chosenThemes, setChosenThemes] = useState<MemoirThemeId[]>([]);
   const [starting, setStarting] = useState(false);
   const [failed, setFailed] = useState(false);
-  const questionCount = chapters.reduce((total, chapter) => total + chapter.questions.length, 0);
+  const added = themes.filter((theme) => chosenThemes.includes(theme.id));
+  const questionCount = chapters.reduce((total, chapter) => total + chapter.questions.length, 0)
+    + added.reduce((total, theme) => total + theme.questionCount, 0);
   const canStart = diaryChoice !== NEW_DIARY || diaryName.trim().length > 0;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -32,7 +37,7 @@ function MemoirIntro({ chapters, diaries, language, onStart, t }: MemoirIntroPro
     setStarting(true);
     setFailed(false);
     const diary = diaryChoice === NEW_DIARY ? { diaryName: diaryName.trim() } : { diaryId: Number(diaryChoice) };
-    const started = await onStart({ ...diary, emailEnabled, deliveryWeekday: weekday, timeZone });
+    const started = await onStart({ ...diary, emailEnabled, deliveryWeekday: weekday, timeZone, themes: chosenThemes });
     setStarting(false);
     setFailed(!started);
   };
@@ -42,7 +47,7 @@ function MemoirIntro({ chapters, diaries, language, onStart, t }: MemoirIntroPro
       <div className="memoir-card memoir-intro-story">
         <h2 id="memoir-intro-heading">{t('memoirIntroTitle')}</h2>
         <p>{t('memoirIntroBody')}</p>
-        <p className="memoir-intro-stats">{t('memoirIntroStats', { questions: questionCount, chapters: chapters.length })}</p>
+        <p className="memoir-intro-stats">{t('memoirIntroStats', { questions: questionCount, chapters: chapters.length + added.length })}</p>
         <ul className="memoir-chapter-chips">
           {chapters.map((chapter) => <li key={chapter.id}>{localize(chapter.title, language)}</li>)}
         </ul>
@@ -80,6 +85,14 @@ function MemoirIntro({ chapters, diaries, language, onStart, t }: MemoirIntroPro
           language={language}
           onWeekdayChange={setWeekday}
           onEmailEnabledChange={setEmailEnabled}
+          t={t}
+        />
+        <MemoirThemeFields
+          idPrefix="memoir-start"
+          themes={themes}
+          selected={chosenThemes}
+          language={language}
+          onChange={setChosenThemes}
           t={t}
         />
         <button type="submit" className="memoir-primary" disabled={!canStart || starting}>

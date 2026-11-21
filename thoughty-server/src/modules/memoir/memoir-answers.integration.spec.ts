@@ -13,7 +13,10 @@ import type { ConfigService } from '@/modules/config';
 import type { EntriesService } from '@/modules/entries';
 import type { LifeErasService } from '@/modules/life-eras';
 import { MemoirAnswersService } from './memoir-answers.service';
-import { MEMOIR_QUESTIONS } from './memoir-questions';
+import { memoirQuestionsFor } from './memoir-questions';
+
+// Every writer's year of questions, without themes
+const YEAR_QUESTIONS = memoirQuestionsFor([]);
 
 describePostgres('PostgreSQL memoir answers', () => {
   let database: PostgresTestDatabase;
@@ -64,7 +67,7 @@ describePostgres('PostgreSQL memoir answers', () => {
   });
 
   it('answers a question once, and again once its entry is in the recycle bin', async () => {
-    const questionId = MEMOIR_QUESTIONS[0]!.id;
+    const questionId = YEAR_QUESTIONS[0]!.id;
 
     const first = await service.answer(writerId, { questionId, text: 'By the sea.' });
     expect(first.questionId).toBe(questionId);

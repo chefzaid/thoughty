@@ -245,19 +245,19 @@ describe('UserDataExportService', () => {
     revisionRepository.find.mockResolvedValue([]);
     attachmentRepository.find.mockResolvedValue([]);
     settingRepository.find.mockResolvedValue([]);
-    memoirProgramRepository.findOne.mockResolvedValue({
-      id: 4,
-      userId: 1,
+    // Exported as stored, apart from the row's own keys and its creation date as `startedAt`
+    const programFields = {
       diaryId: 6,
       status: 'active',
       emailEnabled: true,
       deliveryWeekday: 0,
       timeZone: 'Europe/Paris',
+      themes: ['migration'],
       currentQuestionId: 'childhood-play',
       nextDeliveryAt: new Date('2026-10-25T08:00:00Z'),
       lastEmailedAt: null,
-      createdAt: new Date('2026-10-04T15:20:00Z'),
-    });
+    };
+    memoirProgramRepository.findOne.mockResolvedValue({ id: 4, userId: 1, ...programFields, createdAt: new Date('2026-10-04T15:20:00Z') });
     memoirAnswerRepository.find.mockResolvedValue([{ userId: 1, questionId: 'childhood-home', entryId: 81, createdAt: new Date('2026-10-05T09:00:00Z') }]);
     memoirSnoozeRepository.find.mockResolvedValue([{ programId: 4, questionId: 'work-path', snoozedUntil: '2026-11-22', createdAt: new Date() }]);
 
@@ -265,14 +265,7 @@ describe('UserDataExportService', () => {
 
     expect(result.memoir).toEqual({
       program: {
-        diaryId: 6,
-        status: 'active',
-        emailEnabled: true,
-        deliveryWeekday: 0,
-        timeZone: 'Europe/Paris',
-        currentQuestionId: 'childhood-play',
-        nextDeliveryAt: new Date('2026-10-25T08:00:00Z'),
-        lastEmailedAt: null,
+        ...programFields,
         startedAt: new Date('2026-10-04T15:20:00Z'),
         setAside: [{ questionId: 'work-path', snoozedUntil: '2026-11-22' }],
       },

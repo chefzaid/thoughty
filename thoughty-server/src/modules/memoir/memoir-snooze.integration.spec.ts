@@ -8,10 +8,11 @@ import {
 import { Diary, Entry, MemoirAnswer, MemoirProgram, MemoirSnooze, User } from '@/database/entities';
 import type { DiariesService } from '@/modules/diaries';
 import { MemoirDeliveryService } from './memoir-delivery.service';
-import { MEMOIR_QUESTIONS } from './memoir-questions';
+import { memoirQuestionsFor } from './memoir-questions';
 import { MemoirService } from './memoir.service';
 
-const ids = MEMOIR_QUESTIONS.map((question) => question.id);
+// Every writer's year of questions, without themes
+const ids = memoirQuestionsFor([]).map((question) => question.id);
 
 describePostgres('PostgreSQL memoir "Not this week"', () => {
   let database: PostgresTestDatabase;
@@ -129,5 +130,22 @@ describePostgres('PostgreSQL memoir "Not this week"', () => {
     // Stopping the memoir clears what was set aside with it
     await service.leave(writerId);
     await expect(dataSource.getRepository(MemoirSnooze).count()).resolves.toBe(0);
+  });
+
+  it('keeps the chosen themes and mixes them into the weekly delivery at their place in life order', async () => {
+    await startMondays('UTC', '2026-11-02T09:00:00Z');
+    await dataSource.getRepository(MemoirProgram).update({ userId: writerId }, { currentQuestionId: 'love-advice' });
+
+    const overview = await service.update(writerId, { themes: ['faith', 'parenthood', 'faith'] });
+    expect(overview.program?.themes).toEqual(['parenthood', 'faith']);
+    expect(overview.progress.total).toBe(66);
+    await expect(dataSource.query('SELECT themes FROM memoir_programs')).resolves.toEqual([{ themes: ['parenthood', 'faith'] }]);
+
+    await delivery.deliverDueQuestions(new Date('2026-11-02T09:00:30Z'));
+    await expect(currentQuestion()).resolves.toBe('parenthood-news');
+
+    // Leaving the theme out offers the next question of the year at once
+    const without = await service.update(writerId, { themes: ['faith'] });
+    expect(without.program?.currentQuestionId).toBe('work-path');
   });
 });

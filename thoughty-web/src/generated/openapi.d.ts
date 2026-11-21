@@ -9056,6 +9056,9 @@ export interface components {
          *       "emailAvailable": false,
          *       "deliveryWeekday": 0,
          *       "timeZone": "Europe/Paris",
+         *       "themes": [
+         *         "migration"
+         *       ],
          *       "currentQuestionId": "childhood-play",
          *       "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
          *       "startedAt": "2026-10-04T15:20:00.000Z"
@@ -9083,6 +9086,13 @@ export interface components {
             deliveryWeekday: number;
             /** @example Europe/Paris */
             timeZone: string;
+            /**
+             * @description Themed chapters added to the weekly questions, in life order
+             * @example [
+             *       "migration"
+             *     ]
+             */
+            themes: ("parenthood" | "careers" | "migration" | "history" | "faith")[];
             /**
              * @description This week's question; null once every question is answered, or while every unanswered one is set aside
              * @example childhood-play
@@ -9173,6 +9183,27 @@ export interface components {
         };
         /**
          * @example {
+         *       "id": "migration",
+         *       "title": {
+         *         "en": "What did the home you grew up in look, sound, and smell like?",
+         *         "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+         *       },
+         *       "questionCount": 7
+         *     }
+         */
+        MemoirThemeDto: {
+            /**
+             * @example migration
+             * @enum {string}
+             */
+            id: "parenthood" | "careers" | "migration" | "history" | "faith";
+            /** @description The theme is also the chapter title and the tag of its answers */
+            title: components["schemas"]["LocalizedTextDto"];
+            /** @example 7 */
+            questionCount: number;
+        };
+        /**
+         * @example {
          *       "answered": 12,
          *       "total": 52,
          *       "words": 8400,
@@ -9182,7 +9213,10 @@ export interface components {
         MemoirProgressDto: {
             /** @example 12 */
             answered: number;
-            /** @example 52 */
+            /**
+             * @description Questions in the writer's memoir: the year of questions and the chosen themes
+             * @example 52
+             */
             total: number;
             /**
              * @description Words written in the answers, question headings excluded
@@ -9204,6 +9238,9 @@ export interface components {
          *         "emailAvailable": false,
          *         "deliveryWeekday": 0,
          *         "timeZone": "Europe/Paris",
+         *         "themes": [
+         *           "migration"
+         *         ],
          *         "currentQuestionId": "childhood-play",
          *         "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
          *         "startedAt": "2026-10-04T15:20:00.000Z"
@@ -9231,6 +9268,16 @@ export interface components {
          *           ]
          *         }
          *       ],
+         *       "themes": [
+         *         {
+         *           "id": "migration",
+         *           "title": {
+         *             "en": "What did the home you grew up in look, sound, and smell like?",
+         *             "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+         *           },
+         *           "questionCount": 7
+         *         }
+         *       ],
          *       "progress": {
          *         "answered": 12,
          *         "total": 52,
@@ -9242,7 +9289,10 @@ export interface components {
         MemoirOverviewDto: {
             /** @description Null until the program is started */
             program: components["schemas"]["MemoirProgramDto"] | null;
+            /** @description The chapters of the writer's memoir in life order: the year of questions and the chosen themes */
             chapters: components["schemas"]["MemoirChapterDto"][];
+            /** @description Every themed chapter that can be added, chosen or not, in life order */
+            themes: components["schemas"]["MemoirThemeDto"][];
             progress: components["schemas"]["MemoirProgressDto"];
         };
         /**
@@ -9251,7 +9301,10 @@ export interface components {
          *       "diaryName": "My memoir",
          *       "emailEnabled": true,
          *       "deliveryWeekday": 0,
-         *       "timeZone": "Europe/Paris"
+         *       "timeZone": "Europe/Paris",
+         *       "themes": [
+         *         "migration"
+         *       ]
          *     }
          */
         StartMemoirDto: {
@@ -9280,6 +9333,13 @@ export interface components {
              * @example Europe/Paris
              */
             timeZone: string;
+            /**
+             * @description Themed chapters to add to the weekly questions, as listed in the overview's `themes`; an empty list keeps the year of questions alone
+             * @example [
+             *       "migration"
+             *     ]
+             */
+            themes?: ("parenthood" | "careers" | "migration" | "history" | "faith")[];
         };
         /**
          * @example {
@@ -9287,7 +9347,11 @@ export interface components {
          *       "emailEnabled": false,
          *       "deliveryWeekday": 3,
          *       "timeZone": "Europe/Paris",
-         *       "status": "paused"
+         *       "status": "paused",
+         *       "themes": [
+         *         "migration",
+         *         "faith"
+         *       ]
          *     }
          */
         UpdateMemoirDto: {
@@ -9305,6 +9369,14 @@ export interface components {
              * @enum {string}
              */
             status?: "active" | "paused";
+            /**
+             * @description Themed chapters to add to the weekly questions, as listed in the overview's `themes`; an empty list keeps the year of questions alone. When this week's question leaves with its theme, or every question was answered, the next question is offered at once
+             * @example [
+             *       "migration",
+             *       "faith"
+             *     ]
+             */
+            themes?: ("parenthood" | "careers" | "migration" | "history" | "faith")[];
         };
         /**
          * @example {
@@ -21463,6 +21535,9 @@ export interface operations {
                      *         "emailAvailable": false,
                      *         "deliveryWeekday": 0,
                      *         "timeZone": "Europe/Paris",
+                     *         "themes": [
+                     *           "migration"
+                     *         ],
                      *         "currentQuestionId": "childhood-play",
                      *         "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
                      *         "startedAt": "2026-10-04T15:20:00.000Z"
@@ -21488,6 +21563,16 @@ export interface operations {
                      *               "snoozedUntil": "2026-11-30"
                      *             }
                      *           ]
+                     *         }
+                     *       ],
+                     *       "themes": [
+                     *         {
+                     *           "id": "migration",
+                     *           "title": {
+                     *             "en": "What did the home you grew up in look, sound, and smell like?",
+                     *             "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                     *           },
+                     *           "questionCount": 7
                      *         }
                      *       ],
                      *       "progress": {
@@ -21518,7 +21603,10 @@ export interface operations {
                  *       "diaryName": "My memoir",
                  *       "emailEnabled": true,
                  *       "deliveryWeekday": 0,
-                 *       "timeZone": "Europe/Paris"
+                 *       "timeZone": "Europe/Paris",
+                 *       "themes": [
+                 *         "migration"
+                 *       ]
                  *     }
                  */
                 "application/json": components["schemas"]["StartMemoirDto"];
@@ -21540,6 +21628,9 @@ export interface operations {
                      *         "emailAvailable": false,
                      *         "deliveryWeekday": 0,
                      *         "timeZone": "Europe/Paris",
+                     *         "themes": [
+                     *           "migration"
+                     *         ],
                      *         "currentQuestionId": "childhood-play",
                      *         "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
                      *         "startedAt": "2026-10-04T15:20:00.000Z"
@@ -21565,6 +21656,16 @@ export interface operations {
                      *               "snoozedUntil": "2026-11-30"
                      *             }
                      *           ]
+                     *         }
+                     *       ],
+                     *       "themes": [
+                     *         {
+                     *           "id": "migration",
+                     *           "title": {
+                     *             "en": "What did the home you grew up in look, sound, and smell like?",
+                     *             "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                     *           },
+                     *           "questionCount": 7
                      *         }
                      *       ],
                      *       "progress": {
@@ -21654,7 +21755,11 @@ export interface operations {
                  *       "emailEnabled": false,
                  *       "deliveryWeekday": 3,
                  *       "timeZone": "Europe/Paris",
-                 *       "status": "paused"
+                 *       "status": "paused",
+                 *       "themes": [
+                 *         "migration",
+                 *         "faith"
+                 *       ]
                  *     }
                  */
                 "application/json": components["schemas"]["UpdateMemoirDto"];
@@ -21676,6 +21781,9 @@ export interface operations {
                      *         "emailAvailable": false,
                      *         "deliveryWeekday": 0,
                      *         "timeZone": "Europe/Paris",
+                     *         "themes": [
+                     *           "migration"
+                     *         ],
                      *         "currentQuestionId": "childhood-play",
                      *         "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
                      *         "startedAt": "2026-10-04T15:20:00.000Z"
@@ -21701,6 +21809,16 @@ export interface operations {
                      *               "snoozedUntil": "2026-11-30"
                      *             }
                      *           ]
+                     *         }
+                     *       ],
+                     *       "themes": [
+                     *         {
+                     *           "id": "migration",
+                     *           "title": {
+                     *             "en": "What did the home you grew up in look, sound, and smell like?",
+                     *             "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                     *           },
+                     *           "questionCount": 7
                      *         }
                      *       ],
                      *       "progress": {
@@ -21757,6 +21875,9 @@ export interface operations {
                      *         "emailAvailable": false,
                      *         "deliveryWeekday": 0,
                      *         "timeZone": "Europe/Paris",
+                     *         "themes": [
+                     *           "migration"
+                     *         ],
                      *         "currentQuestionId": "childhood-play",
                      *         "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
                      *         "startedAt": "2026-10-04T15:20:00.000Z"
@@ -21782,6 +21903,16 @@ export interface operations {
                      *               "snoozedUntil": "2026-11-30"
                      *             }
                      *           ]
+                     *         }
+                     *       ],
+                     *       "themes": [
+                     *         {
+                     *           "id": "migration",
+                     *           "title": {
+                     *             "en": "What did the home you grew up in look, sound, and smell like?",
+                     *             "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                     *           },
+                     *           "questionCount": 7
                      *         }
                      *       ],
                      *       "progress": {
@@ -21838,6 +21969,9 @@ export interface operations {
                      *         "emailAvailable": false,
                      *         "deliveryWeekday": 0,
                      *         "timeZone": "Europe/Paris",
+                     *         "themes": [
+                     *           "migration"
+                     *         ],
                      *         "currentQuestionId": "childhood-play",
                      *         "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
                      *         "startedAt": "2026-10-04T15:20:00.000Z"
@@ -21863,6 +21997,16 @@ export interface operations {
                      *               "snoozedUntil": "2026-11-30"
                      *             }
                      *           ]
+                     *         }
+                     *       ],
+                     *       "themes": [
+                     *         {
+                     *           "id": "migration",
+                     *           "title": {
+                     *             "en": "What did the home you grew up in look, sound, and smell like?",
+                     *             "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                     *           },
+                     *           "questionCount": 7
                      *         }
                      *       ],
                      *       "progress": {

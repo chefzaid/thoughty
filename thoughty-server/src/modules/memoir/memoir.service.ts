@@ -15,11 +15,14 @@ import type {
 } from './dto';
 import { countAnswerWords } from './memoir-content';
 import {
+  findMemoirQuestion,
   isSnoozed,
   MEMOIR_CHAPTERS,
-  MEMOIR_QUESTIONS,
+  memoirChaptersFor,
+  memoirQuestionsFor,
   nextQueuedQuestion,
   nextUnansweredQuestion,
+  normalizeMemoirThemes,
   type MemoirSnoozes,
 } from './memoir-questions';
 import {
@@ -64,14 +67,17 @@ export class MemoirService {
       this.loadAnswers(userId),
     ]);
     const answersById = new Map(answers.map((answer) => [answer.questionId, answer]));
+    // Every answer is in the memoir diary, so its words count even when its theme was left out since
     const words = answers.reduce((total, answer) => total + countAnswerWords(answer.content), 0);
-    const answered = MEMOIR_QUESTIONS.filter((question) => answersById.has(question.id)).length;
+    const themes = program?.themes ?? [];
+    const questions = memoirQuestionsFor(themes);
+    const answered = questions.filter((question) => answersById.has(question.id)).length;
     const snoozes = program ? await this.loadSnoozes(program.id) : new Map<string, string>();
     const today = localDateIn(new Date(), memoirTimeZone(program?.timeZone ?? 'UTC'));
 
     return {
       program: program ? await this.toProgramDto(userId, program) : null,
-      chapters: MEMOIR_CHAPTERS.map((chapter): MemoirChapterDto => ({
+      chapters: memoirChaptersFor(themes).map((chapter): MemoirChapterDto => ({
         id: chapter.id,
         title: { ...chapter.title },
         questions: chapter.questions.map((question) => {
@@ -84,9 +90,14 @@ export class MemoirService {
           };
         }),
       })),
+      themes: MEMOIR_CHAPTERS.filter((chapter) => chapter.theme).map((chapter) => ({
+        id: chapter.id,
+        title: { ...chapter.title },
+        questionCount: chapter.questions.length,
+      })),
       progress: {
         answered,
-        total: MEMOIR_QUESTIONS.length,
+        total: questions.length,
         words,
         estimatedPages: Math.ceil(words / WORDS_PER_PAGE),
       },
@@ -103,6 +114,7 @@ export class MemoirService {
       ? await this.requireOwnedDiaryId(userId, dto.diaryId)
       : await this.findOrCreateDiaryId(userId, dto.diaryName ?? '');
     const answered = await this.loadAnsweredIds(userId);
+    const themes = normalizeMemoirThemes(dto.themes ?? []);
     const now = new Date();
 
     try {
@@ -113,7 +125,8 @@ export class MemoirService {
         emailEnabled: dto.emailEnabled,
         deliveryWeekday: dto.deliveryWeekday,
         timeZone: dto.timeZone,
-        currentQuestionId: nextUnansweredQuestion(null, answered)?.id ?? null,
+        themes,
+        currentQuestionId: nextUnansweredQuestion(null, answered, themes)?.id ?? null,
         currentQuestionAt: now,
         nextDeliveryAt: nextWeeklyDelivery(now, dto.deliveryWeekday, dto.timeZone),
       });
@@ -145,8 +158,22 @@ export class MemoirService {
       program.nextDeliveryAt = nextWeeklyDelivery(new Date(), program.deliveryWeekday, program.timeZone);
     }
 
-    await this.programRepository.save(program);
+    if (dto.themes !== undefined && this.changeThemes(program, normalizeMemoirThemes(dto.themes))) {
+      // This week's question left with its theme, or a new theme follows a finished memoir: offer the next one now
+      await this.moveToNextQuestion(program, await this.loadAnsweredIds(userId), await this.loadSnoozes(program.id));
+    } else {
+      await this.programRepository.save(program);
+    }
     return this.getOverview(userId);
+  }
+
+  /** Sets the program's themes; true when this week's question has to be replaced for them. */
+  private changeThemes(program: MemoirProgram, themes: string[]): boolean {
+    const before = program.themes;
+    program.themes = themes;
+    if (themes.join() === before.join()) return false;
+    const current = program.currentQuestionId ? findMemoirQuestion(program.currentQuestionId) : undefined;
+    return !current || !memoirQuestionsFor(themes).includes(current);
   }
 
   /** Stops the program; answers stay in the journal and count again if the memoir is restarted. */
@@ -184,7 +211,7 @@ export class MemoirService {
   /** Offers the next question in the queue now; a set-aside question that comes back leaves the set-aside list. */
   private async moveToNextQuestion(program: MemoirProgram, answered: Set<string>, snoozes: MemoirSnoozes): Promise<void> {
     const today = localDateIn(new Date(), memoirTimeZone(program.timeZone));
-    const next = nextQueuedQuestion(program.currentQuestionId, answered, snoozes, today);
+    const next = nextQueuedQuestion(program.currentQuestionId, answered, snoozes, today, program.themes);
     program.currentQuestionId = next?.id ?? null;
     program.currentQuestionAt = new Date();
     await this.programRepository.save(program);
@@ -206,6 +233,7 @@ export class MemoirService {
       emailAvailable: Boolean(user?.email && user.emailVerified && this.emailService.isConfigured()),
       deliveryWeekday: program.deliveryWeekday,
       timeZone: program.timeZone,
+      themes: [...program.themes],
       currentQuestionId: program.currentQuestionId,
       nextDeliveryAt: program.nextDeliveryAt.toISOString(),
       startedAt: program.createdAt.toISOString(),

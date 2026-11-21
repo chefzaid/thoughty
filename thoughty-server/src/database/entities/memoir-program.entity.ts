@@ -37,6 +37,10 @@ export class MemoirProgram {
   @Column({ name: 'time_zone', type: 'varchar', length: 64, default: 'UTC' })
   timeZone: string;
 
+  /** Themed chapters the writer added to the weekly questions (IDs from the memoir catalogue, in life order). */
+  @Column('text', { array: true, default: [] })
+  themes: string[];
+
   @Column({ name: 'current_question_id', type: 'varchar', length: 64, nullable: true })
   currentQuestionId: string | null;
 

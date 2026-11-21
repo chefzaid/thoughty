@@ -376,6 +376,7 @@ export class UserDataExportService {
             emailEnabled: program.emailEnabled,
             deliveryWeekday: program.deliveryWeekday,
             timeZone: program.timeZone,
+            themes: program.themes,
             currentQuestionId: program.currentQuestionId,
             nextDeliveryAt: program.nextDeliveryAt,
             lastEmailedAt: program.lastEmailedAt,

@@ -34,6 +34,17 @@ describe('memoir DTOs', () => {
     await expect(invalidPropertiesLikeApi(UpdateMemoirDto, { status: 'done' })).resolves.toEqual(['status']);
   });
 
+  it('takes known themes, each once, when starting or changing the memoir', async () => {
+    await expect(parseLikeApi(StartMemoirDto, { ...start, diaryId: 4, themes: ['faith', 'migration'] })).resolves.toMatchObject({
+      themes: ['faith', 'migration'],
+    });
+    await expect(invalidPropertiesLikeApi(UpdateMemoirDto, { themes: [] })).resolves.toEqual([]);
+    await expect(invalidPropertiesLikeApi(UpdateMemoirDto, { themes: ['childhood'] })).resolves.toEqual(['themes']);
+    await expect(invalidPropertiesLikeApi(UpdateMemoirDto, { themes: ['faith', 'faith'] })).resolves.toEqual(['themes']);
+    await expect(invalidPropertiesLikeApi(UpdateMemoirDto, { themes: 'faith' })).resolves.toEqual(['themes']);
+    await expect(invalidPropertiesLikeApi(StartMemoirDto, { ...start, diaryId: 4, themes: [1] })).resolves.toEqual(['themes']);
+  });
+
   it('trims answers and bounds question ids and attachments', async () => {
     await expect(
       parseLikeApi(AnswerMemoirQuestionDto, { questionId: 'childhood-home', text: '  A fig tree in the yard.  ', attachmentIds: [3], eraId: 2 }),

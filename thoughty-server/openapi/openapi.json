@@ -13389,6 +13389,9 @@
                     "emailAvailable": false,
                     "deliveryWeekday": 0,
                     "timeZone": "Europe/Paris",
+                    "themes": [
+                      "migration"
+                    ],
                     "currentQuestionId": "childhood-play",
                     "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
                     "startedAt": "2026-10-04T15:20:00.000Z"
@@ -13414,6 +13417,16 @@
                           "snoozedUntil": "2026-11-30"
                         }
                       ]
+                    }
+                  ],
+                  "themes": [
+                    {
+                      "id": "migration",
+                      "title": {
+                        "en": "What did the home you grew up in look, sound, and smell like?",
+                        "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                      },
+                      "questionCount": 7
                     }
                   ],
                   "progress": {
@@ -13452,7 +13465,10 @@
                 "diaryName": "My memoir",
                 "emailEnabled": true,
                 "deliveryWeekday": 0,
-                "timeZone": "Europe/Paris"
+                "timeZone": "Europe/Paris",
+                "themes": [
+                  "migration"
+                ]
               }
             }
           }
@@ -13473,6 +13489,9 @@
                     "emailAvailable": false,
                     "deliveryWeekday": 0,
                     "timeZone": "Europe/Paris",
+                    "themes": [
+                      "migration"
+                    ],
                     "currentQuestionId": "childhood-play",
                     "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
                     "startedAt": "2026-10-04T15:20:00.000Z"
@@ -13498,6 +13517,16 @@
                           "snoozedUntil": "2026-11-30"
                         }
                       ]
+                    }
+                  ],
+                  "themes": [
+                    {
+                      "id": "migration",
+                      "title": {
+                        "en": "What did the home you grew up in look, sound, and smell like?",
+                        "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                      },
+                      "questionCount": 7
                     }
                   ],
                   "progress": {
@@ -13568,7 +13597,11 @@
                 "emailEnabled": false,
                 "deliveryWeekday": 3,
                 "timeZone": "Europe/Paris",
-                "status": "paused"
+                "status": "paused",
+                "themes": [
+                  "migration",
+                  "faith"
+                ]
               }
             }
           }
@@ -13589,6 +13622,9 @@
                     "emailAvailable": false,
                     "deliveryWeekday": 0,
                     "timeZone": "Europe/Paris",
+                    "themes": [
+                      "migration"
+                    ],
                     "currentQuestionId": "childhood-play",
                     "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
                     "startedAt": "2026-10-04T15:20:00.000Z"
@@ -13614,6 +13650,16 @@
                           "snoozedUntil": "2026-11-30"
                         }
                       ]
+                    }
+                  ],
+                  "themes": [
+                    {
+                      "id": "migration",
+                      "title": {
+                        "en": "What did the home you grew up in look, sound, and smell like?",
+                        "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                      },
+                      "questionCount": 7
                     }
                   ],
                   "progress": {
@@ -13703,6 +13749,9 @@
                     "emailAvailable": false,
                     "deliveryWeekday": 0,
                     "timeZone": "Europe/Paris",
+                    "themes": [
+                      "migration"
+                    ],
                     "currentQuestionId": "childhood-play",
                     "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
                     "startedAt": "2026-10-04T15:20:00.000Z"
@@ -13728,6 +13777,16 @@
                           "snoozedUntil": "2026-11-30"
                         }
                       ]
+                    }
+                  ],
+                  "themes": [
+                    {
+                      "id": "migration",
+                      "title": {
+                        "en": "What did the home you grew up in look, sound, and smell like?",
+                        "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                      },
+                      "questionCount": 7
                     }
                   ],
                   "progress": {
@@ -13789,6 +13848,9 @@
                     "emailAvailable": false,
                     "deliveryWeekday": 0,
                     "timeZone": "Europe/Paris",
+                    "themes": [
+                      "migration"
+                    ],
                     "currentQuestionId": "childhood-play",
                     "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
                     "startedAt": "2026-10-04T15:20:00.000Z"
@@ -13814,6 +13876,16 @@
                           "snoozedUntil": "2026-11-30"
                         }
                       ]
+                    }
+                  ],
+                  "themes": [
+                    {
+                      "id": "migration",
+                      "title": {
+                        "en": "What did the home you grew up in look, sound, and smell like?",
+                        "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                      },
+                      "questionCount": 7
                     }
                   ],
                   "progress": {
@@ -27066,6 +27138,23 @@
             "type": "string",
             "example": "Europe/Paris"
           },
+          "themes": {
+            "type": "array",
+            "example": [
+              "migration"
+            ],
+            "description": "Themed chapters added to the weekly questions, in life order",
+            "items": {
+              "type": "string",
+              "enum": [
+                "parenthood",
+                "careers",
+                "migration",
+                "history",
+                "faith"
+              ]
+            }
+          },
           "currentQuestionId": {
             "type": "string",
             "nullable": true,
@@ -27088,6 +27177,7 @@
           "emailAvailable",
           "deliveryWeekday",
           "timeZone",
+          "themes",
           "currentQuestionId",
           "nextDeliveryAt",
           "startedAt"
@@ -27099,6 +27189,9 @@
           "emailAvailable": false,
           "deliveryWeekday": 0,
           "timeZone": "Europe/Paris",
+          "themes": [
+            "migration"
+          ],
           "currentQuestionId": "childhood-play",
           "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
           "startedAt": "2026-10-04T15:20:00.000Z"
@@ -27235,6 +27328,47 @@
           ]
         }
       },
+      "MemoirThemeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "parenthood",
+              "careers",
+              "migration",
+              "history",
+              "faith"
+            ],
+            "example": "migration"
+          },
+          "title": {
+            "description": "The theme is also the chapter title and the tag of its answers",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LocalizedTextDto"
+              }
+            ]
+          },
+          "questionCount": {
+            "type": "number",
+            "example": 7
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "questionCount"
+        ],
+        "example": {
+          "id": "migration",
+          "title": {
+            "en": "What did the home you grew up in look, sound, and smell like?",
+            "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+          },
+          "questionCount": 7
+        }
+      },
       "MemoirProgressDto": {
         "type": "object",
         "properties": {
@@ -27244,7 +27378,8 @@
           },
           "total": {
             "type": "number",
-            "example": 52
+            "example": 52,
+            "description": "Questions in the writer's memoir: the year of questions and the chosen themes"
           },
           "words": {
             "type": "number",
@@ -27284,9 +27419,17 @@
             ]
           },
           "chapters": {
+            "description": "The chapters of the writer's memoir in life order: the year of questions and the chosen themes",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/MemoirChapterDto"
+            }
+          },
+          "themes": {
+            "description": "Every themed chapter that can be added, chosen or not, in life order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoirThemeDto"
             }
           },
           "progress": {
@@ -27296,6 +27439,7 @@
         "required": [
           "program",
           "chapters",
+          "themes",
           "progress"
         ],
         "example": {
@@ -27306,6 +27450,9 @@
             "emailAvailable": false,
             "deliveryWeekday": 0,
             "timeZone": "Europe/Paris",
+            "themes": [
+              "migration"
+            ],
             "currentQuestionId": "childhood-play",
             "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
             "startedAt": "2026-10-04T15:20:00.000Z"
@@ -27331,6 +27478,16 @@
                   "snoozedUntil": "2026-11-30"
                 }
               ]
+            }
+          ],
+          "themes": [
+            {
+              "id": "migration",
+              "title": {
+                "en": "What did the home you grew up in look, sound, and smell like?",
+                "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+              },
+              "questionCount": 7
             }
           ],
           "progress": {
@@ -27372,6 +27529,23 @@
             "example": "Europe/Paris",
             "maxLength": 64,
             "description": "IANA time zone for the 09:00 weekly delivery"
+          },
+          "themes": {
+            "type": "array",
+            "example": [
+              "migration"
+            ],
+            "description": "Themed chapters to add to the weekly questions, as listed in the overview's `themes`; an empty list keeps the year of questions alone",
+            "items": {
+              "type": "string",
+              "enum": [
+                "parenthood",
+                "careers",
+                "migration",
+                "history",
+                "faith"
+              ]
+            }
           }
         },
         "required": [
@@ -27384,7 +27558,10 @@
           "diaryName": "My memoir",
           "emailEnabled": true,
           "deliveryWeekday": 0,
-          "timeZone": "Europe/Paris"
+          "timeZone": "Europe/Paris",
+          "themes": [
+            "migration"
+          ]
         }
       },
       "UpdateMemoirDto": {
@@ -27417,6 +27594,24 @@
             ],
             "example": "paused",
             "description": "Paused programs get no new weekly question or email"
+          },
+          "themes": {
+            "type": "array",
+            "example": [
+              "migration",
+              "faith"
+            ],
+            "description": "Themed chapters to add to the weekly questions, as listed in the overview's `themes`; an empty list keeps the year of questions alone. When this week's question leaves with its theme, or every question was answered, the next question is offered at once",
+            "items": {
+              "type": "string",
+              "enum": [
+                "parenthood",
+                "careers",
+                "migration",
+                "history",
+                "faith"
+              ]
+            }
           }
         },
         "example": {
@@ -27424,7 +27619,11 @@
           "emailEnabled": false,
           "deliveryWeekday": 3,
           "timeZone": "Europe/Paris",
-          "status": "paused"
+          "status": "paused",
+          "themes": [
+            "migration",
+            "faith"
+          ]
         }
       },
       "MemoirLeftDto": {

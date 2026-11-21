@@ -22,6 +22,12 @@ export const memoirChapters: MemoirOverview['chapters'] = [
   },
 ];
 
+/** Two of the themed chapters a writer can add. */
+export const memoirThemes: MemoirOverview['themes'] = [
+  { id: 'parenthood', title: { en: 'Parenthood', fr: 'Être parent' }, questionCount: 7 },
+  { id: 'migration', title: { en: 'Migration', fr: 'Migration' }, questionCount: 1 },
+];
+
 /** An active memoir asking `childhood-home` this week, with Sunday deliveries in Paris. */
 export const memoirProgram: MemoirProgram = {
   diaryId: 6,
@@ -30,6 +36,7 @@ export const memoirProgram: MemoirProgram = {
   emailAvailable: true,
   deliveryWeekday: 0,
   timeZone: 'Europe/Paris',
+  themes: [],
   currentQuestionId: 'childhood-home',
   nextDeliveryAt: '2026-10-25T08:00:00.000Z',
   startedAt: '2026-10-04T15:20:00.000Z',
@@ -58,6 +65,7 @@ export function memoirOverview(
   return {
     program: program === null ? null : { ...memoirProgram, ...program },
     chapters,
+    themes: memoirThemes,
     progress: { answered: 1, total: 3, words: 1200, estimatedPages: 5 },
   };
 }
