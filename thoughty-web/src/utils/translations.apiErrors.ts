@@ -157,6 +157,9 @@ export const apiErrorsTranslations: Record<Language, Record<ApiErrorTranslationK
     apiError_SOCIAL_CANNOT_LIKE_OWN_COMMENT: 'You cannot like your own comment.',
     apiError_SOCIAL_CANNOT_SAVE_OWN_ENTRY: 'You cannot save your own entry.',
     apiError_COMMENT_NOT_FOUND: 'This comment could not be found.',
+    apiError_COMMENTS_CLOSED: 'Comments are closed on this entry.',
+    apiError_COMMENTS_FOLLOWERS_ONLY: 'Only followers of its writer can comment on this entry.',
+    apiError_COMMENT_PIN_HIDDEN: 'Show this comment again before pinning it.',
     apiError_FEATURE_REQUEST_NOT_FOUND: 'This feature request could not be found.',
   },
   fr: {
@@ -307,6 +310,9 @@ export const apiErrorsTranslations: Record<Language, Record<ApiErrorTranslationK
     apiError_SOCIAL_CANNOT_LIKE_OWN_COMMENT: 'Vous ne pouvez pas aimer votre propre commentaire.',
     apiError_SOCIAL_CANNOT_SAVE_OWN_ENTRY: 'Vous ne pouvez pas enregistrer votre propre entrée.',
     apiError_COMMENT_NOT_FOUND: 'Ce commentaire est introuvable.',
+    apiError_COMMENTS_CLOSED: 'Les commentaires sont fermés sur cette entrée.',
+    apiError_COMMENTS_FOLLOWERS_ONLY: 'Seuls les abonnés de son auteur peuvent commenter cette entrée.',
+    apiError_COMMENT_PIN_HIDDEN: 'Affichez de nouveau ce commentaire avant de l’épingler.',
     apiError_FEATURE_REQUEST_NOT_FOUND: 'Cette demande de fonctionnalité est introuvable.',
   },
 };

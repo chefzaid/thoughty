@@ -188,6 +188,7 @@ export class UserDataExportService {
         tags: entry.tags,
         format: entry.format,
         visibility: entry.visibility,
+        commentPolicy: entry.commentPolicy,
         isFavorite: entry.isFavorite,
         createdAt: entry.createdAt,
         deletedAt: entry.deletedAt,
@@ -379,6 +380,8 @@ export class UserDataExportService {
         entryId: comment.entryId,
         content: comment.content,
         createdAt: comment.createdAt,
+        // The entry's writer hid it: only they and you see it
+        hiddenAt: comment.hiddenAt,
       })),
       likes: {
         entries: entryLikes.map((like) => ({ entryId: like.entryId, likedAt: like.createdAt })),

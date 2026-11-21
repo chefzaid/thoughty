@@ -108,6 +108,44 @@ describe('feedService', () => {
     expect(authFetch).toHaveBeenNthCalledWith(3, '/api/entries/8/comments/3', { method: 'DELETE' });
   });
 
+  it('sets who may comment, and hides and pins comments', async () => {
+    const authFetch = vi.fn().mockImplementation(async () => new Response(JSON.stringify({ id: 3 }), { status: 200 }));
+    const service = createFeedService(authFetch);
+
+    await expect(service.setCommentPolicy(8, 'followers')).resolves.toEqual({ data: { id: 3 }, error: null });
+    await service.setCommentHidden(8, 3, true);
+    await service.setCommentHidden(8, 3, false);
+    await service.setCommentPinned(8, 3, true);
+    await service.setCommentPinned(8, 3, false);
+
+    expect(authFetch.mock.calls).toEqual([
+      ['/api/entries/8/comment-policy', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ policy: 'followers' }),
+      }],
+      ['/api/entries/8/comments/3/hidden', { method: 'PUT' }],
+      ['/api/entries/8/comments/3/hidden', { method: 'DELETE' }],
+      ['/api/entries/8/comments/3/pin', { method: 'PUT' }],
+      ['/api/entries/8/comments/3/pin', { method: 'DELETE' }],
+    ]);
+  });
+
+  it('gives the translated reason a comment or a change was refused', async () => {
+    const refused = (code: string) => new Response(JSON.stringify({ statusCode: 403, code, message: 'No' }), { status: 403 });
+    const authFetch = vi.fn()
+      .mockResolvedValueOnce(refused('COMMENTS_CLOSED'))
+      .mockResolvedValueOnce(new Response('', { status: 500 }))
+      .mockResolvedValueOnce(new Response('', { status: 500 }))
+      .mockResolvedValueOnce(new Response('', { status: 500 }));
+    const service = createFeedService(authFetch);
+
+    await expect(service.addComment(8, 'Hi')).resolves.toEqual({ data: null, error: 'apiError_COMMENTS_CLOSED' });
+    await expect(service.setCommentPolicy(8, 'closed')).resolves.toEqual({ data: null, error: 'commentPolicyUpdateError' });
+    await expect(service.setCommentHidden(8, 3, true)).resolves.toEqual({ data: null, error: 'commentUpdateError' });
+    await expect(service.setCommentPinned(8, 3, true)).resolves.toEqual({ data: null, error: 'commentUpdateError' });
+  });
+
   it('likes and unlikes entries and comments', async () => {
     const authFetch = vi.fn().mockImplementation(async () => new Response(JSON.stringify({ liked: true, likeCount: 1 }), { status: 200 }));
     const service = createFeedService(authFetch);

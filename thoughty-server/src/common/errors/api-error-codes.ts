@@ -197,6 +197,10 @@ export const API_ERROR_MESSAGES = {
   SOCIAL_CANNOT_LIKE_OWN_COMMENT: 'You cannot like your own comment',
   SOCIAL_CANNOT_SAVE_OWN_ENTRY: 'You cannot save your own entry',
   COMMENT_NOT_FOUND: 'Comment not found',
+  // Comment controls: who may comment on an entry, and its hidden and pinned comments.
+  COMMENTS_CLOSED: 'Comments are closed on this entry',
+  COMMENTS_FOLLOWERS_ONLY: 'Only followers of its writer can comment on this entry',
+  COMMENT_PIN_HIDDEN: 'Show this comment again before pinning it',
   FEATURE_REQUEST_NOT_FOUND: 'Feature request not found',
 } as const;
 

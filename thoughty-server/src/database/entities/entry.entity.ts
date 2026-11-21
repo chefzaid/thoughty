@@ -14,6 +14,10 @@ import { User } from './user.entity';
 import { Diary } from './diary.entity';
 import { Attachment } from './attachment.entity';
 
+/** Who may comment on a public entry: anyone, the writer's followers, or no one (`closed`). */
+export const COMMENT_POLICIES = ['everyone', 'followers', 'closed'] as const;
+export type CommentPolicy = (typeof COMMENT_POLICIES)[number];
+
 /**
  * PostgreSQL returns a `TIME(0)` as `08:30:00`; entries keep and expose it as `08:30`.
  * Exported for the entry revisions, which store the time the same way.
@@ -90,6 +94,13 @@ export class Entry {
 
   @Column({ name: 'moderation_status', type: 'varchar', length: 20, default: 'visible' })
   moderationStatus: 'visible' | 'hidden' | 'under_review' | 'removed';
+
+  /**
+   * Who may comment once the entry is public; null follows the writer's `defaultCommentPolicy` setting.
+   * Closing keeps the comments already there readable.
+   */
+  @Column({ name: 'comment_policy', type: 'varchar', length: 20, nullable: true })
+  commentPolicy: CommentPolicy | null;
 
   @Column({ name: 'is_favorite', type: 'boolean', default: false })
   isFavorite: boolean;

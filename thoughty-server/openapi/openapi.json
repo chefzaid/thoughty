@@ -4528,6 +4528,7 @@
                   "ttsVoiceUri": "https://thoughty.example.com/callback",
                   "language": "en",
                   "defaultVisibility": "public",
+                  "defaultCommentPolicy": "everyone",
                   "openRouterModel": "example",
                   "openRouterTagModel": "reflection",
                   "openRouterWritingModel": "example",
@@ -4593,6 +4594,7 @@
                 "language": "en",
                 "maxPinnedEntries": "example",
                 "defaultVisibility": "public",
+                "defaultCommentPolicy": "everyone",
                 "readDates": "true",
                 "streakCard": "true",
                 "quietMode": "true",
@@ -11535,10 +11537,15 @@
                       },
                       "canDelete": true,
                       "likeCount": 2,
-                      "liked": true
+                      "liked": true,
+                      "hidden": true,
+                      "pinned": true
                     }
                   ],
-                  "total": 3
+                  "total": 3,
+                  "commentPolicy": "everyone",
+                  "canComment": true,
+                  "canModerate": true
                 }
               }
             }
@@ -11630,7 +11637,9 @@
                   },
                   "canDelete": true,
                   "likeCount": 2,
-                  "liked": true
+                  "liked": true,
+                  "hidden": true,
+                  "pinned": true
                 }
               }
             }
@@ -11754,6 +11763,467 @@
           }
         ],
         "summary": "Delete a comment you wrote or one on your entry",
+        "tags": [
+          "Social"
+        ]
+      }
+    },
+    "/api/entries/{entryId}/comment-policy": {
+      "put": {
+        "operationId": "CommentControlsController_setPolicy",
+        "parameters": [
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCommentPolicyDto"
+              },
+              "example": {
+                "policy": "followers"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The entry’s comment policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryCommentPolicyDto"
+                },
+                "example": {
+                  "commentPolicy": "followers",
+                  "canComment": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entry is not one of your public entries, or the comment is not on it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "The entry is not one of your public entries, or the comment is not on it",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Choose who may comment on your public entry",
+        "tags": [
+          "Social"
+        ]
+      }
+    },
+    "/api/entries/{entryId}/comments/{commentId}/hidden": {
+      "put": {
+        "operationId": "CommentControlsController_hide",
+        "parameters": [
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "commentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The hidden comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryCommentDto"
+                },
+                "example": {
+                  "id": 41,
+                  "content": "This one stayed with me all day.",
+                  "createdAt": "2026-09-01T08:30:00.000Z",
+                  "author": {
+                    "id": 2,
+                    "username": "maya",
+                    "avatarUrl": null
+                  },
+                  "canDelete": true,
+                  "likeCount": 2,
+                  "liked": true,
+                  "hidden": true,
+                  "pinned": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entry is not one of your public entries, or the comment is not on it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "The entry is not one of your public entries, or the comment is not on it",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Hide a comment on your entry from everyone but you and its writer",
+        "tags": [
+          "Social"
+        ]
+      },
+      "delete": {
+        "operationId": "CommentControlsController_show",
+        "parameters": [
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "commentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The comment, shown again",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryCommentDto"
+                },
+                "example": {
+                  "id": 41,
+                  "content": "This one stayed with me all day.",
+                  "createdAt": "2026-09-01T08:30:00.000Z",
+                  "author": {
+                    "id": 2,
+                    "username": "maya",
+                    "avatarUrl": null
+                  },
+                  "canDelete": true,
+                  "likeCount": 2,
+                  "liked": true,
+                  "hidden": true,
+                  "pinned": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entry is not one of your public entries, or the comment is not on it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "The entry is not one of your public entries, or the comment is not on it",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Show a hidden comment on your entry to everyone again",
+        "tags": [
+          "Social"
+        ]
+      }
+    },
+    "/api/entries/{entryId}/comments/{commentId}/pin": {
+      "put": {
+        "operationId": "CommentControlsController_pin",
+        "parameters": [
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "commentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The pinned comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryCommentDto"
+                },
+                "example": {
+                  "id": 41,
+                  "content": "This one stayed with me all day.",
+                  "createdAt": "2026-09-01T08:30:00.000Z",
+                  "author": {
+                    "id": 2,
+                    "username": "maya",
+                    "avatarUrl": null
+                  },
+                  "canDelete": true,
+                  "likeCount": 2,
+                  "liked": true,
+                  "hidden": true,
+                  "pinned": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The comment is hidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "The comment is hidden",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entry is not one of your public entries, or the comment is not on it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "The entry is not one of your public entries, or the comment is not on it",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Pin a comment on top of your entry’s comments, in place of any other",
+        "tags": [
+          "Social"
+        ]
+      },
+      "delete": {
+        "operationId": "CommentControlsController_unpin",
+        "parameters": [
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "commentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The comment, no longer pinned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryCommentDto"
+                },
+                "example": {
+                  "id": 41,
+                  "content": "This one stayed with me all day.",
+                  "createdAt": "2026-09-01T08:30:00.000Z",
+                  "author": {
+                    "id": 2,
+                    "username": "maya",
+                    "avatarUrl": null
+                  },
+                  "canDelete": true,
+                  "likeCount": 2,
+                  "liked": true,
+                  "hidden": true,
+                  "pinned": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entry is not one of your public entries, or the comment is not on it",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "The entry is not one of your public entries, or the comment is not on it",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unpin a comment on your entry",
         "tags": [
           "Social"
         ]
@@ -18537,6 +19007,15 @@
             ],
             "description": "Visibility of new entries"
           },
+          "defaultCommentPolicy": {
+            "type": "string",
+            "enum": [
+              "everyone",
+              "followers",
+              "closed"
+            ],
+            "description": "Who may comment on public entries that have no choice of their own: everyone, followers only, or no one"
+          },
           "openRouterModel": {
             "type": "string",
             "maxLength": 300,
@@ -18678,6 +19157,7 @@
           "ttsVoiceUri": "https://thoughty.example.com/callback",
           "language": "en",
           "defaultVisibility": "public",
+          "defaultCommentPolicy": "everyone",
           "openRouterModel": "example",
           "openRouterTagModel": "reflection",
           "openRouterWritingModel": "example",
@@ -18845,6 +19325,15 @@
             ],
             "description": "Visibility of new entries"
           },
+          "defaultCommentPolicy": {
+            "type": "string",
+            "enum": [
+              "everyone",
+              "followers",
+              "closed"
+            ],
+            "description": "Who may comment on public entries that have no choice of their own: everyone, followers only, or no one"
+          },
           "readDates": {
             "oneOf": [
               {
@@ -19009,6 +19498,7 @@
           "language": "en",
           "maxPinnedEntries": "example",
           "defaultVisibility": "public",
+          "defaultCommentPolicy": "everyone",
           "readDates": "true",
           "streakCard": "true",
           "quietMode": "true",
@@ -24498,6 +24988,14 @@
           "liked": {
             "type": "boolean",
             "description": "Whether the current user likes the comment"
+          },
+          "hidden": {
+            "type": "boolean",
+            "description": "The entry’s writer hid it: only they and the comment’s writer see it"
+          },
+          "pinned": {
+            "type": "boolean",
+            "description": "The entry’s writer pinned it on top of the comments"
           }
         },
         "required": [
@@ -24507,7 +25005,9 @@
           "author",
           "canDelete",
           "likeCount",
-          "liked"
+          "liked",
+          "hidden",
+          "pinned"
         ],
         "example": {
           "id": 41,
@@ -24520,7 +25020,9 @@
           },
           "canDelete": true,
           "likeCount": 2,
-          "liked": true
+          "liked": true,
+          "hidden": true,
+          "pinned": true
         }
       },
       "EntryCommentsResponseDto": {
@@ -24536,12 +25038,32 @@
           "total": {
             "type": "number",
             "example": 3,
-            "description": "All visible comments on the entry"
+            "description": "All comments on the entry the current user may see"
+          },
+          "commentPolicy": {
+            "type": "string",
+            "enum": [
+              "everyone",
+              "followers",
+              "closed"
+            ],
+            "description": "Who may comment: everyone, followers of the entry’s writer, or no one (closed)"
+          },
+          "canComment": {
+            "type": "boolean",
+            "description": "Whether the current user may comment under that policy"
+          },
+          "canModerate": {
+            "type": "boolean",
+            "description": "The current user wrote the entry, so may change who can comment and hide or pin comments"
           }
         },
         "required": [
           "comments",
-          "total"
+          "total",
+          "commentPolicy",
+          "canComment",
+          "canModerate"
         ],
         "example": {
           "comments": [
@@ -24556,10 +25078,15 @@
               },
               "canDelete": true,
               "likeCount": 2,
-              "liked": true
+              "liked": true,
+              "hidden": true,
+              "pinned": true
             }
           ],
-          "total": 3
+          "total": 3,
+          "commentPolicy": "everyone",
+          "canComment": true,
+          "canModerate": true
         }
       },
       "CreateEntryCommentDto": {
@@ -24598,6 +25125,52 @@
         "example": {
           "id": 41,
           "deleted": true
+        }
+      },
+      "SetCommentPolicyDto": {
+        "type": "object",
+        "properties": {
+          "policy": {
+            "type": "string",
+            "enum": [
+              "everyone",
+              "followers",
+              "closed"
+            ],
+            "example": "followers"
+          }
+        },
+        "required": [
+          "policy"
+        ],
+        "example": {
+          "policy": "followers"
+        }
+      },
+      "EntryCommentPolicyDto": {
+        "type": "object",
+        "properties": {
+          "commentPolicy": {
+            "type": "string",
+            "enum": [
+              "everyone",
+              "followers",
+              "closed"
+            ],
+            "example": "followers"
+          },
+          "canComment": {
+            "type": "boolean",
+            "description": "Whether the current user (the entry’s writer) may still comment"
+          }
+        },
+        "required": [
+          "commentPolicy",
+          "canComment"
+        ],
+        "example": {
+          "commentPolicy": "followers",
+          "canComment": true
         }
       },
       "LikeStateDto": {
@@ -27853,6 +28426,9 @@
           "SOCIAL_CANNOT_LIKE_OWN_COMMENT",
           "SOCIAL_CANNOT_SAVE_OWN_ENTRY",
           "COMMENT_NOT_FOUND",
+          "COMMENTS_CLOSED",
+          "COMMENTS_FOLLOWERS_ONLY",
+          "COMMENT_PIN_HIDDEN",
           "FEATURE_REQUEST_NOT_FOUND"
         ],
         "description": "Stable machine-readable code (docs/architecture.md, \"API error codes\"). Every error the API raises carries one; only an unexpected server failure (500) may come without it.",

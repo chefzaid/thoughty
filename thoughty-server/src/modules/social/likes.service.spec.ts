@@ -118,6 +118,26 @@ describe('LikesService', () => {
     expect(commentLikeRepository.createQueryBuilder).not.toHaveBeenCalled();
   });
 
+  it('lets only the entry writer reach a hidden comment', async () => {
+    const commentQb = createQueryBuilder();
+    commentRepository.createQueryBuilder.mockReturnValue(commentQb);
+    commentQb.getOne.mockResolvedValue({ id: 3, userId: 9, hiddenAt: new Date() });
+
+    await expect(service.setCommentLike(7, 8, 3, true)).rejects.toBeInstanceOf(NotFoundException);
+    expect(commentQb.select).toHaveBeenCalledWith(['c.id', 'c.userId', 'c.hiddenAt']);
+
+    const summaryQb = createQueryBuilder();
+    summaryQb.getRawMany.mockResolvedValue([]);
+    commentLikeRepository.createQueryBuilder
+      .mockReturnValueOnce(createQueryBuilder())
+      .mockReturnValueOnce(summaryQb);
+    // User 5 wrote the entry
+    await expect(service.setCommentLike(5, 8, 3, true)).resolves.toEqual({ liked: false, likeCount: 0 });
+    // Its own writer may still take back an earlier like
+    commentLikeRepository.createQueryBuilder.mockReturnValueOnce(summaryQb);
+    await expect(service.setCommentLike(9, 8, 3, false)).resolves.toEqual({ liked: false, likeCount: 0 });
+  });
+
   it('skips the summary query when there is nothing to summarize', async () => {
     await expect(service.summarizeCommentLikes(7, [])).resolves.toEqual(new Map());
     expect(commentLikeRepository.createQueryBuilder).not.toHaveBeenCalled();

@@ -21,10 +21,13 @@ const comment = (id: number, username: string, canDelete: boolean) => ({
   canDelete,
   likeCount: id === 1 ? 2 : 0,
   liked: false,
+  hidden: false,
+  pinned: false,
 });
+const OPEN = { commentPolicy: 'everyone', canComment: true, canModerate: false };
 
 function renderThread(commentCount = 2) {
-  render(<EntryComments entryId={8} commentCount={commentCount} currentUserId={ME} feedService={feedService} theme="dark" t={t} />);
+  render(<EntryComments entryId={8} authorName="Ada" commentCount={commentCount} currentUserId={ME} feedService={feedService} theme="dark" t={t} />);
   fireEvent.click(screen.getByRole('button', { name: `commentsCount ${commentCount}` }));
 }
 
@@ -32,13 +35,13 @@ describe('EntryComments', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     fetchComments.mockResolvedValue({
-      data: { comments: [comment(1, 'Ada', false), comment(2, 'Me', true)], total: 2 },
+      data: { comments: [comment(1, 'Ada', false), comment(2, 'Me', true)], total: 2, ...OPEN },
       error: null,
     });
   });
 
   it('loads the thread only when opened and renders comments as plain text', async () => {
-    render(<EntryComments entryId={8} commentCount={2} currentUserId={ME} feedService={feedService} theme="dark" t={t} />);
+    render(<EntryComments entryId={8} authorName="Ada" commentCount={2} currentUserId={ME} feedService={feedService} theme="dark" t={t} />);
     const toggle = screen.getByRole('button', { name: 'commentsCount 2' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(fetchComments).not.toHaveBeenCalled();
@@ -69,7 +72,7 @@ describe('EntryComments', () => {
   });
 
   it('keeps the draft and reports an error when posting fails', async () => {
-    addComment.mockResolvedValue({ data: null, error: 'Failed' });
+    addComment.mockResolvedValue({ data: null, error: 'commentPostError' });
     renderThread();
     await screen.findByText('Comment 1 <b>raw</b>');
 
@@ -108,7 +111,7 @@ describe('EntryComments', () => {
   });
 
   it('shows the empty state and the load error', async () => {
-    fetchComments.mockResolvedValueOnce({ data: { comments: [], total: 0 }, error: null });
+    fetchComments.mockResolvedValueOnce({ data: { comments: [], total: 0, ...OPEN }, error: null });
     renderThread(0);
     expect(await screen.findByText('commentsEmpty')).toBeInTheDocument();
 

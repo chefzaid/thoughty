@@ -15,6 +15,7 @@ import CloudProvidersSection from './CloudProvidersSection';
 import ProfileActions from './ProfileActions';
 import DataPrivacySection from './DataPrivacySection';
 import SubscriptionSection from './SubscriptionSection';
+import PublicEntriesSection from './PublicEntriesSection';
 import AchievementsSection from './AchievementsSection';
 import LifeErasSection from '../LifeEras/LifeErasSection';
 import OnThisDayEmailSection from '../OnThisDayEmail/OnThisDayEmailSection';
@@ -62,6 +63,7 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats,
   // A switched-off feature's settings are kept, and the section says so instead of showing them
   const aiOn = useFeatureFlag('ai');
   const cloudSyncOn = useFeatureFlag('cloudSync');
+  const sharingOn = useFeatureFlag('publicSharing');
   const [localConfig, setLocalConfig] = useState<ProfileConfig>(config);
 
   // Password change state
@@ -270,6 +272,17 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats,
           changingPassword={changingPassword}
         />
       </div>
+
+      {sharingOn ? (
+        <PublicEntriesSection
+          defaultCommentPolicy={localConfig.defaultCommentPolicy}
+          handleChange={handleChange}
+          isDark={isDark}
+          t={t}
+        />
+      ) : (
+        <FeatureOffSection title={t('publicEntriesSettings')} message="featureOffPublicSharing" isDark={isDark} t={t} />
+      )}
 
       <LifeErasSection isDark={isDark} language={resolveLanguage(config.language)} t={t} />
 

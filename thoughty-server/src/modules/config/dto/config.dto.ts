@@ -3,6 +3,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsIn, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import { WritersDay } from '@/common/validation';
+import { COMMENT_POLICIES } from '@/database/entities';
 
 /**
  * Settings are stored as text. The web sends a few of them as numbers or booleans; those become
@@ -116,6 +117,12 @@ export class UpdateConfigDto {
   @SettingChoice(['public', 'private'], 'Visibility of new entries')
   defaultVisibility?: string;
 
+  @SettingChoice(
+    COMMENT_POLICIES,
+    'Who may comment on public entries that have no choice of their own: everyone, followers only, or no one',
+  )
+  defaultCommentPolicy?: string;
+
   @SettingChoice(BOOLEAN_TEXT, 'Read entry dates aloud')
   readDates?: string;
 
@@ -194,6 +201,7 @@ export const USER_CONFIG_KEYS: ReadonlySet<string> = new Set<keyof UpdateConfigD
   'language',
   'maxPinnedEntries',
   'defaultVisibility',
+  'defaultCommentPolicy',
   'readDates',
   'streakCard',
   'quietMode',

@@ -21,14 +21,21 @@ export function applyPublicFeedVisibility<T extends ObjectLiteral>(
 
 /**
  * Joins likes or comments on the queried entries (alias `e`) that come from other people
- * whose accounts are not deleted, as `x` (the interaction) and `xu` (its author).
+ * whose accounts are not deleted, as `x` (the interaction) and `xu` (its author). A comment
+ * the entry's writer hid does not count.
  */
 export function joinEngagementByOthers<T extends ObjectLiteral>(
   qb: SelectQueryBuilder<T>,
   table: 'entry_likes' | 'entry_comments',
 ): SelectQueryBuilder<T> {
   return qb
-    .innerJoin(table, 'x', 'x.entry_id = e.id AND x.user_id <> e.user_id')
+    .innerJoin(
+      table,
+      'x',
+      table === 'entry_comments'
+        ? 'x.entry_id = e.id AND x.user_id <> e.user_id AND x.hidden_at IS NULL'
+        : 'x.entry_id = e.id AND x.user_id <> e.user_id',
+    )
     .innerJoin('users', 'xu', 'xu.id = x.user_id AND xu.deleted_at IS NULL');
 }
 
@@ -39,12 +46,12 @@ export function joinEngagementByOthers<T extends ObjectLiteral>(
 export async function findFeedVisibleEntry(
   entryRepository: Repository<Entry>,
   entryId: number,
-): Promise<Pick<Entry, 'id' | 'userId'>> {
+): Promise<Pick<Entry, 'id' | 'userId' | 'commentPolicy'>> {
   const entry = await applyPublicFeedVisibility(
     entryRepository
       .createQueryBuilder('e')
       .innerJoin('e.user', 'u')
-      .select(['e.id', 'e.userId'])
+      .select(['e.id', 'e.userId', 'e.commentPolicy'])
       .where('e.id = :entryId', { entryId }),
   ).getOne();
   if (!entry) {

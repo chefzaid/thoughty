@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { CommentsService, MAX_LISTED_COMMENTS } from './comments.service';
 
 function createQueryBuilder() {
@@ -20,12 +20,14 @@ function createQueryBuilder() {
   return qb;
 }
 
-const comment = (id: number, userId: number, username: string) => ({
+const comment = (id: number, userId: number, username: string, flags: { hiddenAt?: Date; pinnedAt?: Date } = {}) => ({
   id,
   userId,
   entryId: 8,
   content: `Comment ${id}`,
   createdAt: new Date(`2026-09-0${id}T10:00:00Z`),
+  hiddenAt: flags.hiddenAt ?? null,
+  pinnedAt: flags.pinnedAt ?? null,
   user: { id: userId, username, avatarUrl: null, email: 'hidden@example.com' },
 });
 
@@ -40,6 +42,7 @@ describe('CommentsService', () => {
   };
   const entryRepository = { createQueryBuilder: jest.fn() };
   const likesService = { summarizeCommentLikes: jest.fn() };
+  const commentPolicyService = { stateFor: jest.fn(), assertMayComment: jest.fn() };
   let entryQb: Record<string, jest.Mock>;
   let service: CommentsService;
 
@@ -49,10 +52,13 @@ describe('CommentsService', () => {
     entryQb.getOne.mockResolvedValue({ id: 8, userId: 5 });
     entryRepository.createQueryBuilder.mockReturnValue(entryQb);
     likesService.summarizeCommentLikes.mockResolvedValue(new Map());
+    commentPolicyService.stateFor.mockResolvedValue({ commentPolicy: 'everyone', canComment: true });
+    commentPolicyService.assertMayComment.mockResolvedValue(undefined);
     service = new CommentsService(
       commentRepository as never,
       entryRepository as never,
       likesService as never,
+      commentPolicyService as never,
     );
   });
 
@@ -74,6 +80,8 @@ describe('CommentsService', () => {
           canDelete: false,
           likeCount: 3,
           liked: true,
+          hidden: false,
+          pinned: false,
         },
         {
           id: 2,
@@ -83,17 +91,25 @@ describe('CommentsService', () => {
           canDelete: true,
           likeCount: 0,
           liked: false,
+          hidden: false,
+          pinned: false,
         },
       ],
       total: 2,
+      commentPolicy: 'everyone',
+      canComment: true,
+      canModerate: false,
     });
+    expect(commentPolicyService.stateFor).toHaveBeenCalledWith(7, { id: 8, userId: 5 });
     expect(likesService.summarizeCommentLikes).toHaveBeenCalledWith(7, [2, 1]);
     expect(entryQb.where).toHaveBeenCalledWith('e.id = :entryId', { entryId: 8 });
     expect(entryQb.andWhere).toHaveBeenCalledWith('e.visibility = :visibility', {
       visibility: 'public',
     });
     expect(qb.andWhere).toHaveBeenCalledWith('u.deleted_at IS NULL');
-    expect(qb.orderBy).toHaveBeenCalledWith('c.createdAt', 'DESC');
+    expect(qb.orderBy).toHaveBeenCalledWith('c.pinnedAt', 'DESC', 'NULLS LAST');
+    expect(qb.addOrderBy).toHaveBeenCalledWith('c.createdAt', 'DESC');
+    expect(qb.andWhere).toHaveBeenCalledWith('(c.hidden_at IS NULL OR c.user_id = :userId)', { userId: 7 });
     expect(qb.take).toHaveBeenCalledWith(MAX_LISTED_COMMENTS);
   });
 
@@ -105,6 +121,27 @@ describe('CommentsService', () => {
     const result = await service.list(5, 8);
 
     expect(result.comments[0].canDelete).toBe(true);
+    expect(result.canModerate).toBe(true);
+    // The entry's writer sees the hidden comments too
+    expect(qb.andWhere).not.toHaveBeenCalledWith('(c.hidden_at IS NULL OR c.user_id = :userId)', expect.anything());
+  });
+
+  it('puts the pinned comment on top and marks hidden ones', async () => {
+    const qb = createQueryBuilder();
+    const pinnedAt = new Date('2026-09-05T10:00:00Z');
+    qb.getManyAndCount.mockResolvedValue([
+      [comment(1, 3, 'maya', { pinnedAt }), comment(3, 4, 'leo', { hiddenAt: pinnedAt }), comment(2, 6, 'ana')],
+      3,
+    ]);
+    commentRepository.createQueryBuilder.mockReturnValue(qb);
+
+    const result = await service.list(5, 8);
+
+    expect(result.comments.map(({ id, pinned, hidden }) => ({ id, pinned, hidden }))).toEqual([
+      { id: 1, pinned: true, hidden: false },
+      { id: 2, pinned: false, hidden: false },
+      { id: 3, pinned: false, hidden: true },
+    ]);
   });
 
   it('hides comments of entries the feed cannot show', async () => {
@@ -112,6 +149,14 @@ describe('CommentsService', () => {
 
     await expect(service.list(7, 8)).rejects.toBeInstanceOf(NotFoundException);
     await expect(service.create(7, 8, 'Hello')).rejects.toBeInstanceOf(NotFoundException);
+    expect(commentRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('refuses a comment its policy does not allow, before saving anything', async () => {
+    commentPolicyService.assertMayComment.mockRejectedValue(new ForbiddenException());
+
+    await expect(service.create(7, 8, 'Hello')).rejects.toBeInstanceOf(ForbiddenException);
+    expect(commentPolicyService.assertMayComment).toHaveBeenCalledWith(7, { id: 8, userId: 5 });
     expect(commentRepository.save).not.toHaveBeenCalled();
   });
 

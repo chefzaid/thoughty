@@ -29,6 +29,7 @@ import { contentLockTranslations, type ContentLockTranslationKey } from "./trans
 import { journalFeedTranslations, type JournalFeedTranslationKey } from "./translations.journalFeed";
 import { savedEntriesTranslations, type SavedEntriesTranslationKey } from "./translations.savedEntries";
 import { feedTopicsTranslations, type FeedTopicsTranslationKey } from "./translations.feedTopics";
+import { commentControlsTranslations, type CommentControlsTranslationKey } from "./translations.commentControls";
 import { navigationTranslations, type NavigationTranslationKey } from "./translations.navigation";
 import { quickCaptureTranslations, type QuickCaptureTranslationKey } from "./translations.quickCapture";
 import { quietModeTranslations, type QuietModeTranslationKey } from "./translations.quietMode";
@@ -104,6 +105,7 @@ export type TranslationKey =
   | ContentLockTranslationKey
   | JournalFeedTranslationKey
   | SavedEntriesTranslationKey
+  | CommentControlsTranslationKey
   | FeedTopicsTranslationKey
   | NavigationTranslationKey
   | QuickCaptureTranslationKey
@@ -186,6 +188,7 @@ export const translations: Translations = {
     ...journalFeedTranslations.en,
     ...savedEntriesTranslations.en,
     ...feedTopicsTranslations.en,
+    ...commentControlsTranslations.en,
     ...navigationTranslations.en,
     ...quickCaptureTranslations.en,
     ...quietModeTranslations.en,
@@ -260,6 +263,7 @@ export const translations: Translations = {
     ...journalFeedTranslations.fr,
     ...savedEntriesTranslations.fr,
     ...feedTopicsTranslations.fr,
+    ...commentControlsTranslations.fr,
     ...navigationTranslations.fr,
     ...quickCaptureTranslations.fr,
     ...quietModeTranslations.fr,

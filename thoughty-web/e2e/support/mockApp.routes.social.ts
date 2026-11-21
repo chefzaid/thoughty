@@ -1,5 +1,7 @@
 import { fulfillJson, type RouteContext } from './mockApp.route-utils';
-import type { MockAppState, MockEntry } from './mockApp.shared';
+import type { MockEntry } from './mockApp.shared';
+import { handleCommentRoutes, visibleComments } from './mockApp.routes.comments';
+import { authorId, feedEligibleEntries, likeState, setLiked } from './mockApp.social-shared';
 import {
   carriesFollowedTopic,
   carriesTopic,
@@ -7,24 +9,6 @@ import {
   handleTopicFollowRoutes,
   matchesFeedSearch,
 } from './mockApp.routes.topics';
-
-const authorId = (entry: MockEntry, state: MockAppState) => entry.userId ?? state.user.id;
-
-function likeState(baseCount: number | undefined, likedIds: number[], id: number) {
-  const liked = likedIds.includes(id);
-  return { liked, likeCount: (baseCount ?? 0) + (liked ? 1 : 0) };
-}
-
-function setLiked(likedIds: number[], id: number, like: boolean) {
-  return like ? [...new Set([...likedIds, id])] : likedIds.filter((candidate) => candidate !== id);
-}
-
-function feedEligibleEntries(state: MockAppState) {
-  return state.entries
-    .filter((entry) => entry.visibility === 'public')
-    .filter((entry) => !entry.is_archived)
-    .filter((entry) => (entry.moderationStatus || 'visible') === 'visible');
-}
 
 async function handlePublicFeedRoute({ route, request, pathname, searchParams, state }: RouteContext): Promise<boolean> {
   if (pathname !== '/api/entries/feed' || request.method() !== 'GET') {
@@ -71,7 +55,7 @@ async function handlePublicFeedRoute({ route, request, pathname, searchParams, s
       content: entry.content,
       format: entry.format || 'plain',
       createdAt: entry.createdAt || `${entry.date}T12:00:00.000Z`,
-      commentCount: state.comments.filter((comment) => comment.entryId === entry.id).length,
+      commentCount: visibleComments(state, entry).length,
       ...likeState(entry.likeCount, state.likedEntryIds, entry.id),
       saved: state.savedEntryIds.includes(entry.id),
       author: {
@@ -126,61 +110,6 @@ async function handleFollowRoutes({ route, request, pathname, state }: RouteCont
   if (request.method() === 'DELETE') {
     state.followedUserIds = state.followedUserIds.filter((id) => id !== userId);
     await fulfillJson(route, { userId, following: false });
-    return true;
-  }
-  return false;
-}
-
-async function handleCommentRoutes({ route, request, pathname, state }: RouteContext): Promise<boolean> {
-  const match = /^\/api\/entries\/(\d+)\/comments(?:\/(\d+))?$/.exec(pathname);
-  if (!match) {
-    return false;
-  }
-
-  const entryId = Number(match[1]);
-  const entry = feedEligibleEntries(state).find((candidate) => candidate.id === entryId);
-  if (!entry) {
-    await fulfillJson(route, { message: 'Entry not found', statusCode: 404 }, { status: 404 });
-    return true;
-  }
-  const isEntryOwner = authorId(entry, state) === state.user.id;
-  const toResponse = (comment: MockAppState['comments'][number]) => ({
-    id: comment.id,
-    content: comment.content,
-    createdAt: comment.createdAt,
-    author: { id: comment.userId, username: comment.username, avatarUrl: null },
-    canDelete: isEntryOwner || comment.userId === state.user.id,
-    ...likeState(comment.likeCount, state.likedCommentIds, comment.id),
-  });
-
-  if (!match[2] && request.method() === 'GET') {
-    const comments = state.comments.filter((comment) => comment.entryId === entryId);
-    await fulfillJson(route, { comments: comments.map(toResponse), total: comments.length });
-    return true;
-  }
-  if (!match[2] && request.method() === 'POST') {
-    const { content } = request.postDataJSON() as { content: string };
-    const comment = {
-      id: Math.max(0, ...state.comments.map((candidate) => candidate.id)) + 1,
-      entryId,
-      userId: state.user.id,
-      username: state.user.username,
-      content: content.trim(),
-      createdAt: '2026-07-25T12:00:00.000Z',
-    };
-    state.comments.push(comment);
-    await fulfillJson(route, toResponse(comment), { status: 201 });
-    return true;
-  }
-  if (match[2] && request.method() === 'DELETE') {
-    const commentId = Number(match[2]);
-    const comment = state.comments.find((candidate) => candidate.id === commentId && candidate.entryId === entryId);
-    if (!comment || !toResponse(comment).canDelete) {
-      await fulfillJson(route, { message: 'Comment not found', statusCode: 404 }, { status: 404 });
-      return true;
-    }
-    state.comments = state.comments.filter((candidate) => candidate.id !== commentId);
-    await fulfillJson(route, { id: commentId, deleted: true });
     return true;
   }
   return false;
@@ -266,7 +195,7 @@ async function handleLeaderboardRoute({ route, request, pathname, searchParams, 
     mostActiveAuthors: [...authors.values()].sort((left, right) => right.publicEntries - left.publicEntries),
     mostLikedEntries: rankEntries((entry) => likeState(entry.likeCount, state.likedEntryIds, entry.id).likeCount),
     mostCommentedEntries: rankEntries((entry) => state.comments
-      .filter((comment) => comment.entryId === entry.id && comment.userId !== authorId(entry, state)).length),
+      .filter((comment) => comment.entryId === entry.id && comment.userId !== authorId(entry, state) && !comment.hidden).length),
   });
   return true;
 }
@@ -303,7 +232,8 @@ async function handleAchievementsRoute({ route, request, pathname, state }: Rout
     longestStreak: longestStreak(own.map((entry) => entry.date)),
     likesReceived: own.reduce((sum, entry) => sum + (entry.likeCount ?? 0), 0)
       + state.comments.filter((comment) => comment.userId === state.user.id).reduce((sum, comment) => sum + (comment.likeCount ?? 0), 0),
-    commentsReceived: state.comments.filter((comment) => ownPublicIds.has(comment.entryId) && comment.userId !== state.user.id).length,
+    commentsReceived: state.comments
+      .filter((comment) => ownPublicIds.has(comment.entryId) && comment.userId !== state.user.id && !comment.hidden).length,
     commentsWritten: state.comments.filter((comment) => comment.userId === state.user.id).length,
     followers: state.followerCount,
   };

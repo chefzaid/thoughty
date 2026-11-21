@@ -68,7 +68,7 @@ export class PublicFeedService {
         userId,
         entries.map((entry) => entry.user.id),
       ),
-      this.countComments(entryIds),
+      this.countComments(userId, entryIds),
       this.likesService.summarizeEntryLikes(userId, entryIds),
       scope === 'saved'
         ? Promise.resolve(new Set(entryIds))
@@ -116,16 +116,19 @@ export class PublicFeedService {
     return new Set(follows.map((follow) => follow.followedId));
   }
 
-  private async countComments(entryIds: number[]): Promise<Map<number, number>> {
+  /** Comments the reader may see: hidden ones count only for the entry's writer and their own writer. */
+  private async countComments(userId: number, entryIds: number[]): Promise<Map<number, number>> {
     if (entryIds.length === 0) return new Map();
 
     const rows = await this.commentRepository
       .createQueryBuilder('c')
       .innerJoin('c.user', 'u')
+      .innerJoin('c.entry', 'ce')
       .select('c.entry_id', 'entryId')
       .addSelect('COUNT(c.id)', 'count')
       .where('c.entry_id IN (:...entryIds)', { entryIds })
       .andWhere('u.deleted_at IS NULL')
+      .andWhere('(c.hidden_at IS NULL OR c.user_id = :userId OR ce.user_id = :userId)', { userId })
       .groupBy('c.entry_id')
       .getRawMany<{ entryId: number | string; count: number | string }>();
     return new Map(rows.map((row) => [Number(row.entryId), Number(row.count)]));

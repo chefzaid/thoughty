@@ -16,6 +16,9 @@ export type PublicFeedFilters = Pick<PublicFeedQuery, 'tag' | 'search'>;
 export type EntryComment = components['schemas']['EntryCommentDto'];
 export type EntryCommentsResponse = components['schemas']['EntryCommentsResponseDto'];
 export type EntryCommentDeleted = components['schemas']['EntryCommentDeletedDto'];
+export type EntryCommentPolicyState = components['schemas']['EntryCommentPolicyDto'];
+/** Who may comment on a public entry: anyone, its writer's followers, or no one. */
+export type CommentPolicy = EntryCommentPolicyState['commentPolicy'];
 export type LikeState = components['schemas']['LikeStateDto'];
 export type SavedState = components['schemas']['SavedStateDto'];
 export type Leaderboard = components['schemas']['LeaderboardResponseDto'];
@@ -68,7 +71,7 @@ export const createFeedService = (authFetch: (url: string, options?: RequestInit
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content }),
       }),
-      'Failed to post the comment',
+      'commentPostError',
     );
   },
 
@@ -77,6 +80,34 @@ export const createFeedService = (authFetch: (url: string, options?: RequestInit
       authFetch(`/api/entries/${entryId}/comments/${commentId}`, { method: 'DELETE' }),
       'Failed to delete the comment',
     );
+  },
+
+  /** The entry's writer chooses who may comment on it. */
+  setCommentPolicy(entryId: number, policy: CommentPolicy): Promise<ServiceResult<EntryCommentPolicyState>> {
+    return requestJson(
+      authFetch(`/api/entries/${entryId}/comment-policy`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ policy }),
+      }),
+      'commentPolicyUpdateError',
+    );
+  },
+
+  /** The entry's writer hides a comment from everyone but them and its writer, or shows it again. */
+  setCommentHidden(entryId: number, commentId: number, hidden: boolean): Promise<ServiceResult<EntryComment>> {
+    const request = hidden
+      ? authFetch(`/api/entries/${entryId}/comments/${commentId}/hidden`, { method: 'PUT' })
+      : authFetch(`/api/entries/${entryId}/comments/${commentId}/hidden`, { method: 'DELETE' });
+    return requestJson(request, 'commentUpdateError');
+  },
+
+  /** The entry's writer pins a comment on top, in place of any other, or unpins it. */
+  setCommentPinned(entryId: number, commentId: number, pinned: boolean): Promise<ServiceResult<EntryComment>> {
+    const request = pinned
+      ? authFetch(`/api/entries/${entryId}/comments/${commentId}/pin`, { method: 'PUT' })
+      : authFetch(`/api/entries/${entryId}/comments/${commentId}/pin`, { method: 'DELETE' });
+    return requestJson(request, 'commentUpdateError');
   },
 
   fetchLeaderboard(period: LeaderboardPeriod): Promise<ServiceResult<Leaderboard>> {

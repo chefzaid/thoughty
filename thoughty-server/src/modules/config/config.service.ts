@@ -36,6 +36,7 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   quietMode: 'false',
   maxPinnedEntries: '3',
   defaultVisibility: 'private',
+  defaultCommentPolicy: 'everyone',
   language: 'en',
   autoTagMaxTags: '0',
   subscriptionPlan: 'free',

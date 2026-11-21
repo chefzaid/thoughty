@@ -21,6 +21,8 @@ export interface Config {
   gender?: string;
   avatarUrl?: string;
   defaultVisibility?: 'public' | 'private';
+  /** Who may comment on public entries without a choice of their own; `everyone` when unset. */
+  defaultCommentPolicy?: 'everyone' | 'followers' | 'closed';
   readDates?: boolean;
   /** The journal's writing streak card; shown unless false. */
   streakCard?: boolean;

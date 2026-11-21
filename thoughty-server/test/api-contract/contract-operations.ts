@@ -188,6 +188,13 @@ export const CONTRACT_SUITES = {
     'GET /api/feature-requests/votes',
     'POST /api/feature-requests/{id}/vote',
   ],
+  'comment-controls': [
+    'PUT /api/entries/{entryId}/comment-policy',
+    'PUT /api/entries/{entryId}/comments/{commentId}/hidden',
+    'DELETE /api/entries/{entryId}/comments/{commentId}/hidden',
+    'PUT /api/entries/{entryId}/comments/{commentId}/pin',
+    'DELETE /api/entries/{entryId}/comments/{commentId}/pin',
+  ],
   featureFlags: ['GET /api/config/feature-flags'],
   account: [
     'GET /api/health',

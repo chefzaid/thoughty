@@ -279,6 +279,7 @@ function FeedPage({
             )}
             <EntryComments
               entryId={entry.id}
+              authorName={entry.author.username}
               commentCount={entry.commentCount}
               currentUserId={currentUserId}
               feedService={feedService}

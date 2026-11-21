@@ -47,6 +47,7 @@ describe('ConfigService', () => {
         quietMode: 'false',
         maxPinnedEntries: '3',
         defaultVisibility: 'private',
+        defaultCommentPolicy: 'everyone',
         language: 'en',
         autoTagMaxTags: '0',
         subscriptionPlan: 'free',
@@ -85,6 +86,7 @@ describe('ConfigService', () => {
         { key: 'highContrast', value: 'true' },
         { key: 'quietMode', value: 'true' },
         { key: 'defaultVisibility', value: 'public' },
+        { key: 'defaultCommentPolicy', value: 'followers' },
         { key: 'language', value: 'fr' },
         { key: 'autoTagMaxTags', value: '4' },
       ]);
@@ -102,6 +104,7 @@ describe('ConfigService', () => {
         quietMode: 'true',
         maxPinnedEntries: '3',
         defaultVisibility: 'public',
+        defaultCommentPolicy: 'followers',
         language: 'fr',
         autoTagMaxTags: '4',
         subscriptionPlan: 'free',

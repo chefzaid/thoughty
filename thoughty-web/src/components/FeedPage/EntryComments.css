@@ -217,7 +217,6 @@ button.feed-like:disabled {
 }
 
 .feed-comment-body .feed-like {
-  margin: 0.15rem 0 0 -0.45rem;
   font-size: 0.75rem;
 }
 
@@ -228,4 +227,100 @@ button.feed-like:disabled {
 
 .feed-page.light .feed-like-error {
   color: #b91c1c;
+}
+
+.feed-comment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0.15rem 0 0 -0.45rem;
+}
+
+.feed-comment-control {
+  display: inline-flex;
+  min-height: 1.75rem;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.45rem;
+  border: 0;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: #d1d5db;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.feed-page.light .feed-comment-control {
+  color: #374151;
+}
+
+.feed-comment-control:hover {
+  background: rgba(148, 163, 184, 0.2);
+}
+
+.feed-comment-control:focus-visible,
+.feed-comment-policy select:focus-visible {
+  outline: 3px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+.feed-comment-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0;
+  color: #5eead4;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.feed-page.light .feed-comment-flag {
+  color: #0f766e;
+}
+
+.feed-comment-flag.hidden-note {
+  margin-top: 0.15rem;
+  color: #fcd34d;
+}
+
+.feed-page.light .feed-comment-flag.hidden-note {
+  color: #92400e;
+}
+
+.feed-comment.pinned,
+.feed-comment.hidden-comment {
+  padding-left: 0.5rem;
+  border-left: 3px solid #0f766e;
+}
+
+.feed-comment.hidden-comment {
+  border-left-style: dashed;
+  border-left-color: #b45309;
+}
+
+.feed-comment-policy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.feed-comment-policy select {
+  min-height: 2rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #4b5563;
+  border-radius: 0.4rem;
+  background: #111827;
+  color: inherit;
+  font: inherit;
+  font-weight: 400;
+}
+
+.feed-page.light .feed-comment-policy select {
+  border-color: #6b7280;
+  background: #fff;
 }

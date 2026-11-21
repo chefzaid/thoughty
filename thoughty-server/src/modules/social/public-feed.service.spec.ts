@@ -136,6 +136,12 @@ describe('PublicFeedService', () => {
     );
     expect(commentQb.where).toHaveBeenCalledWith('c.entry_id IN (:...entryIds)', { entryIds: [8] });
     expect(commentQb.andWhere).toHaveBeenCalledWith('u.deleted_at IS NULL');
+    // Hidden comments count only for the entry's writer and their own writer
+    expect(commentQb.innerJoin).toHaveBeenCalledWith('c.entry', 'ce');
+    expect(commentQb.andWhere).toHaveBeenCalledWith(
+      '(c.hidden_at IS NULL OR c.user_id = :userId OR ce.user_id = :userId)',
+      { userId: 7 },
+    );
   });
 
   it('limits the following scope to followed authors and the topics followed by others', async () => {

@@ -55,16 +55,17 @@ export class LikesService {
     commentId: number,
     like: boolean,
   ): Promise<LikeStateDto> {
-    await findFeedVisibleEntry(this.entryRepository, entryId);
+    const entry = await findFeedVisibleEntry(this.entryRepository, entryId);
     const comment = await this.commentRepository
       .createQueryBuilder('c')
       .innerJoin('c.user', 'u')
-      .select(['c.id', 'c.userId'])
+      .select(['c.id', 'c.userId', 'c.hiddenAt'])
       .where('c.id = :commentId', { commentId })
       .andWhere('c.entry_id = :entryId', { entryId })
       .andWhere('u.deleted_at IS NULL')
       .getOne();
-    if (!comment) {
+    // A hidden comment is there only for the entry's writer and its own writer, who cannot like it
+    if (!comment || (comment.hiddenAt && entry.userId !== userId && comment.userId !== userId)) {
       throw apiError(NotFoundException, 'COMMENT_NOT_FOUND');
     }
     if (like && comment.userId === userId) {

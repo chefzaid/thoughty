@@ -45,6 +45,8 @@ export interface MockEntry {
   /** Only an app import pins an entry here (a Keep note pinned there); the mock journal has no pin button. */
   is_pinned?: boolean;
   moderationStatus?: "visible" | "hidden" | "under_review" | "removed";
+  /** Who may comment; the writer's `defaultCommentPolicy` setting when unset (`mockApp.routes.comments.ts`). */
+  commentPolicy?: "everyone" | "followers" | "closed";
   /** Likes by other users, before the current user's own like. */
   likeCount?: number;
   createdAt?: string;
@@ -106,6 +108,9 @@ export interface MockComment {
   createdAt: string;
   /** Likes by other users, before the current user's own like. */
   likeCount?: number;
+  /** Hidden by the entry's writer, or pinned on top of its comments. */
+  hidden?: boolean;
+  pinned?: boolean;
 }
 
 export interface SetupMockAppOptions {
@@ -166,6 +171,7 @@ export interface MockAppState {
     /** The comfort reads offer after a very low mood; offered unless false. */
     comfortReads?: boolean;
     defaultVisibility?: "public" | "private";
+    defaultCommentPolicy?: "everyone" | "followers" | "closed";
     ttsVoiceUri?: string;
     openRouterModel?: string;
     /** Prompt card ids drawn since their deck was last used up, comma-separated. */

@@ -1,5 +1,5 @@
 import type { DataSource } from 'typeorm';
-import { Attachment, CommentLike, Diary, Entry, EntryComment, EntryLike, EntryRevision, Person, SavedEntry, UserFollow } from '@/database/entities';
+import { Attachment, CommentLike, Diary, Entry, EntryComment, EntryLike, EntryRevision, Person, SavedEntry, Setting, UserFollow } from '@/database/entities';
 import { EntriesCommandService } from '@/modules/entries/entries-command.service';
 import { EntriesQueryService } from '@/modules/entries/entries-query.service';
 import { EntriesService } from '@/modules/entries/entries.service';
@@ -17,6 +17,7 @@ import { EntryOpenTasksService } from '@/modules/entries/entry-open-tasks.servic
 import { PeopleService } from '@/modules/people/people.service';
 import { RecycleBinService } from '@/modules/recycle-bin/recycle-bin.service';
 import { CommentsService } from '@/modules/social/comments.service';
+import { CommentPolicyService } from '@/modules/social/comment-policy.service';
 import { LikesService } from '@/modules/social/likes.service';
 import { PublicFeedService } from '@/modules/social/public-feed.service';
 import { SavedEntriesService } from '@/modules/social/saved-entries.service';
@@ -94,6 +95,11 @@ export function buildTimeCapsuleBed(dataSource: DataSource) {
       new SavedEntriesService(dataSource.getRepository(SavedEntry), entries),
       search,
     ),
-    comments: new CommentsService(comments, entries, likes),
+    comments: new CommentsService(
+      comments,
+      entries,
+      likes,
+      new CommentPolicyService(dataSource.getRepository(Setting), dataSource.getRepository(UserFollow)),
+    ),
   };
 }

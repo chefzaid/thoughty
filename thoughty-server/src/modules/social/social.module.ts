@@ -6,12 +6,16 @@ import {
   EntryComment,
   EntryLike,
   SavedEntry,
+  Setting,
   TopicFollow,
   UserFollow,
 } from '@/database/entities';
 import { EntriesModule } from '@/modules/entries';
 import { AchievementsController } from './achievements.controller';
 import { AchievementsService } from './achievements.service';
+import { CommentControlsController } from './comment-controls.controller';
+import { CommentControlsService } from './comment-controls.service';
+import { CommentPolicyService } from './comment-policy.service';
 import { CommentsController } from './comments.controller';
 import { CommentsService } from './comments.service';
 import { FeedController } from './feed.controller';
@@ -35,6 +39,7 @@ import { TopicFollowsService } from './topic-follows.service';
       EntryLike,
       CommentLike,
       SavedEntry,
+      Setting,
       Entry,
     ]),
     EntriesModule,
@@ -43,6 +48,7 @@ import { TopicFollowsService } from './topic-follows.service';
     FeedController,
     FollowsController,
     CommentsController,
+    CommentControlsController,
     LikesController,
     SavedEntriesController,
     LeaderboardController,
@@ -53,6 +59,8 @@ import { TopicFollowsService } from './topic-follows.service';
     FollowsService,
     TopicFollowsService,
     CommentsService,
+    CommentPolicyService,
+    CommentControlsService,
     LikesService,
     SavedEntriesService,
     LeaderboardService,

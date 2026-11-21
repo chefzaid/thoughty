@@ -1,7 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsString, Length } from 'class-validator';
-import { ENTRY_COMMENT_MAX_LENGTH } from '@/database/entities';
+import { IsIn, IsString, Length } from 'class-validator';
+import {
+  COMMENT_POLICIES,
+  type CommentPolicy,
+  ENTRY_COMMENT_MAX_LENGTH,
+} from '@/database/entities';
 
 export class CreateEntryCommentDto {
   @ApiProperty({ example: 'This one stayed with me all day.', minLength: 1, maxLength: 1000 })
@@ -43,14 +47,51 @@ export class EntryCommentDto {
 
   @ApiProperty({ description: 'Whether the current user likes the comment' })
   liked!: boolean;
+
+  @ApiProperty({
+    description: 'The entry’s writer hid it: only they and the comment’s writer see it',
+  })
+  hidden!: boolean;
+
+  @ApiProperty({ description: 'The entry’s writer pinned it on top of the comments' })
+  pinned!: boolean;
 }
 
 export class EntryCommentsResponseDto {
   @ApiProperty({ type: [EntryCommentDto], description: 'Most recent comments, oldest first' })
   comments!: EntryCommentDto[];
 
-  @ApiProperty({ example: 3, description: 'All visible comments on the entry' })
+  @ApiProperty({ example: 3, description: 'All comments on the entry the current user may see' })
   total!: number;
+
+  @ApiProperty({
+    enum: COMMENT_POLICIES,
+    description: 'Who may comment: everyone, followers of the entry’s writer, or no one (closed)',
+  })
+  commentPolicy!: CommentPolicy;
+
+  @ApiProperty({ description: 'Whether the current user may comment under that policy' })
+  canComment!: boolean;
+
+  @ApiProperty({
+    description:
+      'The current user wrote the entry, so may change who can comment and hide or pin comments',
+  })
+  canModerate!: boolean;
+}
+
+export class SetCommentPolicyDto {
+  @ApiProperty({ enum: COMMENT_POLICIES, example: 'followers' })
+  @IsIn(COMMENT_POLICIES)
+  policy!: CommentPolicy;
+}
+
+export class EntryCommentPolicyDto {
+  @ApiProperty({ enum: COMMENT_POLICIES, example: 'followers' })
+  commentPolicy!: CommentPolicy;
+
+  @ApiProperty({ description: 'Whether the current user (the entry’s writer) may still comment' })
+  canComment!: boolean;
 }
 
 export class EntryCommentDeletedDto {

@@ -23,6 +23,7 @@ export interface ProfileConfig {
   language?: string;
   maxPinnedEntries?: number | string;
   defaultVisibility?: 'public' | 'private';
+  defaultCommentPolicy?: 'everyone' | 'followers' | 'closed';
   readDates?: boolean;
   streakCard?: boolean;
   quietMode?: boolean;

@@ -84,7 +84,7 @@ describe('AchievementsService', () => {
     expect(commentsReceived.innerJoin).toHaveBeenCalledWith(
       'entry_comments',
       'x',
-      'x.entry_id = e.id AND x.user_id <> e.user_id',
+      'x.entry_id = e.id AND x.user_id <> e.user_id AND x.hidden_at IS NULL',
     );
     expect(commentLikes.innerJoin).toHaveBeenCalledWith(
       'entry_comments',

@@ -1,9 +1,10 @@
-import { useEffect, useId, useState, type Dispatch, type FormEvent, type ReactNode, type SetStateAction } from 'react';
+import { useId, useState, type Dispatch, type FormEvent, type ReactNode, type SetStateAction } from 'react';
 
 import type { EntryComment, FeedService } from '../../services/api';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
-import { FeedAvatar } from './FeedAuthor';
-import LikeButton from './LikeButton';
+import CommentItem from './CommentItem';
+import CommentPolicySelect from './CommentPolicySelect';
+import { useCommentThread, type CommentThreadPolicy } from './useCommentThread';
 import { useQuietMode } from '../QuietMode/quietMode';
 import './EntryComments.css';
 
@@ -13,6 +14,8 @@ type Translate = (key: string, params?: Record<string, string | number>) => stri
 
 interface CommentThreadProps {
   readonly entryId: number;
+  /** The entry's writer, named where only their followers may comment. */
+  readonly authorName: string;
   readonly currentUserId: number | undefined;
   readonly feedService: FeedService;
   readonly theme: 'light' | 'dark';
@@ -20,32 +23,23 @@ interface CommentThreadProps {
   readonly t: Translate;
 }
 
-/** Loads, posts, and deletes the comments of one entry; mounted only while the thread is open. */
-function CommentThread({ entryId, currentUserId, feedService, theme, onTotalChange, t }: CommentThreadProps) {
+/** Why the reader cannot comment, when they cannot. */
+function closedNote(policy: CommentThreadPolicy, authorName: string, t: Translate): string | null {
+  if (policy.canComment) return null;
+  return policy.commentPolicy === 'closed'
+    ? t('commentsClosedNote')
+    : t('commentsFollowersOnlyNote', { username: authorName });
+}
+
+/** Loads, posts, deletes, hides and pins the comments of one entry; mounted only while the thread is open. */
+function CommentThread({ entryId, authorName, currentUserId, feedService, theme, onTotalChange, t }: CommentThreadProps) {
   const inputId = useId();
-  const [comments, setComments] = useState<EntryComment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
+  const thread = useCommentThread(entryId, feedService, onTotalChange);
+  const { comments, policy, loading, loadError, actionError } = thread;
   const [draft, setDraft] = useState('');
   const [posting, setPosting] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<EntryComment | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    void feedService.fetchComments(entryId).then((result) => {
-      if (!active) return;
-      if (result.data) {
-        setComments(result.data.comments);
-        onTotalChange(result.data.total);
-      }
-      setLoadError(!result.data);
-      setLoading(false);
-    });
-    return () => {
-      active = false;
-    };
-  }, [entryId, feedService, onTotalChange]);
+  const note = policy && closedNote(policy, authorName, t);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -53,35 +47,22 @@ function CommentThread({ entryId, currentUserId, feedService, theme, onTotalChan
     if (!content || posting) return;
 
     setPosting(true);
-    setActionError(null);
-    const result = await feedService.addComment(entryId, content);
+    const posted = await thread.post(content);
     setPosting(false);
-    if (!result.data) {
-      setActionError('commentPostError');
-      return;
-    }
-    setComments((current) => [...current, result.data!]);
-    onTotalChange((total) => total + 1);
-    setDraft('');
+    if (posted) setDraft('');
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     const comment = pendingDelete;
     setPendingDelete(null);
-    if (!comment) return;
-
-    setActionError(null);
-    const result = await feedService.deleteComment(entryId, comment.id);
-    if (!result.data) {
-      setActionError('commentDeleteError');
-      return;
-    }
-    setComments((current) => current.filter((candidate) => candidate.id !== comment.id));
-    onTotalChange((total) => Math.max(0, total - 1));
+    if (comment) void thread.remove(comment);
   };
 
   return (
     <div className="feed-comments">
+      {policy?.canModerate && (
+        <CommentPolicySelect value={policy.commentPolicy} onChange={(next) => void thread.changePolicy(next)} t={t} />
+      )}
       {loading && <p className="feed-comments-note">{t('loading')}</p>}
       {loadError && <p className="feed-comments-note error" role="alert">{t('commentsLoadError')}</p>}
       {!loading && !loadError && comments.length === 0 && (
@@ -90,40 +71,23 @@ function CommentThread({ entryId, currentUserId, feedService, theme, onTotalChan
       {comments.length > 0 && (
         <ol className="feed-comment-list">
           {comments.map((comment) => (
-            <li key={comment.id} className="feed-comment">
-              <FeedAvatar author={comment.author} />
-              <div className="feed-comment-body">
-                <p className="feed-comment-meta">
-                  <strong>{comment.author.username}</strong>
-                  <time dateTime={comment.createdAt}>{comment.createdAt.slice(0, 10)}</time>
-                </p>
-                <p className="feed-comment-text">{comment.content}</p>
-                <LikeButton
-                  liked={comment.liked}
-                  likeCount={comment.likeCount}
-                  canLike={comment.author.id !== currentUserId}
-                  label={t('likeCommentBy', { username: comment.author.username })}
-                  onChange={(like) => feedService.setCommentLike(entryId, comment.id, like)}
-                  t={t}
-                />
-              </div>
-              {comment.canDelete && (
-                <button
-                  type="button"
-                  className="feed-comment-delete"
-                  aria-label={t('deleteCommentBy', { username: comment.author.username })}
-                  title={t('deleteComment')}
-                  onClick={() => setPendingDelete(comment)}
-                >
-                  <span className="codicon codicon-trash" aria-hidden="true" />
-                </button>
-              )}
-            </li>
+            <CommentItem
+              key={comment.id}
+              entryId={entryId}
+              comment={comment}
+              currentUserId={currentUserId}
+              canModerate={policy?.canModerate === true}
+              feedService={feedService}
+              onDelete={setPendingDelete}
+              onChange={(target, change, value) => void thread.update(target, change, value)}
+              t={t}
+            />
           ))}
         </ol>
       )}
       {actionError && <p className="feed-comments-note error" role="alert">{t(actionError)}</p>}
-      {!loadError && (
+      {note && <p className="feed-comments-note">{note}</p>}
+      {!loadError && !note && (
         <form className="feed-comment-form" onSubmit={submit}>
           <label htmlFor={inputId} className="sr-only">{t('writeComment')}</label>
           <textarea
@@ -143,7 +107,7 @@ function CommentThread({ entryId, currentUserId, feedService, theme, onTotalChan
       <ConfirmModal
         isOpen={pendingDelete !== null}
         onClose={() => setPendingDelete(null)}
-        onConfirm={() => void confirmDelete()}
+        onConfirm={confirmDelete}
         title={t('deleteComment')}
         message={t('deleteCommentConfirm')}
         theme={theme}
@@ -155,6 +119,8 @@ function CommentThread({ entryId, currentUserId, feedService, theme, onTotalChan
 
 interface EntryCommentsProps {
   readonly entryId: number;
+  /** The entry's writer, named where only their followers may comment. */
+  readonly authorName: string;
   readonly commentCount: number;
   readonly currentUserId: number | undefined;
   /** Rendered before the comments toggle in the entry's action row (the like and listen buttons). */
@@ -164,12 +130,11 @@ interface EntryCommentsProps {
   readonly t: Translate;
 }
 
-function EntryComments({ entryId, commentCount, currentUserId, actions, feedService, theme, t }: EntryCommentsProps) {
+function EntryComments({ entryId, authorName, commentCount, currentUserId, actions, feedService, theme, t }: EntryCommentsProps) {
   const threadId = useId();
   const quiet = useQuietMode();
   const [open, setOpen] = useState(false);
   const [total, setTotal] = useState(commentCount);
-
 
   return (
     <div className="feed-entry-comments">
@@ -190,6 +155,7 @@ function EntryComments({ entryId, commentCount, currentUserId, actions, feedServ
         {open && (
           <CommentThread
             entryId={entryId}
+            authorName={authorName}
             currentUserId={currentUserId}
             feedService={feedService}
             theme={theme}

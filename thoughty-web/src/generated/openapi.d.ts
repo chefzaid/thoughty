@@ -2027,6 +2027,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/entries/{entryId}/comment-policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Choose who may comment on your public entry */
+        put: operations["CommentControlsController_setPolicy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/entries/{entryId}/comments/{commentId}/hidden": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Hide a comment on your entry from everyone but you and its writer */
+        put: operations["CommentControlsController_hide"];
+        post?: never;
+        /** Show a hidden comment on your entry to everyone again */
+        delete: operations["CommentControlsController_show"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/entries/{entryId}/comments/{commentId}/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Pin a comment on top of your entry’s comments, in place of any other */
+        put: operations["CommentControlsController_pin"];
+        post?: never;
+        /** Unpin a comment on your entry */
+        delete: operations["CommentControlsController_unpin"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/entries/{entryId}/like": {
         parameters: {
             query?: never;
@@ -4575,6 +4628,7 @@ export interface components {
          *       "ttsVoiceUri": "https://thoughty.example.com/callback",
          *       "language": "en",
          *       "defaultVisibility": "public",
+         *       "defaultCommentPolicy": "everyone",
          *       "openRouterModel": "example",
          *       "openRouterTagModel": "reflection",
          *       "openRouterWritingModel": "example",
@@ -4645,6 +4699,11 @@ export interface components {
              * @enum {string}
              */
             defaultVisibility?: "public" | "private";
+            /**
+             * @description Who may comment on public entries that have no choice of their own: everyone, followers only, or no one
+             * @enum {string}
+             */
+            defaultCommentPolicy?: "everyone" | "followers" | "closed";
             /** @description OpenRouter model id, or empty for the default */
             openRouterModel?: string;
             /** @description OpenRouter model id, or empty for the default */
@@ -4725,6 +4784,7 @@ export interface components {
          *       "language": "en",
          *       "maxPinnedEntries": "example",
          *       "defaultVisibility": "public",
+         *       "defaultCommentPolicy": "everyone",
          *       "readDates": "true",
          *       "streakCard": "true",
          *       "quietMode": "true",
@@ -4798,6 +4858,11 @@ export interface components {
              * @enum {string}
              */
             defaultVisibility?: "public" | "private";
+            /**
+             * @description Who may comment on public entries that have no choice of their own: everyone, followers only, or no one
+             * @enum {string}
+             */
+            defaultCommentPolicy?: "everyone" | "followers" | "closed";
             /** @description Read entry dates aloud */
             readDates?: ("true" | "false") | boolean;
             /** @description Show the writing streak card above the journal; shown unless false */
@@ -8251,7 +8316,9 @@ export interface components {
          *       },
          *       "canDelete": true,
          *       "likeCount": 2,
-         *       "liked": true
+         *       "liked": true,
+         *       "hidden": true,
+         *       "pinned": true
          *     }
          */
         EntryCommentDto: {
@@ -8271,6 +8338,10 @@ export interface components {
             likeCount: number;
             /** @description Whether the current user likes the comment */
             liked: boolean;
+            /** @description The entry’s writer hid it: only they and the comment’s writer see it */
+            hidden: boolean;
+            /** @description The entry’s writer pinned it on top of the comments */
+            pinned: boolean;
         };
         /**
          * @example {
@@ -8286,20 +8357,34 @@ export interface components {
          *           },
          *           "canDelete": true,
          *           "likeCount": 2,
-         *           "liked": true
+         *           "liked": true,
+         *           "hidden": true,
+         *           "pinned": true
          *         }
          *       ],
-         *       "total": 3
+         *       "total": 3,
+         *       "commentPolicy": "everyone",
+         *       "canComment": true,
+         *       "canModerate": true
          *     }
          */
         EntryCommentsResponseDto: {
             /** @description Most recent comments, oldest first */
             comments: components["schemas"]["EntryCommentDto"][];
             /**
-             * @description All visible comments on the entry
+             * @description All comments on the entry the current user may see
              * @example 3
              */
             total: number;
+            /**
+             * @description Who may comment: everyone, followers of the entry’s writer, or no one (closed)
+             * @enum {string}
+             */
+            commentPolicy: "everyone" | "followers" | "closed";
+            /** @description Whether the current user may comment under that policy */
+            canComment: boolean;
+            /** @description The current user wrote the entry, so may change who can comment and hide or pin comments */
+            canModerate: boolean;
         };
         /**
          * @example {
@@ -8321,6 +8406,33 @@ export interface components {
             id: number;
             /** @example true */
             deleted: boolean;
+        };
+        /**
+         * @example {
+         *       "policy": "followers"
+         *     }
+         */
+        SetCommentPolicyDto: {
+            /**
+             * @example followers
+             * @enum {string}
+             */
+            policy: "everyone" | "followers" | "closed";
+        };
+        /**
+         * @example {
+         *       "commentPolicy": "followers",
+         *       "canComment": true
+         *     }
+         */
+        EntryCommentPolicyDto: {
+            /**
+             * @example followers
+             * @enum {string}
+             */
+            commentPolicy: "everyone" | "followers" | "closed";
+            /** @description Whether the current user (the entry’s writer) may still comment */
+            canComment: boolean;
         };
         /**
          * @example {
@@ -10316,7 +10428,7 @@ export interface components {
          * @example VALIDATION_FAILED
          * @enum {string}
          */
-        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "FEATURE_DISABLED" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_WEAK_PASSWORD" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "AUTH_INVALID_SIGN_UP_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "CONTENT_LOCKED" | "CONTENT_LOCKED_PRIVATE" | "CONTENT_PIN_NOT_SET" | "CONTENT_PIN_INCORRECT" | "CONTENT_PIN_BLOCKED" | "CONTENT_PIN_PROOF_REQUIRED" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "COMPOSER_DRAFT_CONFLICT" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "SOCIAL_CANNOT_SAVE_OWN_ENTRY" | "COMMENT_NOT_FOUND" | "FEATURE_REQUEST_NOT_FOUND";
+        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "FEATURE_DISABLED" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_WEAK_PASSWORD" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "AUTH_INVALID_SIGN_UP_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "CONTENT_LOCKED" | "CONTENT_LOCKED_PRIVATE" | "CONTENT_PIN_NOT_SET" | "CONTENT_PIN_INCORRECT" | "CONTENT_PIN_BLOCKED" | "CONTENT_PIN_PROOF_REQUIRED" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "COMPOSER_DRAFT_CONFLICT" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "SOCIAL_CANNOT_SAVE_OWN_ENTRY" | "COMMENT_NOT_FOUND" | "COMMENTS_CLOSED" | "COMMENTS_FOLLOWERS_ONLY" | "COMMENT_PIN_HIDDEN" | "FEATURE_REQUEST_NOT_FOUND";
         /**
          * @example {
          *       "statusCode": 401,
@@ -13857,6 +13969,7 @@ export interface operations {
                      *       "ttsVoiceUri": "https://thoughty.example.com/callback",
                      *       "language": "en",
                      *       "defaultVisibility": "public",
+                     *       "defaultCommentPolicy": "everyone",
                      *       "openRouterModel": "example",
                      *       "openRouterTagModel": "reflection",
                      *       "openRouterWritingModel": "example",
@@ -13913,6 +14026,7 @@ export interface operations {
                  *       "language": "en",
                  *       "maxPinnedEntries": "example",
                  *       "defaultVisibility": "public",
+                 *       "defaultCommentPolicy": "everyone",
                  *       "readDates": "true",
                  *       "streakCard": "true",
                  *       "quietMode": "true",
@@ -18859,10 +18973,15 @@ export interface operations {
                      *           },
                      *           "canDelete": true,
                      *           "likeCount": 2,
-                     *           "liked": true
+                     *           "liked": true,
+                     *           "hidden": true,
+                     *           "pinned": true
                      *         }
                      *       ],
-                     *       "total": 3
+                     *       "total": 3,
+                     *       "commentPolicy": "everyone",
+                     *       "canComment": true,
+                     *       "canModerate": true
                      *     }
                      */
                     "application/json": components["schemas"]["EntryCommentsResponseDto"];
@@ -18942,7 +19061,9 @@ export interface operations {
                      *       },
                      *       "canDelete": true,
                      *       "likeCount": 2,
-                     *       "liked": true
+                     *       "liked": true,
+                     *       "hidden": true,
+                     *       "pinned": true
                      *     }
                      */
                     "application/json": components["schemas"]["EntryCommentDto"];
@@ -19021,6 +19142,390 @@ export interface operations {
                      * @example {
                      *       "statusCode": 404,
                      *       "message": "No deletable comment with this id on the entry",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    CommentControlsController_setPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entryId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "policy": "followers"
+                 *     }
+                 */
+                "application/json": components["schemas"]["SetCommentPolicyDto"];
+            };
+        };
+        responses: {
+            /** @description The entry’s comment policy */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "commentPolicy": "followers",
+                     *       "canComment": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["EntryCommentPolicyDto"];
+                };
+            };
+            /** @description The entry is not one of your public entries, or the comment is not on it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "The entry is not one of your public entries, or the comment is not on it",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    CommentControlsController_hide: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entryId: number;
+                commentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The hidden comment */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": 41,
+                     *       "content": "This one stayed with me all day.",
+                     *       "createdAt": "2026-09-01T08:30:00.000Z",
+                     *       "author": {
+                     *         "id": 2,
+                     *         "username": "maya",
+                     *         "avatarUrl": null
+                     *       },
+                     *       "canDelete": true,
+                     *       "likeCount": 2,
+                     *       "liked": true,
+                     *       "hidden": true,
+                     *       "pinned": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["EntryCommentDto"];
+                };
+            };
+            /** @description The entry is not one of your public entries, or the comment is not on it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "The entry is not one of your public entries, or the comment is not on it",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    CommentControlsController_show: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entryId: number;
+                commentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The comment, shown again */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": 41,
+                     *       "content": "This one stayed with me all day.",
+                     *       "createdAt": "2026-09-01T08:30:00.000Z",
+                     *       "author": {
+                     *         "id": 2,
+                     *         "username": "maya",
+                     *         "avatarUrl": null
+                     *       },
+                     *       "canDelete": true,
+                     *       "likeCount": 2,
+                     *       "liked": true,
+                     *       "hidden": true,
+                     *       "pinned": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["EntryCommentDto"];
+                };
+            };
+            /** @description The entry is not one of your public entries, or the comment is not on it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "The entry is not one of your public entries, or the comment is not on it",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    CommentControlsController_pin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entryId: number;
+                commentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The pinned comment */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": 41,
+                     *       "content": "This one stayed with me all day.",
+                     *       "createdAt": "2026-09-01T08:30:00.000Z",
+                     *       "author": {
+                     *         "id": 2,
+                     *         "username": "maya",
+                     *         "avatarUrl": null
+                     *       },
+                     *       "canDelete": true,
+                     *       "likeCount": 2,
+                     *       "liked": true,
+                     *       "hidden": true,
+                     *       "pinned": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["EntryCommentDto"];
+                };
+            };
+            /** @description The comment is hidden */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "The comment is hidden",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The entry is not one of your public entries, or the comment is not on it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "The entry is not one of your public entries, or the comment is not on it",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    CommentControlsController_unpin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entryId: number;
+                commentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The comment, no longer pinned */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": 41,
+                     *       "content": "This one stayed with me all day.",
+                     *       "createdAt": "2026-09-01T08:30:00.000Z",
+                     *       "author": {
+                     *         "id": 2,
+                     *         "username": "maya",
+                     *         "avatarUrl": null
+                     *       },
+                     *       "canDelete": true,
+                     *       "likeCount": 2,
+                     *       "liked": true,
+                     *       "hidden": true,
+                     *       "pinned": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["EntryCommentDto"];
+                };
+            };
+            /** @description The entry is not one of your public entries, or the comment is not on it */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "The entry is not one of your public entries, or the comment is not on it",
                      *       "error": "Not Found",
                      *       "code": "NOT_FOUND"
                      *     }
