@@ -61,6 +61,14 @@ export async function handleMemoirRoutes(context: RouteContext): Promise<boolean
   const memoir = state.memoir;
   const method = request.method();
 
+  // Public: the question pages read it without an account
+  if (pathname === '/api/memoir/questions' && method === 'GET') {
+    await fulfillJson(route, {
+      chapters: MOCK_MEMOIR_CHAPTERS.map((chapter) => ({ ...chapter, theme: MOCK_MEMOIR_THEME_IDS.includes(chapter.id) })),
+    });
+    return true;
+  }
+
   if (pathname === '/api/memoir' && method === 'GET') {
     await fulfillJson(route, overview(context));
     return true;

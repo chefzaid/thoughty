@@ -11,6 +11,7 @@ import { MemoirAnswersService } from './memoir-answers.service';
 import { MemoirDeliveryWorkerService } from './memoir-delivery-worker.service';
 import { MemoirDeliveryService } from './memoir-delivery.service';
 import { MemoirController } from './memoir.controller';
+import { MemoirQuestionsController } from './memoir-questions.controller';
 import { MemoirService } from './memoir.service';
 
 @Module({
@@ -23,7 +24,7 @@ import { MemoirService } from './memoir.service';
     LifeErasModule,
     UserConfigModule,
   ],
-  controllers: [MemoirController],
+  controllers: [MemoirController, MemoirQuestionsController],
   providers: [MemoirService, MemoirAnswersService, MemoirDeliveryService, MemoirDeliveryWorkerService],
   exports: [MemoirDeliveryWorkerService],
 })

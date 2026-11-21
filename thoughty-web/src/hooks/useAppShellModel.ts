@@ -39,7 +39,9 @@ import {
   type ContactPageProps,
   type FeedbackPageProps,
   type IntroPageProps,
+  type JournalTemplatesPageProps,
   type LegalPageProps,
+  type MemoirQuestionsPageProps,
   type UnsubscribePageProps,
   type VerifyEmailPageProps,
 } from '../utils/appShellProps';
@@ -59,6 +61,8 @@ interface AppShellModel {
   blogPageProps: BlogPageProps;
   contactPageProps: ContactPageProps;
   feedbackPageProps: FeedbackPageProps;
+  memoirQuestionsPageProps: MemoirQuestionsPageProps;
+  journalTemplatesPageProps: JournalTemplatesPageProps;
   legalPageProps: Omit<LegalPageProps, 'page'>;
   verifyEmailPageProps: VerifyEmailPageProps;
   completeSignUpPageProps: CompleteSignUpPageProps;
@@ -354,6 +358,8 @@ export function useAppShellModel(): AppShellModel {
     blogPageProps,
     contactPageProps,
     feedbackPageProps,
+    memoirQuestionsPageProps,
+    journalTemplatesPageProps,
     legalPageProps,
     authPageProps,
     verifyEmailPageProps,
@@ -362,6 +368,7 @@ export function useAppShellModel(): AppShellModel {
     unsubscribePageProps,
   } = buildPublicShellProps({
     configTheme: config.theme,
+    configLanguage: config.language,
     isAuthenticated,
     landingView,
     publicView,
@@ -433,6 +440,8 @@ export function useAppShellModel(): AppShellModel {
     blogPageProps,
     contactPageProps,
     feedbackPageProps,
+    memoirQuestionsPageProps,
+    journalTemplatesPageProps,
     legalPageProps,
     verifyEmailPageProps,
     completeSignUpPageProps,

@@ -24,6 +24,8 @@ const PUBLIC_ROUTES: Record<string, RouteContent> = {
   '/contact': (page) => [page.getByRole('button', { name: 'Open the community board' }), page.getByRole('heading', { name: 'Which formats are available?' })],
   '/feedback': (page) => [page.getByRole('button', { name: 'Sign in to vote for Mood calendar' })],
   '/blog': (page) => [page.getByRole('heading', { name: 'Prompts for writing when the day feels noisy' })],
+  '/memoir-questions': (page) => [page.getByRole('region', { name: 'Themes to add' })],
+  '/journal-templates': (page) => [page.getByRole('article', { name: 'Dream log' })],
 };
 
 const AUTHENTICATED_ROUTES: Record<string, RouteContent> = {

@@ -11,7 +11,9 @@ describe('Footer', () => {
                 about: 'About',
                 privacy: 'Privacy Policy',
                 terms: 'Terms of Service',
-                contact: 'Contact Us'
+                contact: 'Contact Us',
+                footerMemoirQuestions: 'Memoir questions',
+                footerJournalTemplates: 'Journal templates',
             };
             return translations[key] || key;
         },
@@ -30,6 +32,8 @@ describe('Footer', () => {
         expect(screen.getByText('Privacy Policy')).toBeInTheDocument();
         expect(screen.getByText('Terms of Service')).toBeInTheDocument();
         expect(screen.getByText('Contact Us')).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: 'Memoir questions' })).toHaveAttribute('href', '/memoir-questions');
+        expect(screen.getByRole('link', { name: 'Journal templates' })).toHaveAttribute('href', '/journal-templates');
     });
 
     it('applies dark theme styles correctly', () => {

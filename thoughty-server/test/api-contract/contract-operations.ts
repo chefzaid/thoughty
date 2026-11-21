@@ -223,6 +223,7 @@ export const CONTRACT_SUITES = {
     'GET /api/stats',
     'GET /api/stats/streak',
     'GET /api/memoir',
+    'GET /api/memoir/questions',
     'POST /api/memoir',
     'PATCH /api/memoir',
     'DELETE /api/memoir',

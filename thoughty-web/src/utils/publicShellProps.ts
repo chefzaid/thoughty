@@ -8,16 +8,21 @@ import type ResetPasswordPage from '../components/ResetPasswordPage/ResetPasswor
 import type ContactPage from '../components/ContactPage/ContactPage';
 import type FeedbackPage from '../components/FeedbackPage/FeedbackPage';
 import type IntroPage from '../components/IntroPage/IntroPage';
+import type JournalTemplatesPage from '../components/PublicLibrary/JournalTemplatesPage';
+import type MemoirQuestionsPage from '../components/PublicLibrary/MemoirQuestionsPage';
 import type LegalPage from '../components/LegalPage/LegalPage';
 import type UnsubscribePage from '../components/UnsubscribePage/UnsubscribePage';
 import type VerifyEmailPage from '../components/VerifyEmailPage/VerifyEmailPage';
 import type { PublicViewType, TranslationFunction, ViewType } from '../types';
+import { resolveLanguage } from './language';
 
 export type IntroPageProps = ComponentProps<typeof IntroPage>;
 export type AboutPageProps = ComponentProps<typeof AboutPage>;
 export type BlogPageProps = ComponentProps<typeof BlogPage>;
 export type ContactPageProps = ComponentProps<typeof ContactPage>;
 export type FeedbackPageProps = ComponentProps<typeof FeedbackPage>;
+export type MemoirQuestionsPageProps = ComponentProps<typeof MemoirQuestionsPage>;
+export type JournalTemplatesPageProps = ComponentProps<typeof JournalTemplatesPage>;
 export type AuthPageProps = ComponentProps<typeof AuthPage>;
 export type LegalPageProps = ComponentProps<typeof LegalPage>;
 export type VerifyEmailPageProps = ComponentProps<typeof VerifyEmailPage>;
@@ -29,6 +34,7 @@ type AppShellRoutingState = ReturnType<typeof import('../hooks/useAppShellRoutin
 
 interface BuildPublicShellPropsParams {
   configTheme?: 'light' | 'dark';
+  configLanguage?: string;
   isAuthenticated?: boolean;
   /** Where a signed-in writer goes from the presentation page; the journal while the settings load. */
   landingView?: ViewType | null;
@@ -39,6 +45,7 @@ interface BuildPublicShellPropsParams {
 
 export function buildPublicShellProps({
   configTheme,
+  configLanguage,
   isAuthenticated,
   landingView,
   publicView,
@@ -81,6 +88,26 @@ export function buildPublicShellProps({
     t,
     onBackHome: () => routingState.handlePublicViewChange('intro'),
     onSignIn: () => routingState.handlePublicViewChange('login'),
+  };
+
+  const memoirQuestionsPageProps: MemoirQuestionsPageProps = {
+    theme,
+    t,
+    language: resolveLanguage(configLanguage),
+    isAuthenticated,
+    onSignUp: () => routingState.handlePublicViewChange('register'),
+    onOpenMemoir: () => routingState.handleViewChange('memoir'),
+    onBackHome: () => routingState.handlePublicViewChange('intro'),
+  };
+
+  const journalTemplatesPageProps: JournalTemplatesPageProps = {
+    theme,
+    t,
+    language: resolveLanguage(configLanguage),
+    isAuthenticated,
+    onSignUp: () => routingState.handlePublicViewChange('register'),
+    onOpenJournal: () => routingState.handleViewChange('journal'),
+    onBackHome: () => routingState.handlePublicViewChange('intro'),
   };
 
   const legalPageProps: Omit<LegalPageProps, 'page'> = {
@@ -134,6 +161,8 @@ export function buildPublicShellProps({
     blogPageProps,
     contactPageProps,
     feedbackPageProps,
+    memoirQuestionsPageProps,
+    journalTemplatesPageProps,
     legalPageProps,
     authPageProps,
     verifyEmailPageProps,

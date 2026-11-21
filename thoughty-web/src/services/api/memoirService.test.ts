@@ -14,6 +14,16 @@ describe('memoirService', () => {
     expect(result.data).toEqual({ program: null, chapters: [], progress: {} });
   });
 
+  it('loads the public question bank', async () => {
+    const chapters = [{ id: 'childhood', title: { en: 'Childhood', fr: 'Enfance' }, theme: false, questions: [] }];
+    const authFetch = vi.fn().mockResolvedValue(ok({ chapters }));
+
+    const result = await createMemoirService(authFetch).fetchQuestionBank();
+
+    expect(authFetch).toHaveBeenCalledWith('/api/memoir/questions');
+    expect(result.data).toEqual({ chapters });
+  });
+
   it('sends each memoir change to its endpoint as JSON', async () => {
     const authFetch = vi.fn().mockImplementation(async () => ok({ success: true }));
     const service = createMemoirService(authFetch);

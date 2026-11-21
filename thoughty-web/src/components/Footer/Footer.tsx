@@ -1,4 +1,15 @@
+import { getPublicPathForView, type PublicViewType } from '../../types';
 import { mutedTextClass } from '../../utils/tintedText';
+
+/** The public pages the footer leads to, with the label of each link. */
+const FOOTER_LINKS: readonly (readonly [PublicViewType, string])[] = [
+    ['about', 'about'],
+    ['memoirQuestions', 'footerMemoirQuestions'],
+    ['journalTemplates', 'footerJournalTemplates'],
+    ['privacy', 'privacy'],
+    ['terms', 'terms'],
+    ['contact', 'contact'],
+];
 
 interface FooterProps {
     t: (key: string, params?: Record<string, string | number>) => string;
@@ -18,18 +29,11 @@ function Footer({ t, theme }: Readonly<FooterProps>) {
                 </div>
 
                 <div className="flex flex-wrap justify-center gap-6">
-                    <a href="/about" className={`text-sm hover:underline transition-colors ${isLight ? 'text-gray-600 hover:text-gray-900' : 'text-gray-400 hover:text-gray-100'}`}>
-                        {t('about')}
-                    </a>
-                    <a href="/privacy" className={`text-sm hover:underline transition-colors ${isLight ? 'text-gray-600 hover:text-gray-900' : 'text-gray-400 hover:text-gray-100'}`}>
-                        {t('privacy')}
-                    </a>
-                    <a href="/terms" className={`text-sm hover:underline transition-colors ${isLight ? 'text-gray-600 hover:text-gray-900' : 'text-gray-400 hover:text-gray-100'}`}>
-                        {t('terms')}
-                    </a>
-                    <a href="/contact" className={`text-sm hover:underline transition-colors ${isLight ? 'text-gray-600 hover:text-gray-900' : 'text-gray-400 hover:text-gray-100'}`}>
-                        {t('contact')}
-                    </a>
+                    {FOOTER_LINKS.map(([view, labelKey]) => (
+                        <a key={view} href={getPublicPathForView(view)} className={`text-sm hover:underline transition-colors ${isLight ? 'text-gray-600 hover:text-gray-900' : 'text-gray-400 hover:text-gray-100'}`}>
+                            {t(labelKey)}
+                        </a>
+                    ))}
                 </div>
             </div>
         </footer>

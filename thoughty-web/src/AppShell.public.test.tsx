@@ -68,6 +68,8 @@ describe('AppShell public flows', () => {
     ['/contact', 'Contact and support', 'How to guides'],
     ['/feedback', 'Shape what Thoughty becomes next.', 'Ideas from the community'],
     ['/blog', 'Updates, tips, and journaling inspiration.', 'From the journal desk'],
+    ['/journal-templates', 'Journal templates for the days you do not know where to start.', 'Gratitude journal'],
+    ['/memoir-questions', 'Questions to ask your parents, and yourself.', 'Turn the answers into a book'],
   ])('loads the community page %s', async (path, heading, sectionHeading) => {
     globalThis.history.replaceState({}, '', path);
     setMockAuthState({ user: null, isAuthenticated: false });

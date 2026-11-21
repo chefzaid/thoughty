@@ -14,10 +14,17 @@ export type UpdateMemoirRequest = components['schemas']['UpdateMemoirDto'];
 export type AnswerMemoirRequest = components['schemas']['AnswerMemoirQuestionDto'];
 export type MemoirAnswerResult = components['schemas']['MemoirAnswerResultDto'];
 export type MemoirLeft = components['schemas']['MemoirLeftDto'];
+export type MemoirQuestionBank = components['schemas']['MemoirQuestionBankDto'];
+export type MemoirBankChapter = components['schemas']['MemoirBankChapterDto'];
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
 export const createMemoirService = (authFetch: (url: string, options?: RequestInit) => Promise<Response>) => ({
+  /** Every memoir question by chapter; public, so the question pages show it without an account. */
+  fetchQuestionBank(): Promise<ServiceResult<MemoirQuestionBank>> {
+    return requestJson(authFetch('/api/memoir/questions'), 'Failed to load the memoir questions');
+  },
+
   fetchOverview(): Promise<ServiceResult<MemoirOverview>> {
     return requestJson(authFetch('/api/memoir'), 'Failed to load the memoir');
   },

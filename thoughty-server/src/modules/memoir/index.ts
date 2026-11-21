@@ -1,5 +1,6 @@
 export * from './memoir.module';
 export * from './memoir.controller';
+export * from './memoir-questions.controller';
 export * from './memoir.service';
 export * from './memoir-answers.service';
 export * from './memoir-delivery.service';

@@ -263,6 +263,15 @@ describeContract('account', (context) => {
     await call('GET /api/review/week', { as: alice, query: { today: todayIso(5) }, status: 400, code: 'VALIDATION_FAILED' });
   });
 
+  it('lists the memoir questions to anyone, without an account', async () => {
+    const bank = await call('GET /api/memoir/questions', { status: 200 });
+    const chapters = (bank.body as { chapters: Array<{ id: string; theme: boolean; questions: unknown[] }> }).chapters;
+    expect(bank.headers['cache-control']).toBe('public, max-age=3600');
+    expect(chapters[0]).toMatchObject({ id: 'childhood', theme: false });
+    expect(chapters.filter((chapter) => !chapter.theme).flatMap((chapter) => chapter.questions)).toHaveLength(52);
+    expect(chapters.some((chapter) => chapter.theme)).toBe(true);
+  });
+
   it('runs the memoir program from start to stop', async () => {
     const { alice, bob } = context;
     const before = await call('GET /api/memoir', { as: alice, status: 200 });

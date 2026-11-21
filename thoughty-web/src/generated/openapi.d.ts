@@ -2352,6 +2352,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/memoir/questions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the guided memoir questions by chapter, without an account
+         * @description The public question pages read it; it holds no writer data, only the questions every memoir asks.
+         */
+        get: operations["MemoirQuestionsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/review": {
         parameters: {
             query?: never;
@@ -9438,6 +9458,77 @@ export interface components {
             questionId: string;
             /** @example 812 */
             entryId: number;
+        };
+        /**
+         * @example {
+         *       "id": "childhood-home",
+         *       "text": {
+         *         "en": "What did the home you grew up in look, sound, and smell like?",
+         *         "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+         *       }
+         *     }
+         */
+        MemoirBankQuestionDto: {
+            /** @example childhood-home */
+            id: string;
+            text: components["schemas"]["LocalizedTextDto"];
+        };
+        /**
+         * @example {
+         *       "id": "childhood",
+         *       "title": {
+         *         "en": "What did the home you grew up in look, sound, and smell like?",
+         *         "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+         *       },
+         *       "theme": false,
+         *       "questions": [
+         *         {
+         *           "id": "childhood-home",
+         *           "text": {
+         *             "en": "What did the home you grew up in look, sound, and smell like?",
+         *             "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+         *           }
+         *         }
+         *       ]
+         *     }
+         */
+        MemoirBankChapterDto: {
+            /** @example childhood */
+            id: string;
+            title: components["schemas"]["LocalizedTextDto"];
+            /**
+             * @description A themed chapter a writer adds by choice; the others make up the year of weekly questions
+             * @example false
+             */
+            theme: boolean;
+            questions: components["schemas"]["MemoirBankQuestionDto"][];
+        };
+        /**
+         * @example {
+         *       "chapters": [
+         *         {
+         *           "id": "childhood",
+         *           "title": {
+         *             "en": "What did the home you grew up in look, sound, and smell like?",
+         *             "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+         *           },
+         *           "theme": false,
+         *           "questions": [
+         *             {
+         *               "id": "childhood-home",
+         *               "text": {
+         *                 "en": "What did the home you grew up in look, sound, and smell like?",
+         *                 "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+         *               }
+         *             }
+         *           ]
+         *         }
+         *       ]
+         *     }
+         */
+        MemoirQuestionBankDto: {
+            /** @description Every chapter of the guided memoir in life order, the themed ones included */
+            chapters: components["schemas"]["MemoirBankChapterDto"][];
         };
         /**
          * @example {
@@ -22154,6 +22245,49 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    MemoirQuestionsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every chapter and its questions, in life order */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "chapters": [
+                     *         {
+                     *           "id": "childhood",
+                     *           "title": {
+                     *             "en": "What did the home you grew up in look, sound, and smell like?",
+                     *             "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                     *           },
+                     *           "theme": false,
+                     *           "questions": [
+                     *             {
+                     *               "id": "childhood-home",
+                     *               "text": {
+                     *                 "en": "What did the home you grew up in look, sound, and smell like?",
+                     *                 "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                     *               }
+                     *             }
+                     *           ]
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MemoirQuestionBankDto"];
                 };
             };
         };

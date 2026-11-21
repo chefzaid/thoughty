@@ -22,7 +22,9 @@ export {
   type ContactPageProps,
   type FeedbackPageProps,
   type IntroPageProps,
+  type JournalTemplatesPageProps,
   type LegalPageProps,
+  type MemoirQuestionsPageProps,
   type UnsubscribePageProps,
   type VerifyEmailPageProps,
 } from './publicShellProps';

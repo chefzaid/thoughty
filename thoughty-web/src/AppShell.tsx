@@ -12,6 +12,8 @@ const AuthPage = lazy(() => import('./components/AuthPage/AuthPage'));
 const BlogPage = lazy(() => import('./components/BlogPage/BlogPage'));
 const ContactPage = lazy(() => import('./components/ContactPage/ContactPage'));
 const FeedbackPage = lazy(() => import('./components/FeedbackPage/FeedbackPage'));
+const MemoirQuestionsPage = lazy(() => import('./components/PublicLibrary/MemoirQuestionsPage'));
+const JournalTemplatesPage = lazy(() => import('./components/PublicLibrary/JournalTemplatesPage'));
 const LegalPage = lazy(() => import('./components/LegalPage/LegalPage'));
 const VerifyEmailPage = lazy(() => import('./components/VerifyEmailPage/VerifyEmailPage'));
 const CompleteSignUpPage = lazy(() => import('./components/CompleteSignUpPage/CompleteSignUpPage'));
@@ -44,6 +46,8 @@ function AppShell() {
     blogPageProps,
     contactPageProps,
     feedbackPageProps,
+    memoirQuestionsPageProps,
+    journalTemplatesPageProps,
     legalPageProps,
     verifyEmailPageProps,
     completeSignUpPageProps,
@@ -72,6 +76,14 @@ function AppShell() {
 
   if (publicView === 'feedback') {
     return renderPublic(renderLazy(<FeedbackPage {...feedbackPageProps} />), feedbackPageProps.t);
+  }
+
+  if (publicView === 'memoirQuestions') {
+    return renderPublic(renderLazy(<MemoirQuestionsPage {...memoirQuestionsPageProps} />), memoirQuestionsPageProps.t);
+  }
+
+  if (publicView === 'journalTemplates') {
+    return renderPublic(renderLazy(<JournalTemplatesPage {...journalTemplatesPageProps} />), journalTemplatesPageProps.t);
   }
 
   if (publicView === 'privacy' || publicView === 'terms') {
