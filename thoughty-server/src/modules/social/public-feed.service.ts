@@ -5,6 +5,8 @@ import { Entry, EntryComment, UserFollow } from '@/database/entities';
 import { inlineImagesToAltText } from '@/common/utils';
 import type { GetPublicFeedQueryDto, PublicFeedResponseDto } from './dto';
 import { LikesService } from './likes.service';
+import { applyEntrySearchMatch, EntrySearchService } from '@/modules/entries';
+import { applyFeedScope, applyFeedTopic } from './public-feed-filters';
 import { applyPublicFeedVisibility } from './public-feed-visibility';
 import { SavedEntriesService } from './saved-entries.service';
 
@@ -19,6 +21,7 @@ export class PublicFeedService {
     private readonly commentRepository: Repository<EntryComment>,
     private readonly likesService: LikesService,
     private readonly savedEntriesService: SavedEntriesService,
+    private readonly entrySearchService: EntrySearchService,
   ) {}
 
   async getFeed(userId: number, query: GetPublicFeedQueryDto): Promise<PublicFeedResponseDto> {
@@ -43,22 +46,13 @@ export class PublicFeedService {
         'u.avatarUrl',
       ]);
     applyPublicFeedVisibility(qb);
-
-    if (scope === 'mine') {
-      qb.andWhere('e.user_id = :userId', { userId });
-    } else if (scope === 'following') {
-      qb.andWhere(
-        'e.user_id IN (SELECT f.followed_id FROM user_follows f WHERE f.follower_id = :userId)',
-        { userId },
-      );
-    } else {
-      qb.andWhere('e.user_id != :userId', { userId });
+    applyFeedScope(qb, scope, userId);
+    if (query.tag !== undefined) {
+      applyFeedTopic(qb, query.tag);
     }
-    if (scope === 'saved') {
-      qb.innerJoin('saved_entries', 's', 's.entry_id = e.id AND s.user_id = :userId', { userId });
-      qb.orderBy('s.created_at', 'DESC');
-    } else {
-      qb.orderBy('e.createdAt', 'DESC');
+    const prepared = query.search ? await this.entrySearchService.prepare(query.search) : null;
+    if (prepared) {
+      applyEntrySearchMatch(qb, prepared);
     }
 
     const total = await qb.getCount();

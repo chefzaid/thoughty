@@ -42,7 +42,7 @@ const createEntry = (id: number, username: string, isFollowed = false) => ({
 describe('FeedPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    fetchFollows.mockResolvedValue({ data: { following: [], followerCount: 0 }, error: null });
+    fetchFollows.mockResolvedValue({ data: { following: [], topics: [], followerCount: 0 }, error: null });
   });
 
   it('loads community entries and appends the next page', async () => {
@@ -61,8 +61,8 @@ describe('FeedPage', () => {
     expect(await screen.findByText('Entry 1')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'loadMoreEntries' }));
     expect(await screen.findByText('Entry 2')).toBeInTheDocument();
-    expect(fetchPublicFeed).toHaveBeenNthCalledWith(1, 'community', 1, 10);
-    expect(fetchPublicFeed).toHaveBeenNthCalledWith(2, 'community', 2, 10);
+    expect(fetchPublicFeed).toHaveBeenNthCalledWith(1, 'community', 1, 10, {});
+    expect(fetchPublicFeed).toHaveBeenNthCalledWith(2, 'community', 2, 10, {});
     expect(screen.getByText('2 of 2')).toBeInTheDocument();
   });
 
@@ -114,7 +114,7 @@ describe('FeedPage', () => {
 
     expect(await screen.findByText('Entry 3')).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByText('Entry 1')).not.toBeInTheDocument());
-    expect(fetchPublicFeed).toHaveBeenLastCalledWith('mine', 1, 10);
+    expect(fetchPublicFeed).toHaveBeenLastCalledWith('mine', 1, 10, {});
   });
 
   it('offers retry after an initial loading failure', async () => {
@@ -190,6 +190,7 @@ describe('FeedPage', () => {
           { id: 102, username: 'Zoe', avatarUrl: null, followedAt: '2026-08-01T00:00:00.000Z' },
           { id: 101, username: 'Ada', avatarUrl: '/ada.png', followedAt: '2026-08-02T00:00:00.000Z' },
         ],
+        topics: [],
         followerCount: 4,
       },
       error: null,
@@ -205,7 +206,7 @@ describe('FeedPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'feedFollowing' }));
 
     expect(await screen.findByRole('heading', { name: 'followingListTitle' })).toBeInTheDocument();
-    expect(fetchPublicFeed).toHaveBeenLastCalledWith('following', 1, 10);
+    expect(fetchPublicFeed).toHaveBeenLastCalledWith('following', 1, 10, {});
     expect(screen.getByText('followingCount 2')).toBeInTheDocument();
     expect(screen.getByText('followersCount 4')).toBeInTheDocument();
     const names = [...document.querySelectorAll('.feed-following-name')].map((item) => item.textContent);
@@ -246,7 +247,7 @@ describe('FeedPage', () => {
     render(<FeedPage t={t} />);
     fireEvent.click(screen.getByRole('button', { name: 'feedMine' }));
 
-    await waitFor(() => expect(fetchPublicFeed).toHaveBeenLastCalledWith('mine', 1, 10));
+    await waitFor(() => expect(fetchPublicFeed).toHaveBeenLastCalledWith('mine', 1, 10, {}));
     await screen.findByText('Entry 3');
     expect(screen.queryByRole('button', { name: /followAuthor/ })).not.toBeInTheDocument();
   });

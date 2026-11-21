@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, Max, Min } from 'class-validator';
+import { IsIn, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { StrictInt } from '@/common/validation';
 
@@ -11,6 +11,29 @@ export class GetPublicFeedQueryDto {
   @IsOptional()
   @IsIn(publicFeedScopes)
   scope?: PublicFeedScope;
+
+  @ApiPropertyOptional({
+    description: 'Only entries carrying this tag, ignoring case (a feed topic)',
+    example: 'gratitude',
+    maxLength: 50,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  @Matches(/\S/)
+  tag?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Word search over the entries\' titles, text and tags (never moods or feelings), with the operators of the ' +
+      'journal search: "exact phrases", a leading minus to leave a word out, and OR between alternatives.',
+    example: 'morning walk',
+    maxLength: 500,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  search?: string;
 
   @ApiPropertyOptional({ minimum: 1, default: 1 })
   @IsOptional()

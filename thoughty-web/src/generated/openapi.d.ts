@@ -1946,7 +1946,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List followed users and the follower count */
+        /** List followed users and topics, and the follower count */
         get: operations["FollowsController_list"];
         put?: never;
         post?: never;
@@ -1969,6 +1969,24 @@ export interface paths {
         post?: never;
         /** Stop following a user */
         delete: operations["FollowsController_unfollow"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/follows/topics/{tag}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Follow a topic: public entries carrying the tag, ignoring case, join the Following feed */
+        put: operations["FollowsController_followTopic"];
+        post?: never;
+        /** Stop following a topic */
+        delete: operations["FollowsController_unfollowTopic"];
         options?: never;
         head?: never;
         patch?: never;
@@ -8136,11 +8154,32 @@ export interface components {
         };
         /**
          * @example {
+         *       "tag": "gratitude",
+         *       "followedAt": "2026-09-01T08:30:00.000Z"
+         *     }
+         */
+        FollowedTopicDto: {
+            /**
+             * @description The tag, in lower case
+             * @example gratitude
+             */
+            tag: string;
+            /** @example 2026-09-01T08:30:00.000Z */
+            followedAt: string;
+        };
+        /**
+         * @example {
          *       "following": [
          *         {
          *           "id": 2,
          *           "username": "maya",
          *           "avatarUrl": null,
+         *           "followedAt": "2026-09-01T08:30:00.000Z"
+         *         }
+         *       ],
+         *       "topics": [
+         *         {
+         *           "tag": "gratitude",
          *           "followedAt": "2026-09-01T08:30:00.000Z"
          *         }
          *       ],
@@ -8150,6 +8189,8 @@ export interface components {
         FollowsResponseDto: {
             /** @description Active users the current user follows */
             following: components["schemas"]["FollowedUserDto"][];
+            /** @description Topics (tags) the current user follows, by name */
+            topics: components["schemas"]["FollowedTopicDto"][];
             /**
              * @description Number of active users following the current user
              * @example 3
@@ -8165,6 +8206,21 @@ export interface components {
         FollowStateDto: {
             /** @example 2 */
             userId: number;
+            /** @example true */
+            following: boolean;
+        };
+        /**
+         * @example {
+         *       "tag": "gratitude",
+         *       "following": true
+         *     }
+         */
+        TopicFollowStateDto: {
+            /**
+             * @description The tag, in lower case
+             * @example gratitude
+             */
+            tag: string;
             /** @example true */
             following: boolean;
         };
@@ -18392,6 +18448,10 @@ export interface operations {
         parameters: {
             query?: {
                 scope?: "community" | "following" | "mine" | "saved";
+                /** @description Only entries carrying this tag, ignoring case (a feed topic) */
+                tag?: string;
+                /** @description Word search over the entries' titles, text and tags (never moods or feelings), with the operators of the journal search: "exact phrases", a leading minus to leave a word out, and OR between alternatives. */
+                search?: string;
                 page?: number;
                 limit?: number;
             };
@@ -18471,7 +18531,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Users followed by the authenticated user and how many follow them */
+            /** @description Users and topics followed by the authenticated user, and how many follow them */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -18484,6 +18544,12 @@ export interface operations {
                      *           "id": 2,
                      *           "username": "maya",
                      *           "avatarUrl": null,
+                     *           "followedAt": "2026-09-01T08:30:00.000Z"
+                     *         }
+                     *       ],
+                     *       "topics": [
+                     *         {
+                     *           "tag": "gratitude",
                      *           "followedAt": "2026-09-01T08:30:00.000Z"
                      *         }
                      *       ],
@@ -18615,6 +18681,132 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["FollowStateDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    FollowsController_followTopic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The tag, matched ignoring case */
+                tag: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The topic is followed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "tag": "gratitude",
+                     *       "following": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TopicFollowStateDto"];
+                };
+            };
+            /** @description The tag is empty or longer than 50 characters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "The tag is empty or longer than 50 characters",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    FollowsController_unfollowTopic: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The tag, matched ignoring case */
+                tag: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The topic is no longer followed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "tag": "gratitude",
+                     *       "following": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TopicFollowStateDto"];
+                };
+            };
+            /** @description The tag is empty or longer than 50 characters */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "The tag is empty or longer than 50 characters",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */

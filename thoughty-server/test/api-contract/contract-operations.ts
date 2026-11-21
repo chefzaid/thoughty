@@ -170,6 +170,8 @@ export const CONTRACT_SUITES = {
     'GET /api/follows',
     'PUT /api/follows/{userId}',
     'DELETE /api/follows/{userId}',
+    'PUT /api/follows/topics/{tag}',
+    'DELETE /api/follows/topics/{tag}',
     'GET /api/entries/{entryId}/comments',
     'POST /api/entries/{entryId}/comments',
     'DELETE /api/entries/{entryId}/comments/{commentId}',

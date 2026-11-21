@@ -19,6 +19,26 @@ describe('feedService', () => {
     expect(result).toEqual({ data: payload, error: null });
   });
 
+  it('narrows the feed to a topic and a word search', async () => {
+    const authFetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ entries: [] }), { status: 200 }));
+
+    await createFeedService(authFetch).fetchPublicFeed('community', 1, 10, { tag: 'self care', search: 'walk' });
+
+    expect(authFetch).toHaveBeenCalledWith('/api/entries/feed?scope=community&page=1&limit=10&tag=self+care&search=walk');
+  });
+
+  it('follows a topic with PUT and unfollows it with DELETE, its tag encoded', async () => {
+    const authFetch = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ tag: 'a/b', following: true }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ tag: 'a/b', following: false }), { status: 200 }));
+    const service = createFeedService(authFetch);
+
+    await expect(service.setTopicFollowing('A/B', true)).resolves.toEqual({ data: { tag: 'a/b', following: true }, error: null });
+    await expect(service.setTopicFollowing('A/B', false)).resolves.toEqual({ data: { tag: 'a/b', following: false }, error: null });
+    expect(authFetch).toHaveBeenNthCalledWith(1, '/api/follows/topics/A%2FB', { method: 'PUT' });
+    expect(authFetch).toHaveBeenNthCalledWith(2, '/api/follows/topics/A%2FB', { method: 'DELETE' });
+  });
+
   it('returns an API error without exposing a malformed response', async () => {
     const authFetch = vi.fn().mockResolvedValue(new Response(
       JSON.stringify({ message: 'Feed unavailable' }),

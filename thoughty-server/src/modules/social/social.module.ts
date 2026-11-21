@@ -6,8 +6,10 @@ import {
   EntryComment,
   EntryLike,
   SavedEntry,
+  TopicFollow,
   UserFollow,
 } from '@/database/entities';
+import { EntriesModule } from '@/modules/entries';
 import { AchievementsController } from './achievements.controller';
 import { AchievementsService } from './achievements.service';
 import { CommentsController } from './comments.controller';
@@ -22,10 +24,20 @@ import { LikesService } from './likes.service';
 import { PublicFeedService } from './public-feed.service';
 import { SavedEntriesController } from './saved-entries.controller';
 import { SavedEntriesService } from './saved-entries.service';
+import { TopicFollowsService } from './topic-follows.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserFollow, EntryComment, EntryLike, CommentLike, SavedEntry, Entry]),
+    TypeOrmModule.forFeature([
+      UserFollow,
+      TopicFollow,
+      EntryComment,
+      EntryLike,
+      CommentLike,
+      SavedEntry,
+      Entry,
+    ]),
+    EntriesModule,
   ],
   controllers: [
     FeedController,
@@ -39,6 +51,7 @@ import { SavedEntriesService } from './saved-entries.service';
   providers: [
     PublicFeedService,
     FollowsService,
+    TopicFollowsService,
     CommentsService,
     LikesService,
     SavedEntriesService,

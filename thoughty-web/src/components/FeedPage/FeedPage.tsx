@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { useFeedService } from '../../hooks/useFeedService';
-import type { PublicFeedEntry, PublicFeedScope } from '../../services/api';
+import type { PublicFeedEntry, PublicFeedFilters, PublicFeedScope } from '../../services/api';
 import { resolveLanguage } from '../../utils/language';
 import { pluralPhrase } from '../../utils/pluralPhrase';
 import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
@@ -15,6 +15,7 @@ import LikeButton from './LikeButton';
 import SaveButton from './SaveButton';
 import FeedAuthor from './FeedAuthor';
 import FollowingPanel from './FollowingPanel';
+import FeedTopicBar from './FeedTopicBar';
 import { useFeedSpeech } from './useFeedSpeech';
 import { useFollows } from './useFollows';
 import './FeedPage.css';
@@ -38,10 +39,27 @@ interface FeedPageProps {
   readonly onOpenLeaderboard?: () => void;
   /** **Write about this**: opens the journal's composer on a quote of another writer's entry. */
   readonly onWriteAbout?: (entry: PublicFeedEntry) => void;
+  /** The topic (a tag) and the word search narrowing every tab, kept in the address by the route. */
+  readonly filters?: PublicFeedFilters;
+  /** Opens a topic, runs a search or clears them; without it the feed has no search and its tags are plain text. */
+  readonly onFiltersChange?: (filters: PublicFeedFilters) => void;
   readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-function FeedPage({ theme = 'dark', language, readDates = true, ttsVoiceUri, onOpenLeaderboard, onWriteAbout, t }: Readonly<FeedPageProps>) {
+const NO_FILTERS: PublicFeedFilters = {};
+
+function FeedPage({
+  theme = 'dark',
+  language,
+  readDates = true,
+  ttsVoiceUri,
+  onOpenLeaderboard,
+  onWriteAbout,
+  filters = NO_FILTERS,
+  onFiltersChange,
+  t,
+}: Readonly<FeedPageProps>) {
+  const { tag, search } = filters;
   const uiLanguage = resolveLanguage(language);
   const feedService = useFeedService();
   const currentUserId = useAuth().user?.id;
@@ -54,6 +72,7 @@ function FeedPage({ theme = 'dark', language, readDates = true, ttsVoiceUri, onO
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [imageEntry, setImageEntry] = useState<PublicFeedEntry | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const generationRef = useRef(0);
   /** In-flight page requests, so the infinite scroll and reading aloud share one request per page. */
@@ -72,7 +91,7 @@ function FeedPage({ theme = 'dark', language, readDates = true, ttsVoiceUri, onO
 
     setLoading(true);
     setError(null);
-    const request = feedService.fetchPublicFeed(requestScope, requestedPage, PAGE_SIZE).then((result) => {
+    const request = feedService.fetchPublicFeed(requestScope, requestedPage, PAGE_SIZE, { tag, search }).then((result) => {
       pendingRequestsRef.current.delete(requestKey);
       if (generation !== generationRef.current) return [];
 
@@ -92,7 +111,7 @@ function FeedPage({ theme = 'dark', language, readDates = true, ttsVoiceUri, onO
     });
     pendingRequestsRef.current.set(requestKey, request);
     return request;
-  }, [feedService]);
+  }, [feedService, tag, search]);
 
   useEffect(() => {
     const generation = generationRef.current + 1;
@@ -124,6 +143,18 @@ function FeedPage({ theme = 'dark', language, readDates = true, ttsVoiceUri, onO
     setScope(nextScope);
   };
 
+  const changeFilters = (next: PublicFeedFilters) => {
+    speech.stop();
+    onFiltersChange?.(next);
+  };
+
+  /** A tag under an entry opens its topic: everyone's public entries carrying it, from the top. */
+  const openTopic = (topic: string) => {
+    changeScope('community');
+    changeFilters({ tag: topic });
+    sectionRef.current?.scrollIntoView?.({ block: 'start' });
+  };
+
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel || !hasMore || loading || typeof IntersectionObserver === 'undefined') return undefined;
@@ -141,10 +172,12 @@ function FeedPage({ theme = 'dark', language, readDates = true, ttsVoiceUri, onO
     void fetchPage(scope, entries.length === 0 ? 1 : page + 1, entries.length === 0, generation);
   };
 
-  const emptyMessage = t(SCOPES.find((option) => option.scope === scope)!.empty);
+  const emptyMessage = tag || search
+    ? t('feedEmptyFiltered')
+    : t(SCOPES.find((option) => option.scope === scope)!.empty);
 
   return (
-    <section className={`feed-page ${theme}`} aria-labelledby="feed-heading">
+    <section ref={sectionRef} className={`feed-page ${theme}`} aria-labelledby="feed-heading">
       <PageHeader
         title={t('feed')}
         titleId="feed-heading"
@@ -175,9 +208,25 @@ function FeedPage({ theme = 'dark', language, readDates = true, ttsVoiceUri, onO
         )}
       />
 
+      {onFiltersChange && (
+        <FeedTopicBar
+          filters={filters}
+          onChange={changeFilters}
+          topicFollow={tag ? {
+            followed: follows.isTopicFollowed(tag),
+            pending: follows.isTopicPending(tag),
+            onToggle: () => void follows.setTopicFollow(tag, !follows.isTopicFollowed(tag)),
+          } : undefined}
+          t={t}
+        />
+      )}
+
       {scope === 'following' && (
         <FollowingPanel
           following={follows.following}
+          topics={follows.topics}
+          isTopicPending={follows.isTopicPending}
+          onUnfollowTopic={(topic) => void follows.setTopicFollow(topic, false)}
           followerCount={follows.followerCount}
           loaded={follows.loaded}
           loadError={follows.loadError}
@@ -212,7 +261,20 @@ function FeedPage({ theme = 'dark', language, readDates = true, ttsVoiceUri, onO
             </div>
             {entry.tags.length > 0 && (
               <ul className="feed-tags" aria-label={t('tags')}>
-                {entry.tags.map((tag) => <li key={tag}>#{tag}</li>)}
+                {entry.tags.map((entryTag) => (
+                  <li key={entryTag}>
+                    {onFiltersChange ? (
+                      <button
+                        type="button"
+                        className="feed-tag"
+                        title={t('feedOpenTopic', { tag: entryTag })}
+                        onClick={() => openTopic(entryTag)}
+                      >
+                        #{entryTag}
+                      </button>
+                    ) : `#${entryTag}`}
+                  </li>
+                ))}
               </ul>
             )}
             <EntryComments

@@ -1,5 +1,12 @@
 import { fulfillJson, type RouteContext } from './mockApp.route-utils';
 import type { MockAppState, MockEntry } from './mockApp.shared';
+import {
+  carriesFollowedTopic,
+  carriesTopic,
+  followedTopicsResponse,
+  handleTopicFollowRoutes,
+  matchesFeedSearch,
+} from './mockApp.routes.topics';
 
 const authorId = (entry: MockEntry, state: MockAppState) => entry.userId ?? state.user.id;
 
@@ -27,10 +34,14 @@ async function handlePublicFeedRoute({ route, request, pathname, searchParams, s
   const scope = searchParams.get('scope') || 'community';
   const page = Math.max(1, Number(searchParams.get('page') || '1'));
   const limit = Math.min(20, Math.max(1, Number(searchParams.get('limit') || '10')));
+  const tag = searchParams.get('tag');
+  const search = searchParams.get('search');
   const inScope = (entry: MockEntry) => {
     const id = authorId(entry, state);
     if (scope === 'mine') return id === state.user.id;
-    if (scope === 'following') return state.followedUserIds.includes(id);
+    if (scope === 'following') {
+      return state.followedUserIds.includes(id) || (id !== state.user.id && carriesFollowedTopic(entry, state));
+    }
     if (scope === 'saved') return id !== state.user.id && state.savedEntryIds.includes(entry.id);
     return id !== state.user.id;
   };
@@ -38,6 +49,8 @@ async function handlePublicFeedRoute({ route, request, pathname, searchParams, s
   const savedOrder = (entry: MockEntry) => state.savedEntryIds.indexOf(entry.id);
   const eligibleEntries = feedEligibleEntries(state)
     .filter(inScope)
+    .filter((entry) => !tag || carriesTopic(entry, tag))
+    .filter((entry) => !search || matchesFeedSearch(entry, search))
     .sort((left, right) => {
       if (scope === 'saved') return savedOrder(left) - savedOrder(right);
       const dateComparison = (right.createdAt || right.date).localeCompare(left.createdAt || left.date);
@@ -88,6 +101,7 @@ async function handleFollowRoutes({ route, request, pathname, state }: RouteCont
           followedAt: '2026-07-01T12:00:00.000Z',
         }))
         .sort((left, right) => left.username.localeCompare(right.username)),
+      topics: followedTopicsResponse(state),
       followerCount: state.followerCount,
     });
     return true;
@@ -310,6 +324,7 @@ export async function handleSocialRoutes(context: RouteContext): Promise<boolean
   return (await handlePublicFeedRoute(context))
     || (await handleAchievementsRoute(context))
     || (await handleLeaderboardRoute(context))
+    || (await handleTopicFollowRoutes(context))
     || (await handleFollowRoutes(context))
     || (await handleLikeRoutes(context))
     || (await handleSaveRoute(context))

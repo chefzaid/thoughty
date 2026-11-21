@@ -98,3 +98,14 @@
 .feed-following-list button:hover {
   background: rgba(148, 163, 184, 0.2);
 }
+
+.feed-following-subtitle {
+  margin: 0.9rem 0 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* A topic has no avatar: its name keeps the same distance from the chip's edge. */
+.feed-following-list li.feed-following-topic {
+  padding-left: 0.7rem;
+}

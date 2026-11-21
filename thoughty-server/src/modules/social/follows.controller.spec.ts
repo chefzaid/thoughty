@@ -2,7 +2,8 @@ import { FollowsController } from './follows.controller';
 
 describe('FollowsController', () => {
   const service = { list: jest.fn(), follow: jest.fn(), unfollow: jest.fn() };
-  const controller = new FollowsController(service as never);
+  const topics = { follow: jest.fn(), unfollow: jest.fn() };
+  const controller = new FollowsController(service as never, topics as never);
   const user = { userId: 4 };
 
   afterEach(() => jest.clearAllMocks());
@@ -30,5 +31,21 @@ describe('FollowsController', () => {
     });
     expect(service.follow).toHaveBeenCalledWith(4, 9);
     expect(service.unfollow).toHaveBeenCalledWith(4, 9);
+  });
+
+  it('follows and unfollows a topic for the authenticated user', async () => {
+    topics.follow.mockResolvedValue({ tag: 'gratitude', following: true });
+    topics.unfollow.mockResolvedValue({ tag: 'gratitude', following: false });
+
+    await expect(controller.followTopic(user as never, { tag: 'Gratitude' })).resolves.toEqual({
+      tag: 'gratitude',
+      following: true,
+    });
+    await expect(controller.unfollowTopic(user as never, { tag: 'Gratitude' })).resolves.toEqual({
+      tag: 'gratitude',
+      following: false,
+    });
+    expect(topics.follow).toHaveBeenCalledWith(4, 'Gratitude');
+    expect(topics.unfollow).toHaveBeenCalledWith(4, 'Gratitude');
   });
 });

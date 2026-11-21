@@ -1,7 +1,7 @@
 import { Navigate, useSearchParams } from 'react-router-dom';
 
 import FeedPage from '../components/FeedPage/FeedPage';
-import type { PublicFeedEntry } from '../services/api';
+import type { PublicFeedEntry, PublicFeedFilters } from '../services/api';
 import LeaderboardPage from '../components/FeedPage/LeaderboardPage';
 import { useQuietMode } from '../components/QuietMode/quietMode';
 import { getPathForView } from '../types';
@@ -19,8 +19,17 @@ interface FeedRouteProps {
   readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 
+/** The address of a feed narrowed to a topic (`?tag=gratitude`) and a word search (`?search=walk`). */
+function feedFilterParams({ tag, search }: PublicFeedFilters): Record<string, string> {
+  return {
+    ...(tag ? { tag } : {}),
+    ...(search ? { search } : {}),
+  };
+}
+
 /**
- * `/feed?view=leaderboard` shows the leaderboard; the feed itself is the default view. Quiet mode has no
+ * `/feed?view=leaderboard` shows the leaderboard; the feed itself is the default view, narrowed by `?tag=`
+ * and `?search=` in the address, so a topic can be linked to and Back returns to the previous one. Quiet mode has no
  * leaderboard: no link to it, and its address shows the feed. While public sharing is switched off, the page
  * says so instead of asking for a feed the API refuses.
  */
@@ -48,6 +57,11 @@ function FeedRoute({ language, readDates, ttsVoiceUri, ...props }: Readonly<Feed
       language={language}
       readDates={readDates}
       ttsVoiceUri={ttsVoiceUri}
+      filters={{
+        tag: searchParams.get('tag')?.trim() || undefined,
+        search: searchParams.get('search')?.trim() || undefined,
+      }}
+      onFiltersChange={(filters) => setSearchParams(feedFilterParams(filters))}
       onOpenLeaderboard={quiet ? undefined : () => setSearchParams({ view: 'leaderboard' })}
     />
   );

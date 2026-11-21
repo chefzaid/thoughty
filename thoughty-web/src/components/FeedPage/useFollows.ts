@@ -1,15 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import type { FeedService, FollowedUser, PublicFeedAuthor } from '../../services/api';
+import type { FeedService, FollowedTopic, FollowedUser, PublicFeedAuthor } from '../../services/api';
 
 const byUsername = (left: FollowedUser, right: FollowedUser) => left.username.localeCompare(right.username);
+const byTag = (left: FollowedTopic, right: FollowedTopic) => left.tag.localeCompare(right.tag);
+/** A topic is its tag ignoring case, as the API matches it. */
+const sameTopic = (left: string, right: string) => left.toLowerCase() === right.toLowerCase();
 
 /**
- * Tracks who the current user follows. Follow changes made on this page override
+ * Tracks who and which topics the current user follows. Follow changes made on this page override
  * the `isFollowed` flag the feed returned, so every card by the same author stays in sync.
  */
 export function useFollows(feedService: FeedService) {
   const [following, setFollowing] = useState<FollowedUser[]>([]);
+  const [topics, setTopics] = useState<FollowedTopic[]>([]);
+  const [pendingTopics, setPendingTopics] = useState<ReadonlySet<string>>(new Set());
   const [followerCount, setFollowerCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -23,6 +28,7 @@ export function useFollows(feedService: FeedService) {
       if (!active) return;
       if (result.data) {
         setFollowing([...result.data.following].sort(byUsername));
+        setTopics([...result.data.topics].sort(byTag));
         setFollowerCount(result.data.followerCount);
       }
       setLoadError(!result.data);
@@ -67,5 +73,48 @@ export function useFollows(feedService: FeedService) {
     });
   }, [feedService]);
 
-  return { following, followerCount, loaded, loadError, updateError, pendingIds, isFollowed, setFollow };
+  const isTopicFollowed = useCallback(
+    (tag: string) => topics.some((topic) => sameTopic(topic.tag, tag)),
+    [topics],
+  );
+
+  const setTopicFollow = useCallback(async (tag: string, follow: boolean) => {
+    const key = tag.toLowerCase();
+    setPendingTopics((current) => new Set(current).add(key));
+    setUpdateError(false);
+    const result = await feedService.setTopicFollowing(tag, follow);
+    setPendingTopics((current) => {
+      const next = new Set(current);
+      next.delete(key);
+      return next;
+    });
+
+    if (!result.data) {
+      setUpdateError(true);
+      return;
+    }
+
+    const { tag: storedTag } = result.data;
+    setTopics((current) => {
+      const others = current.filter((topic) => !sameTopic(topic.tag, storedTag));
+      return follow ? [...others, { tag: storedTag, followedAt: new Date().toISOString() }].sort(byTag) : others;
+    });
+  }, [feedService]);
+
+  const isTopicPending = useCallback((tag: string) => pendingTopics.has(tag.toLowerCase()), [pendingTopics]);
+
+  return {
+    following,
+    topics,
+    followerCount,
+    loaded,
+    loadError,
+    updateError,
+    pendingIds,
+    isFollowed,
+    setFollow,
+    isTopicFollowed,
+    isTopicPending,
+    setTopicFollow,
+  };
 }

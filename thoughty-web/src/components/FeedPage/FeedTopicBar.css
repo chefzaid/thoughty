@@ -1,0 +1,161 @@
+.feed-topic-bar {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.75rem 0 0.5rem;
+}
+
+.feed-search {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.2rem 0.2rem 0.7rem;
+  border: 1px solid #4b5563;
+  border-radius: 0.5rem;
+  background: #111827;
+  color: #9ca3af;
+}
+
+.feed-page.light .feed-search {
+  border-color: #d1d5db;
+  background: #fff;
+  color: #6b7280;
+}
+
+.feed-search:has(input:focus-visible) {
+  outline: 3px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+.feed-search input {
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 0.4rem 0.2rem;
+  border: 0;
+  background: transparent;
+  color: #f3f4f6;
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.feed-page.light .feed-search input {
+  color: #111827;
+}
+
+/* The bar's own clear button replaces the browser's. */
+.feed-search input::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.feed-search button,
+.feed-topic-close {
+  display: inline-flex;
+  min-height: 2rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.feed-search-clear,
+.feed-topic-close {
+  width: 2rem;
+}
+
+.feed-search .feed-search-submit {
+  padding: 0.3rem 0.75rem;
+  background: #374151;
+  color: #f3f4f6;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.feed-page.light .feed-search .feed-search-submit {
+  background: #1f2937;
+  color: #f9fafb;
+}
+
+.feed-search .feed-search-submit:hover {
+  background: #4b5563;
+}
+
+.feed-search-clear:hover,
+.feed-topic-close:hover {
+  background: rgba(148, 163, 184, 0.2);
+}
+
+.feed-search button:focus-visible,
+.feed-topic-close:focus-visible {
+  outline: 3px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+.feed-topic {
+  display: grid;
+  grid-template-areas: 'title follow close';
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #374151;
+  border-radius: 0.5rem;
+  background: #1f2937;
+}
+
+.feed-page.light .feed-topic {
+  border-color: #e5e7eb;
+  background: #fff;
+}
+
+.feed-topic > div {
+  grid-area: title;
+  min-width: 0;
+}
+
+.feed-topic .feed-follow {
+  grid-area: follow;
+}
+
+.feed-topic-close {
+  grid-area: close;
+}
+
+/* On a phone the follow button goes under the topic, which keeps its close button beside it. */
+@media (max-width: 640px) {
+  .feed-topic {
+    grid-template-areas:
+      'title close'
+      'follow follow';
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .feed-topic .feed-follow {
+    justify-self: start;
+  }
+}
+
+.feed-topic-label {
+  margin: 0;
+  color: #9ca3af;
+  font-size: 0.75rem;
+}
+
+.feed-page.light .feed-topic-label {
+  color: #6b7280;
+}
+
+.feed-topic h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #67e8f9;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.feed-page.light .feed-topic h2 {
+  color: #0e7490;
+}

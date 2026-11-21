@@ -1,5 +1,5 @@
 import type { components } from "../../src/generated/openapi";
-import { type MockAppState, type MockBookVersion, type MockEntry } from "./mockApp.shared";
+import { type MockAppState, type MockEntry } from "./mockApp.shared";
 import { fulfillApiError, fulfillJson, readQueryFlag, type RouteContext } from "./mockApp.route-utils";
 import { getFilteredEntries } from "./mockApp.routes.entries";
 import { byStart, mockEraContains, type MockLifeEra } from "./mockApp.routes.life-eras";
@@ -7,6 +7,20 @@ import { buildMockBookPdf } from "./mockBookPdf";
 import { bookInlineImages } from "./mockApp.routes.attachments";
 import { MOCK_BOOK_COPY, mockBookDate, mockBookMonth, type MockBookLanguage } from "./mockBookLanguage";
 import { isMockSealed } from "./mockApp.routes.time-capsules";
+
+export interface MockBookVersion {
+  id: number;
+  versionNumber: number;
+  title: string;
+  format: "pdf" | "epub" | "html" | "md";
+  filename: string;
+  chapterCount: number;
+  entryCount: number;
+  addedEntryCount: number;
+  addedChapterTitles: string[];
+  source: components["schemas"]["BookVersionSourceDto"];
+  createdAt: string;
+}
 
 type BookPreview = components["schemas"]["BookPreviewResponseDto"];
 type BookSource = MockBookVersion["source"];

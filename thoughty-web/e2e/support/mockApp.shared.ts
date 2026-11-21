@@ -7,6 +7,7 @@ import { createMockOptInEmail, type MockOptInEmail } from "./mockApp.routes.opt-
 import { addMockMentionedPeople, type MockPerson } from "./mockApp.routes.people";
 import type { MockDiary } from "./mockApp.diaries";
 import type { MockFeatureFlags } from "./mockApp.feature-flags";
+import type { MockBookVersion } from "./mockApp.routes.books";
 import type { components } from "../../src/generated/openapi";
 import { DEFAULT_CLOUD_FILES, DEFAULT_CLOUD_SCHEDULES, DEFAULT_CLOUD_STATUS, DEFAULT_DIARIES, DEFAULT_FEATURE_REQUESTS } from "./mockApp.defaults";
 import { createMockContentLockState, type MockContentLockState } from "./mockApp.content-lock";
@@ -107,20 +108,6 @@ export interface MockComment {
   likeCount?: number;
 }
 
-export interface MockBookVersion {
-  id: number;
-  versionNumber: number;
-  title: string;
-  format: "pdf" | "epub" | "html" | "md";
-  filename: string;
-  chapterCount: number;
-  entryCount: number;
-  addedEntryCount: number;
-  addedChapterTitles: string[];
-  source: components["schemas"]["BookVersionSourceDto"];
-  createdAt: string;
-}
-
 export interface SetupMockAppOptions {
   startAuthenticated?: boolean;
   initialEntries?: MockEntry[];
@@ -138,6 +125,8 @@ export interface SetupMockAppOptions {
   likedEntryIds?: number[];
   likedCommentIds?: number[];
   savedEntryIds?: number[];
+  /** Feed topics followed, in lower case. */
+  followedTopics?: string[];
   /** A started guided memoir (defaults filled in), or null/omitted for one not started yet. */
   memoirProgram?: Partial<MockMemoirProgram> | null;
   savedSearches?: MockSavedSearch[];
@@ -204,6 +193,7 @@ export interface MockAppState {
   likedEntryIds: number[];
   likedCommentIds: number[];
   savedEntryIds: number[];
+  followedTopics: string[];
   bookVersions: MockBookVersion[];
   /** What each saved version held, so the next one can count what it adds. */
   bookVersionManifests: Record<number, { entryIds: number[]; chapterTitles: string[] }>;
@@ -442,6 +432,7 @@ export function createMockAppState(
     likedEntryIds: [...(options.likedEntryIds || [])],
     likedCommentIds: [...(options.likedCommentIds || [])],
     savedEntryIds: [...(options.savedEntryIds || [])],
+    followedTopics: [...(options.followedTopics || [])],
     bookVersions: [],
     bookVersionManifests: {},
     savedSearches: (options.savedSearches || []).map((saved) => ({ ...saved, filters: { ...saved.filters } })),

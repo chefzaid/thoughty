@@ -24,6 +24,7 @@ import {
   ShareLink,
   ComposerDraft,
   SavedEntry,
+  TopicFollow,
 } from '@/database/entities';
 import { ConfigController } from './config.controller';
 import { ConfigService } from './config.service';
@@ -56,6 +57,7 @@ import { TimeCapsulesModule } from '@/modules/time-capsules/time-capsules.module
       ShareLink,
       ComposerDraft,
       SavedEntry,
+      TopicFollow,
     ]),
     TimeCapsulesModule,
   ],

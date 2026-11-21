@@ -11038,6 +11038,28 @@
             }
           },
           {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "Only entries carrying this tag, ignoring case (a feed topic)",
+            "schema": {
+              "maxLength": 50,
+              "example": "gratitude",
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Word search over the entries' titles, text and tags (never moods or feelings), with the operators of the journal search: \"exact phrases\", a leading minus to leave a word out, and OR between alternatives.",
+            "schema": {
+              "maxLength": 500,
+              "example": "morning walk",
+              "type": "string"
+            }
+          },
+          {
             "name": "page",
             "required": false,
             "in": "query",
@@ -11135,7 +11157,7 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Users followed by the authenticated user and how many follow them",
+            "description": "Users and topics followed by the authenticated user, and how many follow them",
             "content": {
               "application/json": {
                 "schema": {
@@ -11147,6 +11169,12 @@
                       "id": 2,
                       "username": "maya",
                       "avatarUrl": null,
+                      "followedAt": "2026-09-01T08:30:00.000Z"
+                    }
+                  ],
+                  "topics": [
+                    {
+                      "tag": "gratitude",
                       "followedAt": "2026-09-01T08:30:00.000Z"
                     }
                   ],
@@ -11177,7 +11205,7 @@
             "bearer": []
           }
         ],
-        "summary": "List followed users and the follower count",
+        "summary": "List followed users and topics, and the follower count",
         "tags": [
           "Social"
         ]
@@ -11320,6 +11348,154 @@
           }
         ],
         "summary": "Stop following a user",
+        "tags": [
+          "Social"
+        ]
+      }
+    },
+    "/api/follows/topics/{tag}": {
+      "put": {
+        "operationId": "FollowsController_followTopic",
+        "parameters": [
+          {
+            "name": "tag",
+            "required": true,
+            "in": "path",
+            "description": "The tag, matched ignoring case",
+            "schema": {
+              "maxLength": 50,
+              "example": "gratitude",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The topic is followed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicFollowStateDto"
+                },
+                "example": {
+                  "tag": "gratitude",
+                  "following": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The tag is empty or longer than 50 characters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "The tag is empty or longer than 50 characters",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Follow a topic: public entries carrying the tag, ignoring case, join the Following feed",
+        "tags": [
+          "Social"
+        ]
+      },
+      "delete": {
+        "operationId": "FollowsController_unfollowTopic",
+        "parameters": [
+          {
+            "name": "tag",
+            "required": true,
+            "in": "path",
+            "description": "The tag, matched ignoring case",
+            "schema": {
+              "maxLength": 50,
+              "example": "gratitude",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The topic is no longer followed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TopicFollowStateDto"
+                },
+                "example": {
+                  "tag": "gratitude",
+                  "following": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The tag is empty or longer than 50 characters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "The tag is empty or longer than 50 characters",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Stop following a topic",
         "tags": [
           "Social"
         ]
@@ -24153,6 +24329,28 @@
           "followedAt": "2026-09-01T08:30:00.000Z"
         }
       },
+      "FollowedTopicDto": {
+        "type": "object",
+        "properties": {
+          "tag": {
+            "type": "string",
+            "example": "gratitude",
+            "description": "The tag, in lower case"
+          },
+          "followedAt": {
+            "type": "string",
+            "example": "2026-09-01T08:30:00.000Z"
+          }
+        },
+        "required": [
+          "tag",
+          "followedAt"
+        ],
+        "example": {
+          "tag": "gratitude",
+          "followedAt": "2026-09-01T08:30:00.000Z"
+        }
+      },
       "FollowsResponseDto": {
         "type": "object",
         "properties": {
@@ -24163,6 +24361,13 @@
               "$ref": "#/components/schemas/FollowedUserDto"
             }
           },
+          "topics": {
+            "description": "Topics (tags) the current user follows, by name",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FollowedTopicDto"
+            }
+          },
           "followerCount": {
             "type": "number",
             "example": 3,
@@ -24171,6 +24376,7 @@
         },
         "required": [
           "following",
+          "topics",
           "followerCount"
         ],
         "example": {
@@ -24179,6 +24385,12 @@
               "id": 2,
               "username": "maya",
               "avatarUrl": null,
+              "followedAt": "2026-09-01T08:30:00.000Z"
+            }
+          ],
+          "topics": [
+            {
+              "tag": "gratitude",
               "followedAt": "2026-09-01T08:30:00.000Z"
             }
           ],
@@ -24203,6 +24415,28 @@
         ],
         "example": {
           "userId": 2,
+          "following": true
+        }
+      },
+      "TopicFollowStateDto": {
+        "type": "object",
+        "properties": {
+          "tag": {
+            "type": "string",
+            "example": "gratitude",
+            "description": "The tag, in lower case"
+          },
+          "following": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "tag",
+          "following"
+        ],
+        "example": {
+          "tag": "gratitude",
           "following": true
         }
       },

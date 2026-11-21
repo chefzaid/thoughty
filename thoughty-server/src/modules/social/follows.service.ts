@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { Entry, UserFollow } from '@/database/entities';
 import { applyPublicFeedVisibility } from './public-feed-visibility';
 import type { FollowStateDto, FollowsResponseDto } from './dto';
+import { TopicFollowsService } from './topic-follows.service';
 
 @Injectable()
 export class FollowsService {
@@ -13,10 +14,11 @@ export class FollowsService {
     private readonly followRepository: Repository<UserFollow>,
     @InjectRepository(Entry)
     private readonly entryRepository: Repository<Entry>,
+    private readonly topicFollowsService: TopicFollowsService,
   ) {}
 
   async list(userId: number): Promise<FollowsResponseDto> {
-    const [follows, followerCount] = await Promise.all([
+    const [follows, topics, followerCount] = await Promise.all([
       this.followRepository
         .createQueryBuilder('f')
         .innerJoinAndSelect('f.followed', 'u')
@@ -25,6 +27,7 @@ export class FollowsService {
         .andWhere('u.deleted_at IS NULL')
         .orderBy('u.username', 'ASC')
         .getMany(),
+      this.topicFollowsService.list(userId),
       this.countFollowers(userId),
     ]);
 
@@ -35,6 +38,7 @@ export class FollowsService {
         avatarUrl: follow.followed.avatarUrl,
         followedAt: new Date(follow.createdAt).toISOString(),
       })),
+      topics,
       followerCount,
     };
   }

@@ -62,7 +62,7 @@ describe('FeedPage reading aloud', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     spoken.length = 0;
-    fetchFollows.mockResolvedValue({ data: { following: [], followerCount: 0 }, error: null });
+    fetchFollows.mockResolvedValue({ data: { following: [], topics: [], followerCount: 0 }, error: null });
     (synth.speak as ReturnType<typeof vi.fn>).mockImplementation((utterance: FakeUtterance) => spoken.push(utterance));
     (synth.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
       { voiceURI: 'chosen', lang: 'en-GB', name: 'Chosen', default: false },
@@ -125,7 +125,7 @@ describe('FeedPage reading aloud', () => {
     finishCurrent();
     finishCurrent();
     await waitFor(() => expect(spoken).toHaveLength(3));
-    expect(fetchPublicFeed).toHaveBeenLastCalledWith('community', 2, 10);
+    expect(fetchPublicFeed).toHaveBeenLastCalledWith('community', 2, 10, {});
     expect(await screen.findByText('Entry 3 is about the day')).toBeInTheDocument();
 
     finishCurrent();

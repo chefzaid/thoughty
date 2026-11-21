@@ -2,8 +2,9 @@ import { Controller, Delete, Get, Param, ParseIntPipe, Put } from '@nestjs/commo
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthenticatedUser, CurrentUser, RATE_LIMITS, throttleDefault } from '@/common';
-import { FollowStateDto, FollowsResponseDto } from './dto';
+import { FollowStateDto, FollowsResponseDto, TopicFollowStateDto, TopicParamDto } from './dto';
 import { FollowsService } from './follows.service';
+import { TopicFollowsService } from './topic-follows.service';
 import { RequireFeature } from '@/common/feature-flags';
 
 @ApiTags('Social')
@@ -11,13 +12,16 @@ import { RequireFeature } from '@/common/feature-flags';
 @RequireFeature('publicSharing')
 @Controller('follows')
 export class FollowsController {
-  constructor(private readonly followsService: FollowsService) {}
+  constructor(
+    private readonly followsService: FollowsService,
+    private readonly topicFollowsService: TopicFollowsService,
+  ) {}
 
   @Get()
-  @ApiOperation({ summary: 'List followed users and the follower count' })
+  @ApiOperation({ summary: 'List followed users and topics, and the follower count' })
   @ApiResponse({
     status: 200,
-    description: 'Users followed by the authenticated user and how many follow them',
+    description: 'Users and topics followed by the authenticated user, and how many follow them',
     type: FollowsResponseDto,
   })
   list(@CurrentUser() user: AuthenticatedUser): Promise<FollowsResponseDto> {
@@ -46,5 +50,31 @@ export class FollowsController {
     @Param('userId', ParseIntPipe) userId: number,
   ): Promise<FollowStateDto> {
     return this.followsService.unfollow(user.userId, userId);
+  }
+
+  @Put('topics/:tag')
+  @Throttle(throttleDefault(RATE_LIMITS.socialWrite))
+  @ApiOperation({
+    summary: 'Follow a topic: public entries carrying the tag, ignoring case, join the Following feed',
+  })
+  @ApiResponse({ status: 200, description: 'The topic is followed', type: TopicFollowStateDto })
+  @ApiResponse({ status: 400, description: 'The tag is empty or longer than 50 characters' })
+  followTopic(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param() { tag }: TopicParamDto,
+  ): Promise<TopicFollowStateDto> {
+    return this.topicFollowsService.follow(user.userId, tag);
+  }
+
+  @Delete('topics/:tag')
+  @Throttle(throttleDefault(RATE_LIMITS.socialWrite))
+  @ApiOperation({ summary: 'Stop following a topic' })
+  @ApiResponse({ status: 200, description: 'The topic is no longer followed', type: TopicFollowStateDto })
+  @ApiResponse({ status: 400, description: 'The tag is empty or longer than 50 characters' })
+  unfollowTopic(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param() { tag }: TopicParamDto,
+  ): Promise<TopicFollowStateDto> {
+    return this.topicFollowsService.unfollow(user.userId, tag);
   }
 }

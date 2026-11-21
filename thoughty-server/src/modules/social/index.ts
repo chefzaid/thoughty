@@ -9,6 +9,7 @@ export * from './likes.controller';
 export * from './likes.service';
 export * from './saved-entries.controller';
 export * from './saved-entries.service';
+export * from './topic-follows.service';
 export * from './leaderboard.controller';
 export * from './leaderboard.service';
 export * from './achievements.controller';

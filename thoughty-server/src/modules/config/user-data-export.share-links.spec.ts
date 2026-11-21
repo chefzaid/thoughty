@@ -24,7 +24,7 @@ describe('UserDataExportService share links', () => {
     // Constructor order: 18 repositories, the time capsules repository and service, then the share links
     const repositories = Array.from({ length: 19 }, emptyRepository);
     const Service = UserDataExportService as unknown as new (...dependencies: unknown[]) => UserDataExportService;
-    const service = new Service(...repositories, timeCapsules, shareLinkRepository, emptyRepository(), emptyRepository(), emptyRepository());
+    const service = new Service(...repositories, timeCapsules, shareLinkRepository, emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository());
 
     const data = await service.downloadData(1);
 

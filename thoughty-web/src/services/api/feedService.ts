@@ -9,6 +9,10 @@ export type PublicFeedResponse = paths['/api/entries/feed']['get']['responses'][
 export type FollowedUser = components['schemas']['FollowedUserDto'];
 export type FollowsResponse = components['schemas']['FollowsResponseDto'];
 export type FollowState = components['schemas']['FollowStateDto'];
+export type FollowedTopic = components['schemas']['FollowedTopicDto'];
+export type TopicFollowState = components['schemas']['TopicFollowStateDto'];
+/** What narrows any feed tab: a topic (a tag, ignoring case) and a word search. */
+export type PublicFeedFilters = Pick<PublicFeedQuery, 'tag' | 'search'>;
 export type EntryComment = components['schemas']['EntryCommentDto'];
 export type EntryCommentsResponse = components['schemas']['EntryCommentsResponseDto'];
 export type EntryCommentDeleted = components['schemas']['EntryCommentDeletedDto'];
@@ -21,8 +25,15 @@ export type Achievements = components['schemas']['AchievementsResponseDto'];
 export type PublicFeedResult = ServiceResult<PublicFeedResponse>;
 
 export const createFeedService = (authFetch: (url: string, options?: RequestInit) => Promise<Response>) => ({
-  fetchPublicFeed(scope: PublicFeedScope, page: number, limit = 10): Promise<PublicFeedResult> {
+  fetchPublicFeed(
+    scope: PublicFeedScope,
+    page: number,
+    limit = 10,
+    filters: PublicFeedFilters = {},
+  ): Promise<PublicFeedResult> {
     const params = new URLSearchParams({ scope, page: String(page), limit: String(limit) });
+    if (filters.tag) params.set('tag', filters.tag);
+    if (filters.search) params.set('search', filters.search);
     return requestJson(authFetch(`/api/entries/feed?${params}`), 'Failed to load the public feed');
   },
 
@@ -35,6 +46,15 @@ export const createFeedService = (authFetch: (url: string, options?: RequestInit
       ? authFetch(`/api/follows/${userId}`, { method: 'PUT' })
       : authFetch(`/api/follows/${userId}`, { method: 'DELETE' });
     return requestJson(request, 'Failed to update the follow');
+  },
+
+  /** Follows a topic, whose public entries then join the Following tab, or stops following it. */
+  setTopicFollowing(tag: string, follow: boolean): Promise<ServiceResult<TopicFollowState>> {
+    const topic = encodeURIComponent(tag);
+    const request = follow
+      ? authFetch(`/api/follows/topics/${topic}`, { method: 'PUT' })
+      : authFetch(`/api/follows/topics/${topic}`, { method: 'DELETE' });
+    return requestJson(request, 'Failed to update the topic');
   },
 
   fetchComments(entryId: number): Promise<ServiceResult<EntryCommentsResponse>> {

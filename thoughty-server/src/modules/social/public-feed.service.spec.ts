@@ -24,6 +24,7 @@ describe('PublicFeedService', () => {
   const commentRepository = { createQueryBuilder: jest.fn(() => commentQb) };
   const likesService = { summarizeEntryLikes: jest.fn() };
   const savedEntriesService = { findSavedIds: jest.fn() };
+  const entrySearchService = { prepare: jest.fn() };
   let service: PublicFeedService;
 
   beforeEach(() => {
@@ -41,8 +42,17 @@ describe('PublicFeedService', () => {
       commentRepository as never,
       likesService as never,
       savedEntriesService as never,
+      entrySearchService as never,
     );
   });
+
+  const emptyFeedQuery = () => {
+    const qb = createQueryBuilder();
+    qb.getCount.mockResolvedValue(0);
+    qb.getMany.mockResolvedValue([]);
+    repository.createQueryBuilder.mockReturnValue(qb);
+    return qb;
+  };
 
   it('returns a narrow, paginated community feed', async () => {
     const qb = createQueryBuilder();
@@ -128,20 +138,73 @@ describe('PublicFeedService', () => {
     expect(commentQb.andWhere).toHaveBeenCalledWith('u.deleted_at IS NULL');
   });
 
-  it('limits the following scope to followed authors', async () => {
-    const qb = createQueryBuilder();
-    qb.getCount.mockResolvedValue(0);
-    qb.getMany.mockResolvedValue([]);
-    repository.createQueryBuilder.mockReturnValue(qb);
+  it('limits the following scope to followed authors and the topics followed by others', async () => {
+    const qb = emptyFeedQuery();
 
     await service.getFeed(7, { scope: 'following' });
 
-    expect(qb.andWhere).toHaveBeenCalledWith(
+    const [condition, parameters] = qb.andWhere.mock.calls.find(([sql]) =>
+      String(sql).includes('user_follows'),
+    )!;
+    expect(condition).toContain(
       'e.user_id IN (SELECT f.followed_id FROM user_follows f WHERE f.follower_id = :userId)',
-      { userId: 7 },
     );
+    // A followed topic brings in other writers' entries carrying it, never the reader's own
+    expect(condition).toContain('OR (e.user_id <> :userId AND EXISTS (');
+    expect(condition).toContain(
+      'tf.user_id = :userId AND tf.tag IN (SELECT lower(et.tag) FROM unnest(e.tags) AS et(tag))',
+    );
+    expect(parameters).toEqual({ userId: 7 });
     expect(followRepository.find).not.toHaveBeenCalled();
     expect(commentRepository.createQueryBuilder).not.toHaveBeenCalled();
+  });
+
+  it('narrows any tab to a topic, ignoring case', async () => {
+    const qb = emptyFeedQuery();
+
+    await service.getFeed(7, { scope: 'saved', tag: 'Gratitude' });
+
+    expect(qb.andWhere).toHaveBeenCalledWith(
+      'lower(:topic) IN (SELECT lower(ft.tag) FROM unnest(e.tags) AS ft(tag))',
+      { topic: 'Gratitude' },
+    );
+    expect(qb.innerJoin).toHaveBeenCalledWith('saved_entries', 's', expect.any(String), { userId: 7 });
+    expect(entrySearchService.prepare).not.toHaveBeenCalled();
+  });
+
+  it('finds entries by their words with the journal search', async () => {
+    const qb = emptyFeedQuery();
+    entrySearchService.prepare.mockResolvedValue({
+      kind: 'text',
+      text: 'river',
+      matchQuery: "'river':*",
+      terms: [{ text: 'river', prefix: true }],
+    });
+
+    await service.getFeed(7, { search: 'river' });
+
+    expect(entrySearchService.prepare).toHaveBeenCalledWith('river');
+    expect(qb.andWhere).toHaveBeenCalledWith(
+      '(e.search_vector @@ CAST(:searchQuery AS tsquery) OR e.tags @> :searchTags)',
+      { searchQuery: "'river':*", searchTags: ['river'] },
+    );
+  });
+
+  it('matches a search of symbols literally, and ignores a blank one', async () => {
+    const qb = emptyFeedQuery();
+    entrySearchService.prepare.mockResolvedValueOnce({ kind: 'literal', text: '50%' });
+
+    await service.getFeed(7, { search: '50%' });
+    expect(qb.andWhere).toHaveBeenCalledWith(
+      '(e.content ILIKE :searchPattern OR e.title ILIKE :searchPattern OR e.tags @> :searchTags)',
+      { searchPattern: String.raw`%50\%%`, searchTags: ['50%'] },
+    );
+
+    const blank = emptyFeedQuery();
+    entrySearchService.prepare.mockResolvedValueOnce(null);
+    await service.getFeed(7, { search: '   ' });
+    expect(blank.andWhere).not.toHaveBeenCalledWith(expect.stringContaining('search_vector'), expect.anything());
+    expect(blank.andWhere).not.toHaveBeenCalledWith(expect.stringContaining('ILIKE'), expect.anything());
   });
 
   it('scopes the preview to the authenticated user', async () => {

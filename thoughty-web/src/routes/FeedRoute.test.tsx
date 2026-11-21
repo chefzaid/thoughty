@@ -5,17 +5,30 @@ import { describe, expect, it, vi } from 'vitest';
 import FeedRoute from './FeedRoute';
 import { QuietModeContext } from '../components/QuietMode/quietMode';
 
+interface MockFeedPageProps {
+  onOpenLeaderboard?: () => void;
+  readDates?: boolean;
+  ttsVoiceUri?: string;
+  filters?: { tag?: string; search?: string };
+  onFiltersChange?: (filters: { tag?: string; search?: string }) => void;
+}
+
 vi.mock('../components/FeedPage/FeedPage', () => ({
-  default: ({ onOpenLeaderboard, readDates, ttsVoiceUri }: { onOpenLeaderboard?: () => void; readDates?: boolean; ttsVoiceUri?: string }) => (
-    <button
-      type="button"
-      onClick={onOpenLeaderboard}
-      data-leaderboard={String(Boolean(onOpenLeaderboard))}
-      data-read-dates={String(readDates)}
-      data-voice={ttsVoiceUri}
-    >
-      feed page
-    </button>
+  default: ({ onOpenLeaderboard, readDates, ttsVoiceUri, filters, onFiltersChange }: MockFeedPageProps) => (
+    <>
+      <button
+        type="button"
+        onClick={onOpenLeaderboard}
+        data-leaderboard={String(Boolean(onOpenLeaderboard))}
+        data-read-dates={String(readDates)}
+        data-voice={ttsVoiceUri}
+        data-filters={JSON.stringify(filters)}
+      >
+        feed page
+      </button>
+      <button type="button" onClick={() => onFiltersChange?.({ tag: 'Calm', search: 'sea walk' })}>open topic</button>
+      <button type="button" onClick={() => onFiltersChange?.({})}>clear filters</button>
+    </>
   ),
 }));
 
@@ -74,5 +87,27 @@ describe('FeedRoute', () => {
     const feed = screen.getByRole('button', { name: 'feed page' });
     expect(feed).toHaveAttribute('data-read-dates', 'false');
     expect(feed).toHaveAttribute('data-voice', 'voice-1');
+  });
+
+  it('keeps the open topic and the word search in the address', () => {
+    render(
+      <MemoryRouter initialEntries={['/feed?tag=%20Gratitude%20&search=']}>
+        <Routes>
+          <Route path="/feed" element={<><FeedRoute t={(key) => key} /><LocationProbe /></>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('button', { name: 'feed page' })).toHaveAttribute('data-filters', '{"tag":"Gratitude"}');
+
+    fireEvent.click(screen.getByRole('button', { name: 'open topic' }));
+    expect(screen.getByRole('status')).toHaveTextContent('/feed?tag=Calm&search=sea+walk');
+    expect(screen.getByRole('button', { name: 'feed page' })).toHaveAttribute(
+      'data-filters',
+      '{"tag":"Calm","search":"sea walk"}',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'clear filters' }));
+    expect(screen.getByRole('status')).toHaveTextContent(/^\/feed$/);
   });
 });

@@ -92,6 +92,7 @@ export function buildTimeCapsuleBed(dataSource: DataSource) {
       comments,
       likes,
       new SavedEntriesService(dataSource.getRepository(SavedEntry), entries),
+      search,
     ),
     comments: new CommentsService(comments, entries, likes),
   };

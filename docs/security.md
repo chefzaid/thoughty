@@ -42,6 +42,7 @@ Social features need a session and are refused with `503 FEATURE_DISABLED` while
 - `moderation_status` is platform-controlled. No entry DTO may accept it.
 - The feed returns at most 20 entries per page and leaves out mood and feelings. Authors show only `id`, `username`, `avatarUrl`, and follow state. Followers are counted, never listed.
 - Self-follows, self-likes and saving your own entry answer `400`. Comments are at most 1,000 characters and render as escaped text.
+- The feed's topic (`tag`) and word search (`search`) only narrow the feed's own rules, so they reach only feed-eligible entries; both are bound as query parameters (the search goes through `websearch_to_tsquery`, or an escaped `ILIKE` pattern when it holds no word). Followed topics (`topic_follows`) are returned only to their reader; following a tag reveals nothing, since it matches only public entries.
 - A reader's Saved list (`saved_entries`) is returned only to that reader, through the feed's `saved` scope; the author is never told, and no count includes saves.
 - The leaderboard counts only visible content. Achievements are returned only to their owner.
 

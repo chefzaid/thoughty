@@ -75,6 +75,52 @@ describeContract('social', (context) => {
     expect(unfollowed.body).toMatchObject({ following: false });
   });
 
+  it('opens a topic and finds entries by their words, and follows a topic into the following feed', async () => {
+    const { bob } = context;
+    const feed = async (query: Record<string, string>, scope = 'community') => {
+      const response = await call('GET /api/entries/feed', {
+        as: bob,
+        query: { scope, page: '1', limit: '10', ...query },
+        status: 200,
+      });
+      return (response.body as { entries: { id: number }[] }).entries.map((entry) => entry.id);
+    };
+    expect(await feed({ tag: 'PUBLIC' })).toEqual([publicId]);
+    expect(await feed({ tag: 'missing' })).toEqual([]);
+    expect(await feed({ search: 'everyone' })).toEqual([publicId]);
+    expect(await feed({ search: 'just for me' })).toEqual([]);
+    await call('GET /api/entries/feed', {
+      as: bob,
+      query: { tag: 'x'.repeat(51) },
+      status: 400,
+      code: 'VALIDATION_FAILED',
+    });
+
+    const followed = await call('PUT /api/follows/topics/{tag}', {
+      as: bob,
+      params: { tag: 'Public' },
+      status: 200,
+    });
+    expect(followed.body).toEqual({ tag: 'public', following: true });
+    const follows = await call('GET /api/follows', { as: bob, status: 200 });
+    expect((follows.body as { topics: { tag: string }[] }).topics.map((topic) => topic.tag)).toEqual(['public']);
+    expect(await feed({}, 'following')).toEqual([publicId]);
+    await call('PUT /api/follows/topics/{tag}', {
+      as: bob,
+      params: { tag: 'x'.repeat(51) },
+      status: 400,
+      code: 'VALIDATION_FAILED',
+    });
+
+    const unfollowed = await call('DELETE /api/follows/topics/{tag}', {
+      as: bob,
+      params: { tag: 'PUBLIC' },
+      status: 200,
+    });
+    expect(unfollowed.body).toEqual({ tag: 'public', following: false });
+    expect(await feed({}, 'following')).toEqual([]);
+  });
+
   it('comments on and likes public entries only, and lets the commenter or the entry’s author delete a comment', async () => {
     const { alice, bob } = context;
     await call('GET /api/entries/{entryId}/comments', {

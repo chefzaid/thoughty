@@ -18,7 +18,7 @@ import {
   OnThisDayEmail,
   MonthlyRecapEmail,
   TimeCapsule,
-  ShareLink, ComposerDraft, SavedEntry,
+  ShareLink, ComposerDraft, SavedEntry, TopicFollow,
   Setting,
   User,
   UserFollow,
@@ -93,7 +93,7 @@ describe('UserDataExportService', () => {
         { provide: getRepositoryToken(MonthlyRecapEmail), useValue: monthlyRecapEmailRepository },
         { provide: getRepositoryToken(TimeCapsule), useValue: { find: jest.fn().mockResolvedValue([]) } },
         noTimeCapsules(),
-        ...[ShareLink, ComposerDraft, SavedEntry].map((entity) => ({ provide: getRepositoryToken(entity), useValue: { find: jest.fn().mockResolvedValue([]), findOne: jest.fn().mockResolvedValue(null) } })),
+        ...[ShareLink, ComposerDraft, SavedEntry, TopicFollow].map((entity) => ({ provide: getRepositoryToken(entity), useValue: { find: jest.fn().mockResolvedValue([]), findOne: jest.fn().mockResolvedValue(null) } })),
       ],
     }).compile();
 

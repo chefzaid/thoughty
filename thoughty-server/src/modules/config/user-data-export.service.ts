@@ -25,6 +25,7 @@ import {
   TimeCapsule,
   User,
   SavedEntry,
+  TopicFollow,
   UserFollow,
 } from '@/database/entities';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
@@ -99,6 +100,8 @@ export class UserDataExportService {
     private readonly composerDraftRepository: Repository<ComposerDraft>,
     @InjectRepository(SavedEntry)
     private readonly savedEntryRepository: Repository<SavedEntry>,
+    @InjectRepository(TopicFollow)
+    private readonly topicFollowRepository: Repository<TopicFollow>,
   ) {}
 
   /**
@@ -351,12 +354,13 @@ export class UserDataExportService {
 
   private async collectSocialData(userId: number) {
     const order = { createdAt: 'ASC' } as const;
-    const [follows, comments, entryLikes, commentLikes, savedEntries] = await Promise.all([
+    const [follows, topics, comments, entryLikes, commentLikes, savedEntries] = await Promise.all([
       this.followRepository.find({
         where: { followerId: userId },
         relations: { followed: true },
         order,
       }),
+      this.topicFollowRepository.find({ where: { userId }, order }),
       this.commentRepository.find({ where: { userId }, order }),
       this.entryLikeRepository.find({ where: { userId }, order }),
       this.commentLikeRepository.find({ where: { userId }, order }),
@@ -369,6 +373,7 @@ export class UserDataExportService {
         username: follow.followed.username,
         followedAt: follow.createdAt,
       })),
+      followedTopics: topics.map((topic) => ({ tag: topic.tag, followedAt: topic.createdAt })),
       comments: comments.map((comment) => ({
         id: comment.id,
         entryId: comment.entryId,

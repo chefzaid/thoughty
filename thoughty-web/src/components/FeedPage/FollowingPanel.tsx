@@ -1,20 +1,34 @@
-import type { FollowedUser } from '../../services/api';
+import type { FollowedTopic, FollowedUser } from '../../services/api';
 import { FeedAvatar } from './FeedAuthor';
 import { useQuietMode } from '../QuietMode/quietMode';
 import './FollowingPanel.css';
 
 interface FollowingPanelProps {
   readonly following: readonly FollowedUser[];
+  readonly topics: readonly FollowedTopic[];
   readonly followerCount: number;
   readonly loaded: boolean;
   readonly loadError: boolean;
   readonly pendingIds: ReadonlySet<number>;
   readonly onUnfollow: (user: FollowedUser) => void;
+  readonly isTopicPending: (tag: string) => boolean;
+  readonly onUnfollowTopic: (tag: string) => void;
   readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-/** The writers followed, with how many follow and are followed except in quiet mode. */
-function FollowingPanel({ following, followerCount, loaded, loadError, pendingIds, onUnfollow, t }: FollowingPanelProps) {
+/** The writers and topics followed, with how many follow and are followed except in quiet mode. */
+function FollowingPanel({
+  following,
+  topics,
+  followerCount,
+  loaded,
+  loadError,
+  pendingIds,
+  onUnfollow,
+  isTopicPending,
+  onUnfollowTopic,
+  t,
+}: FollowingPanelProps) {
   const quiet = useQuietMode();
   return (
     <section className="feed-following" aria-labelledby="feed-following-heading">
@@ -49,6 +63,27 @@ function FollowingPanel({ following, followerCount, loaded, loadError, pendingId
             </li>
           ))}
         </ul>
+      )}
+      {topics.length > 0 && (
+        <>
+          <h3 className="feed-following-subtitle">{t('followedTopicsTitle')}</h3>
+          <ul className="feed-following-list" aria-label={t('followedTopicsTitle')}>
+            {topics.map(({ tag }) => (
+              <li key={tag} className="feed-following-topic">
+                <span className="feed-following-name">#{tag}</span>
+                <button
+                  type="button"
+                  aria-label={t('unfollowTopic', { tag })}
+                  title={t('unfollowTopic', { tag })}
+                  disabled={isTopicPending(tag)}
+                  onClick={() => onUnfollowTopic(tag)}
+                >
+                  <span className="codicon codicon-close" aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </section>
   );

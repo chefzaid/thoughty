@@ -28,14 +28,16 @@ function createQueryBuilder() {
 describe('FollowsService', () => {
   const followRepository = { createQueryBuilder: jest.fn(), delete: jest.fn() };
   const entryRepository = { createQueryBuilder: jest.fn() };
+  const topicFollowsService = { list: jest.fn() };
   let service: FollowsService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new FollowsService(followRepository as never, entryRepository as never);
+    topicFollowsService.list.mockResolvedValue([]);
+    service = new FollowsService(followRepository as never, entryRepository as never, topicFollowsService as never);
   });
 
-  it('lists active followed users alphabetically with the active follower count', async () => {
+  it('lists active followed users alphabetically, the topics followed and the active follower count', async () => {
     const listQb = createQueryBuilder();
     const countQb = createQueryBuilder();
     listQb.getMany.mockResolvedValue([
@@ -47,13 +49,17 @@ describe('FollowsService', () => {
     ]);
     countQb.getCount.mockResolvedValue(3);
     followRepository.createQueryBuilder.mockReturnValueOnce(listQb).mockReturnValueOnce(countQb);
+    const topics = [{ tag: 'gratitude', followedAt: '2026-09-02T08:30:00.000Z' }];
+    topicFollowsService.list.mockResolvedValue(topics);
 
     await expect(service.list(1)).resolves.toEqual({
       following: [
         { id: 2, username: 'maya', avatarUrl: null, followedAt: '2026-09-01T08:30:00.000Z' },
       ],
+      topics,
       followerCount: 3,
     });
+    expect(topicFollowsService.list).toHaveBeenCalledWith(1);
     expect(listQb.where).toHaveBeenCalledWith('f.follower_id = :userId', { userId: 1 });
     expect(listQb.andWhere).toHaveBeenCalledWith('u.deleted_at IS NULL');
     expect(listQb.orderBy).toHaveBeenCalledWith('u.username', 'ASC');
