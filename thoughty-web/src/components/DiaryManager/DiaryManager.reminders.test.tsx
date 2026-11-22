@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { getTranslation, type Language } from '../../utils/translations';
 import DiaryManager, { type DiaryReminderHours } from './DiaryManager';
@@ -92,6 +92,39 @@ describe('DiaryManager writing reminders', () => {
 
         expect(screen.getByText('The diary’s writing reminder could not be saved.')).toBeInTheDocument();
         expect(editor()).not.toBeNull();
+    });
+
+    it('keeps the editor open, saying it is saving, until the reminder is saved, and sends it once', async () => {
+        const user = userEvent.setup();
+        let finish: () => void = () => {};
+        const onSaveWritingReminder = vi.fn().mockReturnValue(new Promise<void>((resolve) => { finish = resolve; }));
+        renderManager({ onSaveWritingReminder });
+
+        await user.click(within(card('Personal')).getByTitle('Edit'));
+        await user.selectOptions(within(editor()).getByLabelText('Writing reminder'), '9:00 AM');
+        await user.click(within(editor()).getByRole('button', { name: 'Save' }));
+
+        const saving = within(editor()).getByRole('button', { name: 'Saving…' });
+        expect(saving).toBeDisabled();
+        await user.click(saving);
+        expect(onSaveWritingReminder).toHaveBeenCalledTimes(1);
+        finish();
+        await waitFor(() => expect(editor()).toBeNull());
+    });
+
+    it('clears the earlier failure once a retried save goes through', async () => {
+        const user = userEvent.setup();
+        const onSaveWritingReminder = vi.fn().mockRejectedValueOnce(new Error('diaryReminderSaveFailed')).mockResolvedValueOnce(undefined);
+        renderManager({ onSaveWritingReminder });
+
+        await user.click(within(card('Personal')).getByTitle('Edit'));
+        await user.selectOptions(within(editor()).getByLabelText('Writing reminder'), '9:00 AM');
+        await user.click(within(editor()).getByRole('button', { name: 'Save' }));
+        expect(screen.getByText('The diary’s writing reminder could not be saved.')).toBeInTheDocument();
+
+        await user.click(within(editor()).getByRole('button', { name: 'Save' }));
+        expect(editor()).toBeNull();
+        expect(screen.queryByText('The diary’s writing reminder could not be saved.')).not.toBeInTheDocument();
     });
 
     it('warns once an hour is picked that no email can reach the writer yet', async () => {

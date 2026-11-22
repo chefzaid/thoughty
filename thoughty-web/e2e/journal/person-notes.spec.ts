@@ -45,6 +45,8 @@ test.describe('Notes on people', () => {
       await expect(page.getByRole('textbox', { name: 'Notes' })).toHaveValue('Met at the climbing gym.\nLoves Japanese novels.');
       await page.getByRole('textbox', { name: 'Notes' }).fill('   ');
       await page.getByRole('button', { name: 'Save' }).click();
+      // The row hides its notes while it is edited, so wait for the editor to close
+      await expect(page.getByRole('textbox', { name: 'Notes' })).toHaveCount(0);
       await expect(page.locator('#main-content').getByRole('status')).toHaveText('Saved for Marie.');
       await expect(row.locator('p.privacy-text')).toHaveCount(0);
       expect(state.people.find((candidate) => candidate.name === 'Marie')?.notes).toBeNull();

@@ -16,6 +16,7 @@ export type DiariesTranslationKey =
   | "diaryDefaultDeleteBlocked"
   | "diaryCreateFailed"
   | "diaryUpdateFailed"
+  | "diarySaving"
   | "diaryDeleteFailed"
   | "diarySetDefaultFailed"
   | "diaryReorderFailed"
@@ -40,6 +41,7 @@ export const diariesTranslations: Record<Language, Record<DiariesTranslationKey,
     diaryDefaultDeleteBlocked: "Cannot delete the default diary",
     diaryCreateFailed: "Failed to create diary",
     diaryUpdateFailed: "Failed to update diary",
+    diarySaving: "Saving…",
     diaryDeleteFailed: "Failed to delete diary",
     diarySetDefaultFailed: "Failed to set default diary",
     diaryReorderFailed: "Failed to reorder diaries",
@@ -64,6 +66,7 @@ export const diariesTranslations: Record<Language, Record<DiariesTranslationKey,
     diaryDefaultDeleteBlocked: "Impossible de supprimer le journal par défaut",
     diaryCreateFailed: "Échec de la création du journal",
     diaryUpdateFailed: "Échec de la mise à jour du journal",
+    diarySaving: "Enregistrement…",
     diaryDeleteFailed: "Échec de la suppression du journal",
     diarySetDefaultFailed: "Échec du choix du journal par défaut",
     diaryReorderFailed: "Échec de la réorganisation des journaux",

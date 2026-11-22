@@ -340,4 +340,24 @@ describe('PeoplePage', () => {
     render(<MemoryRouter><PeoplePage t={t} /></MemoryRouter>);
     expect(screen.getByRole('alert')).toHaveTextContent('Your people could not be loaded.');
   });
+
+  it('empties the status while a person is saved again, so the same message is announced anew', async () => {
+    let finishSecond: (value: { data: Person; error: null }) => void = () => {};
+    peopleHook.update
+      .mockResolvedValueOnce({ data: marie, error: null })
+      .mockReturnValueOnce(new Promise((resolve) => { finishSecond = resolve; }));
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Marie' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Notes' }), { target: { value: 'Likes tea.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Saved for Marie.'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Marie' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Notes' }), { target: { value: 'Likes coffee.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(screen.getByRole('status')).toBeEmptyDOMElement());
+    finishSecond({ data: marie, error: null });
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Saved for Marie.'));
+  });
 });

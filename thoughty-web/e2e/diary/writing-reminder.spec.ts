@@ -34,6 +34,8 @@ test.describe('A diary’s own writing reminder', () => {
     await editor.getByLabel('Writing reminder').selectOption({ label: 'As in Profile' });
     await editor.getByRole('button', { name: 'Save' }).click();
 
+    // The card hides its summary while it is edited, so its absence alone says nothing until the editor closes
+    await expect(editor).toHaveCount(0);
     await expect(personal.getByText(/Writing reminder at/)).toHaveCount(0);
     expect(state.diaryWritingReminders).toEqual([]);
   });

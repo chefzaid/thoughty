@@ -404,6 +404,11 @@
     background: #2563eb;
 }
 
+.save-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
 .cancel-btn {
     padding: 0.5rem 1rem;
     font-size: 0.875rem;

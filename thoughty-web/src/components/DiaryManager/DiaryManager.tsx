@@ -65,6 +65,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
     const [editGoal, setEditGoal] = useState(NO_DIARY_GOAL);
     const [editTemplate, setEditTemplate] = useState('');
     const [editReminder, setEditReminder] = useState('');
+    const [savingEdit, setSavingEdit] = useState(false);
     /** A translation key, or a message the API sent, which `t` passes through. */
     const [error, setError] = useState<string>('');
     const [showIconPicker, setShowIconPicker] = useState<'new' | number | null>(null);
@@ -135,13 +136,15 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
     };
 
     const handleSaveEdit = async (): Promise<void> => {
-        if (!editName.trim() || !editingDiary) return;
+        if (!editName.trim() || !editingDiary || savingEdit) return;
         const goal = readDiaryGoal(editGoal, t, uiLanguage);
         if ('error' in goal) {
             setError(goal.error);
             return;
         }
 
+        setError('');
+        setSavingEdit(true);
         try {
             await onUpdateDiary(editingDiary.id, {
                 name: editName.trim(),
@@ -157,6 +160,8 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
             setEditingDiary(null);
         } catch (err) {
             setError((err as Error).message || 'diaryUpdateFailed');
+        } finally {
+            setSavingEdit(false);
         }
     };
 
@@ -364,7 +369,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                             )}
                                         </div>
                                         <div className="edit-actions">
-                                            <button type="button" onClick={handleSaveEdit} className="save-btn">{t('save')}</button>
+                                            <button type="button" onClick={handleSaveEdit} className="save-btn" disabled={savingEdit}>{savingEdit ? t('diarySaving') : t('save')}</button>
                                             <button type="button" onClick={() => setEditingDiary(null)} className="cancel-btn">{t('cancel')}</button>
                                         </div>
                                     </div>

@@ -42,6 +42,8 @@ export default function PeoplePage({ theme = 'dark', language: languageSetting, 
   }, [people, query]);
 
   const savePerson = async (person: Person, changes: PersonChanges): Promise<string | null> => {
+    // Emptied first, so a second save of the same person is announced again
+    setStatus('');
     const result = await update(person.id, changes);
     if (!result.data) return result.error ?? 'personSaveFailed';
     setStatus(changes.name === person.name
