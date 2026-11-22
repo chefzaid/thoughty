@@ -2533,6 +2533,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/people/mentions-over-time": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How many entries mention anyone in one of the writer’s groups (each entry once), month by month over the last 12 months and year by year, with the average mood of those entries, up to the writer’s day */
+        get: operations["PeopleController_groupMentions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/people/{id}/mentions-over-time": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** How many entries mention a person, month by month over the last 12 months and year by year, with the average mood of those entries, up to the writer’s day */
+        get: operations["PeopleController_personMentions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/people/{id}": {
         parameters: {
             query?: never;
@@ -10527,6 +10561,68 @@ export interface components {
              * @example 1000
              */
             limit: number;
+        };
+        /**
+         * @example {
+         *       "period": "2026-03",
+         *       "entries": 3,
+         *       "moodEntries": 2,
+         *       "averageMood": 4.5
+         *     }
+         */
+        MentionPeriodDto: {
+            /**
+             * @description The month (YYYY-MM) or the year (YYYY)
+             * @example 2026-03
+             */
+            period: string;
+            /**
+             * @description Entries of the period that mention them, each counted once
+             * @example 3
+             */
+            entries: number;
+            /**
+             * @description How many of those entries have a mood check-in
+             * @example 2
+             */
+            moodEntries: number;
+            /**
+             * @description The average mood of those entries, to one decimal (1 very low to 5 very good); null when none has a mood
+             * @example 4.5
+             */
+            averageMood: number | null;
+        };
+        /**
+         * @example {
+         *       "entries": 14,
+         *       "months": [
+         *         {
+         *           "period": "2026-03",
+         *           "entries": 3,
+         *           "moodEntries": 2,
+         *           "averageMood": 4.5
+         *         }
+         *       ],
+         *       "years": [
+         *         {
+         *           "period": "2026-03",
+         *           "entries": 3,
+         *           "moodEntries": 2,
+         *           "averageMood": 4.5
+         *         }
+         *       ]
+         *     }
+         */
+        MentionsOverTimeResponseDto: {
+            /**
+             * @description Entries up to the writer’s day that mention them, leaving out the recycle bin, sealed time capsules and (unless unlocked) locked entries
+             * @example 14
+             */
+            entries: number;
+            /** @description The last 12 months, oldest first, ending with the writer’s month; months without a mention count 0 */
+            months: components["schemas"]["MentionPeriodDto"][];
+            /** @description Every year from the first one with a mention to the writer’s year, oldest first, years without a mention counting 0; empty when nothing mentions them */
+            years: components["schemas"]["MentionPeriodDto"][];
         };
         /**
          * @example {
@@ -23474,6 +23570,149 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["PersonListResponseDto"];
+                };
+            };
+        };
+    };
+    PeopleController_groupMentions: {
+        parameters: {
+            query: {
+                /** @description The writer’s own day (the UTC day or the one before or after it): the months end with its month and the years with its year, and entries dated after it are left out; the server’s UTC day when left out */
+                today?: string;
+                /** @description One of the writer’s groups, ignoring case and the spaces around it; a group no one is in has no mentions */
+                group: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The group’s mentions over time */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "entries": 14,
+                     *       "months": [
+                     *         {
+                     *           "period": "2026-03",
+                     *           "entries": 3,
+                     *           "moodEntries": 2,
+                     *           "averageMood": 4.5
+                     *         }
+                     *       ],
+                     *       "years": [
+                     *         {
+                     *           "period": "2026-03",
+                     *           "entries": 3,
+                     *           "moodEntries": 2,
+                     *           "averageMood": 4.5
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MentionsOverTimeResponseDto"];
+                };
+            };
+            /** @description A missing or blank group, a group name over 40 characters, or a day that is not the writer’s */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "A missing or blank group, a group name over 40 characters, or a day that is not the writer’s",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    PeopleController_personMentions: {
+        parameters: {
+            query?: {
+                /** @description The writer’s own day (the UTC day or the one before or after it): the months end with its month and the years with its year, and entries dated after it are left out; the server’s UTC day when left out */
+                today?: string;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The person’s mentions over time */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "entries": 14,
+                     *       "months": [
+                     *         {
+                     *           "period": "2026-03",
+                     *           "entries": 3,
+                     *           "moodEntries": 2,
+                     *           "averageMood": 4.5
+                     *         }
+                     *       ],
+                     *       "years": [
+                     *         {
+                     *           "period": "2026-03",
+                     *           "entries": 3,
+                     *           "moodEntries": 2,
+                     *           "averageMood": 4.5
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MentionsOverTimeResponseDto"];
+                };
+            };
+            /** @description A day that is not the writer’s */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "A day that is not the writer’s",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Person not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "Person not found",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };

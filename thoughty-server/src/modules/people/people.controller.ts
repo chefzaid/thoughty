@@ -1,23 +1,62 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { SuccessResponseDto } from '@/common/dto';
-import { MarkPersonContactedDto, MergePersonDto, PersonListResponseDto, PersonResponseDto, UpdatePersonDto } from './dto';
+import { writersDayOr } from '@/common/utils/writers-day.util';
+import {
+  GroupMentionsQueryDto,
+  MarkPersonContactedDto,
+  MentionsOverTimeResponseDto,
+  MergePersonDto,
+  PersonListResponseDto,
+  PersonMentionsQueryDto,
+  PersonResponseDto,
+  UpdatePersonDto,
+} from './dto';
 import { PeopleService } from './people.service';
+import { PersonMentionsService } from './person-mentions.service';
+
+const MENTIONS_SUMMARY =
+  'month by month over the last 12 months and year by year, with the average mood of those entries, up to the writer’s day';
 
 @ApiTags('People')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('people')
 export class PeopleController {
-  constructor(private readonly peopleService: PeopleService) {}
+  constructor(
+    private readonly peopleService: PeopleService,
+    private readonly personMentionsService: PersonMentionsService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'List the people the writer mentions with @handle, by name, with how many entries mention each' })
   @ApiResponse({ status: 200, description: 'People and the limit', type: PersonListResponseDto })
   async list(@CurrentUser() user: AuthenticatedUser): Promise<PersonListResponseDto> {
     return this.peopleService.list(user.userId);
+  }
+
+  @Get('mentions-over-time')
+  @ApiOperation({ summary: `How many entries mention anyone in one of the writer’s groups (each entry once), ${MENTIONS_SUMMARY}` })
+  @ApiResponse({ status: 200, description: 'The group’s mentions over time', type: MentionsOverTimeResponseDto })
+  @ApiResponse({ status: 400, description: 'A missing or blank group, a group name over 40 characters, or a day that is not the writer’s' })
+  async groupMentions(@CurrentUser() user: AuthenticatedUser, @Query() query: GroupMentionsQueryDto): Promise<MentionsOverTimeResponseDto> {
+    return this.personMentionsService.forGroup(user.userId, query.group, writersDayOr(query.today));
+  }
+
+  @Get(':id/mentions-over-time')
+  @ApiOperation({ summary: `How many entries mention a person, ${MENTIONS_SUMMARY}` })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'The person’s mentions over time', type: MentionsOverTimeResponseDto })
+  @ApiResponse({ status: 400, description: 'A day that is not the writer’s' })
+  @ApiResponse({ status: 404, description: 'Person not found' })
+  async personMentions(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+    @Query() query: PersonMentionsQueryDto,
+  ): Promise<MentionsOverTimeResponseDto> {
+    return this.personMentionsService.forPerson(user.userId, id, writersDayOr(query.today));
   }
 
   @Patch(':id')

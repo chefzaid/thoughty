@@ -261,4 +261,32 @@ describeContract('rereading', (context) => {
     expect((download.body as { people: { id: number }[] }).people).toContainEqual(expect.objectContaining({ id: idOf('Sami'), groups: ['Climbing', 'Friends'] }));
     expect((await save('Sami', { groups: [] })).body).toMatchObject({ groups: [] });
   });
+
+  it('counts the entries that mention a person or a group month by month and year by year, with their moods', async () => {
+    const { alice, bob } = context;
+    const today = todayIso();
+    await createEntry(context, alice, { text: 'Tea with @Iris and @Omar', date: today, mood: 5 });
+    await createEntry(context, alice, { text: 'Called @Iris', date: today, mood: 2 });
+    const people = (await call('GET /api/people', { as: alice, status: 200 })).body as { people: { id: number; name: string }[] };
+    const iris = people.people.find((person) => person.name === 'Iris')!.id;
+    const omar = people.people.find((person) => person.name === 'Omar')!.id;
+    for (const [id, name] of [[iris, 'Iris'], [omar, 'Omar']] as const) {
+      await call('PATCH /api/people/{id}', { as: alice, params: { id }, json: { name, groups: ['Friends'] }, status: 200 });
+    }
+    const thisMonth = { period: today.slice(0, 7), entries: 2, moodEntries: 2, averageMood: 3.5 };
+
+    const person = await call('GET /api/people/{id}/mentions-over-time', { as: alice, params: { id: iris }, query: { today }, status: 200 });
+    expect(person.body).toMatchObject({ entries: 2, years: [{ ...thisMonth, period: today.slice(0, 4) }] });
+    expect((person.body as { months: unknown[] }).months).toHaveLength(12);
+    expect((person.body as { months: unknown[] }).months.at(-1)).toEqual(thisMonth);
+    await call('GET /api/people/{id}/mentions-over-time', { as: bob, params: { id: iris }, status: 404, code: 'PERSON_NOT_FOUND' });
+    await call('GET /api/people/{id}/mentions-over-time', { as: alice, params: { id: iris }, query: { today: '2020-01-01' }, status: 400, code: 'VALIDATION_FAILED' });
+
+    // The entry that mentions both counts once for their group
+    const group = await call('GET /api/people/mentions-over-time', { as: alice, query: { group: ' friends ', today }, status: 200 });
+    expect((group.body as { months: unknown[] }).months.at(-1)).toEqual(thisMonth);
+    const bobs = await call('GET /api/people/mentions-over-time', { as: bob, query: { group: 'Friends' }, status: 200 });
+    expect(bobs.body).toMatchObject({ entries: 0, years: [] });
+    await call('GET /api/people/mentions-over-time', { as: alice, query: { group: '  ' }, status: 400, code: 'VALIDATION_FAILED' });
+  });
 });

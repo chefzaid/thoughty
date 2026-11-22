@@ -137,6 +137,8 @@ export const CONTRACT_SUITES = {
     'GET /api/entries/reader',
     'GET /api/entries/comfort-reads',
     'POST /api/people/{id}/contacted',
+    'GET /api/people/{id}/mentions-over-time',
+    'GET /api/people/mentions-over-time',
   ],
   drafts: ['GET /api/composer-draft', 'PUT /api/composer-draft', 'DELETE /api/composer-draft'],
   'content-lock': [

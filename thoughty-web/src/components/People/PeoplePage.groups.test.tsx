@@ -26,6 +26,10 @@ vi.mock('./usePeople', () => ({
   }),
 }));
 
+vi.mock('./usePersonMentions', () => ({
+  usePersonMentions: (scope: unknown) => ({ isPending: false, isError: false, data: { entries: 0, months: [], years: [], scope } }),
+}));
+
 const en = (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params);
 const fr = (key: string, params?: Record<string, string | number>) => getTranslation('fr', key, params);
 const marie = person(12, 'Marie', ['Friends', 'Climbing']);
@@ -59,6 +63,22 @@ describe('PeoplePage groups', () => {
     expect(screen.getAllByRole('link').map((link) => link.textContent)).toEqual(['Paul']);
     fireEvent.change(filter, { target: { value: '' } });
     expect(screen.getAllByRole('link').map((link) => link.textContent)).toEqual(['Paul']);
+  });
+
+  it('shows the chosen group’s mentions over time above the list, and a person’s under their row on demand', () => {
+    renderPage();
+    expect(screen.queryByRole('region')).toBeNull();
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Group' }), { target: { value: 'friends' } });
+    expect(screen.getByRole('region', { name: 'Mentions of Friends over time' })).toHaveTextContent('No entry mentions anyone in Friends yet.');
+
+    const toggle = within(rowOf('Paul')).getByRole('button', { name: 'Mentions of Paul over time' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(within(rowOf('Paul')).getByRole('region', { name: 'Mentions of Paul over time' })).toHaveTextContent('No entry mentions Paul yet.');
+    fireEvent.click(toggle);
+    expect(within(rowOf('Paul')).queryByRole('region')).toBeNull();
   });
 
   it('shows everyone again once no one is left in the chosen group, and has no filter without groups', () => {

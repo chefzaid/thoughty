@@ -3,6 +3,8 @@ import type { components } from '../../generated/openapi';
 
 export type Person = components['schemas']['PersonResponseDto'];
 export type PersonList = components['schemas']['PersonListResponseDto'];
+export type MentionsOverTime = components['schemas']['MentionsOverTimeResponseDto'];
+export type MentionPeriod = components['schemas']['MentionPeriodDto'];
 type PersonDeleteResult = components['schemas']['SuccessResponseDto'];
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
@@ -40,6 +42,16 @@ export const createPeopleService = (authFetch: AuthFetchFunction) => ({
       authFetch(`/api/people/${id}/merge`, { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) }),
       'personMergeFailed',
     );
+  },
+
+  /** How many entries up to the writer's day `today` mention the person, by month over the last 12 months and by year. */
+  mentionsOverTime(id: number, today: string): Promise<ServiceResult<MentionsOverTime>> {
+    return requestJson(authFetch(`/api/people/${id}/mentions-over-time?${new URLSearchParams({ today }).toString()}`), 'personMentionsFailed');
+  },
+
+  /** The same for anyone in one of the writer's groups, each entry counted once. */
+  groupMentionsOverTime(group: string, today: string): Promise<ServiceResult<MentionsOverTime>> {
+    return requestJson(authFetch(`/api/people/mentions-over-time?${new URLSearchParams({ group, today }).toString()}`), 'personMentionsFailed');
   },
 
   remove(id: number): Promise<ServiceResult<PersonDeleteResult>> {

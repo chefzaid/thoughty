@@ -10,6 +10,7 @@ import { collectPersonGroups, personGroupKey } from '../../utils/personGroups';
 import { pluralPhrase } from '../../utils/pluralPhrase';
 import { mutedTextClass } from '../../utils/tintedText';
 import MergePersonDialog from './MergePersonDialog';
+import PersonMentionsOverTime from './PersonMentionsOverTime';
 import PersonRow, { type PersonChanges } from './PersonRow';
 import { usePeople } from './usePeople';
 
@@ -39,7 +40,8 @@ export default function PeoplePage({ theme = 'dark', language: languageSetting, 
 
   const groups = useMemo(() => collectPersonGroups(people, language), [people, language]);
   // A group no one is in any more shows everyone again
-  const group = groups.some((candidate) => candidate.key === groupFilter) ? groupFilter : '';
+  const groupName = groups.find((candidate) => candidate.key === groupFilter)?.name;
+  const group = groupName === undefined ? '' : groupFilter;
 
   const shown = useMemo(() => {
     const key = normalizeMentionHandle(query.trim());
@@ -120,6 +122,9 @@ export default function PeoplePage({ theme = 'dark', language: languageSetting, 
             )}
             <p className={`ml-auto text-sm ${muted}`}>{t('peopleCount', { count: people.length, limit })}</p>
           </div>
+          {groupName !== undefined && (
+            <PersonMentionsOverTime key={group} scope={{ group: groupName }} name={groupName} theme={theme} language={language} t={t} />
+          )}
           {shown.length === 0
             ? <p className={muted}>{t('peopleNoMatch')}</p>
             : (

@@ -15,6 +15,8 @@ describe('peopleService', () => {
     await service.markContacted(12, '2026-11-22');
     await service.merge(12, 14);
     await service.remove(12);
+    await service.mentionsOverTime(12, '2026-11-22');
+    await service.groupMentionsOverTime('Friends & co', '2026-11-22');
 
     expect(authFetch.mock.calls.map(([url, options]) => [url, options?.method, options?.body])).toEqual([
       ['/api/people', undefined, undefined],
@@ -23,6 +25,8 @@ describe('peopleService', () => {
       ['/api/people/12/contacted', 'POST', '{"today":"2026-11-22"}'],
       ['/api/people/12/merge', 'POST', '{"duplicateId":14}'],
       ['/api/people/12', 'DELETE', undefined],
+      ['/api/people/12/mentions-over-time?today=2026-11-22', undefined, undefined],
+      ['/api/people/mentions-over-time?group=Friends+%26+co&today=2026-11-22', undefined, undefined],
     ]);
   });
 
@@ -38,6 +42,7 @@ describe('peopleService', () => {
     await expect(service.merge(12, 14)).resolves.toEqual({ data: null, error: 'personMergeFailed' });
     await expect(service.markContacted(12, '2026-11-22')).resolves.toEqual({ data: null, error: 'reachOutContactFailed' });
     await expect(service.remove(12)).resolves.toEqual({ data: null, error: 'personDeleteFailed' });
+    await expect(service.mentionsOverTime(12, '2026-11-22')).resolves.toEqual({ data: null, error: 'personMentionsFailed' });
     await expect(service.list()).resolves.toEqual({ data: null, error: 'peopleLoadFailed' });
   });
 });

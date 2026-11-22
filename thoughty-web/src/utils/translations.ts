@@ -26,6 +26,7 @@ import { personDatesTranslations, type PersonDatesTranslationKey } from "./trans
 import { personReachOutTranslations, type PersonReachOutTranslationKey } from "./translations.personReachOut";
 import { personNotesTranslations, type PersonNotesTranslationKey } from "./translations.personNotes";
 import { personGroupsTranslations, type PersonGroupsTranslationKey } from "./translations.personGroups";
+import { personMentionsTranslations, type PersonMentionsTranslationKey } from "./translations.personMentions";
 import { focusModeTranslations, type FocusModeTranslationKey } from "./translations.focusMode";
 import { composerDraftTranslations, type ComposerDraftTranslationKey } from "./translations.composerDraft";
 import { signUpTranslations, type SignUpTranslationKey } from "./translations.signUp";
@@ -118,6 +119,7 @@ export type TranslationKey =
   | PersonReachOutTranslationKey
   | PersonNotesTranslationKey
   | PersonGroupsTranslationKey
+  | PersonMentionsTranslationKey
   | FocusModeTranslationKey
   | ComposerDraftTranslationKey
   | SignUpTranslationKey
@@ -215,6 +217,7 @@ export const translations: Translations = {
     ...personReachOutTranslations.en,
     ...personNotesTranslations.en,
     ...personGroupsTranslations.en,
+    ...personMentionsTranslations.en,
     ...focusModeTranslations.en,
     ...composerDraftTranslations.en,
     ...signUpTranslations.en,
@@ -305,6 +308,7 @@ export const translations: Translations = {
     ...personReachOutTranslations.fr,
     ...personNotesTranslations.fr,
     ...personGroupsTranslations.fr,
+    ...personMentionsTranslations.fr,
     ...focusModeTranslations.fr,
     ...composerDraftTranslations.fr,
     ...signUpTranslations.fr,

@@ -30,6 +30,7 @@ import type { Language } from '../../utils/translations';
 import PersonDatesFields from './PersonDatesFields';
 import PersonGroupsField from './PersonGroupsField';
 import PersonNotesField, { PERSON_NOTES_MAX_LENGTH } from './PersonNotesField';
+import PersonMentionsOverTime from './PersonMentionsOverTime';
 import PersonReachOutFields from './PersonReachOutFields';
 
 /** The longest name the server keeps for a person. */
@@ -90,6 +91,7 @@ export default function PersonRow({ person, canMerge, groups: allGroups, theme, 
   const [pendingGroup, setPendingGroup] = useState('');
   const [error, setError] = useState<{ field: EditorField; message: string; index: number } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showMentions, setShowMentions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const datesRef = useRef<HTMLFieldSetElement>(null);
   const lastContactRef = useRef<HTMLInputElement>(null);
@@ -319,6 +321,10 @@ export default function PersonRow({ person, canMerge, groups: allGroups, theme, 
             <p className={`text-xs ${muted}`}>{details}</p>
           </div>
           <div className="flex gap-2">
+            <button type="button" className={iconButton} onClick={() => setShowMentions((shown) => !shown)} aria-expanded={showMentions}
+              aria-label={t('personMentionsShow', { name: person.name })} title={t('personMentionsShow', { name: person.name })}>
+              <span className="codicon codicon-graph" aria-hidden="true" />
+            </button>
             <button ref={editButtonRef} type="button" className={iconButton} onClick={startEditing}
               aria-label={t('personEdit', { name: person.name })} title={t('personEdit', { name: person.name })}>
               <span className="codicon codicon-edit" aria-hidden="true" />
@@ -334,6 +340,11 @@ export default function PersonRow({ person, canMerge, groups: allGroups, theme, 
               <span className="codicon codicon-trash" aria-hidden="true" />
             </button>
           </div>
+          {showMentions && (
+            <div className="basis-full">
+              <PersonMentionsOverTime scope={{ personId: person.id }} name={person.name} theme={theme} language={language} t={t} />
+            </div>
+          )}
         </div>
       )}
     </li>

@@ -4,6 +4,7 @@ import type { MockAppState, MockEntry } from './mockApp.shared';
 import { fulfillApiError, fulfillJson, type RouteContext } from './mockApp.route-utils';
 import { mockMergedPersonDates, mockPersonDatesRefusal, mockSavedPersonDates } from './mockApp.person-dates';
 import { mockContactRefusal, mockLastMentionedOn } from './mockApp.reach-outs';
+import { mockMentionsOverTime } from './mockApp.person-mentions';
 
 export const MOCK_PEOPLE_LIMIT = 1000;
 
@@ -78,20 +79,37 @@ const byName = (left: MockPerson, right: MockPerson) => left.name.toLowerCase().
 /**
  * `/api/people` as the API answers it: people by name with their counts outside the recycle bin, renaming the
  * name shown and setting their dates, reminder, last contact, notes and groups (refused with the API's codes), recording a
- * contact today, merging a duplicate (its handles move, its reminder too when the person kept has none, the later
+ * contact today, the mentions over time of a person or a group (`mockMentionsOverTime`), merging a duplicate (its handles move, its reminder too when the person kept has none, the later
  * contact stays, its notes, groups and dates follow the person's, saved searches follow) and deleting (saved searches widen).
  */
-export async function handlePeopleRoutes({ route, request, pathname, state }: RouteContext): Promise<boolean> {
+export async function handlePeopleRoutes({ route, request, pathname, searchParams, state }: RouteContext): Promise<boolean> {
   if (pathname === '/api/people' && request.method() === 'GET') {
     await fulfillJson(route, { people: [...state.people].sort(byName).map((person) => toResponse(state, person)), limit: MOCK_PEOPLE_LIMIT });
     return true;
   }
 
-  const match = /^\/api\/people\/(\d+)(\/merge|\/contacted)?$/.exec(pathname);
+  const today = searchParams.get('today') ?? new Date().toISOString().slice(0, 10);
+  if (pathname === '/api/people/mentions-over-time' && request.method() === 'GET') {
+    const group = groupKey(searchParams.get('group')?.trim() ?? '');
+    if (!group) {
+      await fulfillApiError(route, 400, 'VALIDATION_FAILED', 'group should not be empty');
+      return true;
+    }
+    const inGroup = state.people.filter((person) => (person.groups ?? []).some((name) => groupKey(name) === group));
+    await fulfillJson(route, mockMentionsOverTime(state, (entry) => inGroup.some((person) => mockMentions(entry, person)), today));
+    return true;
+  }
+
+  const match = /^\/api\/people\/(\d+)(\/merge|\/contacted|\/mentions-over-time)?$/.exec(pathname);
   if (!match) return false;
   const person = state.people.find((candidate) => candidate.id === Number(match[1]));
   if (!person) {
     await fulfillApiError(route, 404, 'PERSON_NOT_FOUND', 'Person not found');
+    return true;
+  }
+
+  if (match[2] === '/mentions-over-time' && request.method() === 'GET') {
+    await fulfillJson(route, mockMentionsOverTime(state, (entry) => mockMentions(entry, person), today));
     return true;
   }
 
