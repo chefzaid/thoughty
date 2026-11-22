@@ -122,6 +122,30 @@ describe('useAuthSession › a journal opened without a connection', () => {
         expect(result.current.user).toEqual(ADA);
     });
 
+    it('does not bring back a session signed out while it was being got back', async () => {
+        rememberOfflineUser(ADA);
+        let answerMe: (value: unknown) => void = () => undefined;
+        const routes: Record<string, Answer> = {
+            '/api/auth/refresh': unreachable,
+            '/api/auth/me': () => new Promise((resolve) => { answerMe = resolve; }),
+            '/api/auth/logout': () => json({ success: true }),
+        };
+        const fetchMock = stubApi(routes);
+        const result = await renderLoaded();
+
+        routes['/api/auth/refresh'] = () => json({ accessToken: 'back-token' });
+        act(() => { globalThis.dispatchEvent(new Event('online')); });
+        await waitFor(() => expect(callsTo(fetchMock, '/api/auth/me')).toHaveLength(1));
+
+        await act(() => result.current.logout());
+        await act(async () => { answerMe(json(ADA)); });
+
+        expect(result.current.user).toBeNull();
+        expect(result.current.getAccessToken()).toBeNull();
+        expect(readOfflineUser()).toBeNull();
+        expect(isSignOutPending()).toBe(false);
+    });
+
     it('ends the session when the server refuses it on the way back', async () => {
         rememberOfflineUser(ADA);
         const routes: Record<string, Answer> = { '/api/auth/refresh': unreachable };

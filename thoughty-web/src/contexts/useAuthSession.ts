@@ -174,6 +174,9 @@ export function useAuthSession() {
       const current = userIdRef.current;
       if (current !== null && (message.type === 'signed-out' || message.userId !== current)) {
         endSession();
+      } else if (current === null && message.type === 'signed-out') {
+        // No writer here yet: the session this tab may be restoring was just signed out, so it is not used
+        sessionEpochRef.current += 1;
       }
     });
     channelRef.current = channel;
@@ -225,16 +228,20 @@ export function useAuthSession() {
   // whether it goes on (and for whom: `/me` says), and a refusal ends it. Callers share one attempt.
   const reconnect = useCallback((): Promise<string | null> => {
     reconnectInFlightRef.current ??= (async () => {
+      const epoch = sessionEpochRef.current;
       const { token } = await refreshSession();
       if (!token) return null;
       setOfflineMode(false);
+      let me: User | null = null;
       try {
         const response = await fetch(`${API_BASE}/me`, { headers: buildAuthHeaders({}, token) });
-        const me = response.ok ? await safeJsonParse<User>(response) : null;
-        if (me) startSession({ accessToken: token, user: me });
+        me = response.ok ? await safeJsonParse<User>(response) : null;
       } catch {
         // The token stands; `/me` is read again on the next load
       }
+      // A session that ended while `/me` was read (signed out here or in another tab) is not brought back
+      if (epoch !== sessionEpochRef.current) return null;
+      if (me) startSession({ accessToken: token, user: me });
       return accessTokenRef.current;
     })().finally(() => {
       reconnectInFlightRef.current = null;
@@ -303,10 +310,12 @@ export function useAuthSession() {
         setLoading(false);
         return;
       }
+      const epoch = sessionEpochRef.current;
       const { token: accessToken, reached } = await refreshSession();
       if (!accessToken) {
-        // Thoughty cannot be reached: the writer last signed in here keeps their journal, offline
-        const remembered = reached ? null : readOfflineUser();
+        // Thoughty cannot be reached: the writer last signed in here keeps their journal, offline,
+        // unless another tab signed them out meanwhile
+        const remembered = reached || epoch !== sessionEpochRef.current ? null : readOfflineUser();
         if (remembered) {
           setOfflineMode(true);
           setUser(remembered);
@@ -321,7 +330,10 @@ export function useAuthSession() {
       try {
         const response = await authFetch(`${API_BASE}/me`);
         const userData = response.ok ? await safeJsonParse<User>(response) : null;
-        if (userData) {
+        if (epoch !== sessionEpochRef.current) {
+          // Signed out in another tab meanwhile: the token is for a session that no longer exists
+          accessTokenRef.current = null;
+        } else if (userData) {
           setUser(userData);
         } else {
           endSession();

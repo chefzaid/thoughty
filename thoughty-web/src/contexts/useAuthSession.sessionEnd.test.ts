@@ -191,6 +191,70 @@ describe('useAuthSession › every way a session ends', () => {
         expect(result.current.sessionKey).toBe(key + 2);
     });
 
+    it('does not restore a session another tab signs out while this one loads', async () => {
+        let answerMe: (value: unknown) => void = () => undefined;
+        const fetchMock = vi.fn(async (url: string) => {
+            if (url === '/api/auth/refresh') return json({ accessToken: 'access-token' });
+            if (url === '/api/auth/me') return new Promise((resolve) => { answerMe = resolve; });
+            return json({});
+        });
+        vi.stubGlobal('fetch', fetchMock);
+        const tab = openTab();
+        const hook = renderHook(() => useAuthSession());
+        await waitFor(() => expect(callsTo(fetchMock, '/api/auth/me')).toHaveLength(1));
+
+        tab.post({ type: 'signed-out' });
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        await act(async () => { answerMe(json(ADA)); });
+
+        await waitFor(() => expect(hook.result.current.loading).toBe(false));
+        expect(hook.result.current.user).toBeNull();
+        expect(hook.result.current.getAccessToken()).toBeNull();
+        expect(localStorage.getItem('thoughty.offlineUser')).toBeNull();
+    });
+
+    it('does not open offline for a writer another tab signs out while this one loads', async () => {
+        localStorage.setItem('thoughty.offlineUser', JSON.stringify(ADA));
+        let failRefresh: (reason: unknown) => void = () => undefined;
+        const fetchMock = vi.fn(async (url: string) => {
+            if (url === '/api/auth/refresh') return new Promise((_, reject) => { failRefresh = reject; });
+            return json({});
+        });
+        vi.stubGlobal('fetch', fetchMock);
+        const tab = openTab();
+        const hook = renderHook(() => useAuthSession());
+        await waitFor(() => expect(callsTo(fetchMock, '/api/auth/refresh')).toHaveLength(1));
+
+        // The other tab signs out offline: its storage write can land after this tab reads it, the message cannot
+        tab.post({ type: 'signed-out' });
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        await act(async () => { failRefresh(new TypeError('Failed to fetch')); });
+
+        await waitFor(() => expect(hook.result.current.loading).toBe(false));
+        expect(hook.result.current.user).toBeNull();
+        expect(hook.result.current.offline).toBe(false);
+    });
+
+    it('keeps a restore going when another tab signs in the same writer', async () => {
+        let answerMe: (value: unknown) => void = () => undefined;
+        const fetchMock = vi.fn(async (url: string) => {
+            if (url === '/api/auth/refresh') return json({ accessToken: 'access-token' });
+            if (url === '/api/auth/me') return new Promise((resolve) => { answerMe = resolve; });
+            return json({});
+        });
+        vi.stubGlobal('fetch', fetchMock);
+        const tab = openTab();
+        const hook = renderHook(() => useAuthSession());
+        await waitFor(() => expect(callsTo(fetchMock, '/api/auth/me')).toHaveLength(1));
+
+        tab.post({ type: 'signed-in', userId: 1 });
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        await act(async () => { answerMe(json(ADA)); });
+
+        await waitFor(() => expect(hook.result.current.user?.id).toBe(1));
+        expect(hook.result.current.getAccessToken()).toBe('access-token');
+    });
+
     it('starts afresh when another writer signs in over the one signed in here', async () => {
         const { result } = await renderSignedIn();
         const key = result.current.sessionKey;

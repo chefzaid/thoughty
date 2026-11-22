@@ -79,6 +79,40 @@ test.describe('Journal opened offline', () => {
     expect(await page.evaluate(() => localStorage.getItem('thoughty.offlineUser'))).toBeNull();
   });
 
+  test('a sign-out while the session is being got back is not undone by it', async ({ page }) => {
+    const { state } = await setupMockApp(page, { startAuthenticated: true });
+    await page.goto('/journal');
+    await expect(composer(page)).toBeVisible();
+
+    await loseConnection(page);
+    await page.reload();
+    await expect(offlineNotice(page)).toBeVisible();
+
+    // The connection comes back, and the writer signs out while `/me` is still on its way. The access
+    // token the refresh gave stays a valid JWT after the sign-out, so `/me` still answers for it.
+    let releaseMe: () => void = () => undefined;
+    const meHeld = new Promise<void>((resolve) => { releaseMe = resolve; });
+    let meAsked: () => void = () => undefined;
+    const meSent = new Promise<void>((resolve) => { meAsked = resolve; });
+    const { isNewUser: _isNewUser, ...user } = state.user;
+    await page.route('**/api/auth/me', async (route) => {
+      meAsked();
+      await meHeld;
+      await route.fulfill({ json: { ...user, createdAt: '2026-01-01T00:00:00.000Z' } });
+    });
+    await getConnectionBack(page);
+    await meSent;
+    await page.getByRole('button', { name: 'Logout' }).click();
+    await expect(page.getByRole('button', { name: 'Sign In' }).first()).toBeVisible();
+    await expect.poll(() => state.authenticated).toBe(false);
+
+    releaseMe();
+    await page.waitForResponse('**/api/auth/me');
+    await expect(page.getByRole('button', { name: 'Sign In' }).first()).toBeVisible();
+    await expect(composer(page)).toHaveCount(0);
+    expect(await page.evaluate(() => localStorage.getItem('thoughty.offlineUser'))).toBeNull();
+  });
+
   test('a sign-out chosen offline reaches the server on the next load', async ({ page }) => {
     const { state } = await setupMockApp(page, { startAuthenticated: true });
     await page.goto('/journal');
