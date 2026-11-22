@@ -20,6 +20,7 @@ const VerifyEmailPage = lazy(() => import('./components/VerifyEmailPage/VerifyEm
 const CompleteSignUpPage = lazy(() => import('./components/CompleteSignUpPage/CompleteSignUpPage'));
 const ResetPasswordPage = lazy(() => import('./components/ResetPasswordPage/ResetPasswordPage'));
 const UnsubscribePage = lazy(() => import('./components/UnsubscribePage/UnsubscribePage'));
+const SessionUnreachablePage = lazy(() => import('./components/SessionUnreachable/SessionUnreachablePage'));
 const AuthenticatedAppLayout = lazy(() => import('./routes/AuthenticatedAppLayout'));
 const AuthenticatedRoutes = lazy(() => import('./routes/AuthenticatedRoutes'));
 
@@ -57,6 +58,7 @@ function AppShell() {
     authenticatedLayoutProps,
     authenticatedRoutesProps,
     introPageProps,
+    sessionUnreachablePageProps,
   } = useAppShellModel();
 
   if (authLoading) {
@@ -113,6 +115,11 @@ function AppShell() {
   }
 
   if (!isAuthenticated) {
+    // Signed in, but Thoughty could not say as whom yet: not a sign-in page for a writer who is signed in
+    if (sessionUnreachablePageProps) {
+      return renderPublic(renderLazy(<SessionUnreachablePage {...sessionUnreachablePageProps} />), sessionUnreachablePageProps.t);
+    }
+
     if (!publicView) {
       return <Navigate to={getPublicPathForView('intro')} replace />;
     }

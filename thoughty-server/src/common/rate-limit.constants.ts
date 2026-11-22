@@ -9,6 +9,9 @@ export const RATE_LIMITS = {
   tokenRefresh: { limit: 30, ttl: FIFTEEN_MINUTES_MS },
   // Every refresh from one address: the ceiling for writers who share it (one network, one NAT).
   tokenRefreshAddress: { limit: 300, ttl: FIFTEEN_MINUTES_MS },
+  // `GET /api/auth/me`, read on each load: per account (the default limit), under a ceiling per address.
+  sessionRead: { limit: 100, ttl: FIFTEEN_MINUTES_MS },
+  sessionReadAddress: { limit: 300, ttl: FIFTEEN_MINUTES_MS },
   passwordRecovery: { limit: 3, ttl: ONE_HOUR_MS },
   accountSecurity: { limit: 5, ttl: ONE_HOUR_MS },
   socialWrite: { limit: 30, ttl: FIFTEEN_MINUTES_MS },

@@ -1,9 +1,10 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { InjectThrottlerStorage, ThrottlerException, type ThrottlerStorage } from '@nestjs/throttler';
-import type { Request, Response } from 'express';
+import { InjectThrottlerStorage, type ThrottlerStorage } from '@nestjs/throttler';
+import type { Request } from 'express';
 import { RATE_LIMITS } from '@/common/rate-limit.constants';
 import { AuthSessionService } from '../services/auth-session.service';
 import { readRefreshTokenCookie } from '../refresh-token-cookie';
+import { countAgainst } from './throttle-key';
 
 const THROTTLER_NAME = 'tokenRefresh';
 
@@ -24,16 +25,9 @@ export class RefreshThrottlerGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const http = context.switchToHttp();
-    const request = http.getRequest<Request>();
+    const request = context.switchToHttp().getRequest<Request>();
     const account = this.sessions.refreshTokenAccount(readRefreshTokenCookie(request));
     const key = account === null ? `refresh:address:${request.ip}` : `refresh:account:${account}`;
-    const { limit, ttl } = RATE_LIMITS.tokenRefresh;
-    const { isBlocked, timeToBlockExpire } = await this.storage.increment(key, ttl, limit, ttl, THROTTLER_NAME);
-    if (isBlocked) {
-      http.getResponse<Response>().header('Retry-After', String(timeToBlockExpire));
-      throw new ThrottlerException();
-    }
-    return true;
+    return countAgainst(this.storage, context, key, RATE_LIMITS.tokenRefresh, THROTTLER_NAME);
   }
 }

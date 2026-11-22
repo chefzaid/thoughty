@@ -111,7 +111,7 @@ export interface SetupMockAppOptions {
   startAuthenticated?: boolean;
   /** Another account than the default writer (id 1, `TestUser`), for specs where two writers share a browser. */
   user?: Partial<MockAppState["user"]>;
-  /** The access token the mock's sign-ins and refreshes hand out; `test-access-token` by default. */
+  /** The access token the mock's sign-ins and refreshes hand out; by default one shaped as the API signs it. */
   accessToken?: string;
   initialEntries?: MockEntry[];
   initialRevisions?: Record<number, MockEntryRevision[]>;
@@ -344,12 +344,18 @@ export function unique<T>(values: T[]): T[] {
 
 export { buildStats } from "./mockApp.stats";
 
+/** An access token shaped as the API signs it: a JWT whose payload names the account (`userId`). */
+export function mockAccessToken(userId: number): string {
+  const part = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
+  return `${part({ alg: "HS256", typ: "JWT" })}.${part({ userId, email: "test@example.com", username: "TestUser" })}.mock-signature`;
+}
+
 export function createMockAppState(
   options: SetupMockAppOptions = {},
 ): MockAppState {
   return {
     authenticated: options.startAuthenticated ?? false,
-    accessToken: options.accessToken ?? "test-access-token",
+    accessToken: options.accessToken ?? mockAccessToken(options.user?.id ?? 1),
     user: {
       id: 1,
       username: "TestUser",

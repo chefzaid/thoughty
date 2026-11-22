@@ -108,18 +108,21 @@ describe('useAuthSession › a journal opened without a connection', () => {
         expect(result.current.sessionKey).toBe(key);
     });
 
-    it('keeps the token when `/me` cannot be read on the way back', async () => {
+    it('keeps the token, still offline, when `/me` cannot be read on the way back', async () => {
         rememberOfflineUser(ADA);
         const routes: Record<string, Answer> = { '/api/auth/refresh': unreachable, '/api/auth/me': unreachable };
         stubApi(routes);
         const result = await renderLoaded();
 
-        routes['/api/auth/refresh'] = () => json({ accessToken: 'back-token' });
+        // A token the API signs for Ada (`userId` 1)
+        const token = `h.${btoa(JSON.stringify({ userId: 1 }))}.s`;
+        routes['/api/auth/refresh'] = () => json({ accessToken: token });
         await act(async () => { globalThis.dispatchEvent(new Event('online')); });
 
-        await waitFor(() => expect(result.current.offline).toBe(false));
-        expect(result.current.getAccessToken()).toBe('back-token');
+        expect(result.current.offline).toBe(true);
+        expect(result.current.getAccessToken()).toBe(token);
         expect(result.current.user).toEqual(ADA);
+        expect(readOfflineUser()).toEqual(ADA);
     });
 
     it('does not bring back a session signed out while it was being got back', async () => {

@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  backoffMs,
   clearRefreshThrottle,
+  clearSessionUserThrottle,
+  noteSessionUserThrottled,
+  sessionUserWaitMs,
   noteRefreshThrottled,
   parseRetryAfter,
   REFRESH_FIRST_WAIT_MS,
@@ -92,5 +96,21 @@ describe('refreshThrottle', () => {
     expect(refreshWaitMs(NOW)).toBe(30_000);
     clearRefreshThrottle();
     expect(refreshWaitMs(NOW)).toBe(0);
+  });
+
+  it('backs off from five seconds, doubling, to at most fifteen minutes', () => {
+    expect(backoffMs(0)).toBe(REFRESH_FIRST_WAIT_MS);
+    expect(backoffMs(1)).toBe(REFRESH_FIRST_WAIT_MS);
+    expect(backoffMs(2)).toBe(2 * REFRESH_FIRST_WAIT_MS);
+    expect(backoffMs(30)).toBe(REFRESH_MAX_WAIT_MS);
+  });
+
+  it('keeps the wait for `/me` apart from the refresh’s', () => {
+    expect(noteSessionUserThrottled('60', NOW)).toBe(60_000);
+
+    expect(sessionUserWaitMs(NOW)).toBe(60_000);
+    expect(refreshWaitMs(NOW)).toBe(0);
+    clearSessionUserThrottle();
+    expect(sessionUserWaitMs(NOW)).toBe(0);
   });
 });

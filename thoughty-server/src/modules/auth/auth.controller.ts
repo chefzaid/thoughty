@@ -62,6 +62,7 @@ import {
 } from './services';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RefreshThrottlerGuard } from './guards/refresh-throttler.guard';
+import { SessionReadThrottlerGuard } from './guards/session-read-throttler.guard';
 import { Public, CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { SuccessMessageResponseDto, SuccessResponseDto } from '@/common/dto';
 import { RATE_LIMITS, throttleDefault } from '@/common';
@@ -352,11 +353,20 @@ export class AuthController {
   }
 
   @Get('me')
-  @UseGuards(JwtAuthGuard)
+  @Throttle(throttleDefault(RATE_LIMITS.sessionReadAddress))
+  @UseGuards(JwtAuthGuard, SessionReadThrottlerGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get current user info' })
+  @ApiOperation({
+    summary: 'Get current user info',
+    description: 'Limited per account, under a looser ceiling per address.',
+  })
   @ApiResponse({ status: 200, description: 'Current user info', type: UserResponseDto })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({
+    status: 429,
+    description: 'Too many reads; the session is untouched and the token still works after the wait',
+    headers: { 'Retry-After': { description: 'Seconds until a read is accepted again', schema: { type: 'integer' } } },
+  })
   async getMe(@CurrentUser() user: AuthenticatedUser): Promise<UserResponseDto> {
     return this.accountService.getMe(user.userId);
   }

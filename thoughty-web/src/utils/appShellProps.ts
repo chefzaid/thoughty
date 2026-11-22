@@ -27,6 +27,7 @@ export {
   type MemoirQuestionsPageProps,
   type UnsubscribePageProps,
   type VerifyEmailPageProps,
+  type SessionUnreachablePageProps,
 } from './publicShellProps';
 
 export type AuthenticatedLayoutProps = Omit<ComponentProps<typeof AuthenticatedAppLayout>, 'children'>;

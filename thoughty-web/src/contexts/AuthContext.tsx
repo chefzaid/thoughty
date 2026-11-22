@@ -23,6 +23,10 @@ interface AuthContextValue {
   sessionKey: number;
   /** Set while the journal is open without the API having confirmed the session (Thoughty could not be reached). */
   offline: boolean;
+  /** Set while the session goes on but Thoughty could not say whose it is, and no writer remembered here is theirs. */
+  unreachable: boolean;
+  /** Tries to confirm an unconfirmed session now (a wait the API asked for still holds). */
+  retrySession: () => Promise<unknown>;
   register: (email: string, password: string, username: string, website?: string) => Promise<AuthResult>;
   completeSignUp: (token: string, password: string, username?: string) => Promise<AuthResult>;
   login: (identifier: string, password: string, website?: string) => Promise<AuthResult>;
@@ -58,6 +62,8 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     loading,
     sessionKey,
     offline,
+    unreachable,
+    retrySession,
     getAccessToken,
     startSession,
     signOutLocally,
@@ -88,6 +94,8 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     isAuthenticated: !!user,
     sessionKey,
     offline,
+    unreachable,
+    retrySession,
     register,
     completeSignUp,
     login,
@@ -110,6 +118,8 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     error,
     sessionKey,
     offline,
+    unreachable,
+    retrySession,
     register,
     completeSignUp,
     login,

@@ -296,4 +296,20 @@ describeContract('auth', (context) => {
     const rotated = await call('POST /api/auth/refresh', { headers: withCookie(bob), status: 200 });
     bob.refreshCookie = readRefreshCookie(rotated.headers['set-cookie']);
   });
+
+  // Last too: it uses up alice's reads of `/me` for the window
+  it('counts reads of `/me` per account, so writers at one address do not use up each other\'s', async () => {
+    const { alice, bob } = context;
+    const readMe = () => request(context.api.http).get('/api/auth/me').set('Authorization', `Bearer ${alice.accessToken}`);
+    let read = await readMe();
+    for (let sent = 1; read.status === 200 && sent <= RATE_LIMITS.sessionRead.limit; sent += 1) {
+      read = await readMe();
+    }
+    expect(read.status).toBe(429);
+    const refused = await call('GET /api/auth/me', { as: alice, status: 429, code: 'RATE_LIMITED' });
+    expect(Number(refused.headers['retry-after'])).toBeGreaterThan(0);
+
+    // Bob reads his from the same address all the same
+    await call('GET /api/auth/me', { as: bob, status: 200 });
+  });
 });

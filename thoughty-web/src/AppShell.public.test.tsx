@@ -200,4 +200,34 @@ describe('AppShell public flows', () => {
       expect(screen.getAllByRole('button', { name: 'Sign In' })[0]).toBeInTheDocument();
     });
   });
+
+  it('says Thoughty cannot be reached, not sign in, to a writer whose session it could not confirm', async () => {
+    const user = userEvent.setup();
+    globalThis.history.replaceState({}, '', '/journal');
+    setMockAuthState({ user: null, isAuthenticated: false, unreachable: true });
+    const { useAuth } = await import('./contexts/AuthContext');
+    const { retrySession, logout } = useAuth();
+
+    renderAppShell();
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Thoughty can’t be reached right now' })).toBeInTheDocument();
+    expect(screen.getByText(/You’re still signed in/)).toBeInTheDocument();
+    expect(screen.queryByLabelText('Email or Username')).not.toBeInTheDocument();
+    expect(globalThis.location.pathname).toBe('/journal');
+
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(retrySession).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Try again' })).toBeEnabled());
+    await user.click(screen.getByRole('button', { name: 'Logout' }));
+    expect(logout).toHaveBeenCalledTimes(1);
+  });
+
+  it('still shows the presentation page to a writer whose session it could not confirm', () => {
+    globalThis.history.replaceState({}, '', '/');
+    setMockAuthState({ user: null, isAuthenticated: false, unreachable: true });
+
+    renderAppShell();
+
+    expect(screen.getByRole('heading', { level: 1, name: 'A private journal that becomes your life story.' })).toBeInTheDocument();
+  });
 });

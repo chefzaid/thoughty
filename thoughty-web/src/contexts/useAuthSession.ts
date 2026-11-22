@@ -18,7 +18,8 @@ import {
   readOfflineUser,
   rememberOfflineUser,
 } from './offlineSession';
-import { clearRefreshThrottle, noteRefreshThrottled, refreshWaitMs } from './refreshThrottle';
+import { backoffMs, clearRefreshThrottle, noteRefreshThrottled, refreshWaitMs } from './refreshThrottle';
+import { readSessionUser, tokenUserId, UNANSWERED, type SessionUserAnswer } from './sessionUser';
 
 /** Keys where older versions kept tokens in localStorage; they are removed on load. */
 const LEGACY_TOKEN_KEYS = ['accessToken', 'refreshToken'] as const;
@@ -112,12 +113,20 @@ export function useAuthSession() {
   const [sessionKey, setSessionKey] = useState(0);
   /**
    * Set while the journal is open for the writer last signed in on this browser without the API having
-   * confirmed the session, because it could not be reached when the app opened, or because it asked to
-   * wait before the next refresh (429, on load or when a token expired). It ends when the API answers a
-   * refresh: the session goes on, or ends there if the server refuses it.
+   * confirmed the session, because it could not be reached when the app opened, because it asked to
+   * wait before the next refresh (429, on load or when a token expired), or because `/me` did not say
+   * whose the session is (429, 5xx, no answer). It ends when `/me` confirms the session, or when the server
+   * refuses it (401, 403), which ends the session there.
    */
   const [offline, setOffline] = useState(false);
   const offlineRef = useRef(false);
+  /**
+   * Set while the session goes on (the refresh gave a token) but `/me` could not say whose it is yet and no
+   * writer remembered here is the one the token is for: the page says Thoughty cannot be reached, rather
+   * than asking a writer who is signed in to sign in again, and tries again (`retryAt`).
+   */
+  const [unreachable, setUnreachableState] = useState(false);
+  const unreachableRef = useRef(false);
 
   // The access token lives in memory only; the refresh token is an httpOnly cookie the page
   // cannot read, so a reload gets a new access token through refreshSession.
@@ -128,8 +137,13 @@ export function useAuthSession() {
   const userIdRef = useRef<number | null>(null);
   const channelRef = useRef<SessionChannel | null>(null);
   const reconnectInFlightRef = useRef<Promise<string | null> | null>(null);
-  /** When a refresh may go again after a `429`, so a journal kept offline meanwhile gets its session back then. */
-  const [refreshRetry, setRefreshRetry] = useState<{ at: number } | null>(null);
+  /**
+   * When the session is tried again: once a refresh or `/me` may go after a `429`, or after a backoff when
+   * `/me` (or the refresh on the way back) got no answer, so an unconfirmed session gets confirmed on its own.
+   */
+  const [retryAt, setRetryAt] = useState<{ at: number } | null>(null);
+  /** Tries in a row that got no answer, for that backoff. */
+  const retryStrikesRef = useRef(0);
 
   useEffect(() => {
     userIdRef.current = user?.id ?? null;
@@ -145,6 +159,16 @@ export function useAuthSession() {
     setOffline(next);
   }, []);
 
+  const setUnreachable = useCallback((next: boolean): void => {
+    unreachableRef.current = next;
+    setUnreachableState(next);
+  }, []);
+
+  const retryAfterBackoff = useCallback((): void => {
+    retryStrikesRef.current += 1;
+    setRetryAt({ at: Date.now() + backoffMs(retryStrikesRef.current) });
+  }, []);
+
   const getAccessToken = useCallback((): string | null => accessTokenRef.current, []);
 
   // The token, the PIN unlock of this tab and the user go; the new key drops the writer's data
@@ -154,9 +178,10 @@ export function useAuthSession() {
     setContentUnlockToken(null);
     forgetOfflineSession();
     setOfflineMode(false);
+    setUnreachable(false);
     setUser(null);
     setSessionKey(sessionEpochRef.current);
-  }, [setOfflineMode]);
+  }, [setOfflineMode, setUnreachable]);
 
   // A sign-out the writer chose: this browser's draft copies go too, and so do the other tabs' sessions.
   // A draft is private text: it stays on the server for the next sign-in, not in this browser.
@@ -180,6 +205,10 @@ export function useAuthSession() {
   useEffect(() => {
     const channel = openSessionChannel((message) => {
       // The cookie this tab refreshes with is gone, or now another writer's
+      if (unreachableRef.current) {
+        if (message.type === 'signed-out' || message.userId !== tokenUserId(accessTokenRef.current)) endSession();
+        return;
+      }
       const current = userIdRef.current;
       if (current !== null && (message.type === 'signed-out' || message.userId !== current)) {
         endSession();
@@ -203,7 +232,7 @@ export function useAuthSession() {
   const refreshSession = useCallback((): Promise<RefreshOutcome> => {
     const epoch = sessionEpochRef.current;
     const throttled = (retryInMs: number): RefreshOutcome => {
-      setRefreshRetry({ at: Date.now() + retryInMs });
+      setRetryAt({ at: Date.now() + retryInMs });
       return { token: null, refused: false, retryInMs };
     };
     refreshInFlightRef.current ??= withRefreshLock(async (): Promise<RefreshOutcome> => {
@@ -221,11 +250,10 @@ export function useAuthSession() {
       }
       if (response.status === 429) return throttled(noteRefreshThrottled(response.headers.get('Retry-After')));
       clearRefreshThrottle();
-      setRefreshRetry(null);
 
       const current = epoch === sessionEpochRef.current;
       if (response.status === 401 || response.status === 403) {
-        if (current && (accessTokenRef.current !== null || offlineRef.current)) endSession();
+        if (current && (accessTokenRef.current !== null || offlineRef.current || unreachableRef.current)) endSession();
         return { token: null, refused: true };
       }
       const data = response.ok ? await safeJsonParse<{ accessToken?: string }>(response) : null;
@@ -238,37 +266,80 @@ export function useAuthSession() {
     return refreshInFlightRef.current;
   }, [endSession]);
 
-  // A journal opened offline gets its session back once the API answers: the refresh cookie decides
-  // whether it goes on (and for whom: `/me` says), and a refusal ends it. Callers share one attempt.
+  // A session left unconfirmed: the writer remembered here, if the token is theirs, keeps their journal
+  // offline; otherwise the page says Thoughty cannot be reached. Either way the session is tried again later.
+  const holdUnconfirmed = useCallback((token: string | null, owner: number | null): void => {
+    const shown = userIdRef.current;
+    // The writer shown offline is not the one this session is for: nothing of theirs stays
+    if (shown !== null && shown !== owner) endSession();
+    const remembered = shown === null ? readOfflineUser() : null;
+    const known = owner !== null && (shown === owner || remembered?.id === owner);
+    accessTokenRef.current = token;
+    if (known && remembered) setUser(remembered);
+    setOfflineMode(known);
+    setUnreachable(!known);
+  }, [endSession, setOfflineMode, setUnreachable]);
+
+  // Who the session a token is for belongs to (`/me`). Only a `401` or `403` says the session is gone; a
+  // token held since an earlier try may have expired, so it is refreshed once first. A `429`, a server
+  // that is down or no answer keep the session, unconfirmed, and it is tried again later.
+  const confirmSession = useCallback(async (token: string, epoch: number, justRefreshed: boolean): Promise<string | null> => {
+    let answer: SessionUserAnswer = await readSessionUser(token);
+    let held: string | null = token;
+    if (answer.kind === 'refused' && !justRefreshed) {
+      const refreshed = await refreshSession();
+      held = refreshed.token;
+      if (refreshed.token) answer = await readSessionUser(refreshed.token);
+      else if (!refreshed.refused) answer = refreshed.retryInMs === undefined ? UNANSWERED : { kind: 'wait', retryInMs: refreshed.retryInMs };
+    }
+    // A session that ended meanwhile (signed out here or in another tab) is not brought back, nor its token kept
+    if (epoch !== sessionEpochRef.current) {
+      if (accessTokenRef.current === token || accessTokenRef.current === held) accessTokenRef.current = null;
+      return null;
+    }
+    if (answer.kind === 'refused') {
+      endSession();
+      return null;
+    }
+    if (answer.kind === 'user') {
+      retryStrikesRef.current = 0;
+      setRetryAt(null);
+      setOfflineMode(false);
+      setUnreachable(false);
+      startSession({ accessToken: held ?? token, user: answer.user });
+      return held;
+    }
+    if (answer.kind === 'wait') setRetryAt({ at: Date.now() + answer.retryInMs });
+    else retryAfterBackoff();
+    holdUnconfirmed(held, tokenUserId(held ?? token));
+    return held;
+  }, [endSession, holdUnconfirmed, refreshSession, retryAfterBackoff, setOfflineMode, setUnreachable, startSession]);
+
+  // A session left unconfirmed (opened offline, or `/me` unanswered) is confirmed once the API answers: the
+  // token held since then, or else the refresh cookie, decides whether it goes on and `/me` says for whom;
+  // a refusal ends it. Callers share one attempt.
   const reconnect = useCallback((): Promise<string | null> => {
     reconnectInFlightRef.current ??= (async () => {
       const epoch = sessionEpochRef.current;
-      const { token } = await refreshSession();
-      if (!token) return null;
-      setOfflineMode(false);
-      let me: User | null = null;
-      try {
-        const response = await fetch(`${API_BASE}/me`, { headers: buildAuthHeaders({}, token) });
-        me = response.ok ? await safeJsonParse<User>(response) : null;
-      } catch {
-        // The token stands; `/me` is read again on the next load
-      }
-      // A session that ended while `/me` was read (signed out here or in another tab) is not brought back
-      if (epoch !== sessionEpochRef.current) return null;
-      if (me) startSession({ accessToken: token, user: me });
-      return accessTokenRef.current;
+      const held = accessTokenRef.current;
+      if (held !== null) return confirmSession(held, epoch, false);
+      const { token, refused, retryInMs } = await refreshSession();
+      if (token && epoch === sessionEpochRef.current) return confirmSession(token, epoch, true);
+      // No answer: tried again after a backoff, as well as before each request and when the connection returns
+      if (!token && !refused && retryInMs === undefined) retryAfterBackoff();
+      return null;
     })().finally(() => {
       reconnectInFlightRef.current = null;
     });
     return reconnectInFlightRef.current;
-  }, [refreshSession, setOfflineMode, startSession]);
+  }, [confirmSession, refreshSession, retryAfterBackoff]);
 
-  // Kept offline while a refresh waits (429): the session is tried again once the wait is over
+  // An unconfirmed session is tried again once the wait is over
   useEffect(() => {
-    if (!offline || !refreshRetry) return undefined;
-    const timer = setTimeout(() => void reconnect(), Math.max(0, refreshRetry.at - Date.now()));
+    if ((!offline && !unreachable) || !retryAt) return undefined;
+    const timer = setTimeout(() => void reconnect(), Math.max(0, retryAt.at - Date.now()));
     return () => clearTimeout(timer);
-  }, [offline, refreshRetry, reconnect]);
+  }, [offline, unreachable, retryAt, reconnect]);
 
   // Fetch with auto token refresh
   const authFetch = useCallback(
@@ -303,11 +374,11 @@ export function useAuthSession() {
 
   // A connection coming back gets the session back at once, not only at the next request
   useEffect(() => {
-    if (!offline) return undefined;
+    if (!offline && !unreachable) return undefined;
     const onOnline = () => void reconnect();
     globalThis.addEventListener('online', onOnline);
     return () => globalThis.removeEventListener('online', onOnline);
-  }, [offline, reconnect]);
+  }, [offline, unreachable, reconnect]);
 
   // Check if user is logged in on mount
   useEffect(() => {
@@ -354,26 +425,13 @@ export function useAuthSession() {
         return;
       }
 
-      try {
-        const response = await authFetch(`${API_BASE}/me`);
-        const userData = response.ok ? await safeJsonParse<User>(response) : null;
-        if (epoch !== sessionEpochRef.current) {
-          // Signed out in another tab meanwhile: the token is for a session that no longer exists
-          accessTokenRef.current = null;
-        } else if (userData) {
-          setUser(userData);
-        } else {
-          endSession();
-        }
-      } catch (err) {
-        console.error('Auth check failed:', err);
-        endSession();
-      }
+      // `/me` says whose the session is; only a `401` or `403` ends it, and nothing else forgets the writer
+      await confirmSession(accessToken, epoch, true);
       setLoading(false);
     };
 
     checkAuth();
-  }, [authFetch, endSession, refreshSession, setOfflineMode, startSession]);
+  }, [confirmSession, refreshSession, setOfflineMode, startSession]);
 
   // Logout ends the session here at once, then the server revokes the refresh token from its cookie
   // and clears the cookie. It waits for a refresh in flight, so it revokes the cookie that refresh set.
@@ -396,6 +454,8 @@ export function useAuthSession() {
     loading,
     sessionKey,
     offline,
+    unreachable,
+    retrySession: reconnect,
     getAccessToken,
     startSession,
     signOutLocally,

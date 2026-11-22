@@ -262,7 +262,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get current user info */
+        /**
+         * Get current user info
+         * @description Limited per account, under a looser ceiling per address.
+         */
         get: operations["AuthController_getMe"];
         put?: never;
         post?: never;
@@ -13300,6 +13303,25 @@ export interface operations {
                      *       "message": "Unauthorized",
                      *       "error": "Unauthorized",
                      *       "code": "UNAUTHORIZED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Too many reads; the session is untouched and the token still works after the wait */
+            429: {
+                headers: {
+                    /** @description Seconds until a read is accepted again */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 429,
+                     *       "message": "Too many reads; the session is untouched and the token still works after the wait",
+                     *       "error": "Too Many Requests",
+                     *       "code": "RATE_LIMITED"
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];

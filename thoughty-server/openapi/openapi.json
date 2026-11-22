@@ -863,6 +863,7 @@
     },
     "/api/auth/me": {
       "get": {
+        "description": "Limited per account, under a looser ceiling per address.",
         "operationId": "AuthController_getMe",
         "parameters": [],
         "responses": {
@@ -898,6 +899,30 @@
                   "message": "Unauthorized",
                   "error": "Unauthorized",
                   "code": "UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many reads; the session is untouched and the token still works after the wait",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until a read is accepted again",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 429,
+                  "message": "Too many reads; the session is untouched and the token still works after the wait",
+                  "error": "Too Many Requests",
+                  "code": "RATE_LIMITED"
                 }
               }
             }

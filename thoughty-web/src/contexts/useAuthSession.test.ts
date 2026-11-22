@@ -68,18 +68,19 @@ describe('useAuthSession', () => {
     });
 
     it.each([
-        ['the profile request is refused', () => json({}, 500)],
+        ['the profile request fails on the server', () => json({}, 500)],
         ['the profile has no body', () => ({ ok: true, status: 200, json: async () => null })],
-        ['the profile request fails', () => {
+        ['the profile request gets no answer', () => {
             throw new Error('offline');
         }],
-    ])('drops the access token when %s', async (_case, me) => {
+    ])('keeps the session, unconfirmed and without a writer to show, when %s', async (_case, me) => {
         stubFetch(me);
 
         const result = await renderSession();
 
         expect(result.current.user).toBeNull();
-        expect(result.current.getAccessToken()).toBeNull();
+        expect(result.current.unreachable).toBe(true);
+        expect(result.current.getAccessToken()).toBe('access-token');
     });
 
     it('signs out locally even when the logout request fails', async () => {

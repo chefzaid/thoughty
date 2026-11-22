@@ -15,7 +15,9 @@ export type ComposerDraftTranslationKey =
   | 'composerDraftKeepWriting'
   | 'composerDraftClear'
   | 'offlineNotice'
-  | 'offlineNoticeDetail';
+  | 'offlineNoticeDetail'
+  | 'sessionUnreachableTitle'
+  | 'sessionUnreachableDetail';
 
 export const composerDraftTranslations: Record<Language, Record<ComposerDraftTranslationKey, string>> = {
   en: {
@@ -34,6 +36,8 @@ export const composerDraftTranslations: Record<Language, Record<ComposerDraftTra
     composerDraftClear: 'Clear it',
     offlineNotice: 'You’re offline',
     offlineNoticeDetail: 'You can keep writing: your draft stays on this device and is saved once Thoughty can be reached again.',
+    sessionUnreachableTitle: 'Thoughty can’t be reached right now',
+    sessionUnreachableDetail: 'You’re still signed in. Your journal opens as soon as Thoughty answers; it tries again on its own.',
   },
   fr: {
     composerDraftSaving: 'Enregistrement…',
@@ -51,5 +55,7 @@ export const composerDraftTranslations: Record<Language, Record<ComposerDraftTra
     composerDraftClear: 'L’effacer',
     offlineNotice: 'Vous êtes hors ligne',
     offlineNoticeDetail: 'Vous pouvez continuer à écrire : votre brouillon reste sur cet appareil et sera enregistré dès que Thoughty sera de nouveau joignable.',
+    sessionUnreachableTitle: 'Thoughty est injoignable pour le moment',
+    sessionUnreachableDetail: 'Votre session est toujours ouverte. Votre journal s’ouvre dès que Thoughty répond ; il réessaie de lui-même.',
   },
 };

@@ -13,6 +13,7 @@ import type MemoirQuestionsPage from '../components/PublicLibrary/MemoirQuestion
 import type LegalPage from '../components/LegalPage/LegalPage';
 import type UnsubscribePage from '../components/UnsubscribePage/UnsubscribePage';
 import type VerifyEmailPage from '../components/VerifyEmailPage/VerifyEmailPage';
+import type SessionUnreachablePage from '../components/SessionUnreachable/SessionUnreachablePage';
 import type { PublicViewType, TranslationFunction, ViewType } from '../types';
 import { resolveLanguage } from './language';
 
@@ -29,6 +30,7 @@ export type VerifyEmailPageProps = ComponentProps<typeof VerifyEmailPage>;
 export type CompleteSignUpPageProps = ComponentProps<typeof CompleteSignUpPage>;
 export type ResetPasswordPageProps = ComponentProps<typeof ResetPasswordPage>;
 export type UnsubscribePageProps = ComponentProps<typeof UnsubscribePage>;
+export type SessionUnreachablePageProps = ComponentProps<typeof SessionUnreachablePage>;
 
 type AppShellRoutingState = ReturnType<typeof import('../hooks/useAppShellRouting').useAppShellRouting>;
 

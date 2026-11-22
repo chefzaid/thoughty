@@ -44,6 +44,7 @@ import {
   type MemoirQuestionsPageProps,
   type UnsubscribePageProps,
   type VerifyEmailPageProps,
+  type SessionUnreachablePageProps,
 } from '../utils/appShellProps';
 import type { RephraseMode, SummaryGuidance } from '../services/api/aiService';
 import type { Entry, PublicViewType, ViewType } from '../types';
@@ -71,10 +72,12 @@ interface AppShellModel {
   authenticatedLayoutProps: AuthenticatedLayoutProps;
   authenticatedRoutesProps: AuthenticatedRoutesProps;
   introPageProps: IntroPageProps;
+  /** Set while the session goes on but Thoughty could not say whose it is (and no writer here is theirs). */
+  sessionUnreachablePageProps: SessionUnreachablePageProps | null;
 }
 
 export function useAppShellModel(): AppShellModel {
-  const { isAuthenticated, loading: authLoading, user, logout, offline } = useAuth();
+  const { isAuthenticated, loading: authLoading, user, logout, offline, unreachable, retrySession } = useAuth();
   const navigate = useNavigate();
   const {
     searchParams,
@@ -430,6 +433,10 @@ export function useAppShellModel(): AppShellModel {
     userName: config.name || user?.username || 'User',
   });
 
+  const sessionUnreachablePageProps: SessionUnreachablePageProps | null = unreachable
+    ? { t, theme: config.theme || 'dark', onRetry: retrySession, onSignOut: logout }
+    : null;
+
   return {
     authLoading,
     isAuthenticated,
@@ -451,5 +458,6 @@ export function useAppShellModel(): AppShellModel {
     authenticatedLayoutProps,
     authenticatedRoutesProps,
     introPageProps,
+    sessionUnreachablePageProps,
   };
 }
