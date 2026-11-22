@@ -19,6 +19,7 @@ function build(activity: ReturnType<typeof createAccountActivityMock>) {
     activity,
     emptyRepository(),
     emptyRepository(),
+    emptyRepository(),
   );
 }
 
@@ -62,6 +63,7 @@ describe('UserDataExportService access tokens', () => {
       createAccountActivityMock(),
       emptyRepository(),
       tokens,
+      emptyRepository(),
     );
 
     const data = await service.downloadData(1);

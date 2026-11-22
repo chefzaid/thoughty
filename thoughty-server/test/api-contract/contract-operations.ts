@@ -237,6 +237,8 @@ export const CONTRACT_SUITES = {
     'POST /api/on-this-day-email/unsubscribe',
     'GET /api/monthly-recap-email',
     'PUT /api/monthly-recap-email',
+    'GET /api/writing-reminder-email',
+    'PUT /api/writing-reminder-email',
     'POST /api/email-unsubscribe',
   ],
 } as const satisfies Record<string, readonly string[]>;

@@ -29,6 +29,6 @@ import { StatsTopWordsService } from './stats-top-words.service';
     StatsRecordsService,
     StatsTopWordsService,
   ],
-  exports: [StatsService],
+  exports: [StatsService, StatsStreakService],
 })
 export class StatsModule {}

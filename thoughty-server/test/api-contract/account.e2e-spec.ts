@@ -346,7 +346,7 @@ describeContract('account', (context) => {
   it('saves the opt-in emails and turns them off from an unsubscribe link', async () => {
     const { alice, bob } = context;
     const secret = getUnsubscribeSecret(context.api.app.get(ConfigService));
-    for (const route of ['/api/on-this-day-email', '/api/monthly-recap-email'] as const) {
+    for (const route of ['/api/on-this-day-email', '/api/monthly-recap-email', '/api/writing-reminder-email'] as const) {
       const current = await call(`GET ${route}`, { as: alice, status: 200 });
       const setting = current.body as {
         enabled: boolean;
@@ -400,5 +400,12 @@ describeContract('account', (context) => {
     });
     const after = await call('GET /api/monthly-recap-email', { as: alice, status: 200 });
     expect((after.body as { enabled: boolean }).enabled).toBe(false);
+    const reminder = await call('POST /api/email-unsubscribe', {
+      query: { token: createEmailUnsubscribeToken('writing-reminder', alice.id, secret) },
+      status: 200,
+    });
+    expect(reminder.body).toEqual({ success: true, kind: 'writing-reminder' });
+    const reminderAfter = await call('GET /api/writing-reminder-email', { as: alice, status: 200 });
+    expect((reminderAfter.body as { enabled: boolean }).enabled).toBe(false);
   });
 });

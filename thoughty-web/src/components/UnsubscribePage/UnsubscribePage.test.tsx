@@ -48,6 +48,14 @@ describe('UnsubscribePage', () => {
     expect(screen.getByRole('heading', { name: 'emailUnsubscribeTitle' })).toBeInTheDocument();
   });
 
+  it('says which email went off: the writing reminder', async () => {
+    unsubscribeEmail.mockResolvedValue({ data: { success: true, kind: 'writing-reminder' }, error: null });
+    renderPage('/unsubscribe?token=remind.3.signed');
+
+    expect(await screen.findByText('writingReminderUnsubscribed')).toBeInTheDocument();
+    expect(unsubscribeEmail).toHaveBeenCalledWith('remind.3.signed');
+  });
+
   it('shows why it failed and tries again', async () => {
     unsubscribeEmail
       .mockResolvedValueOnce({ data: null, error: 'apiError_EMAIL_UNSUBSCRIBE_INVALID' })

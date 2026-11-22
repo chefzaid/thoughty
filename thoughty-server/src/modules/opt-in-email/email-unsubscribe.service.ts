@@ -3,7 +3,7 @@ import { ConfigService as NestConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { apiError } from '@/common/errors';
-import { MonthlyRecapEmail, OnThisDayEmail, type OptInEmailSetting } from '@/database/entities';
+import { MonthlyRecapEmail, OnThisDayEmail, type OptInEmailSetting, WritingReminderEmail } from '@/database/entities';
 import { getUnsubscribeSecret } from '@/modules/auth/auth-secrets';
 import type { EmailUnsubscribeResultDto } from './dto';
 import { verifyEmailUnsubscribeToken } from './email-unsubscribe-token';
@@ -20,10 +20,16 @@ export class EmailUnsubscribeService {
     onThisDayRepository: Repository<OnThisDayEmail>,
     @InjectRepository(MonthlyRecapEmail)
     monthlyRecapRepository: Repository<MonthlyRecapEmail>,
+    @InjectRepository(WritingReminderEmail)
+    writingReminderRepository: Repository<WritingReminderEmail>,
     nestConfigService: NestConfigService,
   ) {
     this.unsubscribeSecret = getUnsubscribeSecret(nestConfigService);
-    this.settings = { 'on-this-day': onThisDayRepository, 'monthly-recap': monthlyRecapRepository };
+    this.settings = {
+      'on-this-day': onThisDayRepository,
+      'monthly-recap': monthlyRecapRepository,
+      'writing-reminder': writingReminderRepository,
+    };
   }
 
   /**

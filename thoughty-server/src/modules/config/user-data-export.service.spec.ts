@@ -10,7 +10,7 @@ import {
   EntryLike,
   EntryRevision,
   MemoirAnswer,
-  YearReviewMood, WeeklyReflection, PersonalAccessToken,
+  YearReviewMood, WeeklyReflection, PersonalAccessToken, WritingReminderEmail,
   SavedSearch,
   LifeEra,
   Person,
@@ -95,7 +95,7 @@ describe('UserDataExportService', () => {
         { provide: getRepositoryToken(TimeCapsule), useValue: { find: jest.fn().mockResolvedValue([]) } },
         noTimeCapsules(),
         accountActivityProvider(),
-        ...[ShareLink, ComposerDraft, SavedEntry, TopicFollow, UserMute, UserBlock, WeeklyReflection, PersonalAccessToken].map((entity) => ({ provide: getRepositoryToken(entity), useValue: { find: jest.fn().mockResolvedValue([]), findOne: jest.fn().mockResolvedValue(null) } })),
+        ...[ShareLink, ComposerDraft, SavedEntry, TopicFollow, UserMute, UserBlock, WeeklyReflection, PersonalAccessToken, WritingReminderEmail].map((entity) => ({ provide: getRepositoryToken(entity), useValue: { find: jest.fn().mockResolvedValue([]), findOne: jest.fn().mockResolvedValue(null) } })),
       ],
     }).compile();
 

@@ -9,17 +9,17 @@ const emptyRepository = () => ({
 });
 
 describe('UserDataExportService opt-in email settings', () => {
-  const build = (onThisDayEmail: unknown, monthlyRecapEmail: unknown) => {
+  const build = (onThisDayEmail: unknown, monthlyRecapEmail: unknown, writingReminderEmail: unknown) => {
     // Every repository before the two opt-in email ones, in constructor order.
     const others = Array.from({ length: 16 }, emptyRepository);
     const Service = UserDataExportService as unknown as new (...repositories: unknown[]) => UserDataExportService;
     const timeCapsules = { reveal: async (entries: unknown[]) => entries };
-    return new Service(...others, onThisDayEmail, monthlyRecapEmail, emptyRepository(), timeCapsules, emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), createAccountActivityMock(), emptyRepository(), emptyRepository());
+    return new Service(...others, onThisDayEmail, monthlyRecapEmail, emptyRepository(), timeCapsules, emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), createAccountActivityMock(), emptyRepository(), emptyRepository(), writingReminderEmail);
   };
 
-  it.each(['onThisDayEmail', 'monthlyRecapEmail'] as const)('includes the %s setting, and null when it was never saved', async (key) => {
-    const repositories = { onThisDayEmail: emptyRepository(), monthlyRecapEmail: emptyRepository() };
-    const service = build(repositories.onThisDayEmail, repositories.monthlyRecapEmail);
+  it.each(['onThisDayEmail', 'monthlyRecapEmail', 'writingReminderEmail'] as const)('includes the %s setting, and null when it was never saved', async (key) => {
+    const repositories = { onThisDayEmail: emptyRepository(), monthlyRecapEmail: emptyRepository(), writingReminderEmail: emptyRepository() };
+    const service = build(repositories.onThisDayEmail, repositories.monthlyRecapEmail, repositories.writingReminderEmail);
     expect((await service.downloadData(1))[key]).toBeNull();
 
     const createdAt = new Date('2026-10-01T10:00:00Z');

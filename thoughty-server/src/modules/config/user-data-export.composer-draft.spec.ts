@@ -13,7 +13,7 @@ function build(composerDraftRepository: ReturnType<typeof emptyRepository>) {
   const timeCapsules = { reveal: jest.fn(async (rows: unknown[]) => rows) };
   const repositories = Array.from({ length: 19 }, emptyRepository);
   const Service = UserDataExportService as unknown as new (...dependencies: unknown[]) => UserDataExportService;
-  return new Service(...repositories, timeCapsules, emptyRepository(), emptyRepository(), composerDraftRepository, emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), createAccountActivityMock(), emptyRepository(), emptyRepository());
+  return new Service(...repositories, timeCapsules, emptyRepository(), emptyRepository(), composerDraftRepository, emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), createAccountActivityMock(), emptyRepository(), emptyRepository(), emptyRepository());
 }
 
 describe('UserDataExportService composer draft', () => {

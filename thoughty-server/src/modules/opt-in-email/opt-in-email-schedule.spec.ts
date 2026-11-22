@@ -1,10 +1,14 @@
-import { DEFAULT_ON_THIS_DAY_HOUR, nextDailySend } from './on-this-day-schedule';
+import { ON_THIS_DAY_SCHEDULE } from '@/modules/on-this-day-email/on-this-day-schedule';
+import { dailySchedule, nextDailySend } from './opt-in-email-schedule';
 
 const next = (after: string, hour: number, timeZone: string) => nextDailySend(new Date(after), hour, timeZone).toISOString();
 
 describe('nextDailySend', () => {
-  it('defaults to eight in the morning', () => {
-    expect(DEFAULT_ON_THIS_DAY_HOUR).toBe(8);
+  it('is the daily schedule: one email per local day, "On this day" at eight in the morning by default', () => {
+    const schedule = dailySchedule(20);
+    expect(schedule).toMatchObject({ defaultHour: 20, next: nextDailySend });
+    expect(schedule.period('2026-11-22')).toBe('2026-11-22');
+    expect(ON_THIS_DAY_SCHEDULE.defaultHour).toBe(8);
   });
 
   it('sends later today when the hour has not come yet, otherwise tomorrow', () => {

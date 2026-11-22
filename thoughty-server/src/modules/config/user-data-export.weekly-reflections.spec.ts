@@ -19,6 +19,7 @@ function build(weeklyReflectionRepository: ReturnType<typeof emptyRepository>) {
     createAccountActivityMock(),
     weeklyReflectionRepository,
     emptyRepository(),
+    emptyRepository(),
   );
 }
 

@@ -29,6 +29,7 @@ import {
   UserMute,
   UserBlock,
   PersonalAccessToken,
+  WritingReminderEmail,
 } from '@/database/entities';
 import { ConfigController } from './config.controller';
 import { ConfigService } from './config.service';
@@ -67,6 +68,7 @@ import { AuthModule } from '@/modules/auth/auth.module';
       UserMute,
       UserBlock,
       PersonalAccessToken,
+      WritingReminderEmail,
     ]),
     TimeCapsulesModule,
     AuthModule,

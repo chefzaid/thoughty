@@ -8,6 +8,7 @@ import type { OptInEmailKind } from './opt-in-email-kind';
 const TOKEN_FORMATS: Record<OptInEmailKind, { prefix: string; purpose: string }> = {
   'on-this-day': { prefix: '', purpose: 'on-this-day-email:unsubscribe' },
   'monthly-recap': { prefix: 'recap', purpose: 'monthly-recap-email:unsubscribe' },
+  'writing-reminder': { prefix: 'remind', purpose: 'writing-reminder-email:unsubscribe' },
 };
 const KIND_BY_PREFIX = new Map(
   (Object.entries(TOKEN_FORMATS) as Array<[OptInEmailKind, { prefix: string }]>).map(([kind, { prefix }]) => [prefix, kind]),

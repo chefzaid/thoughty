@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createMonthlyRecapEmailService } from './monthlyRecapEmailService';
 import { unsubscribeEmail } from './optInEmailService';
+import { createWritingReminderEmailService } from './writingReminderEmailService';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
@@ -23,6 +24,25 @@ describe('opt-in email services', () => {
     const offline = createMonthlyRecapEmailService(vi.fn().mockRejectedValue(new Error('offline')));
     await expect(offline.get()).resolves.toEqual({ data: null, error: 'monthlyRecapEmailLoadFailed' });
     await expect(offline.save(changes)).resolves.toEqual({ data: null, error: 'monthlyRecapEmailSaveFailed' });
+  });
+
+  it('read and save the writing reminder setting, with its own failure keys', async () => {
+    const settings = { enabled: true, deliveryHour: 20, timeZone: 'UTC', diaryId: 4, nextSendAt: '2026-11-22T20:00:00.000Z', emailAvailable: true };
+    const authFetch = vi.fn().mockImplementation(() => Promise.resolve(json(settings)));
+    const service = createWritingReminderEmailService(authFetch);
+    const changes = { enabled: true, deliveryHour: 20, timeZone: 'UTC', diaryId: 4 };
+
+    await expect(service.get()).resolves.toEqual({ data: settings, error: null });
+    await expect(service.save(changes)).resolves.toEqual({ data: settings, error: null });
+    expect(authFetch.mock.calls.map(([url, options]) => [url, options?.method, options?.body])).toEqual([
+      ['/api/writing-reminder-email', undefined, undefined],
+      ['/api/writing-reminder-email', 'PUT', JSON.stringify(changes)],
+    ]);
+
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const offline = createWritingReminderEmailService(vi.fn().mockRejectedValue(new Error('offline')));
+    await expect(offline.get()).resolves.toEqual({ data: null, error: 'writingReminderEmailLoadFailed' });
+    await expect(offline.save(changes)).resolves.toEqual({ data: null, error: 'writingReminderEmailSaveFailed' });
   });
 
   it('unsubscribe with the link’s token, encoded, without signing in, and say which email went off', async () => {

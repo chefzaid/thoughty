@@ -138,6 +138,8 @@ export interface SetupMockAppOptions {
   onThisDayEmail?: Partial<MockOptInEmail>;
   /** The saved monthly recap email setting; off and never saved by default. */
   monthlyRecapEmail?: Partial<MockOptInEmail>;
+  /** The saved writing reminder email setting; off and never saved by default (its hour then reads 20). */
+  writingReminderEmail?: Partial<MockOptInEmail>;
   /** The people the writer mentions; by default those the initial entries mention. */
   people?: MockPerson[];
   /** Runtime feature flags to switch off, such as `{ ai: false }`; every feature is on by default. */
@@ -214,6 +216,7 @@ export interface MockAppState {
   lifeEras: MockLifeEra[];
   onThisDayEmail: MockOptInEmail;
   monthlyRecapEmail: MockOptInEmail;
+  writingReminderEmail: MockOptInEmail;
   people: MockPerson[];
   memoir: MockMemoirState;
   appImport: MockAppImportState;
@@ -383,6 +386,7 @@ export function createMockAppState(
     lifeEras: (options.lifeEras || []).map((era) => ({ ...era })),
     onThisDayEmail: createMockOptInEmail(options.onThisDayEmail),
     monthlyRecapEmail: createMockOptInEmail(options.monthlyRecapEmail),
+    writingReminderEmail: createMockOptInEmail({ deliveryHour: 20, ...options.writingReminderEmail }),
     people: options.people?.map((person) => ({ ...person, handles: [...person.handles] })) ?? mentionedPeople(options.initialEntries || []),
     memoir: createMockMemoirState(options.memoirProgram ?? null),
     appImport: createMockAppImportState(),

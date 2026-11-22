@@ -46,9 +46,8 @@ vi.mock('../LifeEras/LifeErasSection', () => ({
 vi.mock('../OnThisDayEmail/OnThisDayEmailSection', () => ({
   default: () => <section data-testid="on-this-day-email-section" />,
 }));
-vi.mock('../MonthlyRecapEmail/MonthlyRecapEmailSection', () => ({
-  default: () => <section data-testid="monthly-recap-email-section" />,
-}));
+vi.mock('../MonthlyRecapEmail/MonthlyRecapEmailSection', () => ({ default: () => <section data-testid="monthly-recap-email-section" /> }));
+vi.mock('../WritingReminderEmail/WritingReminderEmailSection', () => ({ default: () => <section data-testid="writing-reminder-email-section" /> }));
 vi.mock('./CloudProvidersSection', () => ({
     default: () => <div>cloudProviders</div>,
 }));

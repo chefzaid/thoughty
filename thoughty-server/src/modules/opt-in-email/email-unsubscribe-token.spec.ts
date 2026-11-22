@@ -13,6 +13,11 @@ describe('email unsubscribe tokens', () => {
     expect(verifyEmailUnsubscribeToken(recap, SECRET)).toEqual({ kind: 'monthly-recap', userId: 42 });
     expect(verifyEmailUnsubscribeToken(onThisDay, SECRET)).toEqual({ kind: 'on-this-day', userId: 42 });
     expect(recap.length).toBeLessThanOrEqual(64);
+
+    const reminder = createEmailUnsubscribeToken('writing-reminder', 4_294_967_295, SECRET);
+    expect(reminder).toMatch(/^remind\.4294967295\.[\w-]{43}$/);
+    expect(verifyEmailUnsubscribeToken(reminder, SECRET)).toEqual({ kind: 'writing-reminder', userId: 4_294_967_295 });
+    expect(reminder.length).toBeLessThanOrEqual(64);
   });
 
   it('keep reading the links "On this day" emails carried before there was a second email', () => {
@@ -27,6 +32,7 @@ describe('email unsubscribe tokens', () => {
     expect(verifyEmailUnsubscribeToken(`42.${signature}`, SECRET)).toBeNull();
     expect(verifyEmailUnsubscribeToken(`daily.42.${signature}`, SECRET)).toBeNull();
     expect(verifyEmailUnsubscribeToken(`recap.43.${signature}`, SECRET)).toBeNull();
+    expect(verifyEmailUnsubscribeToken(`remind.42.${signature}`, SECRET)).toBeNull();
     expect(verifyEmailUnsubscribeToken(createEmailUnsubscribeToken('monthly-recap', 42, 'b'.repeat(48)), SECRET)).toBeNull();
     expect(verifyEmailUnsubscribeToken('recap.42', SECRET)).toBeNull();
     expect(verifyEmailUnsubscribeToken('', SECRET)).toBeNull();

@@ -2607,6 +2607,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/writing-reminder-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the writing reminder email setting (off until turned on) */
+        get: operations["WritingReminderEmailController_get"];
+        /**
+         * Turn the writing reminder email on or off and choose its hour, time zone and diary
+         * @description Once on, it arrives every day at that local hour, unless the writer already has an entry dated that day (in the chosen diary, or in any diary when it is null), and opens the journal on that diary.
+         */
+        put: operations["WritingReminderEmailController_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/email-unsubscribe": {
         parameters: {
             query?: never;
@@ -2618,7 +2639,7 @@ export interface paths {
         put?: never;
         /**
          * Stop the opt-in email an email’s signed link names, without signing in
-         * @description The token says which email it turns off ("On this day" or the monthly recap). The web unsubscribe page posts here, and the monthly recap’s one-click unsubscribe header too (RFC 8058, `List-Unsubscribe=One-Click` in the body). Repeating it changes nothing.
+         * @description The token says which email it turns off ("On this day", the monthly recap or the writing reminder). The web unsubscribe page posts here, and the one-click unsubscribe header of the monthly recap and the writing reminder too (RFC 8058, `List-Unsubscribe=One-Click` in the body). Repeating it changes nothing.
          */
         post: operations["EmailUnsubscribeController_unsubscribe"];
         delete?: never;
@@ -10467,7 +10488,7 @@ export interface components {
              * @example monthly-recap
              * @enum {string}
              */
-            kind: "on-this-day" | "monthly-recap";
+            kind: "on-this-day" | "monthly-recap" | "writing-reminder";
         };
         /**
          * @example {
@@ -23364,6 +23385,112 @@ export interface operations {
         };
     };
     MonthlyRecapEmailController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "enabled": true,
+                 *       "deliveryHour": 8,
+                 *       "timeZone": "Europe/Paris",
+                 *       "diaryId": null
+                 *     }
+                 */
+                "application/json": components["schemas"]["UpdateOptInEmailDto"];
+            };
+        };
+        responses: {
+            /** @description The saved setting */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "enabled": true,
+                     *       "deliveryHour": 8,
+                     *       "timeZone": "Europe/Paris",
+                     *       "diaryId": 4,
+                     *       "nextSendAt": "2026-10-28T07:00:00.000Z",
+                     *       "emailAvailable": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OptInEmailSettingsDto"];
+                };
+            };
+            /** @description Invalid hour or unknown time zone */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "Invalid hour or unknown time zone",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The diary does not belong to you */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "The diary does not belong to you",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    WritingReminderEmailController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The setting */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "enabled": true,
+                     *       "deliveryHour": 8,
+                     *       "timeZone": "Europe/Paris",
+                     *       "diaryId": 4,
+                     *       "nextSendAt": "2026-10-28T07:00:00.000Z",
+                     *       "emailAvailable": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OptInEmailSettingsDto"];
+                };
+            };
+        };
+    };
+    WritingReminderEmailController_update: {
         parameters: {
             query?: never;
             header?: never;

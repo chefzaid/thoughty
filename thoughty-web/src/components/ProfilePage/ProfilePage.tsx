@@ -21,6 +21,7 @@ import AchievementsSection from './AchievementsSection';
 import LifeErasSection from '../LifeEras/LifeErasSection';
 import OnThisDayEmailSection from '../OnThisDayEmail/OnThisDayEmailSection';
 import MonthlyRecapEmailSection from '../MonthlyRecapEmail/MonthlyRecapEmailSection';
+import WritingReminderEmailSection from '../WritingReminderEmail/WritingReminderEmailSection';
 import type { Diary } from '../../types';
 import { resolveLanguage } from '../../utils/language';
 import { useTransientMessage } from '../../hooks/useTransientMessage';
@@ -290,6 +291,8 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats,
       <OnThisDayEmailSection diaries={diaries} isDark={isDark} language={resolveLanguage(config.language)} t={t} />
 
       <MonthlyRecapEmailSection diaries={diaries} isDark={isDark} language={resolveLanguage(config.language)} t={t} />
+
+      <WritingReminderEmailSection diaries={diaries} isDark={isDark} language={resolveLanguage(config.language)} t={t} />
 
       <AppearanceSection
         localConfig={localConfig}

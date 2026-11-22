@@ -18,6 +18,7 @@ type UnsubscribeState = 'working' | 'done' | 'failed' | 'missing';
 const UNSUBSCRIBED: Record<OptInEmailKind, string> = {
   'on-this-day': 'onThisDayUnsubscribed',
   'monthly-recap': 'monthlyRecapUnsubscribed',
+  'writing-reminder': 'writingReminderUnsubscribed',
 };
 
 /**

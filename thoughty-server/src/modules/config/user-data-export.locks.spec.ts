@@ -19,6 +19,7 @@ describe('UserDataExportService with locked content', () => {
     createAccountActivityMock(),
     emptyRepository(),
     emptyRepository(),
+    emptyRepository(),
   );
 
   beforeEach(() => entryRepository.query.mockResolvedValue([{ locked: true }]));

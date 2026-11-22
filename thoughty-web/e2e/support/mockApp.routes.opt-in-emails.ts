@@ -10,13 +10,16 @@ type OptInEmailKind = components['schemas']['EmailUnsubscribeResultDto']['kind']
 export const MOCK_UNSUBSCRIBE_TOKENS: Record<OptInEmailKind, string> = {
   'on-this-day': '1.Xq0o2Zr4b0bq9m3xg1Vd7QF2s8kPj5tYwHn6cLzA_eE',
   'monthly-recap': 'recap.1.Rm4v0Qp8b3cL7xg1Vd7QF2s8kPj5tYwHn6cLzA_eE',
+  'writing-reminder': 'remind.1.Wr7t0Qp8b3cL7xg1Vd7QF2s8kPj5tYwHn6cLzA_eE',
 };
 export const MOCK_ON_THIS_DAY_UNSUBSCRIBE_TOKEN = MOCK_UNSUBSCRIBE_TOKENS['on-this-day'];
 
 /** Each email's settings route, the state that holds it, and how its next send comes round. */
-const EMAILS: Record<OptInEmailKind, { path: string; state: 'onThisDayEmail' | 'monthlyRecapEmail'; monthly: boolean }> = {
+type OptInEmailState = 'onThisDayEmail' | 'monthlyRecapEmail' | 'writingReminderEmail';
+const EMAILS: Record<OptInEmailKind, { path: string; state: OptInEmailState; monthly: boolean }> = {
   'on-this-day': { path: '/api/on-this-day-email', state: 'onThisDayEmail', monthly: false },
   'monthly-recap': { path: '/api/monthly-recap-email', state: 'monthlyRecapEmail', monthly: true },
+  'writing-reminder': { path: '/api/writing-reminder-email', state: 'writingReminderEmail', monthly: false },
 };
 
 const QUARTER_HOUR_MS = 15 * 60 * 1000;
@@ -46,8 +49,8 @@ function turnOff(state: MockAppState, kind: OptInEmailKind) {
 }
 
 /**
- * The opt-in emails as the API answers them: `/api/on-this-day-email` and `/api/monthly-recap-email`
- * (one setting per writer) and the shared signed unsubscribe link the unsubscribe page posts to.
+ * The opt-in emails as the API answers them: `/api/on-this-day-email`, `/api/monthly-recap-email` and
+ * `/api/writing-reminder-email` (one setting per writer) and the shared signed unsubscribe link the unsubscribe page posts to.
  */
 export async function handleOptInEmailRoutes({ route, request, pathname, searchParams, state }: RouteContext): Promise<boolean> {
   if (pathname === '/api/email-unsubscribe' && request.method() === 'POST') {
