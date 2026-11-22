@@ -16,7 +16,13 @@ export interface OpenRouterChatRequest {
   readonly modelSetting: string;
   readonly temperature: number;
   readonly system: string;
-  readonly user: string;
+  /** The writer's request, or a whole conversation to answer the last message of. */
+  readonly user: string | readonly OpenRouterChatMessage[];
+}
+
+export interface OpenRouterChatMessage {
+  readonly role: 'user' | 'assistant';
+  readonly content: string;
 }
 
 export interface OpenRouterChatServices {
@@ -49,7 +55,7 @@ export async function completeOpenRouterChat(
         temperature: request.temperature,
         messages: [
           { role: 'system', content: request.system },
-          { role: 'user', content: request.user },
+          ...(typeof request.user === 'string' ? [{ role: 'user', content: request.user }] : request.user),
         ],
       }),
     });

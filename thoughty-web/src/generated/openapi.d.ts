@@ -903,6 +903,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/entries/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Discuss the entries of the journal filters with AI
+         * @description Answers the conversation's last message about the entries the journal list shows with the same filters (its day, or a date range, among them): the newest that match, at most 50 and as many as fit the model, read oldest first and numbered from 1. The reply cites entries by their number in square brackets; the answer lists the entries read and the numbers cited. Nothing of the conversation is kept. Sealed time capsules, locked entries (unless the request is unlocked) and entries in the recycle bin are left out.
+         */
+        post: operations["EntryChatController_chat"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/config": {
         parameters: {
             query?: never;
@@ -5107,6 +5127,102 @@ export interface components {
         };
         /**
          * @example {
+         *       "role": "user",
+         *       "content": "Today I wrote a thoughtful journal entry about focus and calm."
+         *     }
+         */
+        ChatMessageDto: {
+            /**
+             * @description Role of the message sender
+             * @enum {string}
+             */
+            role: "user" | "assistant";
+            /** @description Message content */
+            content: string;
+        };
+        /**
+         * @example {
+         *       "messages": [
+         *         {
+         *           "role": "user",
+         *           "content": "Today I wrote a thoughtful journal entry about focus and calm."
+         *         }
+         *       ]
+         *     }
+         */
+        EntryChatDto: {
+            /** @description The conversation so far, oldest first, ending with the message to answer */
+            messages: components["schemas"]["ChatMessageDto"][];
+        };
+        /**
+         * @example {
+         *       "ref": 1,
+         *       "id": 42,
+         *       "date": "2026-03-14",
+         *       "title": "A walk by the sea"
+         *     }
+         */
+        EntryChatEntryDto: {
+            /**
+             * @description Its number in the conversation, from 1 for the oldest entry read
+             * @example 1
+             */
+            ref: number;
+            /**
+             * @description The entry ID
+             * @example 42
+             */
+            id: number;
+            /**
+             * @description The entry date (YYYY-MM-DD)
+             * @example 2026-03-14
+             */
+            date: string;
+            /**
+             * @description The entry title, if it has one
+             * @example A walk by the sea
+             */
+            title: string | null;
+        };
+        /**
+         * @example {
+         *       "reply": "example",
+         *       "entries": [
+         *         {
+         *           "ref": 1,
+         *           "id": 42,
+         *           "date": "2026-03-14",
+         *           "title": "A walk by the sea"
+         *         }
+         *       ],
+         *       "cited": [
+         *         2,
+         *         1
+         *       ],
+         *       "total": 120
+         *     }
+         */
+        EntryChatResponseDto: {
+            /** @description The reply, citing entries by their number in square brackets ([2]) */
+            reply: string;
+            /** @description The entries read for this reply, oldest first: the newest that match, at most 50 */
+            entries: components["schemas"]["EntryChatEntryDto"][];
+            /**
+             * @description The numbers (`ref`) of the entries the reply cites, in the order first cited
+             * @example [
+             *       2,
+             *       1
+             *     ]
+             */
+            cited: number[];
+            /**
+             * @description How many entries match, read or not
+             * @example 120
+             */
+            total: number;
+        };
+        /**
+         * @example {
          *       "theme": "light",
          *       "name": "Daily Journal",
          *       "bio": "example",
@@ -5848,21 +5964,6 @@ export interface components {
         ApplyJournalRetagResponseDto: {
             success: boolean;
             affectedEntries: number;
-        };
-        /**
-         * @example {
-         *       "role": "user",
-         *       "content": "Today I wrote a thoughtful journal entry about focus and calm."
-         *     }
-         */
-        ChatMessageDto: {
-            /**
-             * @description Role of the message sender
-             * @enum {string}
-             */
-            role: "user" | "assistant";
-            /** @description Message content */
-            content: string;
         };
         /**
          * @example {
@@ -11982,7 +12083,7 @@ export interface components {
          * @example VALIDATION_FAILED
          * @enum {string}
          */
-        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "FEATURE_DISABLED" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_WEAK_PASSWORD" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "AUTH_INVALID_SIGN_UP_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "CONTENT_LOCKED" | "CONTENT_LOCKED_PRIVATE" | "CONTENT_PIN_NOT_SET" | "CONTENT_PIN_INCORRECT" | "CONTENT_PIN_BLOCKED" | "CONTENT_PIN_PROOF_REQUIRED" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "COMPOSER_DRAFT_CONFLICT" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "ACCESS_TOKEN_NOT_FOUND" | "ACCESS_TOKEN_LIMIT_REACHED" | "ACCESS_TOKEN_INVALID" | "ACCESS_TOKEN_SCOPE_MISSING" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "PERSON_DATE_BIRTHDAY_TWICE" | "PERSON_CONTACT_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "MEMOIR_PHOTO_EMPTY" | "MEMOIR_PHOTO_NOT_IMAGE" | "MEMOIR_PHOTO_IN_USE" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "REVIEW_WEEK_EMPTY" | "REVIEW_REFLECTION_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "SOCIAL_CANNOT_SAVE_OWN_ENTRY" | "SOCIAL_CANNOT_MUTE_SELF" | "SOCIAL_CANNOT_BLOCK_SELF" | "COMMENT_NOT_FOUND" | "COMMENTS_CLOSED" | "COMMENTS_FOLLOWERS_ONLY" | "COMMENT_PIN_HIDDEN" | "FEATURE_REQUEST_NOT_FOUND";
+        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "FEATURE_DISABLED" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_WEAK_PASSWORD" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "AUTH_INVALID_SIGN_UP_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "ENTRY_CHAT_NO_MATCH" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "CONTENT_LOCKED" | "CONTENT_LOCKED_PRIVATE" | "CONTENT_PIN_NOT_SET" | "CONTENT_PIN_INCORRECT" | "CONTENT_PIN_BLOCKED" | "CONTENT_PIN_PROOF_REQUIRED" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "COMPOSER_DRAFT_CONFLICT" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "ACCESS_TOKEN_NOT_FOUND" | "ACCESS_TOKEN_LIMIT_REACHED" | "ACCESS_TOKEN_INVALID" | "ACCESS_TOKEN_SCOPE_MISSING" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "PERSON_DATE_BIRTHDAY_TWICE" | "PERSON_CONTACT_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "MEMOIR_PHOTO_EMPTY" | "MEMOIR_PHOTO_NOT_IMAGE" | "MEMOIR_PHOTO_IN_USE" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "REVIEW_WEEK_EMPTY" | "REVIEW_REFLECTION_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "SOCIAL_CANNOT_SAVE_OWN_ENTRY" | "SOCIAL_CANNOT_MUTE_SELF" | "SOCIAL_CANNOT_BLOCK_SELF" | "COMMENT_NOT_FOUND" | "COMMENTS_CLOSED" | "COMMENTS_FOLLOWERS_ONLY" | "COMMENT_PIN_HIDDEN" | "FEATURE_REQUEST_NOT_FOUND";
         /**
          * @example {
          *       "statusCode": 401,
@@ -15571,6 +15672,152 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["DeleteAllResponseDto"];
+                };
+            };
+        };
+    };
+    EntryChatController_chat: {
+        parameters: {
+            query?: {
+                /** @description Full-text search over content and tags, with English and French word forms and accents ignored. Supports "exact phrases" in quotes, a leading minus to exclude a word or phrase, and OR between alternatives; the last word also matches the longer words it starts. */
+                search?: string;
+                /** @description Comma-separated entry IDs to include, in relevance order */
+                ids?: string;
+                /** @description Comma-separated list of tags to filter by */
+                tags?: string;
+                visibility?: "public" | "private";
+                /** @description Filter by favorites only */
+                favorites?: boolean;
+                /** @description Filter by archive state */
+                archiveStatus?: "all" | "active" | "archived";
+                /** @description Filter by recorded mood: one or more levels from 1 (very low) to 5 (very good), comma-separated; "any" for entries with a mood, or "none" for entries without one */
+                mood?: string;
+                /** @description Diary ID */
+                diaryId?: number;
+                /** @description Life era ID: only entries dated within the era (from its start to its end, with no end while it is ongoing) */
+                eraId?: number;
+                /** @description Person ID: only entries that mention the person */
+                personId?: number;
+                /** @description Only this day's entries (YYYY-MM-DD), as the list's date filter */
+                date?: string;
+                /** @description Only entries dated on or after this day (YYYY-MM-DD) */
+                dateFrom?: string;
+                /** @description Only entries dated on or before this day (YYYY-MM-DD) */
+                dateTo?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "messages": [
+                 *         {
+                 *           "role": "user",
+                 *           "content": "Today I wrote a thoughtful journal entry about focus and calm."
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["EntryChatDto"];
+            };
+        };
+        responses: {
+            /** @description The reply and the entries it read */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "reply": "example",
+                     *       "entries": [
+                     *         {
+                     *           "ref": 1,
+                     *           "id": 42,
+                     *           "date": "2026-03-14",
+                     *           "title": "A walk by the sea"
+                     *         }
+                     *       ],
+                     *       "cited": [
+                     *         2,
+                     *         1
+                     *       ],
+                     *       "total": 120
+                     *     }
+                     */
+                    "application/json": components["schemas"]["EntryChatResponseDto"];
+                };
+            };
+            /** @description A filter or a message is invalid, or AI is not available (`AI_KEY_NOT_CONFIGURED`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "A filter or a message is invalid, or AI is not available (`AI_KEY_NOT_CONFIGURED`)",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description No entry matches (`ENTRY_CHAT_NO_MATCH`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "No entry matches (`ENTRY_CHAT_NO_MATCH`)",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The AI provider failed (`AI_PROVIDER_FAILED`) */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 502,
+                     *       "message": "The AI provider failed (`AI_PROVIDER_FAILED`)",
+                     *       "error": "Bad Gateway",
+                     *       "code": "BAD_GATEWAY"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `ai` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };

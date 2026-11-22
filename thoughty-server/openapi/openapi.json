@@ -4607,6 +4607,266 @@
         ]
       }
     },
+    "/api/entries/chat": {
+      "post": {
+        "description": "Answers the conversation's last message about the entries the journal list shows with the same filters (its day, or a date range, among them): the newest that match, at most 50 and as many as fit the model, read oldest first and numbered from 1. The reply cites entries by their number in square brackets; the answer lists the entries read and the numbers cited. Nothing of the conversation is kept. Sealed time capsules, locked entries (unless the request is unlocked) and entries in the recycle bin are left out.",
+        "operationId": "EntryChatController_chat",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Full-text search over content and tags, with English and French word forms and accents ignored. Supports \"exact phrases\" in quotes, a leading minus to exclude a word or phrase, and OR between alternatives; the last word also matches the longer words it starts.",
+            "schema": {
+              "maxLength": 500,
+              "example": "\"morning run\" -rain OR swim",
+              "type": "string"
+            }
+          },
+          {
+            "name": "ids",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated entry IDs to include, in relevance order",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tags",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated list of tags to filter by",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "visibility",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "public",
+                "private"
+              ]
+            }
+          },
+          {
+            "name": "favorites",
+            "required": false,
+            "in": "query",
+            "description": "Filter by favorites only",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "archiveStatus",
+            "required": false,
+            "in": "query",
+            "description": "Filter by archive state",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "active",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "mood",
+            "required": false,
+            "in": "query",
+            "description": "Filter by recorded mood: one or more levels from 1 (very low) to 5 (very good), comma-separated; \"any\" for entries with a mood, or \"none\" for entries without one",
+            "schema": {
+              "example": "4,5",
+              "type": "string"
+            }
+          },
+          {
+            "name": "diaryId",
+            "required": false,
+            "in": "query",
+            "description": "Diary ID",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "eraId",
+            "required": false,
+            "in": "query",
+            "description": "Life era ID: only entries dated within the era (from its start to its end, with no end while it is ongoing)",
+            "schema": {
+              "example": 3,
+              "type": "number"
+            }
+          },
+          {
+            "name": "personId",
+            "required": false,
+            "in": "query",
+            "description": "Person ID: only entries that mention the person",
+            "schema": {
+              "example": 12,
+              "type": "number"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Only this day's entries (YYYY-MM-DD), as the list's date filter",
+            "schema": {
+              "example": "2026-10-21",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "description": "Only entries dated on or after this day (YYYY-MM-DD)",
+            "schema": {
+              "example": "2026-01-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "description": "Only entries dated on or before this day (YYYY-MM-DD)",
+            "schema": {
+              "example": "2026-06-30",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntryChatDto"
+              },
+              "example": {
+                "messages": [
+                  {
+                    "role": "user",
+                    "content": "Today I wrote a thoughtful journal entry about focus and calm."
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The reply and the entries it read",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryChatResponseDto"
+                },
+                "example": {
+                  "reply": "example",
+                  "entries": [
+                    {
+                      "ref": 1,
+                      "id": 42,
+                      "date": "2026-03-14",
+                      "title": "A walk by the sea"
+                    }
+                  ],
+                  "cited": [
+                    2,
+                    1
+                  ],
+                  "total": 120
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A filter or a message is invalid, or AI is not available (`AI_KEY_NOT_CONFIGURED`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "A filter or a message is invalid, or AI is not available (`AI_KEY_NOT_CONFIGURED`)",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No entry matches (`ENTRY_CHAT_NO_MATCH`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "No entry matches (`ENTRY_CHAT_NO_MATCH`)",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The AI provider failed (`AI_PROVIDER_FAILED`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 502,
+                  "message": "The AI provider failed (`AI_PROVIDER_FAILED`)",
+                  "error": "Bad Gateway",
+                  "code": "BAD_GATEWAY"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Discuss the entries of the journal filters with AI",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
     "/api/config": {
       "get": {
         "operationId": "ConfigController_getConfig",
@@ -21246,6 +21506,148 @@
           "deletedCount": 3
         }
       },
+      "ChatMessageDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "description": "Role of the message sender",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "content": {
+            "type": "string",
+            "description": "Message content"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ],
+        "example": {
+          "role": "user",
+          "content": "Today I wrote a thoughtful journal entry about focus and calm."
+        }
+      },
+      "EntryChatDto": {
+        "type": "object",
+        "properties": {
+          "messages": {
+            "description": "The conversation so far, oldest first, ending with the message to answer",
+            "minItems": 1,
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessageDto"
+            }
+          }
+        },
+        "required": [
+          "messages"
+        ],
+        "example": {
+          "messages": [
+            {
+              "role": "user",
+              "content": "Today I wrote a thoughtful journal entry about focus and calm."
+            }
+          ]
+        }
+      },
+      "EntryChatEntryDto": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "type": "number",
+            "description": "Its number in the conversation, from 1 for the oldest entry read",
+            "example": 1
+          },
+          "id": {
+            "type": "number",
+            "description": "The entry ID",
+            "example": 42
+          },
+          "date": {
+            "type": "string",
+            "description": "The entry date (YYYY-MM-DD)",
+            "example": "2026-03-14"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "description": "The entry title, if it has one",
+            "example": "A walk by the sea"
+          }
+        },
+        "required": [
+          "ref",
+          "id",
+          "date",
+          "title"
+        ],
+        "example": {
+          "ref": 1,
+          "id": 42,
+          "date": "2026-03-14",
+          "title": "A walk by the sea"
+        }
+      },
+      "EntryChatResponseDto": {
+        "type": "object",
+        "properties": {
+          "reply": {
+            "type": "string",
+            "description": "The reply, citing entries by their number in square brackets ([2])"
+          },
+          "entries": {
+            "description": "The entries read for this reply, oldest first: the newest that match, at most 50",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EntryChatEntryDto"
+            }
+          },
+          "cited": {
+            "description": "The numbers (`ref`) of the entries the reply cites, in the order first cited",
+            "example": [
+              2,
+              1
+            ],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "How many entries match, read or not",
+            "example": 120
+          }
+        },
+        "required": [
+          "reply",
+          "entries",
+          "cited",
+          "total"
+        ],
+        "example": {
+          "reply": "example",
+          "entries": [
+            {
+              "ref": 1,
+              "id": 42,
+              "date": "2026-03-14",
+              "title": "A walk by the sea"
+            }
+          ],
+          "cited": [
+            2,
+            1
+          ],
+          "total": 120
+        }
+      },
       "UserConfigDto": {
         "type": "object",
         "properties": {
@@ -22707,31 +23109,6 @@
         "example": {
           "success": true,
           "affectedEntries": 1
-        }
-      },
-      "ChatMessageDto": {
-        "type": "object",
-        "properties": {
-          "role": {
-            "type": "string",
-            "description": "Role of the message sender",
-            "enum": [
-              "user",
-              "assistant"
-            ]
-          },
-          "content": {
-            "type": "string",
-            "description": "Message content"
-          }
-        },
-        "required": [
-          "role",
-          "content"
-        ],
-        "example": {
-          "role": "user",
-          "content": "Today I wrote a thoughtful journal entry about focus and calm."
         }
       },
       "ChatDto": {
@@ -32272,6 +32649,7 @@
           "ENTRY_RANDOM_NO_MATCH",
           "ENTRY_READER_NO_MATCH",
           "ENTRY_READER_NOT_FOUND",
+          "ENTRY_CHAT_NO_MATCH",
           "TIME_CAPSULE_DATE_INVALID",
           "REREAD_DATE_INVALID",
           "TAG_RENAME_SAME_NAME",

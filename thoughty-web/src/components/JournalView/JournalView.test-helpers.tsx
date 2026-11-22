@@ -173,6 +173,15 @@ export const MockRandomEntryButton = ({ listEmpty, onOpen }: { listEmpty: boolea
   <button type="button" data-testid="random-entry" data-list-empty={String(listEmpty)} onClick={() => onOpen(7)}>Random entry</button>
 );
 
+/** Stands in for **Discuss**: shows the scope it discusses and opens entry 22 as a reply that read 21 and 22 cites it. */
+export const MockDiscussEntriesButton = ({ scope, listEmpty, onOpenEntry }: {
+  scope: string; listEmpty: boolean; onOpenEntry: (readIds: readonly number[], entryId: number) => void;
+}) => (
+  <button type="button" data-testid="discuss-entries" data-scope={scope} data-list-empty={String(listEmpty)} onClick={() => onOpenEntry([21, 22], 22)}>
+    Open a cited entry
+  </button>
+);
+
 export const MockDuplicateReview = ({ diaryId }: { diaryId: number | null }) => (
   <div data-testid="duplicate-review">{diaryId}</div>
 );

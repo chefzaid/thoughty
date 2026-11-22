@@ -33,6 +33,7 @@ import { signUpTranslations, type SignUpTranslationKey } from "./translations.si
 import { passwordResetTranslations, type PasswordResetTranslationKey } from "./translations.passwordReset";
 import { dictationTranslations, type DictationTranslationKey } from "./translations.dictation";
 import { readerTranslations, type ReaderTranslationKey } from "./translations.reader";
+import { entryChatTranslations, type EntryChatTranslationKey } from "./translations.entryChat";
 import { privacyBlurTranslations, type PrivacyBlurTranslationKey } from "./translations.privacyBlur";
 import { contentLockTranslations, type ContentLockTranslationKey } from "./translations.contentLock";
 import { journalFeedTranslations, type JournalFeedTranslationKey } from "./translations.journalFeed";
@@ -126,6 +127,7 @@ export type TranslationKey =
   | PasswordResetTranslationKey
   | DictationTranslationKey
   | ReaderTranslationKey
+  | EntryChatTranslationKey
   | PrivacyBlurTranslationKey
   | ContentLockTranslationKey
   | JournalFeedTranslationKey
@@ -224,6 +226,7 @@ export const translations: Translations = {
     ...passwordResetTranslations.en,
     ...dictationTranslations.en,
     ...readerTranslations.en,
+    ...entryChatTranslations.en,
     ...privacyBlurTranslations.en,
     ...contentLockTranslations.en,
     ...journalFeedTranslations.en,
@@ -315,6 +318,7 @@ export const translations: Translations = {
     ...passwordResetTranslations.fr,
     ...dictationTranslations.fr,
     ...readerTranslations.fr,
+    ...entryChatTranslations.fr,
     ...privacyBlurTranslations.fr,
     ...contentLockTranslations.fr,
     ...journalFeedTranslations.fr,

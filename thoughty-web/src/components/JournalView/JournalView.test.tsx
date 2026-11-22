@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import JournalView from './JournalView';
+import { FeatureFlagsContext } from '../FeatureFlags/featureFlags';
 import { createProps, mockConfig } from './JournalView.test-helpers';
 import type { JournalViewProps } from './JournalView.test-helpers';
 
@@ -16,6 +17,7 @@ vi.mock('../YearMonthNavigator/YearMonthNavigator', async () => ({ default: (awa
 vi.mock('../BackToTopButton/BackToTopButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockBackToTopButton }));
 vi.mock('../DuplicateReview/DuplicateReview', async () => ({ default: (await import('./JournalView.test-helpers')).MockDuplicateReview }));
 vi.mock('../SavedSearches/SavedSearches', async () => ({ default: (await import('./JournalView.test-helpers')).MockSavedSearches }));
+vi.mock('../EntryChat/DiscussEntriesButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockDiscussEntriesButton }));
 vi.mock('./RandomEntryButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockRandomEntryButton }));
 vi.mock('../LifeEras/useLifeEras', async () => ({ useLifeEraList: (await import('./JournalView.test-helpers')).mockUseLifeEraList }));
 vi.mock('../People/usePeople', async () => ({ usePeopleList: (await import('./JournalView.test-helpers')).mockUsePeopleList }));
@@ -53,10 +55,16 @@ describe('JournalView', () => {
     expect(screen.getByTestId('back-to-top')).toBeInTheDocument();
   });
 
-  it('renders the duplicate finder inside the filter controls', () => {
-    render(<JournalView {...defaultProps} />);
+  it('renders the AI tools, Discuss and the duplicate finder, inside the filter controls, and leaves them out while AI is off', () => {
+    const { unmount } = render(<JournalView {...defaultProps} />);
 
     expect(screen.getByTestId('filter-controls')).toContainElement(screen.getByTestId('duplicate-review'));
+    expect(screen.getByTestId('filter-controls')).toContainElement(screen.getByTestId('discuss-entries'));
+    unmount();
+
+    render(<FeatureFlagsContext.Provider value={{ ai: false }}><JournalView {...defaultProps} /></FeatureFlagsContext.Provider>);
+    expect(screen.queryByTestId('duplicate-review')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('discuss-entries')).not.toBeInTheDocument();
   });
 
   it('puts the saved searches in the filter controls with the diary scope and the notice toast', () => {

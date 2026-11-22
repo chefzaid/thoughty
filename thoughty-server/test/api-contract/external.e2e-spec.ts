@@ -78,6 +78,21 @@ describeContract('external', (context) => {
       },
       ...noKey,
     });
+    // The entries are found before the AI is asked, so another writer's filters match nothing
+    await call('POST /api/entries/chat', {
+      as: alice,
+      query: { tags: 'work', dateFrom: '2024-01-01', dateTo: '2024-12-31' },
+      json: { messages: [{ role: 'user', content: 'What comes back?' }] },
+      ...noKey,
+    });
+    await call('POST /api/entries/chat', {
+      as: bob,
+      query: { tags: 'work' },
+      json: { messages: [{ role: 'user', content: 'What comes back?' }] },
+      status: 404,
+      code: 'ENTRY_CHAT_NO_MATCH',
+    });
+    await call('POST /api/entries/chat', { as: alice, json: { messages: [] }, status: 400, code: 'VALIDATION_FAILED' });
     const history = await call('GET /api/ai/history/{entryId}', {
       as: alice,
       params: { entryId },

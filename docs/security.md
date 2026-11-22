@@ -144,6 +144,7 @@ AI is optional and uses OpenRouter. A user's personal key, when set, replaces th
 | Rephrase | the draft, up to 10,000 characters |
 | Auto Tag | the draft, up to 10,000 characters, and its current tags |
 | Entry chat | the entry, up to 10,000 characters, and up to 50 messages. Chats are stored per entry. |
+| Discuss these entries | on request: the newest 50 entries the journal filters (and an optional date range) match, with date and title, up to 1,500 characters each and about 40,000 in all, and up to 50 messages; never a sealed capsule, nor a locked entry unless unlocked. Nothing is stored. |
 | Entry summary | one owned entry, plus the writer's include and exclude notes |
 | Get Inspired | tag names and counts from the 200 newest entries. No entry text. |
 | Stats mood, tone, subjects | each time stats load with a key available: the 40 newest entries, with date, tags, and up to 1,200 characters each |
@@ -158,7 +159,7 @@ AI is optional and uses OpenRouter. A user's personal key, when set, replaces th
 | Audio transcription | the one selected audio attachment, up to 5 MB |
 
 - Every prompt treats journal text as untrusted data: it is wrapped in tagged blocks (`ai/untrusted-content.ts`, which escapes a closing tag inside the text) and the system prompt tells the model to ignore instructions inside them. New prompts must use the same helper.
-- The entry chat's system prompt carries `COMPANION_SAFETY_INSTRUCTIONS` (`ai/companion-safety.ts`): the companion never acts as a therapist, and on signs of suicide, self-harm or danger it stops analyzing and sends the writer to a crisis line, emergency services or someone they trust, without giving phone numbers (the web app lists vetted ones itself). The web app's crisis check (`utils/crisisSignals.ts`) runs in the browser only and sends nothing.
+- The entry chat's system prompt, and that of **Discuss these entries** (`ai/entries-chat.ts`), carry `COMPANION_SAFETY_INSTRUCTIONS` (`ai/companion-safety.ts`): the companion never acts as a therapist, and on signs of suicide, self-harm or danger it stops analyzing and sends the writer to a crisis line, emergency services or someone they trust, without giving phone numbers (the web app lists vetted ones itself). The web app's crisis check (`utils/crisisSignals.ts`) runs in the browser only and sends nothing.
 - Mood readings with clinical labels are discarded, and so is a weekly reflection whose summary or question uses one (a theme that does is dropped). Applying a tag plan does not call the provider again.
 - Usage rows store metadata only (model, tokens, cost, time), never prompts or completions.
 

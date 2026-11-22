@@ -23,10 +23,12 @@ import { EntryTaskListService } from './entry-task-list.service';
 import { EntryOpenTasksService } from './entry-open-tasks.service';
 import { EntryMentionsService } from './entry-mentions.service';
 import { EntryInlineImagesService } from './entry-inline-images.service';
+import { EntryChatController } from './entry-chat.controller';
+import { EntryChatService } from './entry-chat.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Entry, EntryRevision, Diary, Attachment]), UserConfigModule, AiModule, TimeCapsulesModule, RereadRemindersModule, PersonDatesModule],
-  controllers: [EntriesController],
+  controllers: [EntriesController, EntryChatController],
   providers: [
     EntriesService,
     EntriesQueryService,
@@ -44,6 +46,7 @@ import { EntryInlineImagesService } from './entry-inline-images.service';
     EntryOpenTasksService,
     EntryMentionsService,
     EntryInlineImagesService,
+    EntryChatService,
   ],
   exports: [EntriesService, EntriesQueryService, EntryListCacheService, EntrySearchService, EntryMentionsService, EntryInlineImagesService],
 })

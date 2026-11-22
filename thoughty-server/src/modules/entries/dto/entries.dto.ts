@@ -10,3 +10,4 @@ export * from './entry-comfort-reads.dto';
 export * from './entry-revision.dto';
 export * from './entry-open-tasks.dto';
 export * from './entry-reader.dto';
+export * from './entry-chat.dto';

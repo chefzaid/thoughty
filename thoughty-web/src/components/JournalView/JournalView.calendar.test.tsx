@@ -19,6 +19,7 @@ vi.mock('../YearMonthNavigator/YearMonthNavigator', async () => ({ default: (awa
 vi.mock('../BackToTopButton/BackToTopButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockBackToTopButton }));
 vi.mock('../DuplicateReview/DuplicateReview', async () => ({ default: (await import('./JournalView.test-helpers')).MockDuplicateReview }));
 vi.mock('../SavedSearches/SavedSearches', async () => ({ default: (await import('./JournalView.test-helpers')).MockSavedSearches }));
+vi.mock('../EntryChat/DiscussEntriesButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockDiscussEntriesButton }));
 vi.mock('./RandomEntryButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockRandomEntryButton }));
 vi.mock('../EntryReader/EntryReader', async () => ({ default: (await import('./JournalView.test-helpers')).MockEntryReader }));
 vi.mock('../LifeEras/useLifeEras', async () => ({ useLifeEraList: (await import('./JournalView.test-helpers')).mockUseLifeEraList }));
@@ -131,6 +132,20 @@ describe('JournalView calendar layout', () => {
     expect(new URLSearchParams(location() ?? '').get('read')).toBe('12');
     expect(new URLSearchParams(location() ?? '').get('readIn')).toBe('ids=11%2C12%2C13&archiveStatus=all');
     expect(screen.getByTestId('entry-reader')).toHaveAttribute('data-entry-id', '12');
+  });
+
+  it('discusses the current filters, and reads an entry a reply cites among the entries it read', () => {
+    const props = createProps({
+      randomEntry: { query: { ...createProps().randomEntry.query, filterTags: ['walks'] }, listEmpty: true },
+    });
+    renderJournal(props, '?diary=1');
+
+    const discuss = screen.getByTestId('discuss-entries');
+    expect(discuss).toHaveAttribute('data-scope', 'tags=walks&archiveStatus=active&diaryId=1');
+    expect(discuss).toHaveAttribute('data-list-empty', 'true');
+    fireEvent.click(discuss);
+    expect(new URLSearchParams(location() ?? '').get('read')).toBe('22');
+    expect(new URLSearchParams(location() ?? '').get('readIn')).toBe('ids=21%2C22&archiveStatus=all');
   });
 
   it('follows a save whose words carry a sign of crisis with the support card above the comfort reads offer', () => {

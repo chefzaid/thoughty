@@ -6,6 +6,8 @@ export * from './ai-year-mood.service';
 export * from './year-mood-analysis';
 export * from './ai-weekly-reflection.service';
 export * from './weekly-reflection';
+export * from './ai-entries-chat.service';
+export * from './entries-chat';
 export * from './ai-duplicate.service';
 export * from './ai-semantic-search.service';
 export * from './ai-credentials.service';

@@ -29,6 +29,7 @@ import { useComposerFocusRoute } from './composerFocusRoute';
 import RandomEntryButton from './RandomEntryButton';
 import EntryReader from '../EntryReader/EntryReader';
 import ReadEntriesButton from '../EntryReader/ReadEntriesButton';
+import DiscussEntriesButton from '../EntryChat/DiscussEntriesButton';
 import { useEntryReaderRoute } from '../EntryReader/useEntryReaderRoute';
 import { readerScopeFromList, readerScopeOfMonth } from '../../services/api/entryReaderService';
 import SupportAfterSave from '../SupportResources/SupportAfterSave';
@@ -107,7 +108,7 @@ function JournalView({
   const reader = useEntryReaderRoute();
   const showCalendar = layoutRoute.layout === 'calendar';
   const language = resolveLanguage(config.language);
-  // Looking for duplicates is AI, so it is left out while AI is switched off
+  // Discussing entries and looking for duplicates are AI, so they are left out while AI is switched off
   const aiOn = useFeatureFlag('ai');
   const theme = config.theme ?? 'dark';
   const { list: eraList, eras } = useLifeEraList();
@@ -175,9 +176,12 @@ function JournalView({
   /** The reader reads the list's entries as they are filtered now, or a month of the calendar. */
   const readCurrentFilters = () => reader.open(readerScopeFromList(randomEntry.query));
   const readMonth = (month: string) => reader.open(readerScopeOfMonth({ ...calendarFilters, month }));
-  /** An offered comfort read opens in the reader, which turns through the entries offered, archived or not. */
-  const readComfortEntry = (entryId: number, offeredIds: readonly number[]) =>
-    reader.open(new URLSearchParams({ ids: offeredIds.join(','), archiveStatus: 'all' }).toString(), entryId);
+  /**
+   * An offered comfort read, or an entry the AI cites, opens in the reader, which turns through the entries
+   * offered (or read for that reply), archived or not.
+   */
+  const readAmong = (entryId: number, ids: readonly number[]) =>
+    reader.open(new URLSearchParams({ ids: ids.join(','), archiveStatus: 'all' }).toString(), entryId);
   /** A random entry opens in the list, among the same filters. */
   const openRandomEntry = (entryId: number) => {
     if (showCalendar) layoutRoute.setLayout('list');
@@ -236,7 +240,7 @@ function JournalView({
       <ComfortReadsCard
         saved={savedEntry}
         enabled={config.comfortReads !== false}
-        onOpenEntry={readComfortEntry}
+        onOpenEntry={readAmong}
         language={language}
         theme={theme}
         t={t}
@@ -260,6 +264,16 @@ function JournalView({
                 theme={config.theme}
                 t={t}
               />
+              {aiOn && (
+                <DiscussEntriesButton
+                  scope={readerScopeFromList(randomEntry.query)}
+                  listEmpty={randomEntry.listEmpty}
+                  onOpenEntry={(readIds, entryId) => readAmong(entryId, readIds)}
+                  language={language}
+                  theme={theme}
+                  t={t}
+                />
+              )}
               <RandomEntryButton
                 query={randomEntry.query}
                 listEmpty={randomEntry.listEmpty}

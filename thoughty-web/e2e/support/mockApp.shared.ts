@@ -253,6 +253,8 @@ export interface MockAppState {
   lastAiDuplicatePayload: unknown;
   lastAiSemanticSearchPayload: unknown;
   lastAiChatPayload: unknown;
+  /** The query and body of the last `POST /api/entries/chat`. */
+  lastEntryChatRequest: { query: string; payload: unknown } | null;
   lastAiJournalRetagPayload: unknown;
   personalOpenRouterKey: string | null;
   lastOpenRouterKeyPayload: unknown;
@@ -428,6 +430,7 @@ export function createMockAppState(
     lastAiDuplicatePayload: null,
     lastAiSemanticSearchPayload: null,
     lastAiChatPayload: null,
+    lastEntryChatRequest: null,
     lastAiJournalRetagPayload: null,
     personalOpenRouterKey: null,
     lastOpenRouterKeyPayload: null,

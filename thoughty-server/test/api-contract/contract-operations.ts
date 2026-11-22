@@ -100,6 +100,7 @@ export const CONTRACT_SUITES = {
     'POST /api/ai/journal-retag/preview',
     'POST /api/ai/journal-retag/apply',
     'POST /api/ai/chat',
+    'POST /api/entries/chat',
     'GET /api/ai/history/{entryId}',
     'POST /api/stats/personality-analysis',
     'POST /api/review/mood',
