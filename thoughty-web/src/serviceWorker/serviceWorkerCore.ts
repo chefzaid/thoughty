@@ -1,6 +1,8 @@
+import { answerSharedFilesRequest, isSharePost, receiveShare, SharedFilesStore, type WorkerMessageEventLike } from './shareTargetReceiver';
+
 /**
  * The service worker's logic, kept apart from its entry (`sw.ts`) so it can be tested. It keeps the app
- * shell for offline use, and nothing else:
+ * shell for offline use, and receives what is shared to the installed app (`shareTargetReceiver.ts`):
  * - one cache per build (`thoughty-shell-<version>`), filled when the worker installs, with `index.html`
  *   and the build's scripts, styles, fonts and icons (`precache`); older builds' caches go when it activates;
  * - a page load always asks the network first, so an online visit always gets the current app; only when
@@ -9,7 +11,8 @@
  * - the build's files come from the cache, since their names change with their content (a query string
  *   on one changes nothing on the static server, so it is ignored);
  * - nothing under `/api/`, no other method than GET, and no other origin is ever answered or stored: the
- *   writer's data stays between the page and the API.
+ *   writer's data stays between the page and the API. The one post it answers is a share to the app on
+ *   this origin, whose files it keeps in memory only, until the page takes them.
  */
 export const CACHE_PREFIX = 'thoughty-shell-';
 export const SHELL_URL = '/index.html';
@@ -32,6 +35,7 @@ export interface ServiceWorkerScopeLike {
   readonly clients: { claim(): Promise<void> };
   addEventListener(type: 'install' | 'activate', listener: (event: ExtendableEventLike) => void): void;
   addEventListener(type: 'fetch', listener: (event: FetchEventLike) => void): void;
+  addEventListener(type: 'message', listener: (event: WorkerMessageEventLike) => void): void;
 }
 
 export interface ShellBuild {
@@ -101,8 +105,13 @@ export function respondTo(request: Request, scope: Pick<ServiceWorkerScopeLike, 
   return null;
 }
 
-/** Wires the worker's events: install fills the cache and takes over at once, activate clears old builds. */
+/**
+ * Wires the worker's events: install fills the cache and takes over at once, activate clears old builds,
+ * a share posted to the app is received (the worker kept alive until the page takes its files), and the
+ * page's request for those files is answered.
+ */
 export function startServiceWorker(scope: ServiceWorkerScopeLike, build: ShellBuild): void {
+  const sharedFiles = new SharedFilesStore();
   scope.addEventListener('install', (event) => {
     event.waitUntil(installShell(scope, build).then(() => scope.skipWaiting()));
   });
@@ -110,7 +119,16 @@ export function startServiceWorker(scope: ServiceWorkerScopeLike, build: ShellBu
     event.waitUntil(removeOldShells(scope.caches, build.version).then(() => scope.clients.claim()));
   });
   scope.addEventListener('fetch', (event) => {
+    if (isSharePost(event.request, scope.location.origin)) {
+      const received = receiveShare(event.request, sharedFiles, scope.location.origin);
+      event.respondWith(received.then(({ response }) => response));
+      event.waitUntil(received.then(({ released }) => released));
+      return;
+    }
     const response = respondTo(event.request, scope, build);
     if (response) event.respondWith(response);
+  });
+  scope.addEventListener('message', (event) => {
+    answerSharedFilesRequest(event, sharedFiles);
   });
 }

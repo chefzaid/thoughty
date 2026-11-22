@@ -2,12 +2,12 @@ import { useId, useRef, useState, type ChangeEvent, type ReactNode } from 'react
 import type { Attachment } from '../../types';
 import {
     ALLOWED_ATTACHMENT_TYPES,
+    attachmentRejectionReason,
     formatAttachmentSize,
     getAttachmentKindLabel,
     hasInlineAttachmentPreview,
     isImageAttachment,
     isVideoAttachment,
-    maxAttachmentBytes,
 } from '../../utils/attachments';
 import type { InlineImageTarget } from '../InlineImages/useInlineImageInsert';
 import { mutedTextClass } from '../../utils/tintedText';
@@ -41,17 +41,6 @@ function InsertImageButton({ name, className, onClick, t }: Readonly<{
             {t('insertImage')}
         </button>
     );
-}
-
-/** Why a picked file cannot be attached, as a translation key, or null when it can. */
-function getRejectionReason(file: File): string | null {
-    if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type as (typeof ALLOWED_ATTACHMENT_TYPES)[number])) {
-        return 'attachmentTypeNotAllowed';
-    }
-    if (file.size <= maxAttachmentBytes(file.type)) {
-        return null;
-    }
-    return isVideoAttachment(file.type) ? 'attachmentVideoTooLarge' : 'attachmentTooLarge';
 }
 
 interface ActiveUploadPreview {
@@ -284,7 +273,7 @@ function AttachmentUpload({
 
         const rejected: string[] = [];
         for (const file of Array.from(files)) {
-            const reason = getRejectionReason(file);
+            const reason = attachmentRejectionReason(file);
             if (reason) {
                 rejected.push(t('attachmentRejected', { reason: t(reason), name: file.name }));
                 continue;

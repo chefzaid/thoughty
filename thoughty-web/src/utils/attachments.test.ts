@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { translations, type TranslationKey } from './translations';
 import {
   ALLOWED_ATTACHMENT_TYPES,
+  attachmentRejectionReason,
   MAX_ATTACHMENT_BYTES,
   MAX_VIDEO_BYTES,
   maxAttachmentBytes,
@@ -49,5 +50,13 @@ describe('attachment utils', () => {
     expect(MAX_VIDEO_BYTES).toBe(50 * 1024 * 1024);
     expect(maxAttachmentBytes('image/png')).toBe(MAX_ATTACHMENT_BYTES);
     expect(ALLOWED_ATTACHMENT_TYPES).toEqual(expect.arrayContaining(['video/mp4', 'video/webm', 'video/quicktime']));
+  });
+
+  it('says why a file cannot be attached: its type, or its size for its kind', () => {
+    expect(attachmentRejectionReason({ type: 'application/x-msdownload', size: 2 })).toBe('attachmentTypeNotAllowed');
+    expect(attachmentRejectionReason({ type: 'image/png', size: MAX_ATTACHMENT_BYTES })).toBeNull();
+    expect(attachmentRejectionReason({ type: 'image/png', size: MAX_ATTACHMENT_BYTES + 1 })).toBe('attachmentTooLarge');
+    expect(attachmentRejectionReason({ type: 'video/mp4', size: MAX_ATTACHMENT_BYTES + 1 })).toBeNull();
+    expect(attachmentRejectionReason({ type: 'video/mp4', size: MAX_VIDEO_BYTES + 1 })).toBe('attachmentVideoTooLarge');
   });
 });

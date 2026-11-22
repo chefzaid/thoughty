@@ -30,6 +30,17 @@ export function maxAttachmentBytes(mimetype: string): number {
   return isVideoAttachment(mimetype) ? MAX_VIDEO_BYTES : MAX_ATTACHMENT_BYTES;
 }
 
+/** Why a file cannot be attached, as a translation key, or null when it can. */
+export function attachmentRejectionReason(file: Pick<File, 'type' | 'size'>): string | null {
+  if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type as (typeof ALLOWED_ATTACHMENT_TYPES)[number])) {
+    return 'attachmentTypeNotAllowed';
+  }
+  if (file.size <= maxAttachmentBytes(file.type)) {
+    return null;
+  }
+  return isVideoAttachment(file.type) ? 'attachmentVideoTooLarge' : 'attachmentTooLarge';
+}
+
 export const EMPTY_CAPTIONS_TRACK_URL = 'data:text/vtt;charset=utf-8,WEBVTT%0A%0A';
 
 export function getAttachmentUrl(storedFilename: string): string {

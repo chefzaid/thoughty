@@ -5,7 +5,7 @@ import { mockDiary } from '../support/mockApp.diaries';
 
 const TODAY = '2026-11-01';
 
-/** The address the phone's share sheet opens once Thoughty is installed, as `share_target` in the manifest names it. */
+/** The address the service worker opens with what the phone's share sheet posted to the installed app. */
 const shareAddress = (values: Record<string, string>) => `/share-target?${new URLSearchParams(values).toString()}`;
 
 const composerText = (page: Page) => page.locator('form').first().locator('textarea').first();
@@ -23,12 +23,14 @@ test.describe('Share to Thoughty', () => {
       diaries: [mockDiary({ id: 1, name: 'Personal', isDefault: true, defaultTemplateId: 'builtin-gratitude' })],
     });
 
-    // The installed app offers itself in the share sheet, for a title, some text and a link
+    // The installed app offers itself in the share sheet, for a title, some text, a link and files, which
+    // the service worker receives and sends on to the address below (share-target-files.spec.ts)
     const manifest = await (await page.request.get('/site.webmanifest')).json() as Record<string, unknown>;
-    expect(manifest.share_target).toEqual({
+    expect(manifest.share_target).toMatchObject({
       action: '/share-target',
-      method: 'GET',
-      params: { title: 'title', text: 'text', url: 'url' },
+      method: 'POST',
+      enctype: 'multipart/form-data',
+      params: { title: 'title', text: 'text', url: 'url', files: [{ name: 'files' }] },
     });
 
     await page.goto(shareAddress({ title: 'Tide tables', text: 'High tide at 6, worth the walk', url: 'https://example.org/tides' }));

@@ -11,7 +11,7 @@ type ComposerState = Pick<ComponentProps<typeof EntryForm>,
   'newEntryText' | 'setNewEntryText' | 'title' | 'setTitle' | 'timeOfDay' | 'setTimeOfDay' | 'mood' | 'setMood'
   | 'feelings' | 'setFeelings' | 'tags' | 'setTags' | 'timeCapsule' | 'setTimeCapsule' | 'setVisibility' | 'setFormat'
   | 'diaryTemplateName'>
-  & Partial<Pick<ComponentProps<typeof EntryForm>, 'setSelectedDate'>>;
+  & Partial<Pick<ComponentProps<typeof EntryForm>, 'setSelectedDate' | 'onAddFile'>>;
 
 interface ComposerSeedOptions {
   readonly composer: ComposerState;
@@ -27,7 +27,7 @@ interface ComposerSeedOptions {
 
 /** What the new entry form is filled with, and why (which the replace warning says). */
 interface ComposerSeed {
-  readonly kind: 'startingPoint' | 'reply' | 'writeAbout' | 'shared';
+  readonly kind: 'startingPoint' | 'reply' | 'writeAbout' | 'shared' | 'sharedFiles';
   readonly text: string;
   /** The new entry's title; none when unset. */
   readonly title?: string;
@@ -37,6 +37,8 @@ interface ComposerSeed {
   readonly privateOnly?: boolean;
   /** Set when the new entry goes on today rather than on the date already picked. */
   readonly today?: boolean;
+  /** Files to attach, beside any the form already holds. */
+  readonly files?: readonly File[];
 }
 
 /** How long the Markdown editor may take to load on first use before focus stops following it. */
@@ -47,7 +49,11 @@ const REPLACE_MESSAGES = {
   reply: 'replyReplaceMessage',
   writeAbout: 'writeAboutReplaceMessage',
   shared: 'shareTargetReplaceMessage',
+  sharedFiles: 'shareTargetFilesReplaceMessage',
 } as const;
+
+/** Whether the form holds a draft of the writer's own: a diary's template the writer has not touched is none. */
+const holdsDraft = (composer: ComposerState): boolean => !composer.diaryTemplateName && hasComposerDraft(composer);
 
 /**
  * Fills the new entry form from an entry, then scrolls to it and focuses its writing field. A draft
@@ -60,7 +66,9 @@ const REPLACE_MESSAGES = {
  * - **Write about this** (from the feed): a short quote of another writer's entry and their name (see
  *   `feedEntryDraft`), on today, in the entry's format, with no tags, and always private.
  * - **Shared to Thoughty** (the installed app's share target): the text or link shared from another app,
- *   and its title (see `sharedContentFrom`), on today, as plain text, with no tags, and always private.
+ *   and its title (see `sharedContentFrom`), on today, as plain text, with no tags, and always private,
+ *   with the files shared along as attachments. Files shared alone join a draft already there, which they
+ *   do not replace, and otherwise start a new private entry for today the same way.
  */
 export function useComposerSeed({ composer, defaultVisibility, formRef, language, theme, t }: ComposerSeedOptions): {
   startFromEntry: (entry: Entry) => void;
@@ -93,6 +101,7 @@ export function useComposerSeed({ composer, defaultVisibility, formRef, language
     form.setMood?.(null);
     form.setFeelings?.([]);
     form.setTimeCapsule?.(null);
+    seed.files?.forEach((file) => form.onAddFile?.(file));
     focusComposer();
   }, [focusComposer]);
 
@@ -100,9 +109,7 @@ export function useComposerSeed({ composer, defaultVisibility, formRef, language
     if (!seed) {
       return;
     }
-    // A diary's template the writer has not touched is no draft of theirs to warn about
-    const { composer } = latest.current;
-    if (!composer.diaryTemplateName && hasComposerDraft(composer)) {
+    if (holdsDraft(latest.current.composer)) {
       setPendingSeed(seed);
     } else {
       applySeed(seed);
@@ -125,8 +132,24 @@ export function useComposerSeed({ composer, defaultVisibility, formRef, language
   }, [seedComposer]);
 
   const shareInto = useCallback((shared: SharedContent) => {
-    seedComposer({ kind: 'shared', text: shared.text, title: shared.title, tags: [], format: 'plain', privateOnly: true, today: true });
-  }, [seedComposer]);
+    const files = shared.files ?? [];
+    const { composer } = latest.current;
+    if (!shared.text.trim() && files.length > 0 && holdsDraft(composer)) {
+      files.forEach((file) => composer.onAddFile?.(file));
+      focusComposer();
+      return;
+    }
+    seedComposer({
+      kind: files.length > 0 ? 'sharedFiles' : 'shared',
+      text: shared.text,
+      title: shared.title,
+      tags: [],
+      format: 'plain',
+      privateOnly: true,
+      today: true,
+      files,
+    });
+  }, [focusComposer, seedComposer]);
 
   useEffect(() => {
     const container = formRef.current;

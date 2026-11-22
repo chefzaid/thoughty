@@ -168,4 +168,37 @@ describe('serviceWorkerCore', () => {
     expect(respondWith).toHaveBeenCalledTimes(1);
     expect(await (await respondWith.mock.calls[0]?.[0])?.text()).toBe('file /assets/index-B2.css');
   });
+
+  it('receives a share posted to the app, stays up until the page takes its files, and hands them over', async () => {
+    const { scope, listeners } = fakeScope(async () => new Response(SHELL_HTML));
+    startServiceWorker(scope, BUILD);
+    const form = new FormData();
+    form.append('text', 'At the beach');
+    const photo = new File(['jpeg'], 'beach.jpg', { type: 'image/jpeg' });
+    form.append('files', photo);
+    const request = { method: 'POST', url: `${ORIGIN}/share-target`, formData: async () => form } as unknown as Request;
+    const respondWith = vi.fn();
+    const waitUntil = vi.fn();
+
+    listeners.fetch?.({ request, respondWith, waitUntil } as never);
+
+    const response = await (respondWith.mock.calls[0]?.[0] as Promise<Response>);
+    expect(response.status).toBe(303);
+    const location = new URL(response.headers.get('Location') ?? '');
+    expect(location.searchParams.get('text')).toBe('At the beach');
+    const id = location.searchParams.get('files') ?? '';
+    let handedOff = false;
+    void (waitUntil.mock.calls[0]?.[0] as Promise<void>).then(() => {
+      handedOff = true;
+    });
+    await Promise.resolve();
+    expect(handedOff).toBe(false);
+
+    const port = { postMessage: vi.fn() };
+    listeners.message?.({ data: { type: 'thoughty:take-shared-files', id }, ports: [port] } as never);
+    expect(port.postMessage).toHaveBeenCalledWith({ files: [photo] });
+    await (waitUntil.mock.calls[0]?.[0] as Promise<void>);
+    expect(handedOff).toBe(true);
+    expect(scope.fetch).not.toHaveBeenCalled();
+  });
 });

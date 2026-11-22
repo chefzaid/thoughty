@@ -55,6 +55,7 @@ function Harness({ initialText = '', defaultVisibility, swapFieldOnFill = false,
     const [format, setFormat] = useState<'plain' | 'markdown'>('plain');
     const [selectedDate, setSelectedDate] = useState(new Date(2024, 0, 2));
     const [swapped, setSwapped] = useState(false);
+    const [files, setFiles] = useState<File[]>([]);
     const { startFromEntry, replyToEntry, writeAbout, shareInto, focusComposer, dialog } = useComposerSeed({
         composer: {
             newEntryText, setNewEntryText: (value) => {
@@ -63,6 +64,7 @@ function Harness({ initialText = '', defaultVisibility, swapFieldOnFill = false,
             },
             title, setTitle, timeOfDay, setTimeOfDay, mood, setMood, feelings, setFeelings,
             tags, setTags, timeCapsule, setTimeCapsule, setVisibility, setFormat, setSelectedDate, diaryTemplateName,
+            onAddFile: (file) => setFiles((added) => [...added, file]),
         },
         defaultVisibility,
         formRef,
@@ -79,6 +81,7 @@ function Harness({ initialText = '', defaultVisibility, swapFieldOnFill = false,
             </div>
             <output data-testid="state">{JSON.stringify({ title, timeOfDay, mood, tags, visibility, format, timeCapsule })}</output>
             <output data-testid="date">{formatEntryDate(selectedDate)}</output>
+            <output data-testid="files">{files.map((file) => file.name).join(', ')}</output>
             <button type="button" onClick={() => startFromEntry(packingList)}>Start</button>
             <button type="button" onClick={focusComposer}>Focus</button>
             <button type="button" onClick={() => startFromEntry({ ...packingList, sealed_until: '2030-01-01T00:00:00Z' })}>Sealed</button>
@@ -89,11 +92,14 @@ function Harness({ initialText = '', defaultVisibility, swapFieldOnFill = false,
                 Write about
             </button>
             <button type="button" onClick={() => shareInto({ title: 'Tide tables', text: 'High tide at 6\nhttps://example.org/tides' })}>Share</button>
+            <button type="button" onClick={() => shareInto({ title: '', text: 'At the beach', files: [beachPhoto] })}>Share with photo</button>
+            <button type="button" onClick={() => shareInto({ title: '', text: '', files: [beachPhoto] })}>Share photo</button>
             {dialog}
         </>
     );
 }
 
+const beachPhoto = new File(['jpeg'], 'beach.jpg', { type: 'image/jpeg' });
 const state = () => JSON.parse(screen.getByTestId('state').textContent ?? '{}');
 
 describe('useComposerSeed', () => {
@@ -254,5 +260,42 @@ describe('useComposerSeed', () => {
         expect(field).toHaveFocus();
         expect(screen.getByTestId('date')).toHaveTextContent(formatEntryDate(new Date()));
         expect(state()).toEqual({ title: 'Tide tables', timeOfDay: '', mood: null, tags: [], visibility: 'private', format: 'plain', timeCapsule: null });
+    });
+
+    it('attaches the files shared with the text, after asking before a draft is replaced', async () => {
+        const user = userEvent.setup();
+        render(<Harness defaultVisibility="public" initialText="My own draft" />);
+
+        await user.click(screen.getByRole('button', { name: 'Share with photo' }));
+        const dialog = screen.getByRole('alertdialog', { name: 'Replace your draft?' });
+        expect(dialog).toHaveAccessibleDescription(/and the files you shared are attached to it/);
+        await user.click(screen.getByRole('button', { name: 'Cancel' }));
+        expect(screen.getByLabelText('Writing')).toHaveValue('My own draft');
+        expect(screen.getByTestId('files')).toHaveTextContent('');
+
+        await user.click(screen.getByRole('button', { name: 'Share with photo' }));
+        await user.click(screen.getByRole('button', { name: 'Replace draft' }));
+        expect(screen.getByLabelText('Writing')).toHaveValue('At the beach');
+        expect(screen.getByTestId('files')).toHaveTextContent('beach.jpg');
+        expect(state()).toMatchObject({ visibility: 'private', format: 'plain', tags: [] });
+    });
+
+    it('adds files shared alone to the draft being written, and starts a private entry with them otherwise', async () => {
+        const user = userEvent.setup();
+        const { unmount } = render(<Harness defaultVisibility="public" initialText="My own draft" />);
+
+        await user.click(screen.getByRole('button', { name: 'Share photo' }));
+        expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+        expect(screen.getByLabelText('Writing')).toHaveValue('My own draft');
+        expect(screen.getByLabelText('Writing')).toHaveFocus();
+        expect(screen.getByTestId('files')).toHaveTextContent('beach.jpg');
+        expect(state()).toMatchObject({ title: 'Old title', visibility: 'private' });
+        unmount();
+
+        render(<Harness defaultVisibility="public" />);
+        await user.click(screen.getByRole('button', { name: 'Share photo' }));
+        expect(screen.getByTestId('files')).toHaveTextContent('beach.jpg');
+        expect(screen.getByTestId('date')).toHaveTextContent(formatEntryDate(new Date()));
+        expect(state()).toMatchObject({ visibility: 'private', format: 'plain' });
     });
 });

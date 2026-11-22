@@ -53,6 +53,14 @@ describe('web security headers', () => {
     expect(snippet).toContain('add_header X-Robots-Tag $robots_tag always;');
   });
 
+  it('turns a share posted where no service worker received it into a relative redirect, its body unread', () => {
+    const block = /location = \/share-target \{([^}]*\{[^}]*\}[^}]*)\}/.exec(read('nginx.conf'))?.[1] ?? '';
+
+    expect(block).toMatch(/if \(\$request_method = POST\) \{\s*return 303 \/share-target\?unreceived=1;\s*\}/);
+    expect(block).toContain('absolute_redirect off;');
+    expect(block).toContain('try_files $uri /index.html;');
+  });
+
   it('has no inline scripts in the HTML entry point', () => {
     const scripts = read('index.html').match(/<script\b[^>]*>[\s\S]*?<\/script>/g) ?? [];
 

@@ -10,7 +10,10 @@ export type QuickCaptureTranslationKey =
   | 'quickCaptureSaving'
   | 'quickCaptureSaved'
   | 'quickCaptureViewEntry'
-  | 'shareTargetReplaceMessage';
+  | 'shareTargetReplaceMessage'
+  | 'shareTargetFilesReplaceMessage'
+  | 'shareTargetFilesLost'
+  | 'shareTargetNotReceived';
 
 export const quickCaptureTranslations: Record<Language, Record<QuickCaptureTranslationKey, string>> = {
   en: {
@@ -24,6 +27,10 @@ export const quickCaptureTranslations: Record<Language, Record<QuickCaptureTrans
     quickCaptureViewEntry: 'View entry',
     shareTargetReplaceMessage:
       'The new entry form already holds a draft. What you shared to Thoughty replaces its text, title, tags, time and mood, in a private entry dated today.',
+    shareTargetFilesReplaceMessage:
+      'The new entry form already holds a draft. What you shared to Thoughty replaces its text, title, tags, time and mood, in a private entry dated today, and the files you shared are attached to it.',
+    shareTargetFilesLost: 'The files you shared to Thoughty could not be received. Please share them again.',
+    shareTargetNotReceived: 'Thoughty could not receive what you shared. Open Thoughty once, then share it again.',
   },
   fr: {
     quickCapture: 'Capture rapide',
@@ -36,5 +43,9 @@ export const quickCaptureTranslations: Record<Language, Record<QuickCaptureTrans
     quickCaptureViewEntry: 'Voir l’entrée',
     shareTargetReplaceMessage:
       'Le formulaire de nouvelle entrée contient déjà un brouillon. Ce que vous avez partagé avec Thoughty remplace son texte, son titre, ses tags, son heure et son humeur, dans une entrée privée à la date d’aujourd’hui.',
+    shareTargetFilesReplaceMessage:
+      'Le formulaire de nouvelle entrée contient déjà un brouillon. Ce que vous avez partagé avec Thoughty remplace son texte, son titre, ses tags, son heure et son humeur, dans une entrée privée à la date d’aujourd’hui, et les fichiers partagés y sont joints.',
+    shareTargetFilesLost: 'Les fichiers partagés avec Thoughty n’ont pas pu être reçus. Partagez-les à nouveau.',
+    shareTargetNotReceived: 'Thoughty n’a pas pu recevoir ce que vous avez partagé. Ouvrez Thoughty une fois, puis partagez-le à nouveau.',
   },
 };

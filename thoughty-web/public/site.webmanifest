@@ -8,8 +8,40 @@
   "theme_color": "#7C3AED",
   "share_target": {
     "action": "/share-target",
-    "method": "GET",
-    "params": { "title": "title", "text": "text", "url": "url" }
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "files",
+          "accept": [
+              "image/jpeg",
+              "image/png",
+              "image/gif",
+              "image/webp",
+              "image/svg+xml",
+              "application/pdf",
+              "text/plain",
+              "audio/mpeg",
+              "audio/mp3",
+              "audio/mp4",
+              "audio/x-m4a",
+              "audio/aac",
+              "audio/ogg",
+              "audio/wav",
+              "audio/wave",
+              "audio/x-wav",
+              "audio/webm",
+              "video/mp4",
+              "video/webm",
+              "video/quicktime"
+          ]
+        }
+      ]
+    }
   },
   "icons": [
     { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },

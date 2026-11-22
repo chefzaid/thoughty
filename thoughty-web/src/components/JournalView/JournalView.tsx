@@ -158,7 +158,7 @@ function JournalView({
     t,
   });
   useComposerFocusRoute(composerSeed.focusComposer, composerSeed.writeAbout);
-  useShareTargetSeed(entryForm.draft?.ready ?? true, composerSeed.shareInto);
+  useShareTargetSeed({ ready: entryForm.draft?.ready ?? true, shareInto: composerSeed.shareInto, notify: onNotify, t });
 
   const keywordSearch = filters.searchMode === 'keyword';
   const calendarFilters = {

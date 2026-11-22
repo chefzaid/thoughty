@@ -39,10 +39,35 @@ describe('captureSharedContent', () => {
 
   it('keeps what was shared in the tab and moves to the journal on the share target', () => {
     const history = { replaceState: vi.fn() };
-    captureSharedContent({ pathname: '/share-target/', search: '?title=Tides&text=High+tide' }, history);
+    const claimFiles = vi.fn();
+    captureSharedContent({ pathname: '/share-target/', search: '?title=Tides&text=High+tide' }, history, sessionStorage, claimFiles);
 
-    expect(JSON.parse(sessionStorage.getItem(SHARED_CONTENT_STORAGE_KEY) ?? 'null')).toEqual({ title: 'Tides', text: 'High tide' });
+    expect(JSON.parse(sessionStorage.getItem(SHARED_CONTENT_STORAGE_KEY) ?? 'null'))
+      .toEqual({ title: 'Tides', text: 'High tide', withFiles: false, notReceived: false });
     expect(history.replaceState).toHaveBeenCalledWith(null, '', '/journal');
+    expect(claimFiles).not.toHaveBeenCalled();
+  });
+
+  it('asks for the files the worker keeps, with or without text, and leaves their id out of the tab', () => {
+    const history = { replaceState: vi.fn() };
+    const claimFiles = vi.fn();
+    captureSharedContent({ pathname: '/share-target', search: '?text=Beach&files=4f1c' }, history, sessionStorage, claimFiles);
+    expect(claimFiles).toHaveBeenCalledWith('4f1c');
+    expect(JSON.parse(sessionStorage.getItem(SHARED_CONTENT_STORAGE_KEY) ?? 'null'))
+      .toEqual({ title: '', text: 'Beach', withFiles: true, notReceived: false });
+
+    captureSharedContent({ pathname: '/share-target', search: '?files=9a2b' }, history, sessionStorage, claimFiles);
+    expect(claimFiles).toHaveBeenLastCalledWith('9a2b');
+    expect(JSON.parse(sessionStorage.getItem(SHARED_CONTENT_STORAGE_KEY) ?? 'null'))
+      .toEqual({ title: '', text: '', withFiles: true, notReceived: false });
+    expect(history.replaceState).toHaveBeenLastCalledWith(null, '', '/journal');
+  });
+
+  it('keeps word that a share could not be received', () => {
+    const history = { replaceState: vi.fn() };
+    captureSharedContent({ pathname: '/share-target', search: '?unreceived=1' }, history, sessionStorage, vi.fn());
+    expect(JSON.parse(sessionStorage.getItem(SHARED_CONTENT_STORAGE_KEY) ?? 'null'))
+      .toEqual({ title: '', text: '', withFiles: false, notReceived: true });
   });
 
   it('leaves every other address alone, and opens the journal with nothing kept when nothing was shared', () => {
@@ -69,8 +94,15 @@ describe('takeSharedContent', () => {
 
   it('gives what was shared once', () => {
     sessionStorage.setItem(SHARED_CONTENT_STORAGE_KEY, JSON.stringify({ title: 'Tides', text: 'High tide' }));
-    expect(takeSharedContent()).toEqual({ title: 'Tides', text: 'High tide' });
+    expect(takeSharedContent()).toEqual({ title: 'Tides', text: 'High tide', withFiles: false, notReceived: false });
     expect(takeSharedContent()).toBeNull();
+  });
+
+  it('gives files shared without text, and a share that was not received', () => {
+    sessionStorage.setItem(SHARED_CONTENT_STORAGE_KEY, JSON.stringify({ title: '', text: '', withFiles: true, notReceived: false }));
+    expect(takeSharedContent()).toEqual({ title: '', text: '', withFiles: true, notReceived: false });
+    sessionStorage.setItem(SHARED_CONTENT_STORAGE_KEY, JSON.stringify({ title: '', text: '', withFiles: 'yes', notReceived: true }));
+    expect(takeSharedContent()).toEqual({ title: '', text: '', withFiles: false, notReceived: true });
   });
 
   it('drops what is not shared content, cut to what an entry holds', () => {
