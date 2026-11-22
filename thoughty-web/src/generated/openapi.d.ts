@@ -2638,9 +2638,46 @@ export interface paths {
         get: operations["WritingReminderEmailController_get"];
         /**
          * Turn the writing reminder email on or off and choose its hour, time zone and diary
-         * @description Once on, it arrives every day at that local hour, unless the writer already has an entry dated that day (in the chosen diary, or in any diary when it is null), and opens the journal on that diary.
+         * @description Once on, it arrives every day at that local hour, unless the writer already has an entry dated that day (in the chosen diary, or in any diary when it is null), and opens the journal on that diary. The diaries’ own reminders move to the new time zone.
          */
         put: operations["WritingReminderEmailController_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/writing-reminder-email/diaries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the diaries that have their own writing reminder hour */
+        get: operations["WritingReminderEmailController_listDiaries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/writing-reminder-email/diaries/{diaryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Give a diary its own writing reminder hour, or remove it
+         * @description The diary is then reminded every day at that local hour, in the account reminder’s time zone, unless it has an entry dated that day, and the Profile reminder no longer reminds about it. It works whether or not the Profile reminder is on, and its email’s unsubscribe link stops every writing reminder.
+         */
+        put: operations["WritingReminderEmailController_updateDiary"];
         post?: never;
         delete?: never;
         options?: never;
@@ -10551,6 +10588,73 @@ export interface components {
              * @example null
              */
             diaryId: number | null;
+        };
+        /**
+         * @example {
+         *       "diaryId": 4,
+         *       "deliveryHour": 8,
+         *       "timeZone": "Europe/Paris",
+         *       "nextSendAt": "2026-11-23T07:00:00.000Z"
+         *     }
+         */
+        DiaryWritingReminderDto: {
+            /** @example 4 */
+            diaryId: number;
+            /**
+             * @description Local hour the diary’s reminder arrives at
+             * @example 8
+             */
+            deliveryHour: number;
+            /**
+             * @description IANA time zone of the hour: the account reminder’s
+             * @example Europe/Paris
+             */
+            timeZone: string;
+            /**
+             * @description When the reminder is next due, unless the diary has an entry that day
+             * @example 2026-11-23T07:00:00.000Z
+             */
+            nextSendAt: string;
+        };
+        /**
+         * @example {
+         *       "reminders": [
+         *         {
+         *           "diaryId": 4,
+         *           "deliveryHour": 8,
+         *           "timeZone": "Europe/Paris",
+         *           "nextSendAt": "2026-11-23T07:00:00.000Z"
+         *         }
+         *       ],
+         *       "emailAvailable": true
+         *     }
+         */
+        DiaryWritingRemindersDto: {
+            /** @description One per diary with its own hour; the others follow the Profile reminder */
+            reminders: components["schemas"]["DiaryWritingReminderDto"][];
+            /**
+             * @description Whether the account has a verified email and this server can send email
+             * @example true
+             */
+            emailAvailable: boolean;
+        };
+        /**
+         * @example {
+         *       "deliveryHour": 8,
+         *       "timeZone": "Europe/Paris"
+         *     }
+         */
+        UpdateDiaryWritingReminderDto: {
+            /**
+             * @description null removes the diary’s own reminder
+             * @example 8
+             */
+            deliveryHour: number | null;
+            /**
+             * @description The browser’s zone, used only while the account reminder was never saved; otherwise its zone is kept
+             * @example Europe/Paris
+             */
+            timeZone: string;
         };
         /**
          * @example {
@@ -23724,6 +23828,118 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["OptInEmailSettingsDto"];
+                };
+            };
+            /** @description Invalid hour or unknown time zone */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "Invalid hour or unknown time zone",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The diary does not belong to you */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "The diary does not belong to you",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    WritingReminderEmailController_listDiaries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The diaries’ own reminders */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "reminders": [
+                     *         {
+                     *           "diaryId": 4,
+                     *           "deliveryHour": 8,
+                     *           "timeZone": "Europe/Paris",
+                     *           "nextSendAt": "2026-11-23T07:00:00.000Z"
+                     *         }
+                     *       ],
+                     *       "emailAvailable": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["DiaryWritingRemindersDto"];
+                };
+            };
+        };
+    };
+    WritingReminderEmailController_updateDiary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                diaryId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "deliveryHour": 8,
+                 *       "timeZone": "Europe/Paris"
+                 *     }
+                 */
+                "application/json": components["schemas"]["UpdateDiaryWritingReminderDto"];
+            };
+        };
+        responses: {
+            /** @description The diaries’ own reminders */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "reminders": [
+                     *         {
+                     *           "diaryId": 4,
+                     *           "deliveryHour": 8,
+                     *           "timeZone": "Europe/Paris",
+                     *           "nextSendAt": "2026-11-23T07:00:00.000Z"
+                     *         }
+                     *       ],
+                     *       "emailAvailable": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["DiaryWritingRemindersDto"];
                 };
             };
             /** @description Invalid hour or unknown time zone */

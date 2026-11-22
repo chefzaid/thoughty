@@ -6,6 +6,7 @@ import { WritingReminderEmailService } from './writing-reminder-email.service';
 describe('WritingReminderEmailService', () => {
   let settingRepository: { findOne: jest.Mock; upsert: jest.Mock };
   let diaryRepository: { exists: jest.Mock };
+  let diaryReminders: { followTimeZone: jest.Mock };
   let service: WritingReminderEmailService;
 
   beforeEach(() => {
@@ -18,6 +19,7 @@ describe('WritingReminderEmailService', () => {
       diaryRepository as never,
       { findOne: jest.fn().mockResolvedValue({ id: 3, email: 'writer@example.com', emailVerified: true }) } as never,
       { isConfigured: jest.fn().mockReturnValue(true) } as never,
+      (diaryReminders = { followTimeZone: jest.fn().mockResolvedValue(undefined) }) as never,
     );
   });
 
@@ -46,12 +48,15 @@ describe('WritingReminderEmailService', () => {
       expect.objectContaining({ deliveryHour: 9, diaryId: null, nextSendAt: new Date('2026-11-23T08:00:00Z') }),
       ['userId'],
     );
+    // The diaries' own reminders keep the account reminder's zone
+    expect(diaryReminders.followTimeZone).toHaveBeenLastCalledWith(3, 'Europe/Paris');
   });
 
   it('refuses another writer’s diary', async () => {
     diaryRepository.exists.mockResolvedValue(false);
     await expectApiError(service.update(3, { enabled: true, deliveryHour: 20, timeZone: 'UTC', diaryId: 99 }), NotFoundException, 'DIARY_NOT_FOUND');
     expect(settingRepository.upsert).not.toHaveBeenCalled();
+    expect(diaryReminders.followTimeZone).not.toHaveBeenCalled();
   });
 });
 
@@ -59,7 +64,7 @@ describe('WritingReminderEmailController', () => {
   it('reads and saves the signed-in writer’s setting', async () => {
     const settings = { enabled: true, deliveryHour: 20, timeZone: 'UTC', diaryId: null, nextSendAt: null, emailAvailable: true };
     const service = { get: jest.fn().mockResolvedValue(settings), update: jest.fn().mockResolvedValue(settings) };
-    const controller = new WritingReminderEmailController(service as never);
+    const controller = new WritingReminderEmailController(service as never, {} as never);
     const user = { userId: 3 } as never;
 
     await expect(controller.get(user)).resolves.toBe(settings);
@@ -68,5 +73,19 @@ describe('WritingReminderEmailController', () => {
     const dto = { enabled: true, deliveryHour: 20, timeZone: 'UTC', diaryId: null };
     await expect(controller.update(user, dto)).resolves.toBe(settings);
     expect(service.update).toHaveBeenCalledWith(3, dto);
+  });
+
+  it('lists and saves the signed-in writer’s diary reminders', async () => {
+    const reminders = { reminders: [], emailAvailable: true };
+    const diaries = { list: jest.fn().mockResolvedValue(reminders), update: jest.fn().mockResolvedValue(reminders) };
+    const controller = new WritingReminderEmailController({} as never, diaries as never);
+    const user = { userId: 3 } as never;
+
+    await expect(controller.listDiaries(user)).resolves.toBe(reminders);
+    expect(diaries.list).toHaveBeenCalledWith(3);
+
+    const dto = { deliveryHour: 7, timeZone: 'UTC' };
+    await expect(controller.updateDiary(user, 4, dto)).resolves.toBe(reminders);
+    expect(diaries.update).toHaveBeenCalledWith(3, 4, dto);
   });
 });

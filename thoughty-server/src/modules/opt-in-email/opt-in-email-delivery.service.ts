@@ -63,8 +63,10 @@ export abstract class OptInEmailDeliveryService<TContent> {
   private readonly logger = new Logger(this.constructor.name);
   private readonly unsubscribeSecret: string;
 
-  /** The setting table, one row per writer. */
+  /** The setting table, one row per writer (or per diary, see `keyColumn`). */
   protected abstract readonly table: string;
+  /** The column that names one row of `table`. */
+  protected readonly keyColumn: 'user_id' | 'diary_id' = 'user_id';
   protected abstract readonly kind: OptInEmailKind;
   protected abstract readonly schedule: OptInEmailSchedule;
   /** How logs name the email. */
@@ -137,9 +139,9 @@ export abstract class OptInEmailDeliveryService<TContent> {
           `
             UPDATE ${this.table}
             SET next_send_at = $2, last_sent_on = CASE WHEN $3 THEN $4::date ELSE last_sent_on END
-            WHERE user_id = $1
+            WHERE ${this.keyColumn} = $1
           `,
-          [row.user_id, this.schedule.next(now, row.delivery_hour, timeZone), sending, localDate],
+          [row[this.keyColumn], this.schedule.next(now, row.delivery_hour, timeZone), sending, localDate],
         );
         if (sending) {
           emails.push({ due: dueEmail, email: row.email!, content });

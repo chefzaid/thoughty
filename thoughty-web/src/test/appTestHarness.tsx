@@ -147,6 +147,9 @@ export function createDefaultFetchResponse(url: string) {
   if (url.includes('/api/entries')) {
     return createJsonResponse(mockEntriesResponse);
   }
+  if (url.includes('/api/writing-reminder-email/diaries')) {
+    return createJsonResponse({ reminders: [], emailAvailable: true });
+  }
   if (url.includes('/api/diaries')) {
     return createJsonResponse([makeDiary({ id: 1, name: 'My Diary', isDefault: true })]);
   }

@@ -9,9 +9,10 @@ const emptyRepository = () => ({
 });
 
 describe('UserDataExportService opt-in email settings', () => {
-  const build = (onThisDayEmail: unknown, monthlyRecapEmail: unknown, writingReminderEmail: unknown) => {
-    // Every repository before the two opt-in email ones, in constructor order.
+  const build = (onThisDayEmail: unknown, monthlyRecapEmail: unknown, writingReminderEmail: unknown, diaryRepository = emptyRepository()) => {
+    // Every repository before the two opt-in email ones, in constructor order; the diaries' is the third.
     const others = Array.from({ length: 16 }, emptyRepository);
+    others[2] = diaryRepository;
     const Service = UserDataExportService as unknown as new (...repositories: unknown[]) => UserDataExportService;
     const timeCapsules = { reveal: async (entries: unknown[]) => entries };
     return new Service(...others, onThisDayEmail, monthlyRecapEmail, emptyRepository(), timeCapsules, emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), createAccountActivityMock(), emptyRepository(), emptyRepository(), writingReminderEmail, emptyRepository());
@@ -32,5 +33,24 @@ describe('UserDataExportService opt-in email settings', () => {
       enabled: true, deliveryHour: 8, timeZone: 'Europe/Paris', diaryId: 4, nextSendAt, lastSentOn: '2026-10-01', createdAt, updatedAt: createdAt,
     });
     expect(repositories[key].findOne).toHaveBeenCalledWith({ where: { userId: 1 } });
+  });
+
+  it('includes each diary’s own writing reminder hour with the diary, and null for a diary without one', async () => {
+    const createdAt = new Date('2026-11-01T10:00:00Z');
+    const nextSendAt = new Date('2026-11-23T06:00:00Z');
+    const diaries = emptyRepository();
+    diaries.find.mockResolvedValue([
+      { id: 4, name: 'Work', writingReminder: { diaryId: 4, userId: 1, enabled: true, deliveryHour: 7, timeZone: 'Europe/Paris', nextSendAt, lastSentOn: '2026-11-22', createdAt, updatedAt: createdAt } },
+      { id: 5, name: 'Home', writingReminder: null },
+    ]);
+    const service = build(emptyRepository(), emptyRepository(), emptyRepository(), diaries);
+
+    const exported = (await service.downloadData(1)).diaries as Array<{ id: number; writingReminder: unknown }>;
+
+    expect(diaries.find).toHaveBeenCalledWith({ where: { userId: 1 }, order: { position: 'ASC' }, relations: { writingReminder: true } });
+    expect(exported.map((diary) => [diary.id, diary.writingReminder])).toEqual([
+      [4, { enabled: true, deliveryHour: 7, timeZone: 'Europe/Paris', nextSendAt, lastSentOn: '2026-11-22', createdAt, updatedAt: createdAt }],
+      [5, null],
+    ]);
   });
 });

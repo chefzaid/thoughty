@@ -4,6 +4,7 @@ import { createMockReviewState, type MockReviewState } from "./mockApp.review";
 import type { MockSavedSearch } from "./mockApp.routes.saved-searches";
 import type { MockLifeEra } from "./mockApp.routes.life-eras";
 import { createMockOptInEmail, type MockOptInEmail } from "./mockApp.routes.opt-in-emails";
+import type { MockDiaryWritingReminder } from "./mockApp.routes.diary-reminders";
 import { addMockMentionedPeople, type MockPerson } from "./mockApp.routes.people";
 import type { MockDiary } from "./mockApp.diaries";
 import type { MockFeatureFlags } from "./mockApp.feature-flags";
@@ -140,6 +141,8 @@ export interface SetupMockAppOptions {
   monthlyRecapEmail?: Partial<MockOptInEmail>;
   /** The saved writing reminder email setting; off and never saved by default (its hour then reads 20). */
   writingReminderEmail?: Partial<MockOptInEmail>;
+  /** The diaries' own writing reminder hours (Manage Diaries); none by default. */
+  diaryWritingReminders?: MockDiaryWritingReminder[];
   /** The people the writer mentions; by default those the initial entries mention. */
   people?: MockPerson[];
   /** Runtime feature flags to switch off, such as `{ ai: false }`; every feature is on by default. */
@@ -217,6 +220,7 @@ export interface MockAppState {
   onThisDayEmail: MockOptInEmail;
   monthlyRecapEmail: MockOptInEmail;
   writingReminderEmail: MockOptInEmail;
+  diaryWritingReminders: MockDiaryWritingReminder[];
   people: MockPerson[];
   memoir: MockMemoirState;
   appImport: MockAppImportState;
@@ -387,6 +391,7 @@ export function createMockAppState(
     onThisDayEmail: createMockOptInEmail(options.onThisDayEmail),
     monthlyRecapEmail: createMockOptInEmail(options.monthlyRecapEmail),
     writingReminderEmail: createMockOptInEmail({ deliveryHour: 20, ...options.writingReminderEmail }),
+    diaryWritingReminders: (options.diaryWritingReminders || []).map((reminder) => ({ ...reminder })),
     people: options.people?.map((person) => ({ ...person, handles: [...person.handles] })) ?? mentionedPeople(options.initialEntries || []),
     memoir: createMockMemoirState(options.memoirProgram ?? null),
     appImport: createMockAppImportState(),

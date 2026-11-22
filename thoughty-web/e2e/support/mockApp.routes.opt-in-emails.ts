@@ -1,6 +1,7 @@
 import type { components } from '../../src/generated/openapi';
 import { fulfillApiError, fulfillJson, isTimeZone, type RouteContext } from './mockApp.route-utils';
 import type { MockAppState } from './mockApp.shared';
+import { followTimeZone } from './mockApp.routes.diary-reminders';
 
 export type MockOptInEmail = components['schemas']['OptInEmailSettingsDto'];
 type OptInEmailChanges = components['schemas']['UpdateOptInEmailDto'];
@@ -28,7 +29,7 @@ const QUARTER_HOUR_MS = 15 * 60 * 1000;
  * The next quarter hour after now at which the zone's clock reads `hour`:00 (on the 1st of a month for
  * the monthly recap), as the API schedules it.
  */
-function nextSendAt(hour: number, timeZone: string, monthly: boolean): string {
+export function nextSendAt(hour: number, timeZone: string, monthly: boolean): string {
   const format = new Intl.DateTimeFormat('en-US', { timeZone, hourCycle: 'h23', day: 'numeric', hour: 'numeric', minute: 'numeric' });
   let candidate = Math.ceil((Date.now() + 1) / QUARTER_HOUR_MS) * QUARTER_HOUR_MS;
   for (let step = 0; step < 4 * 24 * 32; step++, candidate += QUARTER_HOUR_MS) {
@@ -46,6 +47,8 @@ export function createMockOptInEmail(overrides: Partial<MockOptInEmail> = {}): M
 function turnOff(state: MockAppState, kind: OptInEmailKind) {
   const key = EMAILS[kind].state;
   state[key] = { ...state[key], enabled: false, nextSendAt: null };
+  // A writing reminder's link also stops the diaries' own reminders, which send the same link
+  if (kind === 'writing-reminder') state.diaryWritingReminders = [];
 }
 
 /**
@@ -87,6 +90,7 @@ export async function handleOptInEmailRoutes({ route, request, pathname, searchP
       ...changes,
       nextSendAt: changes.enabled ? nextSendAt(changes.deliveryHour, changes.timeZone, email.monthly) : null,
     };
+    if (email.state === 'writingReminderEmail') followTimeZone(state, changes.timeZone);
     await fulfillJson(route, state[email.state]);
     return true;
   }

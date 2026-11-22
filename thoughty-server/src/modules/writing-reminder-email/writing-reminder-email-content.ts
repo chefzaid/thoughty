@@ -14,6 +14,8 @@ export interface WritingReminder {
   diaryId: number | null;
   /** Days in a row with an entry up to yesterday, which an entry today carries on; 0 for none. */
   currentStreak: number;
+  /** Whether it is the Profile's reminder or a diary's own hour from Manage Diaries, which the footer names. */
+  source: 'account' | 'diary';
 }
 
 interface ReminderCopy {
@@ -26,7 +28,7 @@ interface ReminderCopy {
   cards: (draw: string) => string;
   /** The composer's own button, as the app names it. */
   drawCard: string;
-  footer: string;
+  footer: Record<WritingReminder['source'], string>;
 }
 
 const COPY: Record<EmailLanguage, ReminderCopy> = {
@@ -38,9 +40,14 @@ const COPY: Record<EmailLanguage, ReminderCopy> = {
     write: 'Write today’s entry',
     cards: (draw) => `Need a question to start? Choose “${draw}” in the composer.`,
     drawCard: 'Draw a card',
-    footer:
-      'You receive this email because you turned on the writing reminder in your Thoughty profile. ' +
-      'It never comes on a day you have already written. Change the hour or the diary there.',
+    footer: {
+      account:
+        'You receive this email because you turned on the writing reminder in your Thoughty profile. ' +
+        'It never comes on a day you have already written. Change the hour or the diary there.',
+      diary:
+        'You receive this email because you set a writing reminder hour for this diary in Manage Diaries. ' +
+        'It never comes on a day you have already written in it. Change or remove the hour there.',
+    },
   },
   fr: {
     subject: 'Quelques lignes pour votre journal aujourd’hui ?',
@@ -50,9 +57,14 @@ const COPY: Record<EmailLanguage, ReminderCopy> = {
     write: 'Écrire l’entrée du jour',
     cards: (draw) => `Besoin d’une question pour commencer ? Choisissez « ${draw} » dans l’éditeur.`,
     drawCard: 'Tirer une carte',
-    footer:
-      'Vous recevez cet e-mail car vous avez activé le rappel d’écriture dans votre profil Thoughty. ' +
-      'Il n’arrive jamais un jour où vous avez déjà écrit. Vous pouvez y changer l’heure ou le journal.',
+    footer: {
+      account:
+        'Vous recevez cet e-mail car vous avez activé le rappel d’écriture dans votre profil Thoughty. ' +
+        'Il n’arrive jamais un jour où vous avez déjà écrit. Vous pouvez y changer l’heure ou le journal.',
+      diary:
+        'Vous recevez cet e-mail car vous avez choisi une heure de rappel d’écriture pour ce journal dans Gérer les journaux. ' +
+        'Il n’arrive jamais un jour où vous y avez déjà écrit. Vous pouvez y changer ou retirer l’heure.',
+    },
   },
 };
 
@@ -88,7 +100,7 @@ export function buildWritingReminderEmail(input: WritingReminderEmailInput): Ren
   const frame = {
     heading: copy.heading,
     intro: copy.intro,
-    footer: copy.footer,
+    footer: copy.footer[reminder.source],
     unsubscribeLabel: COMMON_EMAIL_COPY[language].unsubscribe,
     unsubscribeUrl: input.unsubscribeUrl,
   };

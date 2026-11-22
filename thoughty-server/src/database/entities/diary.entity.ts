@@ -5,11 +5,13 @@ import {
   CreateDateColumn,
   ManyToOne,
   OneToMany,
+  OneToOne,
   JoinColumn,
   Index,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Entry } from './entry.entity';
+import { DiaryWritingReminder } from './diary-writing-reminder.entity';
 
 /** A diary's writing goal: a number of entries each Monday-to-Sunday week, or of words each day. */
 export type DiaryGoalType = 'entries_per_week' | 'words_per_day';
@@ -74,4 +76,8 @@ export class Diary {
 
   @OneToMany(() => Entry, (entry) => entry.diary)
   entries: Entry[];
+
+  /** The diary's own writing reminder hour, when the writer set one in Manage Diaries. */
+  @OneToOne(() => DiaryWritingReminder, (reminder) => reminder.diary)
+  writingReminder?: DiaryWritingReminder | null;
 }

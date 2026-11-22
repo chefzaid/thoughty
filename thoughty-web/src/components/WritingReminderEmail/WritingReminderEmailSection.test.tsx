@@ -10,7 +10,8 @@ import WritingReminderEmailSection from './WritingReminderEmailSection';
 
 const service = vi.hoisted(() => ({ get: vi.fn(), save: vi.fn() }));
 vi.mock('../../hooks/useAuthenticatedService', () => ({ useAuthenticatedService: () => service }));
-vi.mock('../../utils/timeZone', () => ({
+vi.mock('../../utils/timeZone', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../utils/timeZone')>()),
   browserTimeZone: () => 'Asia/Tokyo',
   timeZoneOptions: (current: string) => [...new Set(['Asia/Tokyo', 'Europe/Paris', 'UTC', current])].sort(),
 }));

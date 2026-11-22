@@ -27,6 +27,7 @@ export * from './on-this-day-email.entity';
 export * from './opt-in-email-setting.base';
 export * from './monthly-recap-email.entity';
 export * from './writing-reminder-email.entity';
+export * from './diary-writing-reminder.entity';
 export * from './time-capsule.entity';
 export * from './share-link.entity';
 export * from './composer-draft.entity';

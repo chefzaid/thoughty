@@ -2,13 +2,11 @@ import { useMemo, useState } from 'react';
 
 import type { AuthFetchFunction, OptInEmailChanges, OptInEmailService, OptInEmailSettings } from '../../services/api';
 import type { Diary, TranslationFunction } from '../../types';
-import { browserTimeZone, timeZoneOptions } from '../../utils/timeZone';
+import { browserTimeZone, DELIVERY_HOURS, formatDeliveryHour, timeZoneOptions } from '../../utils/timeZone';
 import type { Language } from '../../utils/translations';
 import SettingSwitch from '../ProfilePage/SettingSwitch';
 import { useOptInEmail } from './useOptInEmail';
 import './OptInEmailSection.css';
-
-const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 
 /** The translation keys for what differs between opt-in emails; the hour, zone and diary fields are shared. */
 export interface OptInEmailCopyKeys {
@@ -38,11 +36,6 @@ export interface OptInEmailSectionProps {
   readonly isDark: boolean;
   readonly language: Language;
   readonly t: TranslationFunction;
-}
-
-function formatHour(hour: number, language: Language): string {
-  return new Intl.DateTimeFormat(language, { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' })
-    .format(new Date(Date.UTC(2000, 0, 1, hour)));
 }
 
 function formatNextSend(iso: string, timeZone: string, language: Language): string {
@@ -127,7 +120,7 @@ function OptInEmailSection({ sectionId, switchName, queryKey, createService, cop
                     disabled={saving}
                     onChange={(event) => void apply({ deliveryHour: Number(event.target.value) })}
                   >
-                    {HOURS.map((hour) => <option key={hour} value={hour}>{formatHour(hour, language)}</option>)}
+                    {DELIVERY_HOURS.map((hour) => <option key={hour} value={hour}>{formatDeliveryHour(hour, language)}</option>)}
                   </select>
                 </div>
                 <div className="setting-row">

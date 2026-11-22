@@ -5,7 +5,7 @@ const links = {
   unsubscribeUrl: 'https://thoughty.example.com/unsubscribe?token=remind.3.abc',
   oneClickUnsubscribeUrl: 'https://thoughty.example.com/api/email-unsubscribe?token=remind.3.abc',
 };
-const reminder = (overrides: Partial<WritingReminder> = {}): WritingReminder => ({ diaryId: null, currentStreak: 0, ...overrides });
+const reminder = (overrides: Partial<WritingReminder> = {}): WritingReminder => ({ diaryId: null, currentStreak: 0, source: 'account', ...overrides });
 
 describe('writing reminder email content', () => {
   it('nudges the writer to write today and opens the journal on the reminder’s diary', () => {
@@ -39,6 +39,15 @@ describe('writing reminder email content', () => {
     expect(none.text).not.toContain('in a row');
     expect(none.html).not.toContain('in a row');
     expect(none.text).toContain('You haven’t written today yet. A few lines are enough');
+  });
+
+  it('names Manage Diaries in the footer of a diary’s own reminder, in both languages', () => {
+    const own = buildWritingReminderEmail({ ...links, language: 'en', reminder: reminder({ diaryId: 4, source: 'diary' }) });
+    expect(own.text).toContain('you set a writing reminder hour for this diary in Manage Diaries');
+    expect(own.text).toContain('https://thoughty.example.com/journal?diary=4');
+    expect(own.html).not.toContain('Thoughty profile');
+    const french = buildWritingReminderEmail({ ...links, language: 'fr', reminder: reminder({ diaryId: 4, source: 'diary' }) });
+    expect(french.text).toContain('pour ce journal dans Gérer les journaux');
   });
 
   it('leaves the streak count out in quiet mode', () => {

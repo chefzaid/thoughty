@@ -134,7 +134,8 @@ export class UserDataExportService {
     }
     const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people, onThisDayEmail, monthlyRecapEmail, capsules, shareLinks, composerDraft, accountEvents, newBrowserEmail, weeklyReflections, accessTokens, writingReminderEmail] = await Promise.all([
       this.userRepository.findOne({ where: { id: userId } }),
-      this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
+      // With each diary's own writing reminder hour, when it has one
+      this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' }, relations: { writingReminder: true } }),
       // Entries in the recycle bin are still personal data until they are removed for good, and sealed
       // time capsules are written as they were sealed
       this.entryRepository
@@ -200,6 +201,17 @@ export class UserDataExportService {
         defaultTemplateId: diary.defaultTemplateId,
         isLocked: diary.isLocked,
         createdAt: diary.createdAt,
+        writingReminder: diary.writingReminder
+          ? {
+              enabled: diary.writingReminder.enabled,
+              deliveryHour: diary.writingReminder.deliveryHour,
+              timeZone: diary.writingReminder.timeZone,
+              nextSendAt: diary.writingReminder.nextSendAt,
+              lastSentOn: diary.writingReminder.lastSentOn,
+              createdAt: diary.writingReminder.createdAt,
+              updatedAt: diary.writingReminder.updatedAt,
+            }
+          : null,
       })),
       entries: entries.map((entry) => ({
         id: entry.id,

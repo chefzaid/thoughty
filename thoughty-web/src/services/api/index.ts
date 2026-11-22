@@ -24,6 +24,7 @@ export * from './optInEmailService';
 export * from './onThisDayEmailService';
 export * from './monthlyRecapEmailService';
 export * from './writingReminderEmailService';
+export * from './diaryWritingReminderService';
 export * from './shareLinksService';
 export * from './rereadReminderService';
 export * from './openTasksService';

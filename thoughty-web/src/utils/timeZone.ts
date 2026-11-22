@@ -17,3 +17,12 @@ export function timeZoneOptions(current: string): string[] {
   }
   return [...new Set([...zones, 'UTC', current])].sort((left, right) => left.localeCompare(right));
 }
+
+/** The 24 hours of the day a scheduled email can arrive at. */
+export const DELIVERY_HOURS: readonly number[] = Array.from({ length: 24 }, (_, hour) => hour);
+
+/** An hour of the day as the language writes it on a clock (8:00 PM, 20:00). */
+export function formatDeliveryHour(hour: number, language: string): string {
+  return new Intl.DateTimeFormat(language, { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' })
+    .format(new Date(Date.UTC(2000, 0, 1, hour)));
+}

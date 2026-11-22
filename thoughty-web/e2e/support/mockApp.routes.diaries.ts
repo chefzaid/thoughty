@@ -97,6 +97,7 @@ export async function handleDiaryRoutes({ route, request, pathname, state }: Rou
     }
     const defaultDiaryId = state.diaries.find((candidate) => candidate.isDefault)?.id ?? 1;
     state.diaries = state.diaries.filter((candidate) => candidate.id !== diary.id);
+    state.diaryWritingReminders = state.diaryWritingReminders.filter((reminder) => reminder.diaryId !== diary.id);
     // Entries, and those in the recycle bin, move to the default diary as the API moves them
     state.entries = state.entries.map((entry) =>
       (entry.diaryId ?? 1) === diary.id ? { ...entry, diaryId: defaultDiaryId } : entry,

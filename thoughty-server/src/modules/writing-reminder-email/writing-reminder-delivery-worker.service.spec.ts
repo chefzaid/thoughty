@@ -9,15 +9,17 @@ describe('WritingReminderDeliveryWorkerService', () => {
     jest.restoreAllMocks();
   });
 
-  it('delivers on start and every minute, naming the writing reminder in its logs', async () => {
+  it('delivers the account’s and the diaries’ reminders on start and every minute, naming the writing reminder in its logs', async () => {
     const log = jest.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
     const error = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
     const delivery = { deliverDue: jest.fn().mockResolvedValueOnce(2).mockRejectedValueOnce(new Error('database down')) };
-    const worker = new WritingReminderDeliveryWorkerService(delivery as never);
+    const diaryDelivery = { deliverDue: jest.fn().mockResolvedValue(1) };
+    const worker = new WritingReminderDeliveryWorkerService(delivery as never, diaryDelivery as never);
 
     await worker.start();
     expect(log).toHaveBeenCalledWith('Starting writing reminder email delivery');
-    expect(log).toHaveBeenCalledWith('Sent 2 writing reminder emails');
+    // The account's reminders and the diaries' own ones, counted together
+    expect(log).toHaveBeenCalledWith('Sent 3 writing reminder emails');
 
     await jest.advanceTimersByTimeAsync(60_000);
     expect(error).toHaveBeenCalledWith('Failed to deliver writing reminder emails', expect.stringContaining('database down'));

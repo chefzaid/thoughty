@@ -10,7 +10,8 @@ import OnThisDayEmailSection from './OnThisDayEmailSection';
 
 const service = vi.hoisted(() => ({ get: vi.fn(), save: vi.fn() }));
 vi.mock('../../hooks/useAuthenticatedService', () => ({ useAuthenticatedService: () => service }));
-vi.mock('../../utils/timeZone', () => ({
+vi.mock('../../utils/timeZone', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../utils/timeZone')>()),
   browserTimeZone: () => 'Europe/Paris',
   timeZoneOptions: (current: string) => [...new Set(['America/New_York', 'Europe/Paris', 'UTC', current])].sort(),
 }));

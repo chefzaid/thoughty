@@ -19,6 +19,7 @@ describe('WritingReminderDeliveryService', () => {
   let streakService: { getStreak: jest.Mock };
   let emailService: { isConfigured: jest.Mock; sendRenderedEmail: jest.Mock };
   let configService: { getConfig: jest.Mock };
+  let diaryReminders: { exists: jest.Mock };
   let service: WritingReminderDeliveryService;
 
   const row = (overrides: Partial<DueRow> = {}): DueRow => ({
@@ -51,6 +52,7 @@ describe('WritingReminderDeliveryService', () => {
       configService as never,
       emailService as never,
       { get: jest.fn((key: string, fallback?: string) => values[key] ?? fallback) } as never,
+      (diaryReminders = { exists: jest.fn().mockResolvedValue(false) }) as never,
     );
   });
 
@@ -109,6 +111,19 @@ describe('WritingReminderDeliveryService', () => {
     const [, email] = emailService.sendRenderedEmail.mock.calls[0];
     expect(email.subject).toBe('Quelques lignes pour votre journal aujourd’hui ?');
     expect(email.text).not.toContain('d’affilée');
+  });
+
+  it('leaves a chosen diary with its own hour to that diary’s reminder, but still reminds for all diaries', async () => {
+    diaryReminders.exists.mockResolvedValue(true);
+    withBatches([row({ diary_id: 4 })]);
+    await expect(service.deliverDue(now)).resolves.toBe(0);
+    expect(diaryReminders.exists).toHaveBeenCalledWith({ where: { diaryId: 4, enabled: true } });
+    expect(streakService.getStreak).not.toHaveBeenCalled();
+    expect(updates()[0][1]).toEqual([3, new Date('2026-11-23T19:00:00Z'), false, '2026-11-22']);
+
+    withBatches([row()]);
+    await expect(service.deliverDue(now)).resolves.toBe(1);
+    expect(diaryReminders.exists).toHaveBeenCalledTimes(1);
   });
 
   it('never reminds twice in one local day', async () => {

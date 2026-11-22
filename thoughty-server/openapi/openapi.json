@@ -15555,7 +15555,7 @@
         ]
       },
       "put": {
-        "description": "Once on, it arrives every day at that local hour, unless the writer already has an entry dated that day (in the chosen diary, or in any diary when it is null), and opens the journal on that diary.",
+        "description": "Once on, it arrives every day at that local hour, unless the writer already has an entry dated that day (in the chosen diary, or in any diary when it is null), and opens the journal on that diary. The diaries’ own reminders move to the new time zone.",
         "operationId": "WritingReminderEmailController_update",
         "parameters": [],
         "requestBody": {
@@ -15632,6 +15632,138 @@
           }
         ],
         "summary": "Turn the writing reminder email on or off and choose its hour, time zone and diary",
+        "tags": [
+          "Writing reminder email"
+        ]
+      }
+    },
+    "/api/writing-reminder-email/diaries": {
+      "get": {
+        "operationId": "WritingReminderEmailController_listDiaries",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The diaries’ own reminders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryWritingRemindersDto"
+                },
+                "example": {
+                  "reminders": [
+                    {
+                      "diaryId": 4,
+                      "deliveryHour": 8,
+                      "timeZone": "Europe/Paris",
+                      "nextSendAt": "2026-11-23T07:00:00.000Z"
+                    }
+                  ],
+                  "emailAvailable": true
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the diaries that have their own writing reminder hour",
+        "tags": [
+          "Writing reminder email"
+        ]
+      }
+    },
+    "/api/writing-reminder-email/diaries/{diaryId}": {
+      "put": {
+        "description": "The diary is then reminded every day at that local hour, in the account reminder’s time zone, unless it has an entry dated that day, and the Profile reminder no longer reminds about it. It works whether or not the Profile reminder is on, and its email’s unsubscribe link stops every writing reminder.",
+        "operationId": "WritingReminderEmailController_updateDiary",
+        "parameters": [
+          {
+            "name": "diaryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDiaryWritingReminderDto"
+              },
+              "example": {
+                "deliveryHour": 8,
+                "timeZone": "Europe/Paris"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The diaries’ own reminders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryWritingRemindersDto"
+                },
+                "example": {
+                  "reminders": [
+                    {
+                      "diaryId": 4,
+                      "deliveryHour": 8,
+                      "timeZone": "Europe/Paris",
+                      "nextSendAt": "2026-11-23T07:00:00.000Z"
+                    }
+                  ],
+                  "emailAvailable": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid hour or unknown time zone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Invalid hour or unknown time zone",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The diary does not belong to you",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "The diary does not belong to you",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Give a diary its own writing reminder hour, or remove it",
         "tags": [
           "Writing reminder email"
         ]
@@ -29666,6 +29798,103 @@
           "deliveryHour": 8,
           "timeZone": "Europe/Paris",
           "diaryId": null
+        }
+      },
+      "DiaryWritingReminderDto": {
+        "type": "object",
+        "properties": {
+          "diaryId": {
+            "type": "number",
+            "example": 4
+          },
+          "deliveryHour": {
+            "type": "number",
+            "example": 8,
+            "minimum": 0,
+            "maximum": 23,
+            "description": "Local hour the diary’s reminder arrives at"
+          },
+          "timeZone": {
+            "type": "string",
+            "example": "Europe/Paris",
+            "description": "IANA time zone of the hour: the account reminder’s"
+          },
+          "nextSendAt": {
+            "type": "string",
+            "example": "2026-11-23T07:00:00.000Z",
+            "description": "When the reminder is next due, unless the diary has an entry that day"
+          }
+        },
+        "required": [
+          "diaryId",
+          "deliveryHour",
+          "timeZone",
+          "nextSendAt"
+        ],
+        "example": {
+          "diaryId": 4,
+          "deliveryHour": 8,
+          "timeZone": "Europe/Paris",
+          "nextSendAt": "2026-11-23T07:00:00.000Z"
+        }
+      },
+      "DiaryWritingRemindersDto": {
+        "type": "object",
+        "properties": {
+          "reminders": {
+            "description": "One per diary with its own hour; the others follow the Profile reminder",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiaryWritingReminderDto"
+            }
+          },
+          "emailAvailable": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether the account has a verified email and this server can send email"
+          }
+        },
+        "required": [
+          "reminders",
+          "emailAvailable"
+        ],
+        "example": {
+          "reminders": [
+            {
+              "diaryId": 4,
+              "deliveryHour": 8,
+              "timeZone": "Europe/Paris",
+              "nextSendAt": "2026-11-23T07:00:00.000Z"
+            }
+          ],
+          "emailAvailable": true
+        }
+      },
+      "UpdateDiaryWritingReminderDto": {
+        "type": "object",
+        "properties": {
+          "deliveryHour": {
+            "type": "number",
+            "example": 8,
+            "nullable": true,
+            "minimum": 0,
+            "maximum": 23,
+            "description": "null removes the diary’s own reminder"
+          },
+          "timeZone": {
+            "type": "string",
+            "example": "Europe/Paris",
+            "maxLength": 64,
+            "description": "The browser’s zone, used only while the account reminder was never saved; otherwise its zone is kept"
+          }
+        },
+        "required": [
+          "deliveryHour",
+          "timeZone"
+        ],
+        "example": {
+          "deliveryHour": 8,
+          "timeZone": "Europe/Paris"
         }
       },
       "EmailUnsubscribeResultDto": {

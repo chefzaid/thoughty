@@ -6,17 +6,25 @@ import DiaryGoalField from './DiaryGoalField';
 import DiaryIconPicker from './DiaryIconPicker';
 import DiaryColorField from './DiaryColorField';
 import DiaryTemplateField from './DiaryTemplateField';
+import DiaryReminderField from './DiaryReminderField';
 import { describeDiaryTemplate, type EntryTemplate } from '../../utils/entryTemplates';
 import type { Diary as ApiDiary, DiaryFormData } from '../../types';
 import { DEFAULT_DIARY_COLORS, normalizeDiaryColor, resolveDiaryColor, withAlpha } from '../../utils/diaryColors';
 import { describeDiaryGoal, diaryGoalDraft, NO_DIARY_GOAL, readDiaryGoal } from '../../utils/diaryGoals';
 import { resolveLanguage } from '../../utils/language';
+import { formatDeliveryHour } from '../../utils/timeZone';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import DiaryLockButton from '../ContentLock/DiaryLockButton';
 
 /** The diary fields Manage Diaries reads. */
 type Diary = Pick<ApiDiary, 'id' | 'name' | 'icon' | 'color' | 'visibility' | 'isDefault' | 'goalType' | 'goalTarget' | 'defaultTemplateId'>
     & Partial<Pick<ApiDiary, 'isLocked'>>;
+
+/** The diaries' own writing reminder hours (by diary ID), and whether an email can reach the writer. */
+export interface DiaryReminderHours {
+    readonly hours: Readonly<Record<number, number>>;
+    readonly emailAvailable: boolean;
+}
 
 const DEFAULT_NEW_DIARY_COLOR = DEFAULT_DIARY_COLORS[0] ?? '#E76F51';
 
@@ -30,12 +38,16 @@ interface DiaryManagerProps {
     readonly onBack: () => void;
     /** The templates a diary can start its entries from: the built-in ones, then the writer's own. */
     readonly entryTemplates?: readonly EntryTemplate[];
+    /** The diaries' own reminder hours; without them and `onSaveWritingReminder`, the field is left out. */
+    readonly writingReminders?: DiaryReminderHours;
+    /** Gives a diary its own writing reminder hour, or removes it with null; rejects with a translation key. */
+    readonly onSaveWritingReminder?: (diaryId: number, hour: number | null) => Promise<void>;
     readonly theme?: 'light' | 'dark';
     readonly language?: string;
     readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, onSetDefault, onReorderDiaries, onBack, entryTemplates = [], theme, language, t }: DiaryManagerProps) {
+function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, onSetDefault, onReorderDiaries, onBack, entryTemplates = [], writingReminders, onSaveWritingReminder, theme, language, t }: DiaryManagerProps) {
     const [newDiaryName, setNewDiaryName] = useState<string>('');
     const [newDiaryIcon, setNewDiaryIcon] = useState<string>('📓');
     const [newDiaryColor, setNewDiaryColor] = useState<string>(DEFAULT_NEW_DIARY_COLOR);
@@ -52,6 +64,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
     const [editVisibility, setEditVisibility] = useState<'public' | 'private'>('private');
     const [editGoal, setEditGoal] = useState(NO_DIARY_GOAL);
     const [editTemplate, setEditTemplate] = useState('');
+    const [editReminder, setEditReminder] = useState('');
     /** A translation key, or a message the API sent, which `t` passes through. */
     const [error, setError] = useState<string>('');
     const [showIconPicker, setShowIconPicker] = useState<'new' | number | null>(null);
@@ -61,6 +74,12 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
 
     const isLight = theme === 'light';
     const uiLanguage = resolveLanguage(language);
+    const canSetReminder = Boolean(writingReminders && onSaveWritingReminder);
+    const reminderHour = (diaryId: number): number | undefined => writingReminders?.hours[diaryId];
+    const reminderSummary = (diaryId: number): string | null => {
+        const hour = reminderHour(diaryId);
+        return hour === undefined ? null : t('diaryReminderSummary', { time: formatDeliveryHour(hour, uiLanguage) });
+    };
 
     const getDiaryAccentStyle = (diary: Pick<Diary, 'id' | 'name' | 'color'>): CSSProperties => {
         const diaryColor = resolveDiaryColor(diary);
@@ -112,6 +131,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
         setEditVisibility(diary.visibility);
         setEditGoal(diaryGoalDraft(diary.goalType, diary.goalTarget));
         setEditTemplate(diary.defaultTemplateId ?? '');
+        setEditReminder(String(reminderHour(diary.id) ?? ''));
     };
 
     const handleSaveEdit = async (): Promise<void> => {
@@ -131,6 +151,9 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                 ...goal.fields,
                 defaultTemplateId: editTemplate || null,
             });
+            if (onSaveWritingReminder && editReminder !== String(reminderHour(editingDiary.id) ?? '')) {
+                await onSaveWritingReminder(editingDiary.id, editReminder === '' ? null : Number(editReminder));
+            }
             setEditingDiary(null);
         } catch (err) {
             setError((err as Error).message || 'diaryUpdateFailed');
@@ -336,6 +359,9 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                             </div>
                                             <DiaryGoalField goal={editGoal} onChange={setEditGoal} t={t} />
                                             <DiaryTemplateField templateId={editTemplate} templates={entryTemplates} onChange={setEditTemplate} t={t} />
+                                            {canSetReminder && (
+                                                <DiaryReminderField hour={editReminder} emailAvailable={writingReminders?.emailAvailable ?? false} onChange={setEditReminder} language={uiLanguage} t={t} />
+                                            )}
                                         </div>
                                         <div className="edit-actions">
                                             <button type="button" onClick={handleSaveEdit} className="save-btn">{t('save')}</button>
@@ -379,6 +405,9 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                                 )}
                                                 {diary.defaultTemplateId && (
                                                     <span className="diary-goal-summary">{describeDiaryTemplate(diary.defaultTemplateId, entryTemplates, t)}</span>
+                                                )}
+                                                {reminderSummary(diary.id) && (
+                                                    <span className="diary-goal-summary">{reminderSummary(diary.id)}</span>
                                                 )}
                                             </div>
                                             {diary.isDefault && (

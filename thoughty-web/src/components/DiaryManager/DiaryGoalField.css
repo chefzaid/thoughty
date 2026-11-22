@@ -49,3 +49,13 @@
 .diary-manager.dark .diary-goal-summary {
     color: #9ca3af;
 }
+
+.diary-reminder-notice {
+    max-width: 16rem;
+    font-size: 0.75rem;
+    color: #92400e;
+}
+
+.diary-manager.dark .diary-reminder-notice {
+    color: #fcd34d;
+}

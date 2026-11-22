@@ -3,7 +3,7 @@ import { ConfigService as NestConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { apiError } from '@/common/errors';
-import { MonthlyRecapEmail, OnThisDayEmail, type OptInEmailSetting, WritingReminderEmail } from '@/database/entities';
+import { DiaryWritingReminder, MonthlyRecapEmail, OnThisDayEmail, type OptInEmailSetting, WritingReminderEmail } from '@/database/entities';
 import { getUnsubscribeSecret } from '@/modules/auth/auth-secrets';
 import type { EmailUnsubscribeResultDto } from './dto';
 import { verifyEmailUnsubscribeToken } from './email-unsubscribe-token';
@@ -23,6 +23,8 @@ export class EmailUnsubscribeService {
     @InjectRepository(WritingReminderEmail)
     writingReminderRepository: Repository<WritingReminderEmail>,
     nestConfigService: NestConfigService,
+    @InjectRepository(DiaryWritingReminder)
+    private readonly diaryReminderRepository: Repository<DiaryWritingReminder>,
   ) {
     this.unsubscribeSecret = getUnsubscribeSecret(nestConfigService);
     this.settings = {
@@ -33,8 +35,9 @@ export class EmailUnsubscribeService {
   }
 
   /**
-   * Turns the token's email off for its writer and says which email it was. Repeating it, or a token for
-   * an account that is gone, changes nothing; a token that was not signed here is refused.
+   * Turns the token's email off for its writer and says which email it was; a writing reminder's link
+   * also stops the diaries' own reminders, which share it. Repeating it, or a token for an account that
+   * is gone, changes nothing; a token that was not signed here is refused.
    */
   async unsubscribe(token: string): Promise<EmailUnsubscribeResultDto> {
     const verified = verifyEmailUnsubscribeToken(token, this.unsubscribeSecret);
@@ -42,6 +45,9 @@ export class EmailUnsubscribeService {
       throw apiError(BadRequestException, 'EMAIL_UNSUBSCRIBE_INVALID');
     }
     await this.settings[verified.kind].update({ userId: verified.userId, enabled: true }, { enabled: false });
+    if (verified.kind === 'writing-reminder') {
+      await this.diaryReminderRepository.update({ userId: verified.userId, enabled: true }, { enabled: false });
+    }
     return { success: true, kind: verified.kind };
   }
 }

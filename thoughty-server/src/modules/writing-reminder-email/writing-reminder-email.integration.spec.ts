@@ -5,12 +5,13 @@ import {
   POSTGRES_SETUP_TIMEOUT_MS,
   type PostgresTestDatabase,
 } from '@/database/postgres-test-database.test-helpers';
-import { Diary, Entry, MonthlyRecapEmail, OnThisDayEmail, Setting, User, WritingReminderEmail } from '@/database/entities';
+import { Diary, DiaryWritingReminder, Entry, MonthlyRecapEmail, OnThisDayEmail, Setting, User, WritingReminderEmail } from '@/database/entities';
 import type { RenderedEmail } from '@/modules/auth/services/email.service';
 import { ConfigService } from '@/modules/config';
 import { createEmailUnsubscribeToken } from '@/modules/opt-in-email/email-unsubscribe-token';
 import { EmailUnsubscribeService } from '@/modules/opt-in-email/email-unsubscribe.service';
 import { StatsStreakService } from '@/modules/stats/stats-streak.service';
+import { DiaryWritingReminderService } from './diary-writing-reminder.service';
 import { WritingReminderDeliveryService } from './writing-reminder-delivery.service';
 import { WritingReminderEmailService } from './writing-reminder-email.service';
 
@@ -44,6 +45,13 @@ describePostgres('PostgreSQL writing reminder email', () => {
       dataSource.getRepository(Diary),
       dataSource.getRepository(User),
       emailService as never,
+      new DiaryWritingReminderService(
+        dataSource.getRepository(DiaryWritingReminder),
+        dataSource.getRepository(WritingReminderEmail),
+        dataSource.getRepository(Diary),
+        dataSource.getRepository(User),
+        emailService as never,
+      ),
     );
     delivery = new WritingReminderDeliveryService(
       dataSource,
@@ -51,12 +59,14 @@ describePostgres('PostgreSQL writing reminder email', () => {
       new ConfigService(dataSource.getRepository(Setting)),
       emailService as never,
       nestConfig as never,
+      dataSource.getRepository(DiaryWritingReminder),
     );
     unsubscribe = new EmailUnsubscribeService(
       dataSource.getRepository(OnThisDayEmail),
       dataSource.getRepository(MonthlyRecapEmail),
       dataSource.getRepository(WritingReminderEmail),
       nestConfig as never,
+      dataSource.getRepository(DiaryWritingReminder),
     );
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });

@@ -1,6 +1,9 @@
 import type { Language } from './translations';
 
-/** The opt-in writing reminder email: its Profile section and what the unsubscribe page says once it is off. */
+/**
+ * The opt-in writing reminder email: its Profile section, a diary's own hour in Manage Diaries, and what
+ * the unsubscribe page says once it is off.
+ */
 export type WritingReminderEmailTranslationKey =
   | 'writingReminderEmailTitle'
   | 'writingReminderEmailIntro'
@@ -13,7 +16,13 @@ export type WritingReminderEmailTranslationKey =
   | 'writingReminderEmailSaved'
   | 'writingReminderEmailLoadFailed'
   | 'writingReminderEmailSaveFailed'
-  | 'writingReminderUnsubscribed';
+  | 'writingReminderUnsubscribed'
+  | 'diaryReminder'
+  | 'diaryReminderProfile'
+  | 'diaryReminderHint'
+  | 'diaryReminderSummary'
+  | 'diaryReminderLoadFailed'
+  | 'diaryReminderSaveFailed';
 
 export const writingReminderEmailTranslations: Record<Language, Record<WritingReminderEmailTranslationKey, string>> = {
   en: {
@@ -32,7 +41,14 @@ export const writingReminderEmailTranslations: Record<Language, Record<WritingRe
     writingReminderEmailLoadFailed: 'The writing reminder setting could not be loaded.',
     writingReminderEmailSaveFailed: 'The writing reminder setting could not be saved.',
     writingReminderUnsubscribed:
-      'You won’t receive writing reminder emails anymore. You can turn them back on in your profile at any time.',
+      'You won’t receive writing reminder emails anymore, from your profile or your diaries. You can turn them back on at any time in your profile or in Manage Diaries.',
+    diaryReminder: 'Writing reminder',
+    diaryReminderProfile: 'As in Profile',
+    diaryReminderHint:
+      'Choose an hour to get a reminder email for this diary alone, on each day without an entry in it, opening the composer on it. It replaces the Profile reminder for this diary and uses its time zone.',
+    diaryReminderSummary: 'Writing reminder at {time}',
+    diaryReminderLoadFailed: 'The diaries’ writing reminders could not be loaded.',
+    diaryReminderSaveFailed: 'The diary’s writing reminder could not be saved.',
   },
   fr: {
     writingReminderEmailTitle: 'Rappel d’écriture par e-mail',
@@ -50,6 +66,13 @@ export const writingReminderEmailTranslations: Record<Language, Record<WritingRe
     writingReminderEmailLoadFailed: 'Le réglage du rappel d’écriture n’a pas pu être chargé.',
     writingReminderEmailSaveFailed: 'Le réglage du rappel d’écriture n’a pas pu être enregistré.',
     writingReminderUnsubscribed:
-      'Vous ne recevrez plus les e-mails de rappel d’écriture. Vous pouvez les réactiver à tout moment dans votre profil.',
+      'Vous ne recevrez plus les e-mails de rappel d’écriture, ni ceux du profil ni ceux de vos journaux. Vous pouvez les réactiver à tout moment dans votre profil ou dans Gérer les journaux.',
+    diaryReminder: 'Rappel d’écriture',
+    diaryReminderProfile: 'Comme dans le profil',
+    diaryReminderHint:
+      'Choisissez une heure pour recevoir un e-mail de rappel pour ce seul journal, chaque jour sans entrée dans ce journal, qui ouvre l’éditeur sur lui. Il remplace le rappel du profil pour ce journal et utilise son fuseau horaire.',
+    diaryReminderSummary: 'Rappel d’écriture à {time}',
+    diaryReminderLoadFailed: 'Les rappels d’écriture des journaux n’ont pas pu être chargés.',
+    diaryReminderSaveFailed: 'Le rappel d’écriture du journal n’a pas pu être enregistré.',
   },
 };

@@ -400,6 +400,31 @@ describeContract('account', (context) => {
     });
     const after = await call('GET /api/monthly-recap-email', { as: alice, status: 200 });
     expect((after.body as { enabled: boolean }).enabled).toBe(false);
+    const diaryId = await defaultDiaryId(context, alice);
+    const own = await call('PUT /api/writing-reminder-email/diaries/{diaryId}', {
+      as: alice,
+      params: { diaryId },
+      json: { deliveryHour: 7, timeZone: 'America/New_York' },
+      status: 200,
+    });
+    // The Profile reminder was saved above, so its zone wins over the browser's
+    expect(own.body).toMatchObject({ reminders: [{ diaryId, deliveryHour: 7, timeZone: 'Europe/Paris' }], emailAvailable: expect.any(Boolean) });
+    await call('PUT /api/writing-reminder-email/diaries/{diaryId}', {
+      as: bob,
+      params: { diaryId },
+      json: { deliveryHour: 7, timeZone: 'Europe/Paris' },
+      status: 404,
+      code: 'DIARY_NOT_FOUND',
+    });
+    await call('PUT /api/writing-reminder-email/diaries/{diaryId}', {
+      as: alice,
+      params: { diaryId },
+      json: { deliveryHour: 24, timeZone: 'Europe/Paris' },
+      status: 400,
+      code: 'VALIDATION_FAILED',
+    });
+    const others = await call('GET /api/writing-reminder-email/diaries', { as: bob, status: 200 });
+    expect((others.body as { reminders: unknown[] }).reminders).toEqual([]);
     const reminder = await call('POST /api/email-unsubscribe', {
       query: { token: createEmailUnsubscribeToken('writing-reminder', alice.id, secret) },
       status: 200,
@@ -407,5 +432,8 @@ describeContract('account', (context) => {
     expect(reminder.body).toEqual({ success: true, kind: 'writing-reminder' });
     const reminderAfter = await call('GET /api/writing-reminder-email', { as: alice, status: 200 });
     expect((reminderAfter.body as { enabled: boolean }).enabled).toBe(false);
+    // The same link stops the diaries' own reminders
+    const diaryRemindersAfter = await call('GET /api/writing-reminder-email/diaries', { as: alice, status: 200 });
+    expect((diaryRemindersAfter.body as { reminders: unknown[] }).reminders).toEqual([]);
   });
 });
