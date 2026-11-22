@@ -122,6 +122,10 @@ export const API_ERROR_MESSAGES = {
   LIFE_ERA_LIMIT_REACHED: 'Life era limit reached',
   LIFE_ERA_DATES_INVALID: 'A life era cannot end before it starts',
 
+  // Imported calendars.
+  CALENDAR_FILE_INVALID: 'This file is not a calendar (.ics)',
+  CALENDAR_EVENT_LIMIT_REACHED: 'Calendar event limit reached',
+
   // People mentioned in entries.
   PERSON_NOT_FOUND: 'Person not found',
   PERSON_MERGE_SAME: 'A person cannot be merged into themselves',

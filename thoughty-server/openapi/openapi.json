@@ -15444,6 +15444,242 @@
         ]
       }
     },
+    "/api/calendar": {
+      "get": {
+        "operationId": "CalendarController_summary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Imported calendar summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarSummaryResponseDto"
+                },
+                "example": {
+                  "eventCount": 312,
+                  "lastImportedAt": "2026-11-22T09:30:00.000Z",
+                  "limit": 10000
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "How many imported calendar events the writer keeps, and when a calendar was last imported",
+        "tags": [
+          "Calendar"
+        ]
+      },
+      "delete": {
+        "operationId": "CalendarController_clear",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Imported events removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove every imported calendar event",
+        "tags": [
+          "Calendar"
+        ]
+      }
+    },
+    "/api/calendar/events": {
+      "get": {
+        "operationId": "CalendarController_events",
+        "parameters": [
+          {
+            "name": "timeZone",
+            "required": false,
+            "in": "query",
+            "description": "The writer’s IANA time zone, which times without a zone of their own (or with a zone that is not an IANA name) are read in; UTC when left out",
+            "schema": {
+              "maxLength": 64,
+              "example": "Europe/Paris",
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": true,
+            "in": "query",
+            "description": "The day whose events to list",
+            "schema": {
+              "format": "date",
+              "example": "2026-11-22",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The day’s events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarDayResponseDto"
+                },
+                "example": {
+                  "events": [
+                    {
+                      "id": 12,
+                      "summary": "Dinner with Lina",
+                      "location": "Le Petit Zinc",
+                      "allDay": false,
+                      "startsAt": "2026-11-22T19:30:00.000Z",
+                      "endsAt": "2026-11-22T22:00:00.000Z",
+                      "startDate": null,
+                      "endDate": null
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid day or time zone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Invalid day or time zone",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The imported calendar events on a day, in the writer’s time zone",
+        "tags": [
+          "Calendar"
+        ]
+      }
+    },
+    "/api/calendar/import": {
+      "post": {
+        "description": "Up to 5 MB. Events already imported (the same UID) are updated; repeating events are counted and left out.",
+        "operationId": "CalendarController_import",
+        "parameters": [
+          {
+            "name": "timeZone",
+            "required": false,
+            "in": "query",
+            "description": "The writer’s IANA time zone, which times without a zone of their own (or with a zone that is not an IANA name) are read in; UTC when left out",
+            "schema": {
+              "maxLength": 64,
+              "example": "Europe/Paris",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Events imported",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarImportResponseDto"
+                },
+                "example": {
+                  "imported": 42,
+                  "skippedRecurring": 3,
+                  "eventCount": 312
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not a calendar file, or the calendar event limit would be passed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Not a calendar file, or the calendar event limit would be passed",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The file is over 5 MB",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 413,
+                  "message": "The file is over 5 MB",
+                  "error": "Payload Too Large",
+                  "code": "PAYLOAD_TOO_LARGE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Import the events of a calendar file (.ics)",
+        "tags": [
+          "Calendar"
+        ]
+      }
+    },
     "/api/people": {
       "get": {
         "operationId": "PeopleController_list",
@@ -30675,6 +30911,168 @@
           "deletedCount": 2
         }
       },
+      "CalendarSummaryResponseDto": {
+        "type": "object",
+        "properties": {
+          "eventCount": {
+            "type": "number",
+            "example": 312,
+            "description": "How many imported events the writer keeps"
+          },
+          "lastImportedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "example": "2026-11-22T09:30:00.000Z",
+            "description": "When a calendar was last imported; null without events"
+          },
+          "limit": {
+            "type": "number",
+            "example": 10000,
+            "description": "How many imported events a writer can keep"
+          }
+        },
+        "required": [
+          "eventCount",
+          "lastImportedAt",
+          "limit"
+        ],
+        "example": {
+          "eventCount": 312,
+          "lastImportedAt": "2026-11-22T09:30:00.000Z",
+          "limit": 10000
+        }
+      },
+      "CalendarEventResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 12
+          },
+          "summary": {
+            "type": "string",
+            "example": "Dinner with Lina",
+            "description": "Empty when the event has no title"
+          },
+          "location": {
+            "type": "string",
+            "nullable": true,
+            "example": "Le Petit Zinc"
+          },
+          "allDay": {
+            "type": "boolean",
+            "example": false
+          },
+          "startsAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "example": "2026-11-22T19:30:00.000Z",
+            "description": "A timed event’s start; null all day"
+          },
+          "endsAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time",
+            "example": "2026-11-22T22:00:00.000Z",
+            "description": "A timed event’s end; null all day"
+          },
+          "startDate": {
+            "type": "string",
+            "nullable": true,
+            "format": "date",
+            "example": null,
+            "description": "An all-day event’s first day; null for a timed event"
+          },
+          "endDate": {
+            "type": "string",
+            "nullable": true,
+            "format": "date",
+            "example": null,
+            "description": "An all-day event’s last day (included); null for a timed event"
+          }
+        },
+        "required": [
+          "id",
+          "summary",
+          "location",
+          "allDay",
+          "startsAt",
+          "endsAt",
+          "startDate",
+          "endDate"
+        ],
+        "example": {
+          "id": 12,
+          "summary": "Dinner with Lina",
+          "location": "Le Petit Zinc",
+          "allDay": false,
+          "startsAt": "2026-11-22T19:30:00.000Z",
+          "endsAt": "2026-11-22T22:00:00.000Z",
+          "startDate": null,
+          "endDate": null
+        }
+      },
+      "CalendarDayResponseDto": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "description": "The day’s events, all-day ones first, then by start; at most 50",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalendarEventResponseDto"
+            }
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "example": {
+          "events": [
+            {
+              "id": 12,
+              "summary": "Dinner with Lina",
+              "location": "Le Petit Zinc",
+              "allDay": false,
+              "startsAt": "2026-11-22T19:30:00.000Z",
+              "endsAt": "2026-11-22T22:00:00.000Z",
+              "startDate": null,
+              "endDate": null
+            }
+          ]
+        }
+      },
+      "CalendarImportResponseDto": {
+        "type": "object",
+        "properties": {
+          "imported": {
+            "type": "number",
+            "example": 42,
+            "description": "Events read from the file, added or updated"
+          },
+          "skippedRecurring": {
+            "type": "number",
+            "example": 3,
+            "description": "Repeating events in the file, which are not imported"
+          },
+          "eventCount": {
+            "type": "number",
+            "example": 312,
+            "description": "How many imported events the writer keeps now"
+          }
+        },
+        "required": [
+          "imported",
+          "skippedRecurring",
+          "eventCount"
+        ],
+        "example": {
+          "imported": 42,
+          "skippedRecurring": 3,
+          "eventCount": 312
+        }
+      },
       "PersonResponseDto": {
         "type": "object",
         "properties": {
@@ -33081,6 +33479,8 @@
           "LIFE_ERA_NAME_TAKEN",
           "LIFE_ERA_LIMIT_REACHED",
           "LIFE_ERA_DATES_INVALID",
+          "CALENDAR_FILE_INVALID",
+          "CALENDAR_EVENT_LIMIT_REACHED",
           "PERSON_NOT_FOUND",
           "PERSON_MERGE_SAME",
           "PERSON_DATE_INVALID",

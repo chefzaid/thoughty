@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
   Attachment,
+  CalendarEvent,
   CommentLike,
   ComposerDraft,
   Diary,
@@ -122,6 +123,8 @@ export class UserDataExportService {
     private readonly writingReminderEmailRepository: Repository<WritingReminderEmail>,
     @InjectRepository(MemoirPhotoAnswer)
     private readonly memoirPhotoAnswerRepository: Repository<MemoirPhotoAnswer>,
+    @InjectRepository(CalendarEvent)
+    private readonly calendarEventRepository: Repository<CalendarEvent>,
   ) {}
 
   /**
@@ -132,7 +135,7 @@ export class UserDataExportService {
     if (!isContentUnlocked(userId) && (await holdsLockedContent(this.entryRepository, userId))) {
       throw apiError(ContentLockedException, 'CONTENT_LOCKED');
     }
-    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people, onThisDayEmail, monthlyRecapEmail, capsules, shareLinks, composerDraft, accountEvents, newBrowserEmail, weeklyReflections, accessTokens, writingReminderEmail] = await Promise.all([
+    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people, onThisDayEmail, monthlyRecapEmail, capsules, shareLinks, composerDraft, accountEvents, newBrowserEmail, weeklyReflections, accessTokens, writingReminderEmail, calendarEvents] = await Promise.all([
       this.userRepository.findOne({ where: { id: userId } }),
       // With each diary's own writing reminder hour, when it has one
       this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' }, relations: { writingReminder: true } }),
@@ -162,6 +165,7 @@ export class UserDataExportService {
       // The token's hash is never selected; the token itself was never kept
       this.accessTokenRepository.find({ where: { userId }, order: { createdAt: 'ASC', id: 'ASC' } }),
       this.writingReminderEmailRepository.findOne({ where: { userId } }),
+      this.calendarEventRepository.find({ where: { userId }, order: { createdAt: 'ASC', id: 'ASC' } }),
     ]);
 
     const safeUser = user
@@ -348,6 +352,10 @@ export class UserDataExportService {
       // Personal access tokens for the public API: names, scopes and dates, never a token or its hash
       accessTokens: accessTokens.map(({ name, tokenHint, scopes, timeZone, expiresAt, lastUsedAt, createdAt }) => ({
         name, hint: tokenHint, scopes, timeZone, expiresAt, lastUsedAt, createdAt,
+      })),
+      // The events of the imported calendar files
+      calendarEvents: calendarEvents.map(({ uid, summary, location, allDay, startsAt, endsAt, startDate, endDate, createdAt, updatedAt }) => ({
+        uid, summary, location, allDay, startsAt, endsAt, startDate, endDate, importedAt: createdAt, updatedAt,
       })),
     };
   }

@@ -1,4 +1,4 @@
-import { type ComponentPropsWithoutRef, type Dispatch, type SetStateAction } from 'react';
+import { type ComponentPropsWithoutRef, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import TagPicker from '../TagPicker/TagPicker';
 import AttachmentUpload from '../AttachmentUpload/AttachmentUpload';
 import TypedDatePicker from '../TypedDatePicker/TypedDatePicker';
@@ -94,6 +94,8 @@ interface EntryFormProps {
     readonly draft?: ComposerDraftSync;
     /** The name of the diary's default template while the composer holds it untouched. */
     readonly diaryTemplateName?: string | null;
+    /** Shown above the date: the events of the composer's day on the writer's imported calendar. */
+    readonly dayEvents?: ReactNode;
 }
 
 function entryFormClasses({ theme, format, visibility }: Pick<EntryFormProps, 'theme' | 'format' | 'visibility'>) {
@@ -174,6 +176,7 @@ function EntryForm({
     onDeleteTemplate,
     draft,
     diaryTemplateName = null,
+    dayEvents,
 }: EntryFormProps) {
     const writingArea = useAutoGrowTextarea(newEntryText);
     const inlineImages = useInlineImageInsert({
@@ -327,6 +330,7 @@ function EntryForm({
                 {setTimeCapsule && (
                     <TimeCapsuleField id="composer-capsule" value={timeCapsule} onChange={changeTimeCapsule} inputClass={inputClass} theme={theme} t={t} />
                 )}
+                {dayEvents}
                 <div className="flex flex-wrap gap-4 items-end">
                     <div className="w-40 z-10">
                         <label htmlFor="composer-date" className="sr-only">{t('entryDateLabel')}</label>

@@ -21,6 +21,7 @@ import { handleComfortReadsRoutes } from "./mockApp.routes.comfort-reads";
 import { handleReaderRoutes } from "./mockApp.routes.reader";
 import { handleEntryChatRoutes } from "./mockApp.routes.entry-chat";
 import { handleLifeEraRoutes } from "./mockApp.routes.life-eras";
+import { handleCalendarEventRoutes } from "./mockApp.routes.calendar-events";
 import { handleOptInEmailRoutes } from "./mockApp.routes.opt-in-emails";
 import { handleDiaryReminderRoutes } from "./mockApp.routes.diary-reminders";
 import { handlePeopleRoutes } from "./mockApp.routes.people";
@@ -374,6 +375,9 @@ export async function registerMockAppRoutes(page: Page, state: MockAppState) {
       return;
     }
     if (await handleSavedSearchRoutes(context)) {
+      return;
+    }
+    if (await handleCalendarEventRoutes(context)) {
       return;
     }
     if (await handleLifeEraRoutes(context)) {

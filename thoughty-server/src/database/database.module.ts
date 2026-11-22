@@ -48,6 +48,7 @@ import {
   AccountEvent,
   PersonalAccessToken,
   NotificationRead,
+  CalendarEvent,
 } from './entities';
 import { buildPostgresConnectionOptions } from './postgres-connection-options';
 import { buildPostgresPoolOptions } from './postgres-pool-options';
@@ -120,6 +121,7 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
           AccountEvent,
           PersonalAccessToken,
           NotificationRead,
+          CalendarEvent,
         ],
         extra: buildPostgresPoolOptions({
           POSTGRES_POOL_MAX: configService.get<string>('POSTGRES_POOL_MAX'),

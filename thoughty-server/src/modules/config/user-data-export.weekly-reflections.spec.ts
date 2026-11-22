@@ -21,6 +21,7 @@ function build(weeklyReflectionRepository: ReturnType<typeof emptyRepository>) {
     emptyRepository(),
     emptyRepository(),
     emptyRepository(),
+    emptyRepository(),
   );
 }
 

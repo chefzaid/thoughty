@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import DiaryTabs from '../components/DiaryTabs/DiaryTabs';
 import ImportExport from '../components/ImportExport/ImportExport';
+import CalendarImportPanel from '../components/CalendarEvents/CalendarImportPanel';
 import type { Diary, ImportExportFormat, ImportExportSection } from '../types';
 import { resolveLanguage } from '../utils/language';
 import { readBookConverterStart } from '../utils/appRouting';
@@ -64,6 +65,7 @@ function ImportExportRoute({
         initialIncludeVisibility={initialIncludeVisibility}
         initialBookStart={bookStart}
         onRouteStateChange={onRouteStateChange}
+        calendarImport={<CalendarImportPanel language={resolveLanguage(language)} theme={theme} t={t} />}
       />
     </>
   );

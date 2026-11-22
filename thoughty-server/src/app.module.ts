@@ -21,6 +21,7 @@ import { ReviewModule } from './modules/review';
 import { RecycleBinModule } from './modules/recycle-bin';
 import { SavedSearchesModule } from './modules/saved-searches';
 import { LifeErasModule } from './modules/life-eras';
+import { CalendarModule } from './modules/calendar';
 import { PeopleModule } from './modules/people';
 import { OnThisDayEmailModule } from './modules/on-this-day-email';
 import { MonthlyRecapEmailModule } from './modules/monthly-recap-email';
@@ -80,6 +81,7 @@ import {
     RecycleBinModule,
     SavedSearchesModule,
     LifeErasModule,
+    CalendarModule,
     PeopleModule,
     OnThisDayEmailModule,
     MonthlyRecapEmailModule,

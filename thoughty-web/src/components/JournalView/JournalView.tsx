@@ -37,6 +37,8 @@ import ComfortReadsCard from '../ComfortReads/ComfortReadsCard';
 import type { SavedEntry } from '../ComfortReads/comfortReadsState';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import { useJournalPeopleCheck } from './useJournalPeopleCheck';
+import ComposerCalendarEvents from '../CalendarEvents/ComposerCalendarEvents';
+import { appendPrompt } from '../EntryForm/appendPrompt';
 
 type DiaryTabsProps = Pick<ComponentProps<typeof DiaryTabs>, 'diaries' | 'currentDiaryId' | 'onDiaryChange' | 'onManageDiaries'>;
 interface ThoughtOfDayProps {
@@ -230,6 +232,15 @@ function JournalView({
           fontFamily={config.fontFamily}
           fontSize={config.fontSize}
           language={config.language}
+          dayEvents={(
+            <ComposerCalendarEvents
+              date={entryForm.selectedDate}
+              onWriteAbout={(prompt) => entryForm.setNewEntryText((current) => appendPrompt(current, prompt))}
+              language={language}
+              theme={theme}
+              t={t}
+            />
+          )}
         />
       </div>
       {composerSeed.dialog}

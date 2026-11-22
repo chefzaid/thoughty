@@ -100,6 +100,10 @@ describePostgres('PostgreSQL account purge', () => {
     );
     await dataSource.query(`INSERT INTO saved_searches (user_id, name, diary_id, filters) VALUES ($1, 'Family', $2, '{}')`, [userId, diaryId]);
     await dataSource.query(`INSERT INTO life_eras (user_id, name, start_date) VALUES ($1, 'University', '2010-09-01')`, [userId]);
+    await dataSource.query(
+      `INSERT INTO calendar_events (user_id, uid, summary, all_day, start_date, end_date) VALUES ($1, 'trip@example', 'Trip', TRUE, '2026-01-02', '2026-01-03')`,
+      [userId],
+    );
     await dataSource.query(`INSERT INTO composer_drafts (user_id, content) VALUES ($1, 'Half a thought')`, [userId]);
     await dataSource.query(
       `INSERT INTO on_this_day_emails (user_id, enabled, delivery_hour, time_zone, diary_id, next_send_at) VALUES ($1, TRUE, 8, 'Europe/Paris', $2, NOW())`,

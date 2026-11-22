@@ -15,6 +15,7 @@ export * from './recycleBinService';
 export * from './savedSearchesService';
 export * from './composerDraftService';
 export * from './lifeErasService';
+export * from './calendarEventsService';
 export * from './peopleService';
 export * from './entryCalendarService';
 export * from './randomEntryService';

@@ -22,6 +22,7 @@ describe('UserDataExportService memoir photo stories', () => {
       createAccountActivityMock(),
       ...Array.from({ length: 3 }, emptyRepository),
       photoAnswers,
+      emptyRepository(),
     );
 
     const data = await service.downloadData(1);

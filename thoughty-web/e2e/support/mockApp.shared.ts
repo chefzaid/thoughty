@@ -2,6 +2,7 @@ import { createMockMemoirState, type MockMemoirProgram, type MockMemoirState } f
 import { createMockAppImportState, type MockAppImportState } from "./mockApp.app-import";
 import { createMockReviewState, type MockReviewState } from "./mockApp.review";
 import type { MockSavedSearch } from "./mockApp.routes.saved-searches";
+import type { MockCalendarEvent } from "./mockApp.routes.calendar-events";
 import type { MockLifeEra } from "./mockApp.routes.life-eras";
 import { createMockOptInEmail, type MockOptInEmail } from "./mockApp.routes.opt-in-emails";
 import type { MockDiaryWritingReminder } from "./mockApp.routes.diary-reminders";
@@ -137,6 +138,8 @@ export interface SetupMockAppOptions {
   memoirProgram?: Partial<MockMemoirProgram> | null;
   savedSearches?: MockSavedSearch[];
   lifeEras?: MockLifeEra[];
+  /** Events of imported calendar files, each with its UID. */
+  calendarEvents?: MockCalendarEvent[];
   /** The saved "On this day" email setting; off and never saved by default. */
   onThisDayEmail?: Partial<MockOptInEmail>;
   /** The saved monthly recap email setting; off and never saved by default. */
@@ -220,6 +223,9 @@ export interface MockAppState {
   bookVersionManifests: Record<number, { entryIds: number[]; chapterTitles: string[] }>;
   savedSearches: MockSavedSearch[];
   lifeEras: MockLifeEra[];
+  calendarEvents: MockCalendarEvent[];
+  /** When a calendar was last imported. */
+  calendarImportedAt: string;
   onThisDayEmail: MockOptInEmail;
   monthlyRecapEmail: MockOptInEmail;
   writingReminderEmail: MockOptInEmail;
@@ -394,6 +400,8 @@ export function createMockAppState(
     bookVersionManifests: {},
     savedSearches: (options.savedSearches || []).map((saved) => ({ ...saved, filters: { ...saved.filters } })),
     lifeEras: (options.lifeEras || []).map((era) => ({ ...era })),
+    calendarEvents: (options.calendarEvents || []).map((event) => ({ ...event })),
+    calendarImportedAt: new Date().toISOString(),
     onThisDayEmail: createMockOptInEmail(options.onThisDayEmail),
     monthlyRecapEmail: createMockOptInEmail(options.monthlyRecapEmail),
     writingReminderEmail: createMockOptInEmail({ deliveryHour: 20, ...options.writingReminderEmail }),

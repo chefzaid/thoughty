@@ -41,3 +41,4 @@ export * from './user-block.entity';
 export * from './account-event.entity';
 export * from './personal-access-token.entity';
 export * from './notification-read.entity';
+export * from './calendar-event.entity';

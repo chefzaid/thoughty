@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { components, paths } from '../../generated/openapi';
 import type { CloudExportFormat, ImportExportFormat, ImportExportSection, TranslationFunction } from '../../types';
 import type { CloudProviderType } from '../../services/api/cloudSyncService';
@@ -178,6 +179,8 @@ export interface ImportExportProps {
     /** What a Make a book action opens the book converter on: entries picked in the journal, or a person's saved search. */
     readonly initialBookStart?: BookStart | null;
     readonly onRouteStateChange?: (state: ImportExportRouteState) => void;
+    /** The calendar import, shown in the Import section. */
+    readonly calendarImport?: ReactNode;
 }
 
 export const DEFAULT_FORMAT_CONFIG: FormatConfig = {

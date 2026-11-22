@@ -22,7 +22,7 @@ let nextAttachmentId = 500;
 const storedFiles = new Map<string, { body: Buffer; contentType: string }>();
 
 /** The file part of a multipart upload body: its name, type and bytes. */
-function filePart(request: RouteContext["request"]): { name: string; type: string; body: Buffer } | null {
+export function filePart(request: RouteContext["request"]): { name: string; type: string; body: Buffer } | null {
   const body = request.postDataBuffer();
   const boundary = /boundary=(.+)$/.exec(request.headers()["content-type"] ?? "")?.[1];
   if (!body || !boundary) return null;

@@ -38,6 +38,7 @@ function ImportExport({
     initialIncludeVisibility = false,
     initialBookStart,
     onRouteStateChange,
+    calendarImport,
 }: Readonly<ImportExportProps>) {
     const { authFetch } = useAuth();
     const [formatConfig, setFormatConfig] = useState<FormatConfig>(DEFAULT_FORMAT_CONFIG);
@@ -352,6 +353,7 @@ function ImportExport({
                             t={t}
                         />
                     )}
+                    calendarImportContent={calendarImport}
                     cloudImportContent={cloudSyncOn ? <CloudImportSection {...cloud.importProps} t={t} /> : null}
                     t={t}
                 />
