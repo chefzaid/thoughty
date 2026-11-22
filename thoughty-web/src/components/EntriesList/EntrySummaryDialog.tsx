@@ -198,7 +198,7 @@ export default function EntrySummaryDialog({
                         type="button"
                         onClick={() => void handleGenerate()}
                         disabled={loading}
-                        className="rounded bg-sky-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded bg-sky-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-sky-800 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         {loading
                             ? t('generatingSummary')

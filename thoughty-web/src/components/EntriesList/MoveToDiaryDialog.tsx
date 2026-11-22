@@ -122,7 +122,7 @@ export default function MoveToDiaryDialog({ entry, diaries, isDark, language, on
                     <button
                         type="submit"
                         aria-disabled={saving}
-                        className="rounded bg-sky-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-sky-600 aria-disabled:cursor-wait aria-disabled:opacity-60"
+                        className="rounded bg-sky-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-sky-800 aria-disabled:cursor-wait aria-disabled:opacity-60"
                     >
                         {t('moveToDiaryConfirm')}
                     </button>

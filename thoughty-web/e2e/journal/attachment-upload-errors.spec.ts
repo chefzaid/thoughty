@@ -1,10 +1,26 @@
 import AxeBuilder from '../support/axe';
-import { test, expect } from '../support/test';
+import { test, expect, type Locator } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
 
 const tooLarge = { name: 'scan.pdf', mimeType: 'application/pdf', buffer: Buffer.alloc((5 * 1024 * 1024) + 1) };
 const program = { name: 'setup.exe', mimeType: 'application/x-msdownload', buffer: Buffer.from('MZ') };
 const note = { name: 'note.txt', mimeType: 'text/plain', buffer: Buffer.from('A short note') };
+
+/** WCAG contrast of an element's text on its own opaque fill. */
+async function ownContrast(element: Locator) {
+  return element.evaluate((node) => {
+    const luminance = (color: string) => {
+      const [red, green, blue] = (color.match(/\d+(\.\d+)?/g) ?? []).slice(0, 3).map((value) => {
+        const channel = Number(value) / 255;
+        return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    };
+    const style = getComputedStyle(node);
+    const [light, dark] = [luminance(style.color), luminance(style.backgroundColor)].sort((a, b) => b - a);
+    return Math.round(((light + 0.05) / (dark + 0.05)) * 100) / 100;
+  });
+}
 
 test.describe('Attachment upload errors', () => {
   test('says next to the attach button which files were turned away, without a browser dialog', async ({ page }) => {
@@ -40,7 +56,7 @@ test.describe('Attachment upload errors', () => {
 
   for (const theme of ['dark', 'light'] as const) {
     for (const highContrast of [false, true]) {
-      test(`passes an accessibility scan with a pending file attached, ${theme}${highContrast ? ' high contrast' : ''}`, async ({ page }) => {
+      test(`passes an accessibility scan with a pending file attached and its remove badge shown, ${theme}${highContrast ? ' high contrast' : ''}`, async ({ page }) => {
         await setupMockApp(page, { startAuthenticated: true, config: { theme, highContrast } });
         await page.goto('/journal');
 
@@ -52,6 +68,13 @@ test.describe('Attachment upload errors', () => {
           .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
           .analyze();
         expect(results.violations.map(({ id, nodes }) => ({ id, targets: nodes.map((node) => node.target) }))).toEqual([]);
+
+        // The remove badge shows while the card is hovered. axe leaves its one-character "×" unchecked
+        // ("too short to determine if it is actual text"), so its contrast is measured here.
+        const remove = page.getByTitle('Remove attachment');
+        await remove.hover();
+        await expect(remove).toHaveCSS('opacity', '1');
+        expect(await ownContrast(remove)).toBeGreaterThanOrEqual(4.5);
       });
     }
   }

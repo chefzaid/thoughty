@@ -194,7 +194,7 @@ function ShareImagePanel({ entry, initialExcerpt, checkPeople = false, isDark, l
             type="button"
             onClick={() => whenChecked(exporter.download)}
             disabled={actionsDisabled}
-            className="rounded bg-sky-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded bg-sky-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-sky-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {t('shareImageDownload')}
           </button>

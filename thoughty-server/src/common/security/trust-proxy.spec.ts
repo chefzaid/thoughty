@@ -93,7 +93,7 @@ function createCountingRedisClient(): RedisThrottlerClient & { keys: Set<string>
     isReady: true,
     keys,
     connect: jest.fn(),
-    quit: jest.fn(),
+    on: jest.fn(),
     destroy: jest.fn(),
     eval: jest.fn(async (_script: string, options: { keys: string[]; arguments: string[] }) => {
       const [hitsKey] = options.keys;

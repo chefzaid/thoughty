@@ -1,5 +1,7 @@
 import { AxeBuilder as BaseAxeBuilder } from '@axe-core/playwright';
 
+import { expect, type Locator, type Page } from './test';
+
 type AxeParams = ConstructorParameters<typeof BaseAxeBuilder>[0];
 
 /**
@@ -34,5 +36,19 @@ export default class AxeBuilder extends BaseAxeBuilder {
   override async analyze() {
     await settleAnimations(this.scannedPage);
     return super.analyze();
+  }
+}
+
+/**
+ * Hovers each button, scanning the page's contrast against the hover color once the transition
+ * ends: a hover shade can fail where the resting one passes.
+ */
+export async function expectReadableOnHover(page: Page, buttons: Locator[]) {
+  for (const button of buttons) {
+    await button.hover();
+    const results = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze();
+    const failures = results.violations.flatMap(({ nodes }) => nodes.map((node) => node.failureSummary));
+    // Soft, so one run reports every button that fails
+    expect.soft({ button: await button.textContent(), failures }).toEqual({ button: await button.textContent(), failures: [] });
   }
 }

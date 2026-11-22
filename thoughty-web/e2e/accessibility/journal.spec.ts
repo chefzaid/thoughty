@@ -1,5 +1,5 @@
-import AxeBuilder from '../support/axe';
-import { expect, test, type Locator, type Page } from '../support/test';
+import AxeBuilder, { expectReadableOnHover } from '../support/axe';
+import { expect, test, type Page } from '../support/test';
 
 import type { MockEntry, MockEntryRevision } from '../support/mockApp.shared';
 import { setupMockApp } from '../support/mockApp';
@@ -44,16 +44,6 @@ async function expectNoAccessibilityViolations(page: Page) {
   }));
 
   expect(violations).toEqual([]);
-}
-
-/** Hovers each button, scanning its text against the hover color once the transition ends. */
-async function expectReadableOnHover(page: Page, buttons: Locator[]) {
-  for (const button of buttons) {
-    await button.hover();
-    const results = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze();
-    const failures = results.violations.flatMap(({ nodes }) => nodes.map((node) => node.failureSummary));
-    expect({ button: await button.textContent(), failures }).toEqual({ button: await button.textContent(), failures: [] });
-  }
 }
 
 test.describe('journal accessibility with entries', () => {
