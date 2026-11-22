@@ -157,8 +157,8 @@ export class EntryHighlightsResponseDto {
   @ApiProperty({
     type: () => [PersonDateHighlightDto],
     description:
-      'People whose birthday or anniversary is on the writer’s day (`today`), by name; a 29 February date comes on ' +
-      '28 February in a year without a 29th',
+      'People whose birthday or anniversary is on the writer’s day (`today`), by name, once for each of their dates on it; ' +
+      'a 29 February date comes on 28 February in a year without a 29th',
   })
   personDates: PersonDateHighlightDto[];
 

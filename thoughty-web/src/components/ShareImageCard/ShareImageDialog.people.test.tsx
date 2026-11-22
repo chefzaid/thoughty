@@ -12,7 +12,7 @@ const downloadBlob = vi.hoisted(() => vi.fn());
 vi.mock('../../utils/downloadFile', () => ({ downloadBlob }));
 
 const t = (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params);
-const marie: Person = { id: 1, name: 'Marie Dupont', handles: ['marie'], date: null, reachOutDays: null, lastContactOn: null, notes: null, groups: [], entryCount: 1, lastMentionedOn: null, createdAt: '', updatedAt: '' };
+const marie: Person = { id: 1, name: 'Marie Dupont', handles: ['marie'], dates: [], reachOutDays: null, lastContactOn: null, notes: null, groups: [], entryCount: 1, lastMentionedOn: null, createdAt: '', updatedAt: '' };
 const ENTRY: ShareableEntry = { content: 'Tea with @marie by the sea.', format: 'plain', title: 'Marie Dupont visits', date: '2026-10-12', visibility: 'private' };
 
 let ctx: FakeContext;

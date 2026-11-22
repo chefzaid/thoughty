@@ -3199,6 +3199,7 @@
                       "name": "Marie",
                       "date": {
                         "kind": "birthday",
+                        "label": "Wedding",
                         "month": 3,
                         "day": 14,
                         "year": 1992
@@ -14959,12 +14960,15 @@
                       ],
                       "entryCount": 8,
                       "lastMentionedOn": "2026-10-21",
-                      "date": {
-                        "kind": "birthday",
-                        "month": 3,
-                        "day": 14,
-                        "year": 1992
-                      },
+                      "dates": [
+                        {
+                          "kind": "birthday",
+                          "label": "Wedding",
+                          "month": 3,
+                          "day": 14,
+                          "year": 1992
+                        }
+                      ],
                       "reachOutDays": 30,
                       "lastContactOn": "2026-11-03",
                       "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
@@ -15015,12 +15019,15 @@
               },
               "example": {
                 "name": "Marie Curie",
-                "date": {
-                  "kind": "birthday",
-                  "month": 3,
-                  "day": 14,
-                  "year": 1992
-                },
+                "dates": [
+                  {
+                    "kind": "birthday",
+                    "label": "Wedding",
+                    "month": 3,
+                    "day": 14,
+                    "year": 1992
+                  }
+                ],
                 "reachOutDays": 30,
                 "lastContactOn": "2026-11-03",
                 "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
@@ -15049,12 +15056,15 @@
                   ],
                   "entryCount": 8,
                   "lastMentionedOn": "2026-10-21",
-                  "date": {
-                    "kind": "birthday",
-                    "month": 3,
-                    "day": 14,
-                    "year": 1992
-                  },
+                  "dates": [
+                    {
+                      "kind": "birthday",
+                      "label": "Wedding",
+                      "month": 3,
+                      "day": 14,
+                      "year": 1992
+                    }
+                  ],
                   "reachOutDays": 30,
                   "lastContactOn": "2026-11-03",
                   "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
@@ -15069,7 +15079,7 @@
             }
           },
           "400": {
-            "description": "Invalid name, reminder, notes (more than 2,000 characters) or groups (more than 10, or a name over 40 characters), a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), or a last contact after today (PERSON_CONTACT_IN_FUTURE)",
+            "description": "Invalid name, reminder, notes (more than 2,000 characters), groups (more than 10, or a name over 40 characters) or dates (more than 10, or a label over 40 characters), a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), a second birthday (PERSON_DATE_BIRTHDAY_TWICE), or a last contact after today (PERSON_CONTACT_IN_FUTURE)",
             "content": {
               "application/json": {
                 "schema": {
@@ -15077,7 +15087,7 @@
                 },
                 "example": {
                   "statusCode": 400,
-                  "message": "Invalid name, reminder, notes (more than 2,000 characters) or groups (more than 10, or a name over 40 characters), a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), or a last contact after today (PERSON_CONTACT_IN_FUTURE)",
+                  "message": "Invalid name, reminder, notes (more than 2,000 characters), groups (more than 10, or a name over 40 characters) or dates (more than 10, or a label over 40 characters), a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), a second birthday (PERSON_DATE_BIRTHDAY_TWICE), or a last contact after today (PERSON_CONTACT_IN_FUTURE)",
                   "error": "Bad Request",
                   "code": "VALIDATION_FAILED"
                 }
@@ -15106,7 +15116,7 @@
             "bearer": []
           }
         ],
-        "summary": "Change the name shown for a person, their birthday or anniversary, their reach-out reminder, their last contact, the writer’s notes on them and the groups they belong to; their handles and the entries’ text stay as they are",
+        "summary": "Change the name shown for a person, their birthday and anniversaries, their reach-out reminder, their last contact, the writer’s notes on them and the groups they belong to; their handles and the entries’ text stay as they are",
         "tags": [
           "People"
         ]
@@ -15208,12 +15218,15 @@
                   ],
                   "entryCount": 8,
                   "lastMentionedOn": "2026-10-21",
-                  "date": {
-                    "kind": "birthday",
-                    "month": 3,
-                    "day": 14,
-                    "year": 1992
-                  },
+                  "dates": [
+                    {
+                      "kind": "birthday",
+                      "label": "Wedding",
+                      "month": 3,
+                      "day": 14,
+                      "year": 1992
+                    }
+                  ],
                   "reachOutDays": 30,
                   "lastContactOn": "2026-11-03",
                   "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
@@ -15315,12 +15328,15 @@
                   ],
                   "entryCount": 8,
                   "lastMentionedOn": "2026-10-21",
-                  "date": {
-                    "kind": "birthday",
-                    "month": 3,
-                    "day": 14,
-                    "year": 1992
-                  },
+                  "dates": [
+                    {
+                      "kind": "birthday",
+                      "label": "Wedding",
+                      "month": 3,
+                      "day": 14,
+                      "year": 1992
+                    }
+                  ],
                   "reachOutDays": 30,
                   "lastContactOn": "2026-11-03",
                   "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
@@ -15372,7 +15388,7 @@
             "bearer": []
           }
         ],
-        "summary": "Merge a duplicate into this person: its handles and entries move here, its notes and groups follow theirs, then it is deleted",
+        "summary": "Merge a duplicate into this person: its handles and entries move here, its notes, groups and dates follow theirs, then it is deleted",
         "tags": [
           "People"
         ]
@@ -19636,6 +19652,12 @@
               }
             ]
           },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "example": "Wedding",
+            "description": "What the date marks; null when the writer did not say"
+          },
           "month": {
             "type": "number",
             "example": 3,
@@ -19657,12 +19679,14 @@
         },
         "required": [
           "kind",
+          "label",
           "month",
           "day",
           "year"
         ],
         "example": {
           "kind": "birthday",
+          "label": "Wedding",
           "month": 3,
           "day": 14,
           "year": 1992
@@ -19718,6 +19742,7 @@
           "name": "Marie",
           "date": {
             "kind": "birthday",
+            "label": "Wedding",
             "month": 3,
             "day": 14,
             "year": 1992
@@ -19880,7 +19905,7 @@
             }
           },
           "personDates": {
-            "description": "People whose birthday or anniversary is on the writer’s day (`today`), by name; a 29 February date comes on 28 February in a year without a 29th",
+            "description": "People whose birthday or anniversary is on the writer’s day (`today`), by name, once for each of their dates on it; a 29 February date comes on 28 February in a year without a 29th",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PersonDateHighlightDto"
@@ -20071,6 +20096,7 @@
               "name": "Marie",
               "date": {
                 "kind": "birthday",
+                "label": "Wedding",
                 "month": 3,
                 "day": 14,
                 "year": 1992
@@ -29648,15 +29674,12 @@
             "example": "2026-10-21",
             "description": "Date of the latest entry that mentions the person; null when none does"
           },
-          "date": {
-            "nullable": true,
-            "description": "Their birthday or anniversary, shown in Highlights on its day; null when none is set",
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PersonDateDto"
-              }
-            ]
+          "dates": {
+            "description": "Their birthday and anniversaries, each shown in Highlights on its day, through the year (a birthday first on a shared day); empty when none is set",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PersonDateDto"
+            }
           },
           "reachOutDays": {
             "type": "number",
@@ -29713,7 +29736,7 @@
           "handles",
           "entryCount",
           "lastMentionedOn",
-          "date",
+          "dates",
           "reachOutDays",
           "lastContactOn",
           "notes",
@@ -29730,12 +29753,15 @@
           ],
           "entryCount": 8,
           "lastMentionedOn": "2026-10-21",
-          "date": {
-            "kind": "birthday",
-            "month": 3,
-            "day": 14,
-            "year": 1992
-          },
+          "dates": [
+            {
+              "kind": "birthday",
+              "label": "Wedding",
+              "month": 3,
+              "day": 14,
+              "year": 1992
+            }
+          ],
           "reachOutDays": 30,
           "lastContactOn": "2026-11-03",
           "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
@@ -29778,12 +29804,15 @@
               ],
               "entryCount": 8,
               "lastMentionedOn": "2026-10-21",
-              "date": {
-                "kind": "birthday",
-                "month": 3,
-                "day": 14,
-                "year": 1992
-              },
+              "dates": [
+                {
+                  "kind": "birthday",
+                  "label": "Wedding",
+                  "month": 3,
+                  "day": 14,
+                  "year": 1992
+                }
+              ],
               "reachOutDays": 30,
               "lastContactOn": "2026-11-03",
               "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
@@ -29809,6 +29838,13 @@
                 "$ref": "#/components/schemas/PersonDateKind"
               }
             ]
+          },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 40,
+            "example": "Wedding",
+            "description": "What the date marks in the writer’s words (a wedding, the day they met), trimmed; null, blank or left out for none"
           },
           "month": {
             "type": "number",
@@ -29838,6 +29874,7 @@
         ],
         "example": {
           "kind": "birthday",
+          "label": "Wedding",
           "month": 3,
           "day": 14,
           "year": 1992
@@ -29852,15 +29889,13 @@
             "minLength": 1,
             "maxLength": 80
           },
-          "date": {
-            "nullable": true,
-            "description": "Their birthday or anniversary, shown in Highlights each year on its day; null removes it, left out keeps it",
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PersonDateInputDto"
-              }
-            ]
+          "dates": {
+            "maxItems": 10,
+            "description": "Their important dates, each shown in Highlights every year on its day: at most 10, and one birthday (`400 PERSON_DATE_BIRTHDAY_TWICE`). They replace the dates the person has; an empty list removes them all, left out keeps them. Merging two people joins their dates, which may then be more than a save accepts.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PersonDateInputDto"
+            }
           },
           "reachOutDays": {
             "type": "number",
@@ -29908,12 +29943,15 @@
         ],
         "example": {
           "name": "Marie Curie",
-          "date": {
-            "kind": "birthday",
-            "month": 3,
-            "day": 14,
-            "year": 1992
-          },
+          "dates": [
+            {
+              "kind": "birthday",
+              "label": "Wedding",
+              "month": 3,
+              "day": 14,
+              "year": 1992
+            }
+          ],
           "reachOutDays": 30,
           "lastContactOn": "2026-11-03",
           "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
@@ -31919,6 +31957,7 @@
           "PERSON_DATE_INVALID",
           "PERSON_DATE_YEAR_INVALID",
           "PERSON_DATE_IN_FUTURE",
+          "PERSON_DATE_BIRTHDAY_TWICE",
           "PERSON_CONTACT_IN_FUTURE",
           "ATTACHMENT_NOT_FOUND",
           "ATTACHMENT_FILE_NOT_FOUND",

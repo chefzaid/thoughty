@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { daysInMonth, formatPersonDate, personDateDraft, readPersonDateDraft, samePersonDate } from './personDates';
+import {
+  daysInMonth,
+  formatPersonDate,
+  newPersonDateDraft,
+  personDateDrafts,
+  readPersonDateDrafts,
+  samePersonDates,
+} from './personDates';
 
 describe('person dates', () => {
   it('gives February 29 days unless a known year had none, as the API checks', () => {
@@ -14,27 +21,57 @@ describe('person dates', () => {
     expect(formatPersonDate({ month: 2, day: 29, year: null }, 'fr')).toBe('29 février');
   });
 
-  it('reads the fields as typed into the date to send, or what is missing', () => {
-    expect(personDateDraft(null)).toEqual({ kind: '', month: '', day: '', year: '' });
-    const draft = personDateDraft({ kind: 'birthday', month: 3, day: 14, year: null });
-    expect(draft).toEqual({ kind: 'birthday', month: '3', day: '14', year: '' });
-    expect(readPersonDateDraft(draft)).toEqual({ date: { kind: 'birthday', month: 3, day: 14, year: null } });
-    expect(readPersonDateDraft({ ...draft, year: ' 1992 ' })).toEqual({ date: { kind: 'birthday', month: 3, day: 14, year: 1992 } });
-    expect(readPersonDateDraft({ ...draft, kind: '' })).toEqual({ date: null });
-    expect(readPersonDateDraft({ ...draft, day: '' })).toEqual({ error: 'personDateIncomplete' });
-    expect(readPersonDateDraft({ ...draft, month: '' })).toEqual({ error: 'personDateIncomplete' });
-    for (const year of ['92', '19920', 'abcd', '-992']) {
-      expect(readPersonDateDraft({ ...draft, year })).toEqual({ error: 'apiError_PERSON_DATE_YEAR_INVALID' });
-    }
+  it('makes a draft of each date, each with its own key, and a new one the birthday while there is none', () => {
+    const drafts = personDateDrafts([
+      { kind: 'anniversary', label: 'Wedding', month: 6, day: 2, year: 2012 },
+      { kind: 'anniversary', label: null, month: 3, day: 14, year: null },
+    ]);
+    expect(drafts.map(({ key: _key, ...draft }) => draft)).toEqual([
+      { kind: 'anniversary', label: 'Wedding', month: '6', day: '2', year: '2012' },
+      { kind: 'anniversary', label: '', month: '3', day: '14', year: '' },
+    ]);
+    expect(new Set(drafts.map((draft) => draft.key)).size).toBe(2);
+    const birthday = newPersonDateDraft(drafts);
+    expect(birthday).toMatchObject({ kind: 'birthday', label: '', month: '', day: '', year: '' });
+    expect(newPersonDateDraft([...drafts, birthday]).kind).toBe('anniversary');
+    expect(newPersonDateDraft([]).key).not.toBe(birthday.key);
   });
 
-  it('compares two dates, a missing year being null', () => {
-    const date = { kind: 'birthday' as const, month: 3, day: 14, year: null };
-    expect(samePersonDate(date, { ...date })).toBe(true);
-    expect(samePersonDate(date, { kind: 'birthday', month: 3, day: 14 })).toBe(true);
-    expect(samePersonDate(date, { ...date, year: 1992 })).toBe(false);
-    expect(samePersonDate(date, { ...date, kind: 'anniversary' })).toBe(false);
-    expect(samePersonDate(date, null)).toBe(false);
-    expect(samePersonDate(null, null)).toBe(true);
+  it('reads the drafts as typed into the dates to send, or the first one that cannot be and why', () => {
+    const today = '2026-11-22';
+    const draft = personDateDrafts([{ kind: 'birthday', label: null, month: 3, day: 14, year: null }])[0]!;
+    const other = { ...draft, key: draft.key + 1000, kind: 'anniversary' as const, label: ' Wedding  ' };
+
+    expect(readPersonDateDrafts([], today)).toEqual({ dates: [] });
+    expect(readPersonDateDrafts([draft, { ...other, year: ' 1992 ' }], today)).toEqual({
+      dates: [
+        { kind: 'birthday', label: null, month: 3, day: 14, year: null },
+        { kind: 'anniversary', label: 'Wedding', month: 3, day: 14, year: 1992 },
+      ],
+    });
+    expect(readPersonDateDrafts([draft, { ...other, label: '   ' }], today)).toEqual({ dates: [expect.anything(), expect.objectContaining({ label: null })] });
+    expect(readPersonDateDrafts([draft, { ...other, day: '' }], today)).toEqual({ error: 'personDateIncomplete', index: 1 });
+    expect(readPersonDateDrafts([{ ...draft, month: '' }, { ...other, day: '' }], today)).toEqual({ error: 'personDateIncomplete', index: 0 });
+    for (const year of ['92', '19921', 'ninety', '0999']) {
+      expect(readPersonDateDrafts([draft, { ...other, year }], today)).toEqual({ error: 'apiError_PERSON_DATE_YEAR_INVALID', index: 1 });
+    }
+    // 29 February only in a leap year; a dated day not after today
+    expect(readPersonDateDrafts([{ ...draft, month: '2', day: '29', year: '2001' }], today)).toEqual({ error: 'apiError_PERSON_DATE_INVALID', index: 0 });
+    expect(readPersonDateDrafts([{ ...draft, month: '2', day: '29', year: '2000' }], today)).toEqual({ dates: [expect.objectContaining({ year: 2000 })] });
+    expect(readPersonDateDrafts([{ ...draft, month: '11', day: '23', year: '2026' }], today)).toEqual({ error: 'apiError_PERSON_DATE_IN_FUTURE', index: 0 });
+    expect(readPersonDateDrafts([{ ...draft, month: '11', day: '22', year: '2026' }], today)).toEqual({ dates: [expect.objectContaining({ year: 2026 })] });
+  });
+
+  it('tells whether the dates to send are the person’s, in order', () => {
+    const birthday = { kind: 'birthday' as const, label: null, month: 3, day: 14, year: null };
+    const wedding = { kind: 'anniversary' as const, label: 'Wedding', month: 6, day: 2, year: 2012 };
+    expect(samePersonDates([birthday, wedding], [birthday, wedding])).toBe(true);
+    expect(samePersonDates([{ kind: 'birthday', month: 3, day: 14 }], [birthday])).toBe(true);
+    expect(samePersonDates([], [])).toBe(true);
+    expect(samePersonDates([wedding, birthday], [birthday, wedding])).toBe(false);
+    expect(samePersonDates([birthday], [birthday, wedding])).toBe(false);
+    for (const change of [{ kind: 'anniversary' as const }, { label: 'First met' }, { month: 4 }, { day: 15 }, { year: 1992 }]) {
+      expect(samePersonDates([{ ...birthday, ...change }], [birthday])).toBe(false);
+    }
   });
 });

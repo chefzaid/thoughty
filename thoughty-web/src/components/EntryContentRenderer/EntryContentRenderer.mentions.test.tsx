@@ -9,7 +9,7 @@ import { MentionPeopleContext } from '../People/PeopleContext';
 import type { Person } from '../../services/api';
 import { peopleByHandle } from '../../utils/mentions';
 
-const marie: Person = { id: 12, name: 'Marie Curie', handles: ['marie', 'mariec'], entryCount: 3, lastMentionedOn: null, date: null, reachOutDays: null, lastContactOn: null, notes: null, groups: [], createdAt: '', updatedAt: '' };
+const marie: Person = { id: 12, name: 'Marie Curie', handles: ['marie', 'mariec'], entryCount: 3, lastMentionedOn: null, dates: [], reachOutDays: null, lastContactOn: null, notes: null, groups: [], createdAt: '', updatedAt: '' };
 const people = { people: [marie], byHandle: peopleByHandle([marie]) };
 
 function Location() {

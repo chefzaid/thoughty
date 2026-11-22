@@ -3,11 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Entry, Person } from '@/database/entities';
 import type { PersonDateDto, PersonReachOutHighlightDto } from './dto';
-import { personDateDaysOn, toPersonDate, yearsOn, type PersonDateColumns } from './person-dates';
+import { PERSON_DATES_ORDER_SQL, personDateDaysOn, toPersonDate, yearsOn, type PersonDateColumns } from './person-dates';
 import { REACH_OUT_HIGHLIGHTS_LIMIT } from './person-reach-out';
 import { hideLockedEntriesSql } from '@/common/content-lock';
 
-/** A person whose birthday or anniversary is on the writer's day, as Highlights shows them. */
+/** A person with a birthday or an anniversary on the writer's day, as Highlights shows them: once for each such date. */
 export interface PersonOfTheDay {
   id: number;
   name: string;
@@ -37,14 +37,15 @@ const mentioningEntries = (lockFilter: string) => `
  WHERE ep.person_id = p.id AND e.user_id = p.user_id AND e.deleted_at IS NULL AND e.sealed_until IS NULL${lockFilter}`;
 
 const peopleOfTheDaySql = (lockFilter: string) => `
-  SELECT p.id, p.name, p.date_kind AS "dateKind", p.date_month AS "dateMonth", p.date_day AS "dateDay", p.date_year AS "dateYear",
+  SELECT p.id, p.name, d.kind, d.label, d.month, d.day, d.year,
          (SELECT COUNT(*)::int ${mentioningEntries(lockFilter)}) AS "entryCount",
          (SELECT e.id ${mentioningEntries(lockFilter)}
            ORDER BY e.date DESC, e.time_of_day DESC NULLS LAST, e."index" DESC, e.id DESC LIMIT 1) AS "latestEntryId"
     FROM people p
+    JOIN person_dates d ON d.person_id = p.id
    WHERE p.user_id = $1
-     AND (p.date_month, p.date_day) IN (SELECT * FROM unnest($2::int[], $3::int[]))
-   ORDER BY lower(p.name), p.id`;
+     AND (d.month, d.day) IN (SELECT * FROM unnest($2::int[], $3::int[]))
+   ORDER BY lower(p.name), p.id, ${PERSON_DATES_ORDER_SQL('d')}`;
 
 interface PersonReachOutRow {
   id: number;
@@ -100,7 +101,7 @@ export class PersonDatesService {
     const byId = new Map(entries.map((entry) => [entry.id, entry]));
 
     return rows.map((row) => {
-      const date = toPersonDate(row)!;
+      const date = toPersonDate(row);
       return {
         id: row.id,
         name: row.name,

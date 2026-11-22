@@ -14,7 +14,7 @@ import {
 } from './mentions';
 
 const person = (id: number, name: string, handles: string[], entryCount = 1): Person => ({
-    id, name, handles, entryCount, lastMentionedOn: null, date: null, reachOutDays: null, lastContactOn: null, notes: null, groups: [], createdAt: '', updatedAt: '',
+    id, name, handles, entryCount, lastMentionedOn: null, dates: [], reachOutDays: null, lastContactOn: null, notes: null, groups: [], createdAt: '', updatedAt: '',
 });
 const handles = (content: string) => findMentions(content).map((mention) => content.slice(mention.start + 1, mention.end));
 

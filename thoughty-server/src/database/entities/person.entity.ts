@@ -32,23 +32,6 @@ export class Person {
   name: string;
 
   /**
-   * A birthday or an anniversary that comes back each year on `dateMonth`/`dateDay`, with `dateYear` when the
-   * writer knows it. Kind, month and day are all set or all null; the database refuses a day that never exists.
-   */
-  @Column({ name: 'date_kind', type: 'varchar', length: 16, nullable: true })
-  dateKind: PersonDateKind | null;
-
-  /** 1 to 12. */
-  @Column({ name: 'date_month', type: 'smallint', nullable: true })
-  dateMonth: number | null;
-
-  @Column({ name: 'date_day', type: 'smallint', nullable: true })
-  dateDay: number | null;
-
-  @Column({ name: 'date_year', type: 'smallint', nullable: true })
-  dateYear: number | null;
-
-  /**
    * At most how many days the writer wants to go without being in touch with the person; null for no reminder.
    * Highlights shows them once this many days have passed since `lastContactOn` or their newest mention.
    */
@@ -99,6 +82,43 @@ export class PersonHandle {
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
+
+  @ManyToOne(() => Person, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'person_id' })
+  person: Person;
+}
+
+/**
+ * An important date on a person: a birthday or an anniversary that comes back each year on `month`/`day`, with
+ * `year` when the writer knows it and `label` saying what it marks (a wedding, the day they met). A person has
+ * any number of anniversaries and at most one birthday; the database refuses a day that never exists.
+ */
+@Entity('person_dates')
+export class PersonDate {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ name: 'person_id', type: 'integer' })
+  personId: number;
+
+  @Column({ type: 'varchar', length: 16 })
+  kind: PersonDateKind;
+
+  @Column({ type: 'varchar', length: 40, nullable: true })
+  label: string | null;
+
+  /** 1 to 12. */
+  @Column({ type: 'smallint' })
+  month: number;
+
+  @Column({ type: 'smallint' })
+  day: number;
+
+  @Column({ type: 'smallint', nullable: true })
+  year: number | null;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  createdAt: Date;
 
   @ManyToOne(() => Person, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'person_id' })

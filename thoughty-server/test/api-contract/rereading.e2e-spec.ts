@@ -144,7 +144,7 @@ describeContract('rereading', (context) => {
     await comfort(alice, { excludeId: 'last' }, 400);
   });
 
-  it('gives a person a birthday, shows it in Highlights on the writer’s day with their entries, and downloads it', async () => {
+  it('gives a person a birthday and anniversaries, shows each in Highlights on the writer’s day with their entries, and downloads them', async () => {
     const { alice, bob } = context;
     const today = todayIso();
     const [year, month, day] = today.split('-').map(Number);
@@ -152,33 +152,42 @@ describeContract('rereading', (context) => {
     const newest = await createEntry(context, alice, { text: 'Called @Ines', date: '2025-05-01' });
     const people = (await call('GET /api/people', { as: alice, status: 200 })).body as { people: { id: number; name: string }[] };
     const ines = people.people.find((person) => person.name === 'Ines')!.id;
-    const save = (as: typeof alice, date: unknown, status = 200, code?: ApiErrorCode) =>
-      call('PATCH /api/people/{id}', { as, params: { id: ines }, json: { name: 'Ines', date }, status, ...(code ? { code } : {}) });
+    const save = (as: typeof alice, dates: unknown, status = 200, code?: ApiErrorCode) =>
+      call('PATCH /api/people/{id}', { as, params: { id: ines }, json: { name: 'Ines', dates }, status, ...(code ? { code } : {}) });
     const birthdays = async () => ((await call('GET /api/entries/highlights', {
       as: alice,
       query: new URLSearchParams({ today }),
       status: 200,
-    })).body as { personDates: { id: number; years: number | null; entryCount: number; latestEntry: { id: number } | null }[] }).personDates;
+    })).body as { personDates: { id: number; date: { kind: string; label: string | null }; years: number | null; entryCount: number; latestEntry: { id: number } | null }[] }).personDates;
 
-    const saved = await save(alice, { kind: 'birthday', month, day, year: year - 28 });
-    expect(saved.body).toMatchObject({ id: ines, date: { kind: 'birthday', month, day, year: year - 28 } });
-    expect(await birthdays()).toEqual([expect.objectContaining({ id: ines, years: 28, entryCount: 2, latestEntry: expect.objectContaining({ id: newest }) })]);
+    const birthday = { kind: 'birthday', label: null, month, day, year: year - 28 };
+    const wedding = { kind: 'anniversary', label: 'Wedding', month, day, year: year - 3 };
+    const saved = await save(alice, [{ ...wedding, label: '  Wedding ' }, birthday]);
+    expect(saved.body).toMatchObject({ id: ines, dates: [birthday, wedding] });
+    expect(await birthdays()).toEqual([
+      expect.objectContaining({ id: ines, date: expect.objectContaining({ kind: 'birthday' }), years: 28, entryCount: 2, latestEntry: expect.objectContaining({ id: newest }) }),
+      expect.objectContaining({ id: ines, date: expect.objectContaining({ kind: 'anniversary', label: 'Wedding' }), years: 3 }),
+    ]);
 
-    await save(alice, { kind: 'birthday', month: 4, day: 31 }, 400, 'PERSON_DATE_INVALID');
-    await save(alice, { kind: 'birthday', month: 2, day: 29, year: 2023 }, 400, 'PERSON_DATE_INVALID');
-    await save(alice, { kind: 'birthday', month: 1, day: 1, year: 86 }, 400, 'PERSON_DATE_YEAR_INVALID');
-    await save(alice, { kind: 'anniversary', month: 1, day: 1, year: year + 2 }, 400, 'PERSON_DATE_IN_FUTURE');
-    await save(alice, { kind: 'nameday', month: 1, day: 1 }, 400, 'VALIDATION_FAILED');
-    await save(bob, null, 404, 'PERSON_NOT_FOUND');
+    await save(alice, [{ kind: 'birthday', month: 4, day: 31 }], 400, 'PERSON_DATE_INVALID');
+    await save(alice, [{ kind: 'birthday', month: 2, day: 29, year: 2023 }], 400, 'PERSON_DATE_INVALID');
+    await save(alice, [{ kind: 'birthday', month: 1, day: 1, year: 86 }], 400, 'PERSON_DATE_YEAR_INVALID');
+    await save(alice, [{ kind: 'anniversary', month: 1, day: 1, year: year + 2 }], 400, 'PERSON_DATE_IN_FUTURE');
+    await save(alice, [birthday, { ...birthday, day: 1, month: 1 }], 400, 'PERSON_DATE_BIRTHDAY_TWICE');
+    await save(alice, [{ kind: 'nameday', month: 1, day: 1 }], 400, 'VALIDATION_FAILED');
+    await save(alice, [{ ...wedding, label: 'l'.repeat(41) }], 400, 'VALIDATION_FAILED');
+    await save(alice, Array.from({ length: 11 }, () => wedding), 400, 'VALIDATION_FAILED');
+    await save(alice, null, 400, 'VALIDATION_FAILED');
+    await save(bob, [], 404, 'PERSON_NOT_FOUND');
 
     const download = await call('GET /api/config/download-data', { as: alice, query: { today }, status: 200, contentType: /^application\/json/ });
-    expect((download.body as { people: { id: number; date: unknown }[] }).people).toContainEqual(
-      expect.objectContaining({ id: ines, date: { kind: 'birthday', month, day, year: year - 28 } }),
+    expect((download.body as { people: { id: number; dates: unknown }[] }).people).toContainEqual(
+      expect.objectContaining({ id: ines, dates: [birthday, wedding] }),
     );
 
-    expect((await save(alice, { kind: 'anniversary', month, day })).body).toMatchObject({ date: { kind: 'anniversary', year: null } });
+    expect((await save(alice, [{ kind: 'anniversary', month, day }])).body).toMatchObject({ dates: [{ kind: 'anniversary', label: null, year: null }] });
     expect(await birthdays()).toEqual([expect.objectContaining({ id: ines, years: null })]);
-    expect((await save(alice, null)).body).toMatchObject({ date: null });
+    expect((await save(alice, [])).body).toMatchObject({ dates: [] });
     expect(await birthdays()).toEqual([]);
   });
 

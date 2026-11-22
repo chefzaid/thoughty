@@ -4,7 +4,7 @@ import type { Person } from '../services/api/peopleService';
 import { findSharedPeople, personInitials, replaceSharedPeople, rewriteSharedTexts } from './peopleCheck';
 
 const person = (id: number, name: string, handles: string[]): Person => ({
-  id, name, handles, date: null, reachOutDays: null, lastContactOn: null, notes: null, groups: [], entryCount: 1, lastMentionedOn: null, createdAt: '', updatedAt: '',
+  id, name, handles, dates: [], reachOutDays: null, lastContactOn: null, notes: null, groups: [], entryCount: 1, lastMentionedOn: null, createdAt: '', updatedAt: '',
 });
 
 const marie = person(1, 'Marie Dupont', ['marie', 'mamie']);

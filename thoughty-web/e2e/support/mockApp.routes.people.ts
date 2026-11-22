@@ -2,18 +2,20 @@ import type { components } from '../../src/generated/openapi';
 import { findMentions } from '../../src/utils/mentions';
 import type { MockAppState, MockEntry } from './mockApp.shared';
 import { fulfillApiError, fulfillJson, type RouteContext } from './mockApp.route-utils';
-import { mockPersonDateRefusal } from './mockApp.person-dates';
+import { mockMergedPersonDates, mockPersonDatesRefusal, mockSavedPersonDates } from './mockApp.person-dates';
 import { mockContactRefusal, mockLastMentionedOn } from './mockApp.reach-outs';
 
 export const MOCK_PEOPLE_LIMIT = 1000;
 
 type PersonResponse = components['schemas']['PersonResponseDto'];
+/** What a spec may leave out of a person, which then reads as none. */
+type MockPersonOptional = 'dates' | 'reachOutDays' | 'lastContactOn' | 'notes' | 'groups';
 /**
  * A person as the mock keeps them; their counts are read from the entries' text on each request. A spec may
- * leave out the reach-out reminder, the last contact, the notes and the groups, which then read as none.
+ * leave out their dates, the reach-out reminder, the last contact, the notes and the groups.
  */
-export type MockPerson = Omit<PersonResponse, 'entryCount' | 'lastMentionedOn' | 'reachOutDays' | 'lastContactOn' | 'notes' | 'groups'>
-  & Partial<Pick<PersonResponse, 'reachOutDays' | 'lastContactOn' | 'notes' | 'groups'>>;
+export type MockPerson = Omit<PersonResponse, 'entryCount' | 'lastMentionedOn' | MockPersonOptional>
+  & Partial<Pick<PersonResponse, MockPersonOptional>>;
 
 /** The longest notes the API saves on a person. */
 const MOCK_PERSON_NOTES_MAX_LENGTH = 2000;
@@ -45,7 +47,6 @@ export function addMockMentionedPeople(people: MockPerson[], content: string): v
       id: Math.max(0, ...people.map((person) => person.id)) + 1,
       name: content.slice(mention.start + 1, mention.end),
       handles: [mention.handle],
-      date: null,
       createdAt: now,
       updatedAt: now,
     });
@@ -62,6 +63,7 @@ function toResponse(state: MockAppState, person: MockPerson): PersonResponse {
   const entries = state.entries.filter((entry) => mockMentions(entry, person));
   return {
     ...person,
+    dates: person.dates ?? [],
     reachOutDays: person.reachOutDays ?? null,
     lastContactOn: person.lastContactOn ?? null,
     notes: person.notes ?? null,
@@ -75,9 +77,9 @@ const byName = (left: MockPerson, right: MockPerson) => left.name.toLowerCase().
 
 /**
  * `/api/people` as the API answers it: people by name with their counts outside the recycle bin, renaming the
- * name shown and setting their date, reminder, last contact, notes and groups (refused with the API's codes), recording a
- * contact today, merging a duplicate (its handles move, its date and reminder too when the person kept has
- * none, the later contact stays, its notes and groups follow the person's, saved searches follow) and deleting (saved searches widen).
+ * name shown and setting their dates, reminder, last contact, notes and groups (refused with the API's codes), recording a
+ * contact today, merging a duplicate (its handles move, its reminder too when the person kept has none, the later
+ * contact stays, its notes, groups and dates follow the person's, saved searches follow) and deleting (saved searches widen).
  */
 export async function handlePeopleRoutes({ route, request, pathname, state }: RouteContext): Promise<boolean> {
   if (pathname === '/api/people' && request.method() === 'GET') {
@@ -113,7 +115,7 @@ export async function handlePeopleRoutes({ route, request, pathname, state }: Ro
       return true;
     }
     person.handles = [...person.handles, ...duplicate.handles];
-    person.date ??= duplicate.date;
+    person.dates = mockMergedPersonDates(person.dates ?? [], duplicate.dates ?? []);
     person.reachOutDays ??= duplicate.reachOutDays ?? null;
     person.lastContactOn = [person.lastContactOn, duplicate.lastContactOn].filter(Boolean).sort().at(-1) ?? null;
     person.notes = [person.notes, duplicate.notes].filter(Boolean).join('\n\n') || null;
@@ -129,7 +131,7 @@ export async function handlePeopleRoutes({ route, request, pathname, state }: Ro
   }
 
   if (!match[2] && request.method() === 'PATCH') {
-    const { name, date, reachOutDays, lastContactOn, notes, groups } = request.postDataJSON() as components['schemas']['UpdatePersonDto'];
+    const { name, dates, reachOutDays, lastContactOn, notes, groups } = request.postDataJSON() as components['schemas']['UpdatePersonDto'];
     const savedNotes = typeof notes === 'string' ? notes.trim() || null : notes;
     if (savedNotes && savedNotes.length > MOCK_PERSON_NOTES_MAX_LENGTH) {
       await fulfillApiError(route, 400, 'VALIDATION_FAILED', 'notes must be shorter than or equal to 2000 characters');
@@ -140,13 +142,13 @@ export async function handlePeopleRoutes({ route, request, pathname, state }: Ro
       await fulfillApiError(route, 400, 'VALIDATION_FAILED', 'groups must hold at most 10 names of 1 to 40 characters');
       return true;
     }
-    const refusal = (date ? mockPersonDateRefusal(date) : null) ?? (lastContactOn ? mockContactRefusal(lastContactOn) : null);
+    const refusal = (dates ? mockPersonDatesRefusal(dates) : null) ?? (lastContactOn ? mockContactRefusal(lastContactOn) : null);
     if (refusal) {
       await fulfillApiError(route, 400, refusal.code, refusal.message);
       return true;
     }
     person.name = name.trim();
-    if (date !== undefined) person.date = date ? { ...date, year: date.year ?? null } : null;
+    if (dates !== undefined) person.dates = mockSavedPersonDates(dates);
     if (reachOutDays !== undefined) person.reachOutDays = reachOutDays;
     if (lastContactOn !== undefined) person.lastContactOn = lastContactOn;
     if (savedNotes !== undefined) person.notes = savedNotes;

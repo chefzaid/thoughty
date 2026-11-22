@@ -18,7 +18,7 @@ import { PEOPLE_LIMIT } from '@/modules/entries/entry-mentions.sync';
 import { StrictInt } from '@/common/validation';
 import { LOCAL_DAY_PATTERN } from '@/common/utils/writers-day.util';
 import { PERSON_DATE_KINDS, type PersonDateKind } from '@/database/entities/person.entity';
-import { PERSON_DATE_MIN_YEAR } from '../person-dates';
+import { PERSON_DATE_LABEL_MAX_LENGTH, PERSON_DATE_MIN_YEAR, PERSON_DATES_MAX } from '../person-dates';
 import { PERSON_GROUP_NAME_MAX_LENGTH, PERSON_GROUPS_MAX } from '../person-groups';
 import { REACH_OUT_DAYS } from '../person-reach-out';
 
@@ -27,18 +27,36 @@ export const PERSON_NAME_MAX_LENGTH = 80;
 export const PERSON_NOTES_MAX_LENGTH = 2000;
 
 const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
-/** Trimmed notes, with blank ones read as none. */
-const trimNotes = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() || null : value);
+/** Trimmed text (notes, a date label), with blank text read as none. */
+const trimOrNone = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() || null : value);
 /** Each group name trimmed. */
 const trimEach = ({ value }: { value: unknown }) => (Array.isArray(value) ? value.map((item) => (typeof item === 'string' ? item.trim() : item)) : value);
 
 const KIND_DESCRIPTION = 'What the date marks: a birthday or an anniversary (a wedding, a meeting, a loss)';
 
-/** A birthday or an anniversary as the writer gives it: the month and day, and the year when they know it. */
+const LABEL_EXAMPLE = 'Wedding';
+
+/**
+ * A birthday or an anniversary as the writer gives it: what it marks when they say, the month and day, and the year
+ * when they know it.
+ */
 export class PersonDateInputDto {
   @ApiProperty({ enum: PERSON_DATE_KINDS, enumName: 'PersonDateKind', example: 'birthday', description: KIND_DESCRIPTION })
   @IsIn(PERSON_DATE_KINDS)
   kind!: PersonDateKind;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    maxLength: PERSON_DATE_LABEL_MAX_LENGTH,
+    example: LABEL_EXAMPLE,
+    description: 'What the date marks in the writer’s words (a wedding, the day they met), trimmed; null, blank or left out for none',
+  })
+  @IsOptional()
+  @Transform(trimOrNone)
+  @IsString()
+  @MaxLength(PERSON_DATE_LABEL_MAX_LENGTH)
+  label?: string | null;
 
   @ApiProperty({ example: 3, minimum: 1, maximum: 12 })
   @StrictInt()
@@ -68,7 +86,7 @@ export class PersonDateInputDto {
 }
 
 /**
- * The name shown for a person, their date, their reach-out reminder, the writer's notes on them and their groups. Their
+ * The name shown for a person, their important dates, their reach-out reminder, the writer's notes on them and their groups. Their
  * handles, and so the text of entries, stay as they are.
  */
 export class UpdatePersonDto {
@@ -80,14 +98,19 @@ export class UpdatePersonDto {
   name!: string;
 
   @ApiPropertyOptional({
-    type: () => PersonDateInputDto,
-    nullable: true,
-    description: 'Their birthday or anniversary, shown in Highlights each year on its day; null removes it, left out keeps it',
+    type: () => [PersonDateInputDto],
+    maxItems: PERSON_DATES_MAX,
+    description:
+      `Their important dates, each shown in Highlights every year on its day: at most ${PERSON_DATES_MAX}, and one birthday ` +
+      '(`400 PERSON_DATE_BIRTHDAY_TWICE`). They replace the dates the person has; an empty list removes them all, left ' +
+      'out keeps them. Merging two people joins their dates, which may then be more than a save accepts.',
   })
-  @IsOptional()
-  @ValidateNested()
+  @ValidateIf((_dto, value) => value !== undefined)
+  @IsArray()
+  @ArrayMaxSize(PERSON_DATES_MAX)
+  @ValidateNested({ each: true })
   @Type(() => PersonDateInputDto)
-  date?: PersonDateInputDto | null;
+  dates?: PersonDateInputDto[];
 
   @ApiPropertyOptional({
     enum: REACH_OUT_DAYS,
@@ -125,7 +148,7 @@ export class UpdatePersonDto {
       'people joins their notes, which may then be longer than a save accepts.',
   })
   @IsOptional()
-  @Transform(trimNotes)
+  @Transform(trimOrNone)
   @IsString()
   @MaxLength(PERSON_NOTES_MAX_LENGTH)
   notes?: string | null;
@@ -164,6 +187,9 @@ export class PersonDateDto {
   @ApiProperty({ enum: PERSON_DATE_KINDS, enumName: 'PersonDateKind', example: 'birthday', description: KIND_DESCRIPTION })
   kind!: PersonDateKind;
 
+  @ApiProperty({ type: String, nullable: true, example: LABEL_EXAMPLE, description: 'What the date marks; null when the writer did not say' })
+  label!: string | null;
+
   @ApiProperty({ example: 3, minimum: 1, maximum: 12 })
   month!: number;
 
@@ -201,11 +227,12 @@ export class PersonResponseDto {
   lastMentionedOn!: string | null;
 
   @ApiProperty({
-    type: () => PersonDateDto,
-    nullable: true,
-    description: 'Their birthday or anniversary, shown in Highlights on its day; null when none is set',
+    type: () => [PersonDateDto],
+    description:
+      'Their birthday and anniversaries, each shown in Highlights on its day, through the year (a birthday first on a ' +
+      'shared day); empty when none is set',
   })
-  date!: PersonDateDto | null;
+  dates!: PersonDateDto[];
 
   @ApiProperty({
     enum: REACH_OUT_DAYS,

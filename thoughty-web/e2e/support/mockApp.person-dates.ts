@@ -6,6 +6,7 @@ import { isMockSealed } from './mockApp.routes.time-capsules';
 import { mockMentions } from './mockApp.routes.people';
 
 type PersonDateInput = components['schemas']['PersonDateInputDto'];
+type PersonDate = components['schemas']['PersonDateDto'];
 type ApiErrorCode = components['schemas']['ApiErrorCode'];
 
 const isLeap = (year: number) => daysInMonth(2, year) === 29;
@@ -29,20 +30,56 @@ export function mockPersonDateRefusal(date: PersonDateInput, now = new Date()): 
     : null;
 }
 
+/** The most dates, and the longest label, the API saves on a person. */
+const MOCK_PERSON_DATES_MAX = 10;
+const MOCK_PERSON_DATE_LABEL_MAX_LENGTH = 40;
+
+/**
+ * Why the API refuses the dates sent for a person, or null when it takes them: more than ten or a label over 40
+ * characters (`VALIDATION_FAILED`), a second birthday, then the first date that cannot be.
+ */
+export function mockPersonDatesRefusal(dates: readonly PersonDateInput[]): { code: ApiErrorCode; message: string } | null {
+  if (dates.length > MOCK_PERSON_DATES_MAX || dates.some((date) => (date.label ?? '').trim().length > MOCK_PERSON_DATE_LABEL_MAX_LENGTH)) {
+    return { code: 'VALIDATION_FAILED', message: 'dates must hold at most 10 dates with labels of at most 40 characters' };
+  }
+  if (dates.filter((date) => date.kind === 'birthday').length > 1) {
+    return { code: 'PERSON_DATE_BIRTHDAY_TWICE', message: 'A person has one birthday' };
+  }
+  return dates.map((date) => mockPersonDateRefusal(date)).find(Boolean) ?? null;
+}
+
+/** A person's dates in the API's order: through the year, a birthday before an anniversary on the same day. */
+const byDay = (left: PersonDate, right: PersonDate) => left.month - right.month || left.day - right.day
+  || Number(left.kind !== 'birthday') - Number(right.kind !== 'birthday');
+
+/** The dates as the API saves them: each label trimmed (blank for none), in their order. */
+export function mockSavedPersonDates(dates: readonly PersonDateInput[]): PersonDate[] {
+  return dates
+    .map((date) => ({ kind: date.kind, label: date.label?.trim() || null, month: date.month, day: date.day, year: date.year ?? null }))
+    .sort(byDay);
+}
+
+/** The person kept's dates after a merge: theirs, then the duplicate's but a second birthday and the dates they share. */
+export function mockMergedPersonDates(kept: readonly PersonDate[], duplicate: readonly PersonDate[]): PersonDate[] {
+  const label = (date: PersonDate) => (date.label ?? '').toLowerCase();
+  const moved = duplicate.filter((date) => !kept.some((own) => own.kind === date.kind
+    && (date.kind === 'birthday' || (own.month === date.month && own.day === date.day && label(own) === label(date)))));
+  return [...kept, ...moved].sort(byDay);
+}
+
 /**
  * Highlights' `personDates` on the writer's day, as the API builds them: the people whose date is that day
- * (29 February on 28 February in a common year), by name, with the entries that mention them outside sealed
+ * (29 February on 28 February in a common year), by name and once for each such date, with the entries that mention them outside sealed
  * capsules (the recycle bin is kept apart already) and the newest of them.
  */
 export function mockPersonDates(state: MockAppState, today: string): components['schemas']['PersonDateHighlightDto'][] {
   const [year, month, day] = today.split('-').map(Number) as [number, number, number];
   const onDay = (date: { month: number; day: number }) => (date.month === month && date.day === day)
     || (month === 2 && day === 28 && !isLeap(year) && date.month === 2 && date.day === 29);
-  return state.people
-    .filter((person) => person.date && onDay(person.date))
+  return [...state.people]
     .sort((left, right) => left.name.toLowerCase().localeCompare(right.name.toLowerCase()) || left.id - right.id)
-    .map((person) => {
-      const date = person.date!;
+    .flatMap((person) => (person.dates ?? []).filter(onDay).map((date) => ({ person, date })))
+    .map(({ person, date }) => {
       const entries = state.entries
         .filter((entry) => !isMockSealed(entry) && mockMentions(entry, person))
         .sort((left, right) => right.date.localeCompare(left.date) || right.index - left.index);

@@ -14,7 +14,7 @@ export const createPeopleService = (authFetch: AuthFetchFunction) => ({
   },
 
   /**
-   * Changes the name shown and sets their birthday or anniversary, their reach-out reminder and their last contact
+   * Changes the name shown and sets their dates, their reach-out reminder and their last contact
    * (null removes each, leaving it out keeps it); the person's handles and the entries' text stay as they are.
    */
   update(id: number, body: components['schemas']['UpdatePersonDto']): Promise<ServiceResult<Person>> {

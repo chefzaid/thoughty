@@ -7,7 +7,7 @@ import type { Person } from '../../services/api';
 import { getTranslation } from '../../utils/translations';
 
 const person = (id: number, name: string, groups: string[] = []): Person => ({
-  id, name, handles: [name.toLowerCase()], entryCount: 1, lastMentionedOn: null, date: null, reachOutDays: null, lastContactOn: null,
+  id, name, handles: [name.toLowerCase()], entryCount: 1, lastMentionedOn: null, dates: [], reachOutDays: null, lastContactOn: null,
   notes: null, groups, createdAt: '', updatedAt: '',
 });
 

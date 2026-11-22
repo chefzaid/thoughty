@@ -8,7 +8,7 @@ const ENTRIES = [
 ];
 
 const person = (id: number, name: string, groups: string[] = []): MockPerson => ({
-  id, name, handles: [name.toLowerCase()], date: null, groups, createdAt: '2026-01-01T09:00:00.000Z', updatedAt: '2026-01-01T09:00:00.000Z',
+  id, name, handles: [name.toLowerCase()], groups, createdAt: '2026-01-01T09:00:00.000Z', updatedAt: '2026-01-01T09:00:00.000Z',
 });
 
 async function expectNoAxeViolations(page: Page, selector: string) {

@@ -2,16 +2,17 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository, type EntityManager } from 'typeorm';
 import { apiError } from '@/common/errors';
-import { Person } from '@/database/entities';
+import { Person, PersonDate } from '@/database/entities';
 import { PEOPLE_LIMIT, PEOPLE_LOCK_NAMESPACE } from '@/modules/entries';
 import { MergePersonDto, PersonListResponseDto, PersonResponseDto, UpdatePersonDto } from './dto';
-import { assertValidPersonDate, toPersonDate, type PersonDateColumns } from './person-dates';
+import { assertValidPersonDates, PERSON_DATES_JSON_SQL, toPersonDate, type PersonDateColumns } from './person-dates';
 import { normalizePersonGroups } from './person-groups';
 import { assertValidContactDay } from './person-reach-out';
 import { hideLockedEntriesSql } from '@/common/content-lock';
 
-interface PersonRow extends PersonDateColumns {
+interface PersonRow {
   id: number;
+  dates: PersonDateColumns[];
   name: string;
   handles: string[] | null;
   entryCount: number;
@@ -30,7 +31,7 @@ interface PersonRow extends PersonDateColumns {
  */
 const personSummarySql = (lockFilter: string) => `
   SELECT p.id, p.name, p.created_at AS "createdAt", p.updated_at AS "updatedAt",
-         p.date_kind AS "dateKind", p.date_month AS "dateMonth", p.date_day AS "dateDay", p.date_year AS "dateYear",
+         ${PERSON_DATES_JSON_SQL} AS dates,
          p.reach_out_days AS "reachOutDays", to_char(p.last_contact_on, 'YYYY-MM-DD') AS "lastContactOn", p.notes, p.groups,
          (SELECT array_agg(h.handle ORDER BY h.created_at, h.handle) FROM person_handles h WHERE h.person_id = p.id) AS handles,
          COUNT(e.id)::int AS "entryCount",
@@ -44,7 +45,7 @@ const personSummarySql = (lockFilter: string) => `
 
 /**
  * The people the writer mentions. Mentions add them (see `syncEntryMentions`); here they are listed,
- * renamed, given a birthday or an anniversary, a reach-out reminder, notes and groups, marked as contacted, merged and deleted. Text is never rewritten: renaming
+ * renamed, given a birthday and anniversaries, a reach-out reminder, notes and groups, marked as contacted, merged and deleted. Text is never rewritten: renaming
  * changes the name shown, merging moves a duplicate's handles to the person kept, and deleting unlinks
  * their entries and leaves `@handle` in the text.
  */
@@ -60,13 +61,16 @@ export class PeopleService {
   }
 
   /**
-   * Changes the name shown and, for each of them given, their birthday or anniversary, their reach-out reminder,
-   * their last contact and the writer's notes (null removes it), and their groups (an empty list removes them).
+   * Changes the name shown and, for each of them given, their reach-out reminder, their last contact and the writer's
+   * notes (null removes it), and their groups and their important dates (an empty list removes them).
    */
   async update(userId: number, id: number, dto: UpdatePersonDto, now = new Date()): Promise<PersonResponseDto> {
     const person = await this.findOwn(userId, id);
     if (dto.lastContactOn) {
       assertValidContactDay(dto.lastContactOn, now);
+    }
+    if (dto.dates) {
+      assertValidPersonDates(dto.dates, now);
     }
     person.name = dto.name;
     if (dto.reachOutDays !== undefined) {
@@ -81,18 +85,19 @@ export class PeopleService {
     if (dto.groups !== undefined) {
       person.groups = normalizePersonGroups(dto.groups, await this.groupsOfOthers(userId, id));
     }
-    if (dto.date !== undefined) {
-      const date = dto.date;
-      if (date) {
-        assertValidPersonDate(date, now);
+    const dates = dto.dates;
+    return this.personRepository.manager.transaction(async (manager) => {
+      await manager.getRepository(Person).save(person);
+      if (dates) {
+        const repository = manager.getRepository(PersonDate);
+        await repository.delete({ personId: id });
+        const rows = dates.map(({ kind, label, month, day, year }) => ({ personId: id, kind, label: label ?? null, month, day, year: year ?? null }));
+        if (rows.length) {
+          await repository.insert(rows);
+        }
       }
-      person.dateKind = date?.kind ?? null;
-      person.dateMonth = date?.month ?? null;
-      person.dateDay = date?.day ?? null;
-      person.dateYear = date?.year ?? null;
-    }
-    await this.personRepository.save(person);
-    return this.summary(this.personRepository.manager, userId, id);
+      return this.summary(manager, userId, id);
+    });
   }
 
   /** Records the writer's day `today` (already checked as theirs) as the last contact, which ends a due reach-out. */
@@ -104,9 +109,10 @@ export class PeopleService {
   }
 
   /**
-   * Moves a duplicate's handles, entries and (when the person has none) date and reach-out reminder to the person,
-   * keeps the later of their last contacts, adds the duplicate's notes after the person's and the duplicate's groups the
-   * person is not in (ignoring case) after theirs, then deletes the duplicate.
+   * Moves a duplicate's handles, entries, dates (but a second birthday or a date the person already has) and, when the
+   * person has none, reach-out reminder to the person, keeps the later of their last contacts, adds the duplicate's
+   * notes after the person's and the duplicate's groups the person is not in (ignoring case) after theirs, then deletes
+   * the duplicate.
    */
   async merge(userId: number, id: number, dto: MergePersonDto): Promise<PersonResponseDto> {
     const duplicateId = dto.duplicateId;
@@ -121,10 +127,16 @@ export class PeopleService {
         throw apiError(NotFoundException, 'PERSON_NOT_FOUND');
       }
       await manager.query('UPDATE person_handles SET person_id = $1 WHERE person_id = $2', [id, duplicateId]);
-      // The person kept keeps their own date, and takes the duplicate's when they have none
+      // The person kept keeps their own dates and takes the duplicate's others: not a second birthday, nor a date
+      // they already have (the same kind, day and label ignoring case), which go with the duplicate
       await manager.query(
-        `UPDATE people p SET date_kind = d.date_kind, date_month = d.date_month, date_day = d.date_day, date_year = d.date_year
-           FROM people d WHERE p.id = $1 AND d.id = $2 AND p.date_month IS NULL AND d.date_month IS NOT NULL`,
+        `UPDATE person_dates d SET person_id = $1
+          WHERE d.person_id = $2
+            AND NOT EXISTS (
+              SELECT 1 FROM person_dates own
+               WHERE own.person_id = $1 AND own.kind = d.kind
+                 AND (d.kind = 'birthday' OR (own.month = d.month AND own.day = d.day
+                      AND lower(COALESCE(own.label, '')) = lower(COALESCE(d.label, '')))))`,
         [id, duplicateId],
       );
       await manager.query(
@@ -202,7 +214,7 @@ export class PeopleService {
       handles: row.handles ?? [],
       entryCount: Number(row.entryCount),
       lastMentionedOn: row.lastMentionedOn,
-      date: toPersonDate(row),
+      dates: row.dates.map(toPersonDate),
       reachOutDays: row.reachOutDays === null ? null : Number(row.reachOutDays),
       lastContactOn: row.lastContactOn,
       notes: row.notes,

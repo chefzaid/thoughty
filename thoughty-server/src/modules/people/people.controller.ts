@@ -23,7 +23,7 @@ export class PeopleController {
   @Patch(':id')
   @ApiOperation({
     summary:
-      'Change the name shown for a person, their birthday or anniversary, their reach-out reminder, their last contact, ' +
+      'Change the name shown for a person, their birthday and anniversaries, their reach-out reminder, their last contact, ' +
       'the writer’s notes on them and the groups they belong to; ' +
       'their handles and the entries’ text stay as they are',
   })
@@ -32,7 +32,9 @@ export class PeopleController {
   @ApiResponse({
     status: 400,
     description:
-      'Invalid name, reminder, notes (more than 2,000 characters) or groups (more than 10, or a name over 40 characters), a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), ' +
+      'Invalid name, reminder, notes (more than 2,000 characters), groups (more than 10, or a name over 40 characters) or ' +
+      'dates (more than 10, or a label over 40 characters), a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, ' +
+      'PERSON_DATE_IN_FUTURE), a second birthday (PERSON_DATE_BIRTHDAY_TWICE), ' +
       'or a last contact after today (PERSON_CONTACT_IN_FUTURE)',
   })
   @ApiResponse({ status: 404, description: 'Person not found' })
@@ -61,7 +63,7 @@ export class PeopleController {
 
   @Post(':id/merge')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Merge a duplicate into this person: its handles and entries move here, its notes and groups follow theirs, then it is deleted' })
+  @ApiOperation({ summary: 'Merge a duplicate into this person: its handles and entries move here, its notes, groups and dates follow theirs, then it is deleted' })
   @ApiParam({ name: 'id', type: Number, description: 'The person kept' })
   @ApiResponse({ status: 200, description: 'The person kept, with the duplicate merged in', type: PersonResponseDto })
   @ApiResponse({ status: 400, description: 'A person cannot be merged into themselves' })

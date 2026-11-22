@@ -1,4 +1,5 @@
 import { invalidPropertiesLikeApi, parseLikeApi } from '@/common/validation/dto-validation.test-helpers';
+import { PERSON_DATE_LABEL_MAX_LENGTH, PERSON_DATES_MAX } from '../person-dates';
 import { PERSON_GROUP_NAME_MAX_LENGTH, PERSON_GROUPS_MAX } from '../person-groups';
 import { MergePersonDto, PERSON_NAME_MAX_LENGTH, PERSON_NOTES_MAX_LENGTH, UpdatePersonDto } from './person.dto';
 import { MarkPersonContactedDto } from './person-reach-out.dto';
@@ -17,21 +18,31 @@ describe('person DTOs', () => {
     await expect(invalidPropertiesLikeApi(UpdatePersonDto, { name: 'Marie', handles: ['m'] })).resolves.toEqual(['handles']);
   });
 
-  it('takes an optional date with its kind, month and day, and the year when known; null removes it', async () => {
-    const withDate = (date: unknown) => invalidPropertiesLikeApi(UpdatePersonDto, { name: 'Marie', date });
+  it('takes optional dates, each with its kind, month and day, a label and the year when known; an empty list removes them', async () => {
+    const withDates = (dates: unknown) => invalidPropertiesLikeApi(UpdatePersonDto, { name: 'Marie', dates });
+    const birthday = { kind: 'birthday', month: 3, day: 14 };
 
-    await expect(withDate({ kind: 'birthday', month: 3, day: 14, year: 1992 })).resolves.toEqual([]);
-    await expect(withDate({ kind: 'anniversary', month: 2, day: 29 })).resolves.toEqual([]);
-    await expect(withDate({ kind: 'birthday', month: 2, day: 29, year: null })).resolves.toEqual([]);
-    await expect(withDate(null)).resolves.toEqual([]);
-    await expect(parseLikeApi(UpdatePersonDto, { name: 'Marie', date: { kind: 'birthday', month: '3', day: '14' } }))
-      .resolves.toMatchObject({ date: { kind: 'birthday', month: 3, day: 14 } });
-    await expect(withDate({ kind: 'nameday', month: 3, day: 14 })).resolves.toEqual(['date.kind']);
-    await expect(withDate({ kind: 'birthday', month: 3.5, day: '' })).resolves.toEqual(['date.month', 'date.day']);
-    await expect(withDate({ kind: 'birthday', month: 3, day: 14, year: 'ninety' })).resolves.toEqual(['date.year']);
-    await expect(withDate({ kind: 'birthday', day: 14 })).resolves.toEqual(['date.month']);
-    await expect(withDate({ kind: 'birthday', month: 3, day: 14, label: 'x' })).resolves.toEqual(['date.label']);
-    await expect(withDate('2026-03-14')).resolves.toEqual(['date']);
+    await expect(withDates([{ ...birthday, year: 1992 }, { kind: 'anniversary', label: 'Wedding', month: 2, day: 29 }])).resolves.toEqual([]);
+    await expect(withDates([{ ...birthday, year: null, label: null }])).resolves.toEqual([]);
+    await expect(withDates([])).resolves.toEqual([]);
+    await expect(withDates(Array.from({ length: PERSON_DATES_MAX }, () => ({ ...birthday, kind: 'anniversary' })))).resolves.toEqual([]);
+    await expect(withDates([{ ...birthday, label: 'l'.repeat(PERSON_DATE_LABEL_MAX_LENGTH) }])).resolves.toEqual([]);
+    await expect(parseLikeApi(UpdatePersonDto, { name: 'Marie', dates: [{ kind: 'anniversary', month: '3', day: '14', label: '  First met ' }] }))
+      .resolves.toMatchObject({ dates: [{ kind: 'anniversary', month: 3, day: 14, label: 'First met' }] });
+    await expect(parseLikeApi(UpdatePersonDto, { name: 'Marie', dates: [{ ...birthday, label: '   ' }] }))
+      .resolves.toMatchObject({ dates: [{ label: null }] });
+    await expect(withDates(Array.from({ length: PERSON_DATES_MAX + 1 }, () => birthday))).resolves.toEqual(['dates']);
+    await expect(withDates([{ ...birthday, kind: 'nameday' }])).resolves.toEqual(['dates.0.kind']);
+    await expect(withDates([birthday, { kind: 'birthday', month: 3.5, day: '' }])).resolves.toEqual(['dates.1.month', 'dates.1.day']);
+    await expect(withDates([{ ...birthday, year: 'ninety' }])).resolves.toEqual(['dates.0.year']);
+    await expect(withDates([{ kind: 'birthday', day: 14 }])).resolves.toEqual(['dates.0.month']);
+    await expect(withDates([{ ...birthday, label: 'l'.repeat(PERSON_DATE_LABEL_MAX_LENGTH + 1) }])).resolves.toEqual(['dates.0.label']);
+    await expect(withDates([{ ...birthday, label: 5 }])).resolves.toEqual(['dates.0.label']);
+    await expect(withDates([{ ...birthday, note: 'x' }])).resolves.toEqual(['dates.0.note']);
+    for (const dates of [null, '2026-03-14', birthday]) {
+      await expect(withDates(dates)).resolves.toEqual(['dates']);
+    }
+    await expect(invalidPropertiesLikeApi(UpdatePersonDto, { name: 'Marie', date: birthday })).resolves.toEqual(['date']);
   });
 
   it('takes an optional reach-out reminder from the offered intervals and an optional last contact day; null removes each', async () => {

@@ -106,7 +106,7 @@ describe('ThoughtOfTheDay', () => {
                 onThisDay: {},
                 openedCapsules: [{ entry: capsule, sealed_at: '2025-10-27T12:00:00Z', opened_at: '2026-10-27T07:00:00Z', opened_early: false }],
                 rereadReminders: [],
-                personDates: [{ id: 5, name: 'Marie', date: { kind: 'birthday', month: 3, day: 14, year: 1992 }, years: 34, entryCount: 2, latestEntry: latest }],
+                personDates: [{ id: 5, name: 'Marie', date: { kind: 'birthday', label: null, month: 3, day: 14, year: 1992 }, years: 34, entryCount: 2, latestEntry: latest }],
             }),
         });
         const onNavigateToEntry = vi.fn();
@@ -132,7 +132,7 @@ describe('ThoughtOfTheDay', () => {
                 onThisDay: {},
                 openedCapsules: [],
                 rereadReminders: [],
-                personDates: [{ id: 5, name: 'Marie', date: { kind: 'birthday', month: 3, day: 14, year: null }, years: null, entryCount: 1, latestEntry: latest }],
+                personDates: [{ id: 5, name: 'Marie', date: { kind: 'birthday', label: null, month: 3, day: 14, year: null }, years: null, entryCount: 1, latestEntry: latest }],
                 reachOuts: [{ id: 6, name: 'Paul', reachOutDays: 30, lastContactOn: null, lastMentionedOn: '2026-01-01', daysSince: 72 }],
             }),
         });

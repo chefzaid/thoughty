@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { expectApiError } from '@/common/errors/api-error.test-helpers';
-import { assertValidPersonDate, daysInMonth, isLeapYear, personDateDaysOn, toPersonDate, yearsOn } from './person-dates';
+import { assertValidPersonDate, assertValidPersonDates, daysInMonth, isLeapYear, personDateDaysOn, toPersonDate, yearsOn } from './person-dates';
 
 describe('person dates', () => {
   const now = new Date('2026-10-31T10:30:00Z');
@@ -47,9 +47,17 @@ describe('person dates', () => {
     expect(yearsOn(null, '2026-03-14')).toBeNull();
   });
 
-  it('reads a date from its columns, as numbers, or null when none is set', () => {
-    expect(toPersonDate({ dateKind: 'birthday', dateMonth: '3', dateDay: '14', dateYear: '1992' })).toEqual({ kind: 'birthday', month: 3, day: 14, year: 1992 });
-    expect(toPersonDate({ dateKind: 'anniversary', dateMonth: 6, dateDay: 1, dateYear: null })).toEqual({ kind: 'anniversary', month: 6, day: 1, year: null });
-    expect(toPersonDate({ dateKind: null, dateMonth: null, dateDay: null, dateYear: null })).toBeNull();
+  it('reads a date from its columns, as numbers', () => {
+    expect(toPersonDate({ kind: 'birthday', label: null, month: '3', day: '14', year: '1992' })).toEqual({ kind: 'birthday', label: null, month: 3, day: 14, year: 1992 });
+    expect(toPersonDate({ kind: 'anniversary', label: 'Wedding', month: 6, day: 1, year: null })).toEqual({ kind: 'anniversary', label: 'Wedding', month: 6, day: 1, year: null });
+  });
+
+  it('refuses a second birthday before any impossible date, and takes any number of anniversaries', async () => {
+    const anniversary = { kind: 'anniversary' as const, month: 6, day: 1 };
+    const checkAll = (dates: Parameters<typeof assertValidPersonDates>[0]) => Promise.resolve().then(() => assertValidPersonDates(dates, now));
+    await expectApiError(checkAll([{ kind: 'birthday', month: 4, day: 31 }, { kind: 'birthday', month: 3, day: 14 }]), BadRequestException, 'PERSON_DATE_BIRTHDAY_TWICE');
+    await expectApiError(checkAll([anniversary, { ...anniversary, month: 4, day: 31 }]), BadRequestException, 'PERSON_DATE_INVALID');
+    expect(() => assertValidPersonDates([anniversary, anniversary, { kind: 'birthday', month: 3, day: 14 }], now)).not.toThrow();
+    expect(() => assertValidPersonDates([], now)).not.toThrow();
   });
 });

@@ -1,20 +1,26 @@
 import type { Language } from './translations';
 
-/** Birthdays and anniversaries on people: the People page editor and the Highlights section. */
+/** Birthdays and anniversaries on people (their important dates): the People page editor and the Highlights section. */
 export type PersonDatesTranslationKey =
-  | 'personDateLegend'
-  | 'personDateHelp'
+  | 'personDatesLegend'
+  | 'personDatesHelp'
+  | 'personDatesNone'
+  | 'personDatesFull'
+  | 'personDatesTooMany'
+  | 'personDateNumber'
+  | 'personDateAdd'
+  | 'personDateRemove'
   | 'personDateKindLabel'
-  | 'personDateKindNone'
+  | 'personDateLabelLabel'
   | 'personDateKind_birthday'
   | 'personDateKind_anniversary'
   | 'personDateMonthLabel'
   | 'personDateDayLabel'
   | 'personDateChoose'
   | 'personDateYearLabel'
-  | 'personDateYearHelp'
   | 'personDateIncomplete'
   | 'personDateShown'
+  | 'personDateShownLabeled'
   | 'personDateSaved'
   | 'personDatesHighlightsTitle'
   | 'personDateAge_one'
@@ -28,19 +34,25 @@ export type PersonDatesTranslationKey =
 
 export const personDatesTranslations: Record<Language, Record<PersonDatesTranslationKey, string>> = {
   en: {
-    personDateLegend: 'Birthday or anniversary',
-    personDateHelp: 'Highlights shows {name} on this day each year, with the entries about them. A date on 29 February comes on 28 February in other years.',
-    personDateKindLabel: 'Date',
-    personDateKindNone: 'None',
+    personDatesLegend: 'Important dates',
+    personDatesHelp: 'A birthday, and anniversaries such as a wedding or the day you met: Highlights shows {name} on each of these days every year, with the entries about them. Leave the year empty if you do not know it. A date on 29 February comes on 28 February in other years.',
+    personDatesNone: 'No date yet.',
+    personDatesFull: '{name} has {max} dates, the most you can keep.',
+    personDatesTooMany: 'Keep at most {max} dates.',
+    personDateNumber: 'Date {number}',
+    personDateAdd: 'Add a date',
+    personDateRemove: 'Remove date {number}',
+    personDateKindLabel: 'Kind',
+    personDateLabelLabel: 'What it marks (optional)',
     personDateKind_birthday: 'Birthday',
     personDateKind_anniversary: 'Anniversary',
     personDateMonthLabel: 'Month',
     personDateDayLabel: 'Day',
     personDateChoose: 'Choose…',
     personDateYearLabel: 'Year (optional)',
-    personDateYearHelp: 'Leave it empty if you do not know the year.',
     personDateIncomplete: 'Choose the month and the day.',
     personDateShown: '{kind}: {date}',
+    personDateShownLabeled: '{kind} ({label}): {date}',
     personDateSaved: 'Saved for {name}.',
     personDatesHighlightsTitle: 'Birthdays and anniversaries',
     personDateAge_one: 'Turns {count} today',
@@ -53,19 +65,25 @@ export const personDatesTranslations: Record<Language, Record<PersonDatesTransla
     personDateLatestEntry: 'Most recent entry',
   },
   fr: {
-    personDateLegend: 'Anniversaire ou date anniversaire',
-    personDateHelp: 'Les Moments forts montrent {name} ce jour-là chaque année, avec les entrées qui en parlent. Une date au 29 février revient le 28 février les autres années.',
-    personDateKindLabel: 'Date',
-    personDateKindNone: 'Aucune',
+    personDatesLegend: 'Dates importantes',
+    personDatesHelp: 'Un anniversaire, et des dates anniversaires comme un mariage ou le jour de votre rencontre : les Moments forts montrent {name} chacun de ces jours, tous les ans, avec les entrées qui en parlent. Laissez l’année vide si vous ne la connaissez pas. Une date au 29 février revient le 28 février les autres années.',
+    personDatesNone: 'Aucune date pour l’instant.',
+    personDatesFull: '{name} a {max} dates, le maximum possible.',
+    personDatesTooMany: 'Gardez au plus {max} dates.',
+    personDateNumber: 'Date {number}',
+    personDateAdd: 'Ajouter une date',
+    personDateRemove: 'Retirer la date {number}',
+    personDateKindLabel: 'Type',
+    personDateLabelLabel: 'Ce qu’elle marque (facultatif)',
     personDateKind_birthday: 'Anniversaire',
     personDateKind_anniversary: 'Date anniversaire',
     personDateMonthLabel: 'Mois',
     personDateDayLabel: 'Jour',
     personDateChoose: 'Choisir…',
     personDateYearLabel: 'Année (facultative)',
-    personDateYearHelp: 'Laissez vide si vous ne connaissez pas l’année.',
     personDateIncomplete: 'Choisissez le mois et le jour.',
     personDateShown: '{kind} : {date}',
+    personDateShownLabeled: '{kind} ({label}) : {date}',
     personDateSaved: 'Enregistré pour {name}.',
     personDatesHighlightsTitle: 'Anniversaires du jour',
     personDateAge_one: 'A {count} an aujourd’hui',

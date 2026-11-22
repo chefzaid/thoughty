@@ -8,7 +8,7 @@ import type { Person } from '../../services/api';
 import { peopleByHandle } from '../../utils/mentions';
 import { getTranslation } from '../../utils/translations';
 
-const marie: Person = { id: 12, name: 'Marie', handles: ['marie'], entryCount: 3, lastMentionedOn: null, date: null, reachOutDays: null, lastContactOn: null, notes: null, groups: [], createdAt: '', updatedAt: '' };
+const marie: Person = { id: 12, name: 'Marie', handles: ['marie'], entryCount: 3, lastMentionedOn: null, dates: [], reachOutDays: null, lastContactOn: null, notes: null, groups: [], createdAt: '', updatedAt: '' };
 
 function Composer({ language, format = 'plain' }: { language?: string; format?: 'plain' | 'markdown' }) {
     const [text, setText] = useState('');

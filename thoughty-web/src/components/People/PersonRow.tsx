@@ -7,9 +7,12 @@ import { formatEraDate } from '../../utils/lifeEras';
 import { personJournalPath } from '../../utils/mentions';
 import {
   formatPersonDate,
-  personDateDraft,
-  readPersonDateDraft,
-  samePersonDate,
+  personDateDrafts,
+  PERSON_DATES_MAX,
+  readPersonDateDrafts,
+  samePersonDates,
+  type PersonDate,
+  type PersonDateDraft,
   type PersonDateInput,
 } from '../../utils/personDates';
 import {
@@ -24,7 +27,7 @@ import { reachOutDraft, readReachOutDraft, type ReachOutDays } from '../../utils
 import { writersToday } from '../../utils/entryDate';
 import { mutedTextClass } from '../../utils/tintedText';
 import type { Language } from '../../utils/translations';
-import PersonDateFields from './PersonDateFields';
+import PersonDatesFields from './PersonDatesFields';
 import PersonGroupsField from './PersonGroupsField';
 import PersonNotesField, { PERSON_NOTES_MAX_LENGTH } from './PersonNotesField';
 import PersonReachOutFields from './PersonReachOutFields';
@@ -33,12 +36,12 @@ import PersonReachOutFields from './PersonReachOutFields';
 const MAX_NAME_LENGTH = 80;
 
 /**
- * What the editor saves: the name shown, and the date, reminder, last contact and notes that changed (null removes
- * each), and the groups when they changed.
+ * What the editor saves: the name shown, and the reminder, last contact and notes that changed (null removes each),
+ * and the dates and the groups when they changed.
  */
 export interface PersonChanges {
   readonly name: string;
-  readonly date?: PersonDateInput | null;
+  readonly dates?: PersonDateInput[];
   readonly reachOutDays?: ReachOutDays | null;
   readonly lastContactOn?: string | null;
   readonly notes?: string | null;
@@ -67,22 +70,28 @@ interface PersonRowProps {
   readonly onDelete: () => void;
 }
 
+/** A person's date on their row: "Birthday: March 14, 1992", or "Anniversary (Wedding): June 2, 2012" with a label. */
+function dateLine(date: PersonDate, language: Language, t: TranslationFunction): string {
+  const params = { kind: t(`personDateKind_${date.kind}`), date: formatPersonDate(date, language) };
+  return date.label ? t('personDateShownLabeled', { ...params, label: date.label }) : t('personDateShown', params);
+}
+
 /**
- * One person on the People page: their name opens their entries; the name shown, their birthday or
- * anniversary, their reach-out reminder, the writer's notes on them and their groups can be changed in place.
+ * One person on the People page: their name opens their entries; the name shown, their birthday and
+ * anniversaries, their reach-out reminder, the writer's notes on them and their groups can be changed in place.
  */
 export default function PersonRow({ person, canMerge, groups: allGroups, theme, language, t, onSave, onMerge, onDelete }: PersonRowProps) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(person.name);
-  const [dateDraft, setDateDraft] = useState(() => personDateDraft(person.date));
+  const [dateDrafts, setDateDrafts] = useState<PersonDateDraft[]>(() => personDateDrafts(person.dates));
   const [reachOut, setReachOut] = useState(() => reachOutDraft(person));
   const [notes, setNotes] = useState(person.notes ?? '');
   const [groups, setGroups] = useState<readonly string[]>(person.groups);
   const [pendingGroup, setPendingGroup] = useState('');
-  const [error, setError] = useState<{ field: EditorField; message: string } | null>(null);
+  const [error, setError] = useState<{ field: EditorField; message: string; index: number } | null>(null);
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const kindRef = useRef<HTMLSelectElement>(null);
+  const datesRef = useRef<HTMLFieldSetElement>(null);
   const lastContactRef = useRef<HTMLInputElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
   const groupRef = useRef<HTMLInputElement>(null);
@@ -106,7 +115,7 @@ export default function PersonRow({ person, canMerge, groups: allGroups, theme, 
 
   const startEditing = () => {
     setName(person.name);
-    setDateDraft(personDateDraft(person.date));
+    setDateDrafts(personDateDrafts(person.dates));
     setReachOut(reachOutDraft(person));
     setNotes(person.notes ?? '');
     setGroups(person.groups);
@@ -120,9 +129,15 @@ export default function PersonRow({ person, canMerge, groups: allGroups, theme, 
     globalThis.setTimeout(() => editButtonRef.current?.focus(), 0);
   };
 
-  const fail = (field: EditorField, message: string) => {
-    setError({ field, message });
-    ({ name: inputRef, date: kindRef, reachOut: lastContactRef, notes: notesRef, groups: groupRef })[field].current?.focus();
+  /** Shows why the save failed and moves the focus to the field it is about: for a date, the kind of date `index`. */
+  const fail = (field: EditorField, message: string, index = 0) => {
+    setError({ field, message, index });
+    if (field === 'date') {
+      const dates = datesRef.current;
+      (dates?.querySelectorAll<HTMLElement>('[data-person-date-kind]')[index] ?? dates?.querySelector<HTMLElement>('[data-person-date-add]'))?.focus();
+      return;
+    }
+    ({ name: inputRef, reachOut: lastContactRef, notes: notesRef, groups: groupRef })[field].current?.focus();
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -132,9 +147,15 @@ export default function PersonRow({ person, canMerge, groups: allGroups, theme, 
       fail('name', t('personNameRequired'));
       return;
     }
-    const read = readPersonDateDraft(dateDraft);
+    const read = readPersonDateDrafts(dateDrafts, today);
     if ('error' in read) {
-      fail('date', t(read.error));
+      fail('date', t(read.error), read.index);
+      return;
+    }
+    // Dates a merge joined past the limit stay as they are until the writer changes them
+    const datesChanged = !samePersonDates(read.dates, person.dates);
+    if (datesChanged && read.dates.length > PERSON_DATES_MAX) {
+      fail('date', t('personDatesTooMany', { max: PERSON_DATES_MAX }), PERSON_DATES_MAX);
       return;
     }
     const readReachOut = readReachOutDraft(reachOut, today);
@@ -158,7 +179,7 @@ export default function PersonRow({ person, canMerge, groups: allGroups, theme, 
     if (saving) return;
     const changes: PersonChanges = {
       name: trimmed,
-      ...(samePersonDate(read.date, person.date) ? {} : { date: read.date }),
+      ...(datesChanged ? { dates: read.dates } : {}),
       ...(readReachOut.reachOutDays === person.reachOutDays ? {} : { reachOutDays: readReachOut.reachOutDays }),
       ...(readReachOut.lastContactOn === person.lastContactOn ? {} : { lastContactOn: readReachOut.lastContactOn }),
       ...(savedNotes === person.notes ? {} : { notes: savedNotes }),
@@ -211,15 +232,15 @@ export default function PersonRow({ person, canMerge, groups: allGroups, theme, 
             />
             <p className={`mt-1 text-xs ${muted}`}>{t('personNameHelp')}</p>
           </div>
-          <PersonDateFields
+          <PersonDatesFields
             name={name.trim() || person.name}
-            draft={dateDraft}
-            onChange={setDateDraft}
+            drafts={dateDrafts}
+            onChange={setDateDrafts}
             isDark={isDark}
             language={language}
             t={t}
-            errorId={error?.field === 'date' ? errorId : undefined}
-            kindRef={kindRef}
+            error={error?.field === 'date' ? { id: errorId, index: error.index } : undefined}
+            fieldsetRef={datesRef}
           />
           <PersonReachOutFields
             name={name.trim() || person.name}
@@ -283,9 +304,9 @@ export default function PersonRow({ person, canMerge, groups: allGroups, theme, 
                 ))}
               </ul>
             )}
-            {person.date && (
+            {person.dates.length > 0 && (
               <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                {t('personDateShown', { kind: t(`personDateKind_${person.date.kind}`), date: formatPersonDate(person.date, language) })}
+                {person.dates.map((date) => dateLine(date, language, t)).join(' · ')}
               </p>
             )}
             {reachOutLine && <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{reachOutLine}</p>}

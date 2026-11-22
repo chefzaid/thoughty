@@ -41,12 +41,15 @@ describePostgres('PostgreSQL birthdays and anniversaries', () => {
     (await bed.journal.create(userId, { date, text, tags: [], ...extra })).entryId;
   const personNamed = async (name: string, userId = writerId) =>
     (await bed.people.list(userId)).people.find((person) => person.name === name)!;
-  const setDate = async (name: string, date: { kind: 'birthday' | 'anniversary'; month: number; day: number; year?: number | null }, userId = writerId) =>
-    bed.people.update(userId, (await personNamed(name, userId)).id, { name, date }, new Date('2026-10-31T10:30:00Z'));
+  type DateInput = { kind: 'birthday' | 'anniversary'; label?: string | null; month: number; day: number; year?: number | null };
+  const setDates = async (name: string, dates: DateInput[], userId = writerId) =>
+    bed.people.update(userId, (await personNamed(name, userId)).id, { name, dates }, new Date('2026-10-31T10:30:00Z'));
+  const setDate = async (name: string, date: DateInput, userId = writerId) => setDates(name, [date], userId);
   const peopleOn = async (today: string, diaryId?: number, userId = writerId) =>
     (await bed.journal.getHighlights(userId, { today, diaryId })).personDates.map((person) => ({
       name: person.name,
       kind: person.date.kind,
+      ...(person.date.label ? { label: person.date.label } : {}),
       years: person.years,
       entryCount: person.entryCount,
       latest: person.latestEntry?.content ?? null,
@@ -90,8 +93,8 @@ describePostgres('PostgreSQL birthdays and anniversaries', () => {
     // A leap day the year never had is refused, by the API and by the database
     await expectApiError(setDate('Mia', { kind: 'birthday', month: 2, day: 29, year: 2001 }), BadRequestException, 'PERSON_DATE_INVALID');
     await expect(dataSource.query(
-      "UPDATE people SET date_kind = 'birthday', date_month = 2, date_day = 29, date_year = 2001 WHERE name = 'Mia'",
-    )).rejects.toThrow(/chk_people_date_year/);
+      "UPDATE person_dates SET month = 2, day = 29, year = 2001 WHERE person_id = (SELECT id FROM people WHERE name = 'Mia')",
+    )).rejects.toThrow(/chk_person_dates_year/);
   });
 
   it('counts every diary but never the recycle bin or a sealed time capsule, and links the newest entry left', async () => {
@@ -123,7 +126,32 @@ describePostgres('PostgreSQL birthdays and anniversaries', () => {
     await expect(peopleOn('2026-03-14')).resolves.toEqual([{ name: 'Marie', kind: 'anniversary', years: null, entryCount: 0, latest: null }]);
   });
 
-  it('keeps, replaces, removes and merges dates, refusing a year still to come anywhere on Earth', async () => {
+  it('shows a person once for each of their dates on the day, a birthday first, with what each marks', async () => {
+    await write('2025-06-01', 'Dinner with @Marie and @Paul.');
+    await setDates('Marie', [
+      { kind: 'anniversary', label: 'First met', month: 3, day: 14, year: 2010 },
+      { kind: 'anniversary', label: 'Wedding', month: 6, day: 2, year: 2012 },
+      { kind: 'birthday', month: 3, day: 14, year: 1992 },
+    ]);
+    await setDate('Paul', { kind: 'anniversary', label: 'Moved to Lyon', month: 6, day: 2 });
+
+    await expect(peopleOn('2026-03-14')).resolves.toEqual([
+      { name: 'Marie', kind: 'birthday', years: 34, entryCount: 1, latest: 'Dinner with @Marie and @Paul.' },
+      { name: 'Marie', kind: 'anniversary', label: 'First met', years: 16, entryCount: 1, latest: 'Dinner with @Marie and @Paul.' },
+    ]);
+    await expect(peopleOn('2026-06-02')).resolves.toEqual([
+      expect.objectContaining({ name: 'Marie', label: 'Wedding', years: 14 }),
+      expect.objectContaining({ name: 'Paul', label: 'Moved to Lyon', years: null }),
+    ]);
+    // The People page lists them through the year, the birthday before the anniversary on its day
+    expect((await personNamed('Marie')).dates).toEqual([
+      { kind: 'birthday', label: null, month: 3, day: 14, year: 1992 },
+      { kind: 'anniversary', label: 'First met', month: 3, day: 14, year: 2010 },
+      { kind: 'anniversary', label: 'Wedding', month: 6, day: 2, year: 2012 },
+    ]);
+  });
+
+  it('keeps, replaces, removes and merges dates, refusing a year still to come anywhere on Earth and a second birthday', async () => {
     await write('2025-03-01', 'Lunch with @Marie and @MarieC.');
     const marie = await personNamed('Marie');
     await setDate('Marie', { kind: 'birthday', month: 11, day: 1, year: 2026 });
@@ -131,24 +159,45 @@ describePostgres('PostgreSQL birthdays and anniversaries', () => {
     await expectApiError(setDate('Marie', { kind: 'birthday', month: 11, day: 2, year: 2026 }), BadRequestException, 'PERSON_DATE_IN_FUTURE');
     await expectApiError(setDate('Marie', { kind: 'birthday', month: 3, day: 14, year: 92 }), BadRequestException, 'PERSON_DATE_YEAR_INVALID');
     await expectApiError(setDate('Marie', { kind: 'birthday', month: 4, day: 31 }), BadRequestException, 'PERSON_DATE_INVALID');
-    expect((await personNamed('Marie')).date).toEqual({ kind: 'birthday', month: 11, day: 1, year: 2026 });
+    await expectApiError(
+      setDates('Marie', [{ kind: 'birthday', month: 3, day: 14 }, { kind: 'birthday', month: 3, day: 15 }]),
+      BadRequestException,
+      'PERSON_DATE_BIRTHDAY_TWICE',
+    );
+    const birthday = { kind: 'birthday', label: null, month: 11, day: 1, year: 2026 };
+    expect((await personNamed('Marie')).dates).toEqual([birthday]);
 
-    // Renaming without a date keeps it; null removes it
+    // Renaming without dates keeps them; an empty list removes them
     await bed.people.update(writerId, marie.id, { name: 'Marie Curie' });
-    expect((await personNamed('Marie Curie')).date).toEqual({ kind: 'birthday', month: 11, day: 1, year: 2026 });
-    await bed.people.update(writerId, marie.id, { name: 'Marie Curie', date: null });
-    expect((await personNamed('Marie Curie')).date).toBeNull();
+    expect((await personNamed('Marie Curie')).dates).toEqual([birthday]);
+    await bed.people.update(writerId, marie.id, { name: 'Marie Curie', dates: [] });
+    expect((await personNamed('Marie Curie')).dates).toEqual([]);
 
-    // The person kept takes the duplicate's date when they have none, and keeps their own otherwise
-    await setDate('MarieC', { kind: 'anniversary', month: 6, day: 21, year: 2010 });
+    // The person kept keeps their dates and takes the duplicate's others, but a second birthday or the same date
+    await setDates('Marie Curie', [{ kind: 'birthday', month: 3, day: 14 }, { kind: 'anniversary', label: 'Wedding', month: 6, day: 2 }]);
+    await setDates('MarieC', [
+      { kind: 'birthday', month: 3, day: 15, year: 1992 },
+      { kind: 'anniversary', label: 'wedding', month: 6, day: 2, year: 2012 },
+      { kind: 'anniversary', label: 'First met', month: 6, day: 21, year: 2010 },
+    ]);
     const merged = await bed.people.merge(writerId, marie.id, { duplicateId: (await personNamed('MarieC')).id });
-    expect(merged.date).toEqual({ kind: 'anniversary', month: 6, day: 21, year: 2010 });
+    expect(merged.dates).toEqual([
+      { kind: 'birthday', label: null, month: 3, day: 14, year: null },
+      { kind: 'anniversary', label: 'Wedding', month: 6, day: 2, year: null },
+      { kind: 'anniversary', label: 'First met', month: 6, day: 21, year: 2010 },
+    ]);
+    await expect(dataSource.query('SELECT COUNT(*)::int AS count FROM person_dates')).resolves.toEqual([{ count: 3 }]);
 
-    await expect(dataSource.query("UPDATE people SET date_kind = 'birthday', date_month = NULL WHERE id = $1", [marie.id]))
-      .rejects.toThrow(/chk_people_date_complete/);
-    await expect(dataSource.query('UPDATE people SET date_day = 31, date_month = 4 WHERE id = $1', [marie.id]))
-      .rejects.toThrow(/chk_people_date_day/);
-    await expect(dataSource.query("UPDATE people SET date_kind = 'nameday' WHERE id = $1", [marie.id]))
-      .rejects.toThrow(/chk_people_date_kind/);
+    await expect(dataSource.query("INSERT INTO person_dates (person_id, kind, month, day) VALUES ($1, 'birthday', 1, 1)", [marie.id]))
+      .rejects.toThrow(/uq_person_dates_birthday/);
+    await expect(dataSource.query("INSERT INTO person_dates (person_id, kind, month, day) VALUES ($1, 'anniversary', 4, 31)", [marie.id]))
+      .rejects.toThrow(/chk_person_dates_day/);
+    await expect(dataSource.query("INSERT INTO person_dates (person_id, kind, month, day) VALUES ($1, 'nameday', 1, 1)", [marie.id]))
+      .rejects.toThrow(/chk_person_dates_kind/);
+    await expect(dataSource.query("INSERT INTO person_dates (person_id, kind, label, month, day) VALUES ($1, 'anniversary', '', 1, 1)", [marie.id]))
+      .rejects.toThrow(/chk_person_dates_label/);
+    // Deleting the person takes their dates with them
+    await bed.people.delete(writerId, marie.id);
+    await expect(dataSource.query('SELECT COUNT(*)::int AS count FROM person_dates')).resolves.toEqual([{ count: 0 }]);
   });
 });

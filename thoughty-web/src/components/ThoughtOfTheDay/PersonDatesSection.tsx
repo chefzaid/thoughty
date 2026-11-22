@@ -23,8 +23,8 @@ interface PersonDatesSectionProps {
 
 /**
  * The birthdays and anniversaries of the writer's day, in Highlights after the capsules opened lately: each
- * person links to their entries, with how many mention them and the most recent one. The age or the years
- * an anniversary marks are left out in quiet mode.
+ * person, once for each of their dates that day, links to their entries, with what the date marks, how many entries
+ * mention them and the most recent one. The age or the years an anniversary marks are left out in quiet mode.
  */
 export default function PersonDatesSection({ people, language, formatDate, onSelectEntry, onOpenPerson, t }: PersonDatesSectionProps) {
     const quietMode = useQuietMode();
@@ -36,12 +36,12 @@ export default function PersonDatesSection({ people, language, formatDate, onSel
                 {t('personDatesHighlightsTitle')}
             </h3>
             <ul className="person-date-list">
-                {people.map((person) => {
+                {people.map((person, index) => {
                     const years = !quietMode && person.years !== null && person.years > 0
                         ? pluralPhrase(t, person.date.kind === 'birthday' ? 'personDateAge' : 'personDateYears', person.years, language)
                         : null;
                     return (
-                        <li key={person.id} className="person-date">
+                        <li key={`${person.id}-${index}`} className="person-date">
                             <p className="person-date-heading">
                                 <Link
                                     to={personJournalPath(person.id)}
@@ -52,6 +52,7 @@ export default function PersonDatesSection({ people, language, formatDate, onSel
                                     {person.name}
                                 </Link>
                                 <span className="person-date-kind"> · {t(`personDateKind_${person.date.kind}`)}</span>
+                                {person.date.label && <span className="person-date-label"> · {person.date.label}</span>}
                                 {years && <span className="person-date-years"> · {years}</span>}
                             </p>
                             <p className="person-date-count">

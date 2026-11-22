@@ -35,7 +35,7 @@ import {
   UserMute,
 } from '@/database/entities';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
-import { toPersonDate, type PersonDateColumns } from '@/modules/people/person-dates';
+import { PERSON_DATES_JSON_SQL, toPersonDate, type PersonDateColumns } from '@/modules/people/person-dates';
 import { isExportableSettingKey } from './config.service';
 import { ContentLockedException, holdsLockedContent, isContentUnlocked } from '@/common/content-lock';
 import { apiError } from '@/common/errors';
@@ -353,14 +353,14 @@ export class UserDataExportService {
   }
 
   /**
-   * The people the writer mentions, with their handles, their birthday or anniversary, their reach-out
+   * The people the writer mentions, with their handles, their birthday and anniversaries, their reach-out
    * reminder and last contact, the writer's notes on them, their groups, and the entries
    * (recycle bin included) that mention them. The ID is what a saved search's `personId` filter refers to.
    */
   private async collectPeople(userId: number) {
     const rows = (await this.personRepository.query(
       `SELECT p.id, p.name, p.created_at AS "createdAt", p.updated_at AS "updatedAt",
-              p.date_kind AS "dateKind", p.date_month AS "dateMonth", p.date_day AS "dateDay", p.date_year AS "dateYear",
+              ${PERSON_DATES_JSON_SQL} AS dates,
               p.reach_out_days AS "reachOutDays", to_char(p.last_contact_on, 'YYYY-MM-DD') AS "lastContactOn", p.notes, p.groups,
               COALESCE((SELECT array_agg(h.handle ORDER BY h.created_at, h.handle) FROM person_handles h WHERE h.person_id = p.id), '{}') AS handles,
               COALESCE((SELECT array_agg(ep.entry_id ORDER BY ep.entry_id) FROM entry_people ep WHERE ep.person_id = p.id), '{}') AS "entryIds"
@@ -368,13 +368,13 @@ export class UserDataExportService {
         WHERE p.user_id = $1
         ORDER BY p.id`,
       [userId],
-    )) as Array<PersonDateColumns & { id: number; name: string; handles: string[]; entryIds: number[]; createdAt: Date; updatedAt: Date }
+    )) as Array<{ dates: PersonDateColumns[]; id: number; name: string; handles: string[]; entryIds: number[]; createdAt: Date; updatedAt: Date }
       & { reachOutDays: number | string | null; lastContactOn: string | null; notes: string | null; groups: string[] }>;
     return rows.map((person) => ({
       id: person.id,
       name: person.name,
       handles: person.handles,
-      date: toPersonDate(person),
+      dates: person.dates.map(toPersonDate),
       reachOutDays: person.reachOutDays === null ? null : Number(person.reachOutDays),
       lastContactOn: person.lastContactOn,
       notes: person.notes,

@@ -74,18 +74,48 @@ export function yearsOn(year: number | null, today: string): number | null {
   return year === null ? null : dayParts(today).year - year;
 }
 
-/** A person's date as the database returns it (a driver may read a `SMALLINT` as text). */
-export interface PersonDateColumns {
-  dateKind: PersonDateKind | null;
-  dateMonth: number | string | null;
-  dateDay: number | string | null;
-  dateYear: number | string | null;
+/** The most important dates a save keeps on a person; merging two people may leave more. */
+export const PERSON_DATES_MAX = 10;
+/** The longest label (what a date marks) a save keeps. */
+export const PERSON_DATE_LABEL_MAX_LENGTH = 40;
+
+/** A person's date as the API shows it. */
+export interface PersonDateValue {
+  kind: PersonDateKind;
+  label: string | null;
+  month: number;
+  day: number;
+  year: number | null;
 }
 
-/** A person's date as the API shows it, or null when none is set. */
-export function toPersonDate(row: PersonDateColumns): { kind: PersonDateKind; month: number; day: number; year: number | null } | null {
-  if (row.dateKind === null || row.dateMonth === null || row.dateDay === null) {
-    return null;
+/** A person's date as the database returns it (a driver may read a `SMALLINT` as text). */
+export interface PersonDateColumns {
+  kind: PersonDateKind;
+  label: string | null;
+  month: number | string;
+  day: number | string;
+  year: number | string | null;
+}
+
+/** The order a person's dates are listed in: through the year, a birthday before an anniversary on the same day. */
+export const PERSON_DATES_ORDER_SQL = (alias: string) => `${alias}.month, ${alias}.day, ${alias}.kind <> 'birthday', ${alias}.id`;
+
+/** A JSON array of the dates of person `p` in their order, empty when they have none. */
+export const PERSON_DATES_JSON_SQL = `COALESCE((
+  SELECT json_agg(json_build_object('kind', d.kind, 'label', d.label, 'month', d.month, 'day', d.day, 'year', d.year)
+                  ORDER BY ${PERSON_DATES_ORDER_SQL('d')})
+    FROM person_dates d WHERE d.person_id = p.id), '[]'::json)`;
+
+export function toPersonDate(row: PersonDateColumns): PersonDateValue {
+  return { kind: row.kind, label: row.label, month: Number(row.month), day: Number(row.day), year: row.year === null ? null : Number(row.year) };
+}
+
+/** Refuses dates that give a person more than one birthday (`PERSON_DATE_BIRTHDAY_TWICE`), then each impossible one. */
+export function assertValidPersonDates(dates: ReadonlyArray<PersonDateParts & { kind: PersonDateKind }>, now = new Date()): void {
+  if (dates.filter((date) => date.kind === 'birthday').length > 1) {
+    throw apiError(BadRequestException, 'PERSON_DATE_BIRTHDAY_TWICE');
   }
-  return { kind: row.dateKind, month: Number(row.dateMonth), day: Number(row.dateDay), year: row.dateYear === null ? null : Number(row.dateYear) };
+  for (const date of dates) {
+    assertValidPersonDate(date, now);
+  }
 }

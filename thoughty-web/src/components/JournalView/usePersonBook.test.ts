@@ -18,7 +18,7 @@ vi.mock('react-router-dom', async (importOriginal) => ({
   useNavigate: () => mocks.navigate,
 }));
 
-const marie: Person = { id: 12, name: 'Marie', handles: ['marie'], entryCount: 3, lastMentionedOn: '2026-10-20', date: null, reachOutDays: null, lastContactOn: null, notes: null, groups: [], createdAt: '', updatedAt: '' };
+const marie: Person = { id: 12, name: 'Marie', handles: ['marie'], entryCount: 3, lastMentionedOn: '2026-10-20', dates: [], reachOutDays: null, lastContactOn: null, notes: null, groups: [], createdAt: '', updatedAt: '' };
 const personFilters = toSavedSearchFilters(personViewFilterState(12));
 
 const savedSearch = (id: number, name: string, overrides: Partial<SavedSearch> = {}): SavedSearch => ({
