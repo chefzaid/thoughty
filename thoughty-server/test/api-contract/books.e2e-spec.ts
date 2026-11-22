@@ -168,6 +168,29 @@ describeContract('books', (context) => {
     });
   });
 
+  it('lays the book out in the interior theme asked for, and refuses an unknown one', async () => {
+    const { alice } = context;
+    const elegant = await call('GET /api/books/export', {
+      as: alice,
+      query: { ...PLAIN_BOOK, format: 'html', interiorTheme: 'elegant' },
+      status: 200,
+      contentType: /^text\/html/,
+    });
+    expect(elegant.text).toContain('font-family:Georgia,"Times New Roman",serif');
+    await call('GET /api/books/export', {
+      as: alice,
+      query: { ...PLAIN_BOOK, interiorTheme: 'large-print' },
+      status: 200,
+      contentType: /^application\/pdf/,
+    });
+    await call('GET /api/books/export', {
+      as: alice,
+      query: { ...PLAIN_BOOK, interiorTheme: 'fancy' },
+      status: 400,
+      code: 'VALIDATION_FAILED',
+    });
+  });
+
   it('makes a book of hand-picked entries, never another writer’s', async () => {
     const { alice, bob } = context;
     const picked = await call('GET /api/books/picked-entries', {

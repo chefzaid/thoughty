@@ -22,6 +22,7 @@ import {
     type BookWeavingMode,
 } from './ImportExport.types';
 import { BookCoverControls } from './ImportExportBookCover';
+import { BookInteriorControls } from './ImportExportBookInterior';
 import { BookPagesControls } from './ImportExportBookPages';
 import { BookSourceControls } from './ImportExportBookSource';
 import { describeBookVersionSource } from './bookSource';
@@ -164,6 +165,7 @@ export function BookSection({
                 </div>
 
                 <BookCoverControls options={options} onOptionChange={onOptionChange} t={t} />
+                <BookInteriorControls options={options} onOptionChange={onOptionChange} t={t} />
                 <BookPagesControls options={options} onOptionChange={onOptionChange} t={t} />
 
                 <div className="book-options-grid book-options-grid--settings">

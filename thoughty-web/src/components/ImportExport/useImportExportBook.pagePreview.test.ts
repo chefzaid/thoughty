@@ -178,6 +178,20 @@ describe('useImportExportBook page preview', () => {
         expect(exportCalls(authFetch)).toHaveLength(4);
     });
 
+    it('previews the pages again in another interior theme, and back from the kept one', async () => {
+        const authFetch = respond(async () => bookResponse());
+        const { result } = renderBook(authFetch);
+
+        await act(() => result.current.handlePagePreview());
+        act(() => result.current.changeOption('interiorTheme', 'large-print'));
+        await act(() => result.current.handlePagePreview());
+
+        expect(exportCalls(authFetch).map(([url]) => url)).toEqual([
+            '/api/books/export?diaryId=2&today=2026-10-27',
+            '/api/books/export?diaryId=2&interiorTheme=large-print&today=2026-10-27',
+        ]);
+    });
+
     it('lets a PDF download feed the next preview', async () => {
         const authFetch = respond(async () => bookResponse());
         const { result } = renderBook(authFetch);

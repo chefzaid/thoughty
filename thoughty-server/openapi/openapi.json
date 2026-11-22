@@ -8017,6 +8017,21 @@
             }
           },
           {
+            "name": "interiorTheme",
+            "required": false,
+            "in": "query",
+            "description": "Interior theme of the pages: standard (sans-serif type, the usual margins, chapters opening at the top of their page), elegant (serif type, wider margins, chapters opening a quarter of the way down, centred under a short rule, photos narrower and centred) or large-print (larger type with more space between lines, ragged right, taller photos). It sets the PDF's pages and, through their style sheet, the HTML and EPUB; Markdown has no layout of its own",
+            "schema": {
+              "default": "standard",
+              "type": "string",
+              "enum": [
+                "standard",
+                "elegant",
+                "large-print"
+              ]
+            }
+          },
+          {
             "name": "embedImages",
             "required": false,
             "in": "query",
@@ -8512,6 +8527,21 @@
             }
           },
           {
+            "name": "interiorTheme",
+            "required": false,
+            "in": "query",
+            "description": "Interior theme of the pages: standard (sans-serif type, the usual margins, chapters opening at the top of their page), elegant (serif type, wider margins, chapters opening a quarter of the way down, centred under a short rule, photos narrower and centred) or large-print (larger type with more space between lines, ragged right, taller photos). It sets the PDF's pages and, through their style sheet, the HTML and EPUB; Markdown has no layout of its own",
+            "schema": {
+              "default": "standard",
+              "type": "string",
+              "enum": [
+                "standard",
+                "elegant",
+                "large-print"
+              ]
+            }
+          },
+          {
             "name": "embedImages",
             "required": false,
             "in": "query",
@@ -8854,6 +8884,21 @@
             }
           },
           {
+            "name": "interiorTheme",
+            "required": false,
+            "in": "query",
+            "description": "Interior theme of the pages: standard (sans-serif type, the usual margins, chapters opening at the top of their page), elegant (serif type, wider margins, chapters opening a quarter of the way down, centred under a short rule, photos narrower and centred) or large-print (larger type with more space between lines, ragged right, taller photos). It sets the PDF's pages and, through their style sheet, the HTML and EPUB; Markdown has no layout of its own",
+            "schema": {
+              "default": "standard",
+              "type": "string",
+              "enum": [
+                "standard",
+                "elegant",
+                "large-print"
+              ]
+            }
+          },
+          {
             "name": "embedImages",
             "required": false,
             "in": "query",
@@ -9169,6 +9214,21 @@
                 "ocean",
                 "forest",
                 "rose"
+              ]
+            }
+          },
+          {
+            "name": "interiorTheme",
+            "required": false,
+            "in": "query",
+            "description": "Interior theme of the pages: standard (sans-serif type, the usual margins, chapters opening at the top of their page), elegant (serif type, wider margins, chapters opening a quarter of the way down, centred under a short rule, photos narrower and centred) or large-print (larger type with more space between lines, ragged right, taller photos). It sets the PDF's pages and, through their style sheet, the HTML and EPUB; Markdown has no layout of its own",
+            "schema": {
+              "default": "standard",
+              "type": "string",
+              "enum": [
+                "standard",
+                "elegant",
+                "large-print"
               ]
             }
           },
@@ -9506,6 +9566,21 @@
                 "ocean",
                 "forest",
                 "rose"
+              ]
+            }
+          },
+          {
+            "name": "interiorTheme",
+            "required": false,
+            "in": "query",
+            "description": "Interior theme of the pages: standard (sans-serif type, the usual margins, chapters opening at the top of their page), elegant (serif type, wider margins, chapters opening a quarter of the way down, centred under a short rule, photos narrower and centred) or large-print (larger type with more space between lines, ragged right, taller photos). It sets the PDF's pages and, through their style sheet, the HTML and EPUB; Markdown has no layout of its own",
+            "schema": {
+              "default": "standard",
+              "type": "string",
+              "enum": [
+                "standard",
+                "elegant",
+                "large-print"
               ]
             }
           },

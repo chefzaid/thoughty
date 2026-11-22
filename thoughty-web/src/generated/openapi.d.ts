@@ -18279,6 +18279,8 @@ export interface operations {
                 weavingMode?: "strict" | "creative";
                 /** @description Color palette for the generated book cover */
                 coverTheme?: "classic" | "ocean" | "forest" | "rose";
+                /** @description Interior theme of the pages: standard (sans-serif type, the usual margins, chapters opening at the top of their page), elegant (serif type, wider margins, chapters opening a quarter of the way down, centred under a short rule, photos narrower and centred) or large-print (larger type with more space between lines, ragged right, taller photos). It sets the PDF's pages and, through their style sheet, the HTML and EPUB; Markdown has no layout of its own */
+                interiorTheme?: "standard" | "elegant" | "large-print";
                 /** @description Embed eligible image attachments from entries in the generated book */
                 embedImages?: boolean;
                 /** @description The writer’s own day (the UTC day or the one before or after it): the book’s date and file name, and the end of an ongoing life era; the server’s UTC day when left out */
@@ -18508,6 +18510,8 @@ export interface operations {
                 weavingMode?: "strict" | "creative";
                 /** @description Color palette for the generated book cover */
                 coverTheme?: "classic" | "ocean" | "forest" | "rose";
+                /** @description Interior theme of the pages: standard (sans-serif type, the usual margins, chapters opening at the top of their page), elegant (serif type, wider margins, chapters opening a quarter of the way down, centred under a short rule, photos narrower and centred) or large-print (larger type with more space between lines, ragged right, taller photos). It sets the PDF's pages and, through their style sheet, the HTML and EPUB; Markdown has no layout of its own */
+                interiorTheme?: "standard" | "elegant" | "large-print";
                 /** @description Embed eligible image attachments from entries in the generated book */
                 embedImages?: boolean;
                 /** @description The writer’s own day (the UTC day or the one before or after it): the book’s date and file name, and the end of an ongoing life era; the server’s UTC day when left out */
@@ -18612,6 +18616,8 @@ export interface operations {
                 weavingMode?: "strict" | "creative";
                 /** @description Color palette for the generated book cover */
                 coverTheme?: "classic" | "ocean" | "forest" | "rose";
+                /** @description Interior theme of the pages: standard (sans-serif type, the usual margins, chapters opening at the top of their page), elegant (serif type, wider margins, chapters opening a quarter of the way down, centred under a short rule, photos narrower and centred) or large-print (larger type with more space between lines, ragged right, taller photos). It sets the PDF's pages and, through their style sheet, the HTML and EPUB; Markdown has no layout of its own */
+                interiorTheme?: "standard" | "elegant" | "large-print";
                 /** @description Embed eligible image attachments from entries in the generated book */
                 embedImages?: boolean;
                 /** @description The writer’s own day (the UTC day or the one before or after it): the book’s date and file name, and the end of an ongoing life era; the server’s UTC day when left out */
@@ -18698,6 +18704,8 @@ export interface operations {
                 weavingMode?: "strict" | "creative";
                 /** @description Color palette for the generated book cover */
                 coverTheme?: "classic" | "ocean" | "forest" | "rose";
+                /** @description Interior theme of the pages: standard (sans-serif type, the usual margins, chapters opening at the top of their page), elegant (serif type, wider margins, chapters opening a quarter of the way down, centred under a short rule, photos narrower and centred) or large-print (larger type with more space between lines, ragged right, taller photos). It sets the PDF's pages and, through their style sheet, the HTML and EPUB; Markdown has no layout of its own */
+                interiorTheme?: "standard" | "elegant" | "large-print";
                 /** @description Embed eligible image attachments from entries in the generated book */
                 embedImages?: boolean;
                 /** @description The writer’s own day (the UTC day or the one before or after it): the book’s date and file name, and the end of an ongoing life era; the server’s UTC day when left out */
@@ -18791,6 +18799,8 @@ export interface operations {
                 weavingMode?: "strict" | "creative";
                 /** @description Color palette for the generated book cover */
                 coverTheme?: "classic" | "ocean" | "forest" | "rose";
+                /** @description Interior theme of the pages: standard (sans-serif type, the usual margins, chapters opening at the top of their page), elegant (serif type, wider margins, chapters opening a quarter of the way down, centred under a short rule, photos narrower and centred) or large-print (larger type with more space between lines, ragged right, taller photos). It sets the PDF's pages and, through their style sheet, the HTML and EPUB; Markdown has no layout of its own */
+                interiorTheme?: "standard" | "elegant" | "large-print";
                 /** @description Embed eligible image attachments from entries in the generated book */
                 embedImages?: boolean;
                 /** @description The writer’s own day (the UTC day or the one before or after it): the book’s date and file name, and the end of an ongoing life era; the server’s UTC day when left out */

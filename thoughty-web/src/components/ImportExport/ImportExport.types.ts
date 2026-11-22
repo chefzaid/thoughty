@@ -1,4 +1,4 @@
-import type { components } from '../../generated/openapi';
+import type { components, paths } from '../../generated/openapi';
 import type { CloudExportFormat, ImportExportFormat, ImportExportSection, TranslationFunction } from '../../types';
 import type { CloudProviderType } from '../../services/api/cloudSyncService';
 import type { Language } from '../../utils/translations';
@@ -31,6 +31,8 @@ export type BookChapterOrder = 'alpha' | 'entries' | 'chrono';
 export type BookTagScope = 'all' | 'first';
 export type BookWeavingMode = 'strict' | 'creative';
 export type BookCoverTheme = 'classic' | 'ocean' | 'forest' | 'rose';
+/** The type, margins, chapter openings and photos of the book's pages, as the API takes them. */
+export type BookInteriorTheme = NonNullable<NonNullable<paths['/api/books/export']['get']['parameters']['query']>['interiorTheme']>;
 
 export const BOOK_FORMAT_OPTIONS: ReadonlyArray<{ value: BookFormat; labelKey: string }> = [
     { value: 'pdf', labelKey: 'bookFormatPdf' },
@@ -100,6 +102,7 @@ export interface BookOptions {
     embedImages: boolean;
     coverTheme: BookCoverTheme;
     coverImage: File | null;
+    interiorTheme: BookInteriorTheme;
 }
 
 export const DEFAULT_BOOK_OPTIONS: BookOptions = {
@@ -124,6 +127,7 @@ export const DEFAULT_BOOK_OPTIONS: BookOptions = {
     embedImages: false,
     coverTheme: 'classic',
     coverImage: null,
+    interiorTheme: 'standard',
 };
 
 // Book responses, derived from the API contract so a renamed field fails the type check

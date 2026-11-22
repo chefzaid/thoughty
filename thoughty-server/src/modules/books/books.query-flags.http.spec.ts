@@ -106,7 +106,7 @@ describe('BooksController query flags over HTTP', () => {
     );
   });
 
-  it.each(['narrative=yes', 'dedication=a&dedication=b', 'includeToc=', 'narrative=true&narrative=false', 'diaryId=', 'diaryId=1.5', 'savedSearchId=0'])(
+  it.each(['narrative=yes', 'dedication=a&dedication=b', 'includeToc=', 'narrative=true&narrative=false', 'diaryId=', 'diaryId=1.5', 'savedSearchId=0', 'interiorTheme=fancy', 'coverTheme=ocean&interiorTheme='])(
     'refuses %s with VALIDATION_FAILED',
     async (query) => {
       const response = await request(app.getHttpServer()).get(`/api/books/export?${query}`).expect(400);
@@ -115,6 +115,12 @@ describe('BooksController query flags over HTTP', () => {
       expect(booksService.export).not.toHaveBeenCalled();
     },
   );
+
+  it('passes the interior theme on', async () => {
+    await request(app.getHttpServer()).get('/api/books/export?interiorTheme=large-print').expect(200);
+
+    expect(booksService.export).toHaveBeenCalledWith(HTTP_SPEC_USER.userId, expect.objectContaining({ interiorTheme: 'large-print' }));
+  });
 
   it('reads the history diary as a number', async () => {
     await request(app.getHttpServer()).get('/api/books/versions?diaryId=4').expect(200);

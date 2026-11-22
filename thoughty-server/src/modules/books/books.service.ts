@@ -186,6 +186,7 @@ export class BooksService {
   ): Promise<BookFile> {
     const { book, source } = await this.buildSourcedBook(userId, query);
     book.cover = createBookCover(query.coverTheme, coverImage);
+    book.interior = query.interiorTheme;
     if (query.narrative !== false) {
       await this.composeNarratives(userId, book, query.weavingMode ?? 'strict');
     }

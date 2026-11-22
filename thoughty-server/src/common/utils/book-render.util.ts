@@ -4,6 +4,7 @@ import { bookEntryMarkdown, inlineImageCaption, layoutBookEntry } from './book-i
 import { escapeHtml } from './sanitize.util';
 import { bookClosingPageLines, bookPageMarkdownLines } from './book-pages.util';
 import { bookCopy, formatBookDate, type BookLanguage } from './book-language.util';
+import { bookInteriorStyle } from './book-interior.util';
 import {
   type Book,
   type BookChapter,
@@ -127,6 +128,7 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
     '.epigraph{max-width:28em;margin:0 auto}',
     '.dedication p,.epigraph p{white-space:pre-line}',
     '.closing-page{page-break-before:always;padding-top:10em;text-align:center;color:#444}',
+    ...[bookInteriorStyle(book.interior).css].filter(Boolean),
     '</style>',
     '</head>',
     '<body>',

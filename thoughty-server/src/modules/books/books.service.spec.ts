@@ -355,6 +355,14 @@ describe('BooksService', () => {
       expect(result.content).toContain(`data:image/png;base64,${png.toString('base64')}`);
     });
 
+    it('should lay the book out in the selected interior theme', async () => {
+      const elegant = await service.export(1, { format: 'html', narrative: false, interiorTheme: 'elegant' });
+      const standard = await service.export(1, { format: 'html', narrative: false });
+
+      expect(elegant.content).toContain('font-family:Georgia,"Times New Roman",serif');
+      expect(standard.content).not.toContain('"Times New Roman"');
+    });
+
     it('should reject a cover image with unsupported or spoofed content', async () => {
       const spoofedImage = {
         buffer: Buffer.from('not a png'),

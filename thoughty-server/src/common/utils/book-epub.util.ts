@@ -9,6 +9,7 @@ import {
 import { inlineImageCaption, layoutBookEntry } from './book-inline-image.util';
 import { bookClosingPageLines } from './book-pages.util';
 import { bookCopy, formatBookDate, type BookLanguage } from './book-language.util';
+import { bookInteriorStyle } from './book-interior.util';
 
 function escapeXml(text: string): string {
   return text
@@ -306,7 +307,7 @@ export async function renderBookEpub(book: Book, options: RenderBookOptions = {}
   for (const page of frontPages(book)) {
     zip.file(`OEBPS/${page.href}`, buildFrontPage(page, bookLang(book)));
   }
-  zip.file('OEBPS/styles.css', EPUB_STYLES);
+  zip.file('OEBPS/styles.css', [EPUB_STYLES, bookInteriorStyle(book.interior).css].filter(Boolean).join('\n'));
   if (book.cover?.image) {
     const extension = book.cover.image.mimeType === 'image/png' ? 'png' : 'jpg';
     zip.file(`OEBPS/cover.${extension}`, book.cover.image.data);

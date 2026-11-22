@@ -2,6 +2,7 @@ import { IsString, IsOptional, IsIn, Matches, MaxLength } from 'class-validator'
 import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
 import { StrictBoolean, StrictInt, WritersDay } from '@/common/validation';
 import { MAX_BOOK_DEDICATION_LENGTH, MAX_BOOK_EPIGRAPH_LENGTH } from '@/common/utils/book-pages.util';
+import { BOOK_INTERIOR_THEMES, type BookInteriorTheme } from '@/common/utils/book-interior.util';
 import { BookSourceQueryDto, BookVersionSourceDto } from './book-source.dto';
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -167,6 +168,20 @@ export class BookQueryDto extends BookSourceQueryDto {
   @IsOptional()
   @IsIn(['classic', 'ocean', 'forest', 'rose'])
   coverTheme?: 'classic' | 'ocean' | 'forest' | 'rose';
+
+  @ApiPropertyOptional({
+    description:
+      'Interior theme of the pages: standard (sans-serif type, the usual margins, chapters opening at the top of ' +
+      'their page), elegant (serif type, wider margins, chapters opening a quarter of the way down, centred under ' +
+      'a short rule, photos narrower and centred) or large-print (larger type with more space between lines, ' +
+      'ragged right, taller photos). It sets the PDF\'s pages and, through their style sheet, the HTML and EPUB; ' +
+      'Markdown has no layout of its own',
+    enum: BOOK_INTERIOR_THEMES,
+    default: 'standard',
+  })
+  @IsOptional()
+  @IsIn(BOOK_INTERIOR_THEMES)
+  interiorTheme?: BookInteriorTheme;
 
   @ApiPropertyOptional({
     description: 'Embed eligible image attachments from entries in the generated book',

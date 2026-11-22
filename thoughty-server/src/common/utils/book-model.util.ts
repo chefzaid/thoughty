@@ -1,6 +1,7 @@
 import type { BookCover } from './book-cover-style.util';
 import type { EmbeddedBookImage } from './book-image.util';
 import type { BookEra } from './book-era.util';
+import type { BookInteriorTheme } from './book-interior.util';
 import { formatBookDate, type BookLanguage } from './book-language.util';
 
 export type ChapterOrder = 'alpha' | 'entries' | 'chrono';
@@ -37,6 +38,8 @@ export interface Book {
   generatedAt: string;
   chapters: BookChapter[];
   cover?: BookCover;
+  /** The type, margins, chapter openers and photo layout of its pages; the standard ones without one. */
+  interior?: BookInteriorTheme;
   /** A short dedication, on its own page after the title page. */
   dedication?: string;
   /** A short epigraph (a quotation and who said it), on its own page after the dedication. */

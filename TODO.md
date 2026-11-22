@@ -513,7 +513,7 @@ The market splits three ways, and no product spans all of them. Everyday journal
 
 ### Books
 
-- [ ] Book design themes (typography, margins, chapter openers, photo layouts) previewed before printing, so the printed book feels designed rather than exported. The in-browser page-by-page preview and four cover color themes exist; interior themes (typography, margins, chapter openers, photo layouts) remain.
+- [x] Book design themes (typography, margins, chapter openers, photo layouts) previewed before printing, so the printed book feels designed rather than exported. Four cover color themes and three **interior themes** under **Interior** in the book converter (`interiorTheme`: **Standard**, the book as before; **Elegant**, Times, wider margins, chapters opening a quarter of the way down centered under a short rule, narrower centered photos; **Large print**, larger type with more space between lines, aligned left, taller photos), shown page by page by **Preview Book**; the HTML and EPUB take their type and photo width (see docs/features.md "Interior themes").
 - [ ] Order more copies of any saved book version for family, with one shipping address per copy.
 
 ## Feature Roadmap (added 2026-10-23)

@@ -1,0 +1,87 @@
+.book-interior-controls {
+    margin: 0;
+    padding: 0.9rem 0;
+    border: 0;
+    border-bottom: 1px solid var(--border-color, rgba(148, 163, 184, 0.22));
+}
+
+.book-interior-controls > legend {
+    padding: 0 0.4rem 0 0;
+    font-weight: 600;
+}
+
+.book-interior-themes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.6rem;
+}
+
+.book-interior-option {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    cursor: pointer;
+    align-items: flex-start;
+    gap: 0.7rem;
+    padding: 0.65rem 0.75rem;
+    border: 2px solid var(--border-color, rgba(148, 163, 184, 0.28));
+    border-radius: 6px;
+}
+
+.book-interior-option input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+}
+
+.book-interior-option.is-selected,
+.book-interior-option:has(input:focus-visible) {
+    border-color: #38bdf8;
+    outline: 2px solid rgba(56, 189, 248, 0.25);
+    outline-offset: 2px;
+}
+
+.book-interior-option__sample {
+    flex: 0 0 2.6rem;
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 1.5rem;
+    line-height: 1.2;
+    text-align: center;
+}
+
+.book-interior-option--elegant .book-interior-option__sample {
+    font-family: Georgia, "Times New Roman", serif;
+}
+
+.book-interior-option--large-print .book-interior-option__sample {
+    font-size: 1.9rem;
+    font-weight: 600;
+}
+
+.book-interior-option__text {
+    display: grid;
+    min-width: 0;
+    gap: 0.2rem;
+}
+
+.book-interior-option__name {
+    font-weight: 600;
+}
+
+.book-interior-option__description {
+    color: var(--text-secondary, rgba(255, 255, 255, 0.72));
+    font-size: 0.8rem;
+    line-height: 1.35;
+}
+
+.import-export.light .book-interior-option__description {
+    color: #4b5563;
+}
+
+@media (max-width: 760px) {
+    .book-interior-themes {
+        grid-template-columns: 1fr;
+    }
+}

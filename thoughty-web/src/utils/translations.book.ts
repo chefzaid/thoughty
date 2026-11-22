@@ -50,6 +50,15 @@ export type BookTranslationKey =
   | "bookCoverRemoveImage"
   | "bookCoverPreview"
   | "bookCoverImageInvalid"
+  | "bookInterior"
+  | "bookInteriorTheme"
+  | "bookInteriorHint"
+  | "bookInteriorStandard"
+  | "bookInteriorStandardDescription"
+  | "bookInteriorElegant"
+  | "bookInteriorElegantDescription"
+  | "bookInteriorLargePrint"
+  | "bookInteriorLargePrintDescription"
   | "previewBook"
   | "downloadBook"
   | "generatingBook"
@@ -139,6 +148,15 @@ export const bookTranslations: Record<Language, Record<BookTranslationKey, strin
     bookCoverRemoveImage: "Remove cover image",
     bookCoverPreview: "Cover image preview",
     bookCoverImageInvalid: "Choose a PNG or JPEG image no larger than 2 MB.",
+    bookInterior: "Interior",
+    bookInteriorTheme: "Interior theme",
+    bookInteriorHint: "The type, margins, chapter openings and photos of the pages. Preview Book shows them page by page; an EPUB or HTML book takes the type and photo size, and Markdown keeps no layout of its own.",
+    bookInteriorStandard: "Standard",
+    bookInteriorStandardDescription: "Sans-serif type, the usual margins, chapters opening at the top of the page",
+    bookInteriorElegant: "Elegant",
+    bookInteriorElegantDescription: "Serif type, wide margins, centered chapter openings under a short rule, narrower photos",
+    bookInteriorLargePrint: "Large print",
+    bookInteriorLargePrintDescription: "Larger type with more space between lines, text aligned left, larger photos",
     previewBook: "Preview Chapters",
     downloadBook: "Download Book",
     generatingBook: "Generating...",
@@ -231,6 +249,15 @@ export const bookTranslations: Record<Language, Record<BookTranslationKey, strin
     bookCoverRemoveImage: "Supprimer l'image de couverture",
     bookCoverPreview: "Aperçu de l'image de couverture",
     bookCoverImageInvalid: "Choisissez une image PNG ou JPEG de 2 Mo maximum.",
+    bookInterior: "Intérieur",
+    bookInteriorTheme: "Thème de l’intérieur",
+    bookInteriorHint: "Les caractères, les marges, les ouvertures de chapitre et les photos des pages. L’aperçu du livre les montre page par page ; un livre EPUB ou HTML en reprend les caractères et la taille des photos, et le Markdown n’a pas de mise en page.",
+    bookInteriorStandard: "Standard",
+    bookInteriorStandardDescription: "Caractères sans empattement, marges habituelles, chapitres ouverts en haut de page",
+    bookInteriorElegant: "Élégant",
+    bookInteriorElegantDescription: "Caractères à empattement, marges larges, ouvertures de chapitre centrées sous un filet, photos plus étroites",
+    bookInteriorLargePrint: "Gros caractères",
+    bookInteriorLargePrintDescription: "Texte plus grand et plus aéré, aligné à gauche, photos plus grandes",
     previewBook: "Aperçu des chapitres",
     downloadBook: "Télécharger le livre",
     generatingBook: "Génération...",

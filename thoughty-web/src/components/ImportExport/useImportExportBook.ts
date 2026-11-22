@@ -112,6 +112,7 @@ export function useImportExportBook({
         if (options.embedImages) params.append('embedImages', 'true');
         if (options.closingPage) params.append('closingPage', 'true');
         if (options.coverTheme !== 'classic') params.append('coverTheme', options.coverTheme);
+        if (options.interiorTheme !== 'standard') params.append('interiorTheme', options.interiorTheme);
         // The book's date and file name, and the end of an ongoing life era, are the writer's own day
         params.append('today', writersToday());
         return params;
