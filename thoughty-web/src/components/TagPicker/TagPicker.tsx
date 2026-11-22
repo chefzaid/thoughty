@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type KeyboardEvent, type ChangeEvent } from 'react';
+import { useEffect, useId, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
 import TagBadge from '../TagBadge/TagBadge';
 import type { TranslationFunction } from '../../types';
 import { getTagMetadata, type TagMetadataMap } from '../../utils/tagMetadata';
@@ -16,6 +16,26 @@ interface TagPickerProps {
     t: TranslationFunction;
 }
 
+/** A row of the suggestion list: an existing tag, or the tag typed so far, to create. */
+interface Suggestion {
+    readonly kind: 'tag' | 'create';
+    readonly tag: string;
+}
+
+function sortedSuggestions(availableTags: string[], selectedTags: string[], query: string, tagMetadata?: TagMetadataMap): string[] {
+    const category = (tag: string) => getTagMetadata(tag, tagMetadata || {})?.category || '';
+    return availableTags
+        .filter(tag => tag.toLowerCase().includes(query.toLowerCase()) && !selectedTags.includes(tag))
+        .sort((left, right) => category(left).localeCompare(category(right)) || left.localeCompare(right));
+}
+
+/**
+ * A tag field with suggestions, following the ARIA combobox pattern: focus stays in the field, Up and
+ * Down move through the list (`aria-activedescendant`), Enter picks the highlighted tag or the one typed,
+ * and Escape closes the list (only then: with the list closed, Escape reaches the popover or dialog
+ * around it). Picking a tag closes the list, so it never covers what comes after the field; typing,
+ * Down, or a click in the field opens it again.
+ */
 function TagPicker({
     availableTags = [],
     selectedTags = [],
@@ -29,103 +49,108 @@ function TagPicker({
 }: Readonly<TagPickerProps>) {
     const [inputValue, setInputValue] = useState<string>('');
     const [isOpen, setIsOpen] = useState<boolean>(false);
-    const wrapperRef = useRef<HTMLDivElement>(null);
+    const [active, setActive] = useState<number>(-1);
+    const listRef = useRef<HTMLUListElement>(null);
+    const id = useId();
+    const listId = `${id}-suggestions`;
+    const optionId = (index: number) => `${id}-option-${index}`;
 
     const isLight = theme === 'light';
+    const typed = inputValue.trim();
+    const filteredTags = sortedSuggestions(availableTags, selectedTags, inputValue, tagMetadata);
+    const offersCreate = allowNew && typed !== '' && !filteredTags.some(tag => tag.toLowerCase() === typed.toLowerCase());
+    const options: Suggestion[] = [
+        ...filteredTags.map((tag): Suggestion => ({ kind: 'tag', tag })),
+        ...(offersCreate ? [{ kind: 'create', tag: typed } satisfies Suggestion] : []),
+    ];
+    const listVisible = isOpen && (inputValue !== '' || filteredTags.length > 0);
+    const activeIndex = listVisible && active < options.length ? active : -1;
 
+    // The highlighted row stays in view when the arrows move past the list's visible part
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent): void => {
-            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+        if (activeIndex < 0) return;
+        listRef.current?.children[activeIndex]?.scrollIntoView?.({ block: 'nearest' });
+    }, [activeIndex]);
 
-    const filteredTags = availableTags
-        .filter(tag =>
-            tag.toLowerCase().includes(inputValue.toLowerCase()) &&
-            !selectedTags.includes(tag)
-        )
-        .sort((left, right) => {
-            const leftCategory = getTagMetadata(left, tagMetadata || {})?.category || '';
-            const rightCategory = getTagMetadata(right, tagMetadata || {})?.category || '';
-            const categoryOrder = leftCategory.localeCompare(rightCategory);
-            if (categoryOrder === 0) {
-                return left.localeCompare(right);
-            }
-
-            return categoryOrder;
-        });
-
-    const handleInputChange = (e: ChangeEvent<HTMLInputElement>): void => {
-        setInputValue(e.target.value);
-        setIsOpen(true);
+    const close = (): void => {
+        setIsOpen(false);
+        setActive(-1);
     };
 
-    const commitTag = (tags: string[], keepOpen: boolean): void => {
-        onChange(tags);
+    const selectTag = (tag: string): void => {
+        onChange(singleSelect ? [tag] : [...selectedTags, tag]);
         setInputValue('');
-        setIsOpen(keepOpen);
+        close();
     };
 
-    const selectSingleTag = (tag: string): void => {
-        commitTag([tag], false);
-    };
-
-    const selectMultipleTags = (tag: string): void => {
-        commitTag([...selectedTags, tag], true);
-    };
-
-    const handleSelectTag = (tag: string): void => {
-        const selectTag = singleSelect ? selectSingleTag : selectMultipleTags;
-        selectTag(tag);
-    };
-
-    const addSingleTag = (tag: string): void => {
-        commitTag([tag], false);
-    };
-
-    const addMultipleTags = (tag: string): void => {
-        commitTag([...selectedTags, tag], false);
-    };
-
-    const handleCreateTag = (): void => {
-        const newTag = inputValue.trim();
-        if (!newTag) return;
-        if (selectedTags.includes(newTag)) {
+    const createTag = (tag: string): void => {
+        if (selectedTags.includes(tag)) {
             setInputValue('');
             return;
         }
+        selectTag(tag);
+    };
 
-        const addTag = singleSelect ? addSingleTag : addMultipleTags;
-        addTag(newTag);
+    const choose = (option: Suggestion): void => {
+        if (option.kind === 'tag') selectTag(option.tag);
+        else createTag(option.tag);
+    };
+
+    const pickWithEnter = (): void => {
+        const highlighted = options[activeIndex];
+        if (highlighted) {
+            choose(highlighted);
+            return;
+        }
+        if (!typed) return;
+        const exactMatch = filteredTags.find(tag => tag.toLowerCase() === typed.toLowerCase());
+        if (exactMatch) selectTag(exactMatch);
+        else if (allowNew) createTag(typed);
+    };
+
+    const moveActive = (step: 1 | -1): void => {
+        setIsOpen(true);
+        const count = options.length;
+        if (count === 0) return;
+        if (activeIndex < 0) setActive(step > 0 ? 0 : count - 1);
+        else setActive((activeIndex + step + count) % count);
     };
 
     const handleRemoveTag = (tagToRemove: string): void => {
         onChange(selectedTags.filter(tag => tag !== tagToRemove));
     };
 
+    const handleInputChange = (e: ChangeEvent<HTMLInputElement>): void => {
+        setInputValue(e.target.value);
+        setIsOpen(true);
+        setActive(-1);
+    };
+
     const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>): void => {
-        if (e.key === 'Enter') {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
             e.preventDefault();
-            if (inputValue.trim()) {
-                const exactMatch = filteredTags.find(tag => tag.toLowerCase() === inputValue.trim().toLowerCase());
-                if (exactMatch) {
-                    handleSelectTag(exactMatch);
-                } else if (allowNew) {
-                    handleCreateTag();
-                }
-            }
+            moveActive(e.key === 'ArrowDown' ? 1 : -1);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            pickWithEnter();
+        } else if (e.key === 'Escape' && listVisible) {
+            // Only the list closes; a second Escape is left to the popover or dialog around the field
+            e.preventDefault();
+            e.stopPropagation();
+            close();
         } else if (e.key === 'Backspace' && !inputValue && selectedTags.length > 0) {
             const lastTag = selectedTags.at(-1);
             if (lastTag) handleRemoveTag(lastTag);
         }
     };
 
+    const rowClass = (selected: boolean): string => {
+        if (isLight) return selected ? 'bg-gray-100' : 'hover:bg-gray-100';
+        return selected ? 'bg-gray-700' : 'hover:bg-gray-700';
+    };
+
     return (
-        <div className="relative" ref={wrapperRef}>
+        <div className="relative">
             <div className={`flex min-h-10 flex-wrap items-center gap-2 rounded-lg border px-3 py-1 focus-within:ring-2 focus-within:ring-blue-500 transition-colors ${isLight ? 'bg-gray-50 border-gray-300' : 'bg-gray-900 border-gray-700'}`}>
                 {selectedTags.map(tag => (
                     <TagBadge
@@ -141,48 +166,52 @@ function TagPicker({
                 ))}
                 <input
                     type="text"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded={listVisible}
+                    aria-controls={listVisible ? listId : undefined}
+                    aria-activedescendant={activeIndex >= 0 ? optionId(activeIndex) : undefined}
                     className={`min-h-8 flex-1 min-w-[120px] outline-none bg-transparent ${isLight ? 'text-gray-900 placeholder-gray-500' : 'text-gray-100 placeholder-gray-400'}`}
                     placeholder={selectedTags.length === 0 ? placeholder : ''}
                     aria-label={placeholder}
                     value={inputValue}
                     onChange={handleInputChange}
                     onFocus={() => setIsOpen(true)}
+                    onClick={() => setIsOpen(true)}
+                    onBlur={close}
                     onKeyDown={handleKeyDown}
                 />
             </div>
 
-            {isOpen && (inputValue || filteredTags.length > 0) && (
-                <ul className={`absolute z-50 w-full mt-1 top-full left-0 max-h-60 overflow-auto border rounded-lg shadow-lg ${isLight ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
-                    {filteredTags.map(tag => (
-                        <li key={tag}>
-                            <button
-                                type="button"
-                                onClick={() => handleSelectTag(tag)}
-                                className={`w-full text-left px-4 py-2 cursor-pointer ${isLight ? 'hover:bg-gray-100 text-gray-900' : 'hover:bg-gray-700 text-gray-100'}`}
-                            >
-                                <TagBadge
-                                    tag={tag}
-                                    metadata={tagMetadata}
-                                    theme={theme}
-                                    showHash={false}
-                                    size="xs"
-                                />
-                            </button>
+            {listVisible && (
+                <ul
+                    id={listId}
+                    ref={listRef}
+                    role="listbox"
+                    aria-label={t('tagPickerSuggestions')}
+                    // Choosing with the pointer (or scrolling the list) keeps focus in the field
+                    onMouseDown={(event) => event.preventDefault()}
+                    className={`absolute z-50 w-full mt-1 top-full left-0 max-h-60 overflow-auto border rounded-lg shadow-lg ${isLight ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}
+                >
+                    {options.map((option, index) => (
+                        <li
+                            key={`${option.kind}-${option.tag}`}
+                            id={optionId(index)}
+                            role="option"
+                            aria-selected={index === activeIndex}
+                            onClick={() => choose(option)}
+                            onMouseEnter={() => setActive(index)}
+                            className={`px-4 py-2 cursor-pointer ${rowClass(index === activeIndex)} ${option.kind === 'create'
+                                ? `font-medium ${isLight ? 'text-blue-700' : 'text-blue-300'}`
+                                : (isLight ? 'text-gray-900' : 'text-gray-100')}`}
+                        >
+                            {option.kind === 'tag' ? (
+                                <TagBadge tag={option.tag} metadata={tagMetadata} theme={theme} showHash={false} size="xs" />
+                            ) : t('tagPickerCreate', { tag: option.tag })}
                         </li>
                     ))}
-                    {allowNew && inputValue && !filteredTags.some(tag => tag.toLowerCase() === inputValue.toLowerCase()) && (
-                        <li>
-                            <button
-                                type="button"
-                                onClick={handleCreateTag}
-                                className={`w-full text-left px-4 py-2 cursor-pointer font-medium ${isLight ? 'hover:bg-gray-100 text-blue-600' : 'hover:bg-gray-700 text-blue-400'}`}
-                            >
-                                {t('tagPickerCreate', { tag: inputValue })}
-                            </button>
-                        </li>
-                    )}
-                    {filteredTags.length === 0 && (!allowNew || !inputValue) && (
-                        <li className={`px-4 py-2 italic ${mutedTextClass(!isLight)}`}>
+                    {options.length === 0 && (
+                        <li role="option" aria-disabled="true" aria-selected={false} className={`px-4 py-2 italic ${mutedTextClass(!isLight)}`}>
                             {t('tagPickerNoTags')}
                         </li>
                     )}

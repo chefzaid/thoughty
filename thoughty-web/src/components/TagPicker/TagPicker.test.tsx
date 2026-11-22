@@ -51,21 +51,21 @@ describe('TagPicker', () => {
         it('hides placeholder when tags are selected', () => {
             render(<TagPicker {...defaultProps} selectedTags={['work']} />);
 
-            const input = screen.getByRole('textbox');
+            const input = screen.getByRole('combobox');
             expect(input).not.toHaveAttribute('placeholder', 'Add tags...');
         });
 
         it('applies light theme styles', () => {
             render(<TagPicker {...defaultProps} theme="light" />);
 
-            const container = screen.getByRole('textbox').parentElement;
+            const container = screen.getByRole('combobox').parentElement;
             expect(container).toHaveClass('bg-gray-50');
         });
 
         it('applies dark theme styles', () => {
             render(<TagPicker {...defaultProps} theme="dark" />);
 
-            const container = screen.getByRole('textbox').parentElement;
+            const container = screen.getByRole('combobox').parentElement;
             expect(container).toHaveClass('bg-gray-900');
         });
     });
@@ -75,7 +75,7 @@ describe('TagPicker', () => {
             const user = userEvent.setup();
             render(<TagPicker {...defaultProps} />);
 
-            const input = screen.getByRole('textbox');
+            const input = screen.getByRole('combobox');
             await user.click(input);
 
             expect(screen.getByText('work')).toBeInTheDocument();
@@ -86,7 +86,7 @@ describe('TagPicker', () => {
             const user = userEvent.setup();
             render(<TagPicker {...defaultProps} />);
 
-            const input = screen.getByRole('textbox');
+            const input = screen.getByRole('combobox');
             await user.type(input, 'wo');
 
             expect(screen.getByText('work')).toBeInTheDocument();
@@ -102,20 +102,20 @@ describe('TagPicker', () => {
                 </div>
             );
 
-            const input = screen.getByRole('textbox');
+            const input = screen.getByRole('combobox');
             await user.click(input);
             expect(screen.getByText('work')).toBeInTheDocument();
 
             await user.click(screen.getByText('Outside'));
             // Dropdown should be closed - tags list should not be visible as dropdown items
-            expect(screen.queryByRole('listitem')).not.toBeInTheDocument();
+            expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
         });
 
         it('shows "No tags found" when no matches', async () => {
             const user = userEvent.setup();
             render(<TagPicker {...defaultProps} allowNew={false} />);
 
-            const input = screen.getByRole('textbox');
+            const input = screen.getByRole('combobox');
             await user.type(input, 'xyz');
 
             expect(screen.getByText('No tags found')).toBeInTheDocument();
@@ -128,7 +128,7 @@ describe('TagPicker', () => {
             const user = userEvent.setup();
             render(<TagPicker {...defaultProps} onChange={onChange} />);
 
-            const input = screen.getByRole('textbox');
+            const input = screen.getByRole('combobox');
             await user.click(input);
             await user.click(screen.getByText('work'));
 
@@ -139,11 +139,11 @@ describe('TagPicker', () => {
             const user = userEvent.setup();
             render(<TagPicker {...defaultProps} selectedTags={['work']} />);
 
-            const input = screen.getByRole('textbox');
+            const input = screen.getByRole('combobox');
             await user.click(input);
 
             // 'work' should not be in the dropdown since it's already selected
-            const dropdownItems = screen.getAllByRole('listitem');
+            const dropdownItems = screen.getAllByRole('option');
             const dropdownTexts = dropdownItems.map(item => item.textContent);
             expect(dropdownTexts).not.toContain('work');
         });
@@ -153,7 +153,7 @@ describe('TagPicker', () => {
             const user = userEvent.setup();
             render(<TagPicker {...defaultProps} onChange={onChange} singleSelect={true} />);
 
-            const input = screen.getByRole('textbox');
+            const input = screen.getByRole('combobox');
             await user.click(input);
             await user.click(screen.getByText('work'));
 
@@ -166,7 +166,7 @@ describe('TagPicker', () => {
             const user = userEvent.setup();
             render(<TagPicker {...defaultProps} />);
 
-            const input = screen.getByRole('textbox');
+            const input = screen.getByRole('combobox');
             await user.type(input, 'newtag');
 
             expect(screen.getByText('Create "newtag"')).toBeInTheDocument();
@@ -177,7 +177,7 @@ describe('TagPicker', () => {
             const user = userEvent.setup();
             render(<TagPicker {...defaultProps} onChange={onChange} />);
 
-            const input = screen.getByRole('textbox');
+            const input = screen.getByRole('combobox');
             await user.type(input, 'newtag');
             await user.click(screen.getByText('Create "newtag"'));
 
@@ -188,7 +188,7 @@ describe('TagPicker', () => {
             const user = userEvent.setup();
             render(<TagPicker {...defaultProps} allowNew={false} />);
 
-            const input = screen.getByRole('textbox');
+            const input = screen.getByRole('combobox');
             await user.type(input, 'newtag');
 
             expect(screen.queryByText('Create "newtag"')).not.toBeInTheDocument();
@@ -199,7 +199,7 @@ describe('TagPicker', () => {
             const user = userEvent.setup();
             render(<TagPicker {...defaultProps} onChange={onChange} selectedTags={['existing']} />);
 
-            const input = screen.getByRole('textbox');
+            const input = screen.getByRole('combobox');
             await user.type(input, 'existing');
             await user.keyboard('{Enter}');
 
@@ -230,7 +230,7 @@ describe('TagPicker', () => {
             const user = userEvent.setup();
             render(<TagPicker {...defaultProps} onChange={onChange} />);
 
-            const input = screen.getByRole('textbox');
+            const input = screen.getByRole('combobox');
             await user.type(input, 'work');
             await user.keyboard('{Enter}');
 
@@ -242,7 +242,7 @@ describe('TagPicker', () => {
             const user = userEvent.setup();
             render(<TagPicker {...defaultProps} onChange={onChange} />);
 
-            const input = screen.getByRole('textbox');
+            const input = screen.getByRole('combobox');
             await user.type(input, 'brandnew');
             await user.keyboard('{Enter}');
 
@@ -254,7 +254,7 @@ describe('TagPicker', () => {
             const user = userEvent.setup();
             render(<TagPicker {...defaultProps} onChange={onChange} selectedTags={['work', 'personal']} />);
 
-            const input = screen.getByRole('textbox');
+            const input = screen.getByRole('combobox');
             await user.click(input);
             await user.keyboard('{Backspace}');
 
@@ -272,7 +272,7 @@ describe('TagPicker', () => {
             const { rerender } = render(<TagPicker {...defaultProps} selectedTags={['work']} t={t} />);
 
             expect(screen.getByRole('button', { name: removeLabel })).toBeInTheDocument();
-            await user.type(screen.getByRole('textbox'), 'garden');
+            await user.type(screen.getByRole('combobox'), 'garden');
             expect(screen.getByText(createLabel)).toBeInTheDocument();
 
             rerender(<TagPicker {...defaultProps} selectedTags={['work']} allowNew={false} t={t} />);

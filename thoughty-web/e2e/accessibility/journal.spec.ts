@@ -152,14 +152,18 @@ test.describe('journal accessibility with entries', () => {
         await expectNoAccessibilityViolations(page);
 
         await button('Add tags').click();
-        const tags = bar.getByRole('textbox', { name: 'Select tags...' });
+        const tags = bar.getByRole('combobox', { name: 'Select tags...' });
+        // The open suggestions, one row highlighted
+        await tags.fill('r');
+        await tags.press('ArrowDown');
+        await expect(bar.getByRole('option', { selected: true })).toBeVisible();
+        await expectNoAccessibilityViolations(page);
         await tags.fill('running');
         await tags.press('Enter');
         await expect(button('Apply')).toBeEnabled();
+        // The pick closes the suggestions, so nothing covers Apply and Cancel
+        await expect(bar.getByRole('listbox')).toHaveCount(0);
         await expectNoAccessibilityViolations(page);
-        // The suggestions stay open after a pick, over Apply and Cancel, until a click elsewhere
-        await page.getByText('1 selected').click();
-        await expect(bar.getByText('archive', { exact: true })).toBeHidden();
         await expectReadableOnHover(page, [button('Apply'), button('Cancel')]);
 
         await button('Move to diary').click();

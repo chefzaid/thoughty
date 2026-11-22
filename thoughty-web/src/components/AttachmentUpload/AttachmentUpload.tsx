@@ -81,8 +81,9 @@ function AttachmentCard({
     onRemove: () => void;
     accentClass: string;
     action?: ReactNode;
-    t: (key: string) => string;
+    t: (key: string, params?: Record<string, string | number>) => string;
 }>) {
+    const removeLabel = t('removeAttachmentNamed', { name });
     return (
         <div
             className={`relative group flex w-full max-w-[240px] flex-col gap-3 rounded-lg border p-3 ${accentClass}`}
@@ -100,10 +101,12 @@ function AttachmentCard({
             <button
                 type="button"
                 onClick={onRemove}
-                className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100"
-                title={t('removeAttachment')}
+                // Shown on hover, while the card has keyboard focus, and always where there is no hover
+                className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 [@media(hover:none)]:opacity-100"
+                aria-label={removeLabel}
+                title={removeLabel}
             >
-                ×
+                <span aria-hidden="true">×</span>
             </button>
         </div>
     );

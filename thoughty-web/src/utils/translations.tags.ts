@@ -27,6 +27,7 @@ export type TagsTranslationKey =
   | "noMatchingTag"
   | "tagPickerCreate"
   | "tagPickerNoTags"
+  | "tagPickerSuggestions"
   | "journalRetagSelected_one"
   | "journalRetagSelected_other"
   | "applyingJournalRetag"
@@ -79,6 +80,7 @@ export const tagsTranslations: Record<Language, Record<TagsTranslationKey, strin
     noMatchingTag: "No matching tag",
     tagPickerCreate: "Create \"{tag}\"",
     tagPickerNoTags: "No tags found",
+    tagPickerSuggestions: "Tag suggestions",
     journalRetagSelected_one: "{count} entry selected",
     journalRetagSelected_other: "{count} entries selected",
     applyingJournalRetag: "Applying changes...",
@@ -132,6 +134,7 @@ export const tagsTranslations: Record<Language, Record<TagsTranslationKey, strin
     noMatchingTag: "Aucun tag correspondant",
     tagPickerCreate: "Créer « {tag} »",
     tagPickerNoTags: "Aucun tag trouvé",
+    tagPickerSuggestions: "Suggestions de tags",
     journalRetagSelected_one: "{count} entrée sélectionnée",
     journalRetagSelected_other: "{count} entrées sélectionnées",
     applyingJournalRetag: "Application des changements...",

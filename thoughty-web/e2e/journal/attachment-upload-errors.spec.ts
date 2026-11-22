@@ -71,13 +71,49 @@ test.describe('Attachment upload errors', () => {
 
         // The remove badge shows while the card is hovered. axe leaves its one-character "×" unchecked
         // ("too short to determine if it is actual text"), so its contrast is measured here.
-        const remove = page.getByTitle('Remove attachment');
+        const remove = page.getByRole('button', { name: 'Remove attachment note.txt' });
         await remove.hover();
         await expect(remove).toHaveCSS('opacity', '1');
         expect(await ownContrast(remove)).toBeGreaterThanOrEqual(4.5);
       });
     }
   }
+
+  test('reaches the remove badge with Tab, shows it while focused, and removes the file with Enter', async ({ page }) => {
+    await setupMockApp(page, { startAuthenticated: true });
+    await page.goto('/journal');
+    await page.locator('input[type="file"]').first().setInputFiles([note]);
+    const remove = page.getByRole('button', { name: 'Remove attachment note.txt' });
+    await expect(remove).toHaveCSS('opacity', '0');
+
+    await page.getByTitle('Attach files').first().focus();
+    for (let presses = 0; presses < 10 && !(await remove.evaluate((node) => node === document.activeElement)); presses += 1) {
+      await page.keyboard.press('Tab');
+    }
+    await expect(remove).toBeFocused();
+    await expect(remove).toHaveCSS('opacity', '1');
+    await expect(remove).toHaveCSS('outline-style', 'solid');
+
+    await page.keyboard.press('Enter');
+    await expect(page.getByText('note.txt')).toHaveCount(0);
+    await expect(remove).toHaveCount(0);
+  });
+
+  test.describe('on a touch screen', () => {
+    test.use({ hasTouch: true, isMobile: true });
+
+    test('always shows the remove badge, since nothing can hover it', async ({ page }) => {
+      await setupMockApp(page, { startAuthenticated: true });
+      await page.goto('/journal');
+      expect(await page.evaluate(() => matchMedia('(hover: none)').matches)).toBe(true);
+      await page.locator('input[type="file"]').first().setInputFiles([note]);
+
+      const remove = page.getByRole('button', { name: 'Remove attachment note.txt' });
+      await expect(remove).toHaveCSS('opacity', '1');
+      await remove.tap();
+      await expect(page.getByText('note.txt')).toHaveCount(0);
+    });
+  });
 
   test('says which file is too large, in French', async ({ page }) => {
     await setupMockApp(page, { startAuthenticated: true, config: { language: 'fr' } });

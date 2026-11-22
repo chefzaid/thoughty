@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState, type KeyboardEvent } from 'react';
 import TagPicker from '../TagPicker/TagPicker';
 import type { RephraseMode } from '../../services/api/aiService';
 import type { Diary, TranslationFunction as TranslationFn } from '../../types';
@@ -44,6 +44,9 @@ export function BulkActionBar({
     const [showMovePicker, setShowMovePicker] = useState(false);
     const [showRephrasePicker, setShowRephrasePicker] = useState(false);
     const [bulkTags, setBulkTags] = useState<string[]>([]);
+    const rephraseButtonRef = useRef<HTMLButtonElement>(null);
+    const tagsButtonRef = useRef<HTMLButtonElement>(null);
+    const moveButtonRef = useRef<HTMLButtonElement>(null);
     const aiOn = useFeatureFlag('ai');
     const publicSharing = useFeatureFlag('publicSharing');
     const bookConverter = useFeatureFlag('bookConverter');
@@ -63,12 +66,25 @@ export function BulkActionBar({
         return null;
     }
 
+    // Escape closes the open picker, as Cancel would, and gives focus back to its button
+    const closePickerOnEscape = (event: KeyboardEvent<HTMLDivElement>) => {
+        if (event.key !== 'Escape') return;
+        const trigger = (showRephrasePicker && rephraseButtonRef) || (showTagPicker && tagsButtonRef) || (showMovePicker && moveButtonRef);
+        if (!trigger) return;
+        setShowRephrasePicker(false);
+        setShowTagPicker(false);
+        setShowMovePicker(false);
+        setBulkTags([]);
+        trigger.current?.focus();
+    };
+
     return (
         <div className={`sticky top-0 z-10 flex flex-wrap items-center gap-2 p-3 rounded-lg border shadow-md mb-4 ${isDark ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}>
             <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                 {pluralPhrase(t, 'bulkSelected', selectedCount, language)}
             </span>
-            <div className="flex flex-wrap gap-2 ml-auto">
+            {/* Keys from the pickers' own buttons and fields bubble here */}
+            <div className="flex flex-wrap gap-2 ml-auto" onKeyDown={closePickerOnEscape}>
                 {bulkButtons.map(({ action, options, label, className }) => (
                     <button type="button"
                         key={`${action}-${label}`}
@@ -80,6 +96,8 @@ export function BulkActionBar({
                 ))}
                 {aiOn && <div className="relative">
                     <button type="button"
+                        ref={rephraseButtonRef}
+                        aria-expanded={showRephrasePicker}
                         onClick={() => { setShowRephrasePicker(!showRephrasePicker); setShowTagPicker(false); setShowMovePicker(false); }}
                         className="px-3 py-1.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
                     >
@@ -105,6 +123,8 @@ export function BulkActionBar({
                 </div>}
                 <div className="relative">
                     <button type="button"
+                        ref={tagsButtonRef}
+                        aria-expanded={showTagPicker}
                         onClick={() => { setShowTagPicker(!showTagPicker); setShowMovePicker(false); setShowRephrasePicker(false); }}
                         className="px-3 py-1.5 text-xs font-medium bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
                     >
@@ -142,6 +162,8 @@ export function BulkActionBar({
                 {diaries.length > 1 && (
                     <div className="relative">
                         <button type="button"
+                            ref={moveButtonRef}
+                            aria-expanded={showMovePicker}
                             onClick={() => { setShowMovePicker(!showMovePicker); setShowTagPicker(false); setShowRephrasePicker(false); }}
                             className="px-3 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                         >

@@ -51,7 +51,7 @@ export type JournalTranslationKey =
   | "bulkDeleteMessage_other"
   | "selectTags"
   | "attachFiles"
-  | "removeAttachment"
+  | "removeAttachmentNamed"
   | "attachmentTypeNotAllowed"
   | "attachmentTooLarge"
   | "attachmentRejected"
@@ -154,7 +154,7 @@ export const journalTranslations: Record<Language, Record<JournalTranslationKey,
     bulkDeleteMessage_other: "Move {count} entries to the recycle bin? You can restore them from there for 30 days.",
     selectTags: "Select tags...",
     attachFiles: "Attach files",
-    removeAttachment: "Remove attachment",
+    removeAttachmentNamed: "Remove attachment {name}",
     attachmentTypeNotAllowed:
       "This file type is not allowed. Allowed: images, audio, videos (MP4, WebM, MOV), PDF, plain text.",
     attachmentTooLarge: "File is too large. Maximum size is 5 MB.",
@@ -260,7 +260,7 @@ export const journalTranslations: Record<Language, Record<JournalTranslationKey,
     bulkDeleteMessage_other: "Placer {count} entrées dans la corbeille ? Vous pourrez les y restaurer pendant 30 jours.",
     selectTags: "Sélectionner des tags...",
     attachFiles: "Joindre des fichiers",
-    removeAttachment: "Supprimer la pièce jointe",
+    removeAttachmentNamed: "Supprimer la pièce jointe {name}",
     attachmentTypeNotAllowed:
       "Ce type de fichier n'est pas autorisé. Autorisés : images, audio, vidéos (MP4, WebM, MOV), PDF, texte brut.",
     attachmentTooLarge:

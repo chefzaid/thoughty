@@ -71,8 +71,26 @@ describe('AttachmentUpload', () => {
       <AttachmentUpload {...defaultProps} pendingFiles={[file]} onRemovePendingFile={onRemove} />
     );
 
-    const removeButtons = screen.getAllByTitle('removeAttachment');
-    await user.click(removeButtons[0]!);
+    await user.click(screen.getByRole('button', { name: 'removeAttachmentNamed' }));
+    expect(onRemove).toHaveBeenCalledWith(0);
+  });
+
+  it.each([
+    ['en', 'Remove attachment notes.txt'],
+    ['fr', 'Supprimer la pièce jointe notes.txt'],
+  ] as const)('names the remove badge after the file in %s, and Enter on it removes the file', async (language, name) => {
+    const user = userEvent.setup();
+    const t = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);
+    const onRemove = vi.fn();
+    render(
+      <AttachmentUpload {...defaultProps} t={t} pendingFiles={[new File(['data'], 'notes.txt', { type: 'text/plain' })]} onRemovePendingFile={onRemove} />
+    );
+
+    const remove = screen.getByRole('button', { name });
+    // Hidden only while nothing hovers or focuses the card, and never on a screen without hover
+    expect(remove).toHaveClass('opacity-0', 'group-hover:opacity-100', 'group-focus-within:opacity-100', 'focus-visible:opacity-100', '[@media(hover:none)]:opacity-100', 'bg-red-600');
+    remove.focus();
+    await user.keyboard('{Enter}');
     expect(onRemove).toHaveBeenCalledWith(0);
   });
 
@@ -90,8 +108,7 @@ describe('AttachmentUpload', () => {
       <AttachmentUpload {...defaultProps} uploadedAttachments={[attachment]} onRemoveUploadedAttachment={onRemove} />
     );
 
-    const removeButtons = screen.getAllByTitle('removeAttachment');
-    await user.click(removeButtons[0]!);
+    await user.click(screen.getByRole('button', { name: 'removeAttachmentNamed' }));
     expect(onRemove).toHaveBeenCalledWith(42);
   });
 
