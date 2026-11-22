@@ -133,11 +133,11 @@ describe('useSignInActions', () => {
 describe('useAccountActions', () => {
     const setError = vi.fn();
     const setUser = vi.fn();
-    const clearSession = vi.fn();
+    const signOutLocally = vi.fn();
     const authFetch = vi.fn();
     const renderAccount = () => renderHook(() => useAccountActions({
         authFetch,
-        clearSession,
+        signOutLocally,
         setError,
         setUser,
     })).result;

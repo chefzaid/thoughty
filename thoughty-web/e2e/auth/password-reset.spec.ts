@@ -90,7 +90,7 @@ test.describe('Password reset', () => {
     await expect(page).toHaveURL(/\/login$/);
   });
 
-  test('speaks French in the light theme, fits a phone, and signs a signed-in browser out', async ({ page }) => {
+  test('speaks French in the light theme, fits a phone, and signs a signed-in browser out of it', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 800 });
     // The language and theme come from the profile settings, which only a signed-in visitor has
     // (TODO.md › Needs Input: which language signed-out pages use)
@@ -109,12 +109,15 @@ test.describe('Password reset', () => {
     await page.getByRole('textbox', { name: 'Confirmer le mot de passe' }).fill(NEW_PASSWORD);
     await page.getByRole('button', { name: 'Enregistrer le nouveau mot de passe' }).click();
 
+    // Signed out, the page drops the writer's settings with the rest: it reads as every signed-out page does
     await expect(page.getByRole('status')).toHaveText(
-      'Votre mot de passe a été modifié et tous les appareils ont été déconnectés. Connectez-vous avec votre nouveau mot de passe.',
+      'Your password has been changed and every device was signed out. Sign in with your new password.',
     );
+    await expect(page.getByRole('heading', { name: 'Choose a new password' })).toBeFocused();
+    await expect(page.locator('body')).not.toHaveClass(/light-mode/);
     await expectNoAccessibilityViolations(page);
     expect(state.authenticated).toBe(false);
-    await page.getByRole('button', { name: 'Se connecter' }).click();
+    await page.getByRole('button', { name: 'Sign In' }).click();
     await expect(page).toHaveURL(/\/login$/);
   });
 });

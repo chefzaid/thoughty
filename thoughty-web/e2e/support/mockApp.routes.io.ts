@@ -1,9 +1,5 @@
-import {
-  buildExportBody,
-  DEFAULT_FORMAT_CONFIG,
-  parseImportedEntries,
-  sortEntries,
-} from "./mockApp.shared";
+import { DEFAULT_FORMAT_CONFIG, sortEntries } from "./mockApp.shared";
+import { buildExportBody, parseImportedEntries } from "./mockApp.io-formats";
 import { fulfillJson, readQueryFlag, type RouteContext } from "./mockApp.route-utils";
 import { importedInlineImages } from "./mockApp.routes.attachments";
 

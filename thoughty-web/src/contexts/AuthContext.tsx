@@ -19,6 +19,8 @@ interface AuthContextValue {
   loading: boolean;
   error: string | null;
   isAuthenticated: boolean;
+  /** Moves on each time a session ends; what the app holds for a writer is keyed on it. */
+  sessionKey: number;
   register: (email: string, password: string, username: string, website?: string) => Promise<AuthResult>;
   completeSignUp: (token: string, password: string, username?: string) => Promise<AuthResult>;
   login: (identifier: string, password: string, website?: string) => Promise<AuthResult>;
@@ -52,9 +54,10 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     user,
     setUser,
     loading,
+    sessionKey,
     getAccessToken,
     startSession,
-    clearSession,
+    signOutLocally,
     authFetch,
     logout,
   } = useAuthSession();
@@ -73,13 +76,14 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     verifyEmail,
     resendVerificationEmail,
     deleteAccount,
-  } = useAccountActions({ authFetch, clearSession, setError, setUser });
+  } = useAccountActions({ authFetch, signOutLocally, setError, setUser });
 
   const value = useMemo<AuthContextValue>(() => ({
     user,
     loading,
     error,
     isAuthenticated: !!user,
+    sessionKey,
     register,
     completeSignUp,
     login,
@@ -100,6 +104,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     user,
     loading,
     error,
+    sessionKey,
     register,
     completeSignUp,
     login,

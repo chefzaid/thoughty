@@ -2,9 +2,12 @@ import '@testing-library/jest-dom/vitest';
 import { configure } from '@testing-library/react';
 import { vi } from 'vitest';
 import { createElement, type ChangeEvent } from 'react';
+import { installFileBroadcastChannel } from './broadcastChannel';
 
 // Lazy renderers can take a few seconds to resolve on a contended CI node.
 configure({ asyncUtilTimeout: 10000 });
+
+installFileBroadcastChannel();
 
 // Mock the Web Speech API globally for all tests
 if (!globalThis.speechSynthesis) {

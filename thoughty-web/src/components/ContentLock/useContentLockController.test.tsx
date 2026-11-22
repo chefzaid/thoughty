@@ -18,6 +18,8 @@ const service = vi.hoisted(() => ({
 }));
 
 vi.mock('../../hooks/useAuthenticatedService', () => ({ useAuthenticatedService: () => service }));
+const session = vi.hoisted(() => ({ accessToken: 'access-token' as string | null }));
+vi.mock('../../contexts/AuthContext', () => ({ useAuth: () => ({ getAccessToken: () => session.accessToken }) }));
 
 const t = (key: string, params?: Record<string, string | number>) =>
   params ? `${key} ${Object.values(params).join(' | ')}` : key;
@@ -39,6 +41,7 @@ const renderController = () => render(<QueryClientProvider client={createTestQue
 describe('useContentLockController', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    session.accessToken = 'access-token';
     service.status.mockResolvedValue(status());
     service.lock.mockResolvedValue({ data: { success: true }, error: null });
   });
@@ -131,6 +134,22 @@ describe('useContentLockController', () => {
     await expect(api.setDiaryLocked(2, false)).resolves.toBe(false);
     await act(() => api.refresh());
     await waitFor(() => expect(getContentUnlockToken()).toBeNull());
+  });
+
+  it('reads nothing again when the unlock ends with the session', async () => {
+    const client = createTestQueryClient();
+    render(<QueryClientProvider client={client}><Harness /></QueryClientProvider>);
+    await waitFor(() => expect(screen.getByTestId('state')).toHaveTextContent('true-false'));
+    act(() => setContentUnlockToken('tok'));
+    await waitFor(() => expect(screen.getByTestId('state')).toHaveTextContent('true-true'));
+    const reads = service.status.mock.calls.length;
+    const reset = vi.spyOn(client, 'resetQueries');
+
+    session.accessToken = null;
+    act(() => setContentUnlockToken(null));
+
+    expect(reset).not.toHaveBeenCalled();
+    expect(service.status).toHaveBeenCalledTimes(reads);
   });
 
   it('names its strings in English and French', () => {

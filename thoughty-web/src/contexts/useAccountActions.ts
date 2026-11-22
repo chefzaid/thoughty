@@ -9,13 +9,14 @@ type SuccessMessageResponse = components['schemas']['SuccessMessageResponseDto']
 
 interface AccountActionsOptions {
   authFetch: (url: string, options?: RequestInit) => Promise<Response>;
-  clearSession: () => void;
+  /** Ends the session in this browser as a sign-out does (drafts kept here and other tabs included). */
+  signOutLocally: () => void;
   setError: (message: string | null) => void;
   setUser: Dispatch<SetStateAction<User | null>>;
 }
 
 /** Password, email verification and account deletion actions. */
-export function useAccountActions({ authFetch, clearSession, setError, setUser }: AccountActionsOptions) {
+export function useAccountActions({ authFetch, signOutLocally, setError, setUser }: AccountActionsOptions) {
   // Change password
   const changePassword = useCallback(async (
     currentPassword: string,
@@ -134,14 +135,13 @@ export function useAccountActions({ authFetch, clearSession, setError, setUser }
 
       const data = await safeJsonParse<SuccessMessageResponse>(response);
 
-      // Log the user out after account deletion; the server has cleared the cookie
-      clearSession();
-      setUser(null);
+      // The account is going: sign out here and in the other tabs; the server has cleared the cookie
+      signOutLocally();
       return { success: true, message: data?.message };
     } catch (err) {
       return authFailure(err, 'deleteAccountFailed', setError);
     }
-  }, [authFetch, clearSession, setError, setUser]);
+  }, [authFetch, setError, signOutLocally]);
 
   return {
     changePassword,

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../../contexts/AuthContext';
 import { useAuthenticatedService } from '../../hooks/useAuthenticatedService';
 import { JOURNAL_ENTRY_QUERY_KEYS } from '../../hooks/useEntriesState';
 import {
@@ -42,6 +43,7 @@ interface ControllerOptions {
 export function useContentLockController({ isDark, language, t }: ControllerOptions) {
     const service = useAuthenticatedService(createContentLockService);
     const queryClient = useQueryClient();
+    const { getAccessToken } = useAuth();
     const [unlocked, setUnlocked] = useState(() => getContentUnlockToken() !== null);
     const [epoch, setEpoch] = useState(0);
     const [pending, setPending] = useState<Pending | null>(null);
@@ -58,9 +60,11 @@ export function useContentLockController({ isDark, language, t }: ControllerOpti
     useEffect(() => subscribeContentUnlockToken((token) => {
         setUnlocked(token !== null);
         setEpoch((current) => current + 1);
+        // A session that ended took the unlock and the whole cache with it (`useSessionQueryClient`): nothing reads again
+        if (getAccessToken() === null) return;
         // What the ended unlock showed leaves the cache at once; with a new one, everything reads again
         void (token === null ? queryClient.resetQueries({ predicate: holdsEntryContent }) : queryClient.invalidateQueries());
-    }), [queryClient]);
+    }), [getAccessToken, queryClient]);
 
     // The server ended the unlock (15 minutes without a request): the tab lets go of it too
     const serverUnlocked = status.data?.unlocked;

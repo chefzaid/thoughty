@@ -1,4 +1,5 @@
-import { useRef, useState, type SubmitEvent } from 'react';
+import { useEffect, useRef, useState, type SubmitEvent } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { useLinkToken } from '../../hooks/useLinkToken';
@@ -21,10 +22,15 @@ interface ResetPasswordPageProps {
   readonly onSignIn: () => void;
 }
 
-/** The new password form, the link that cannot work (with a form for a new one), or done. */
-type Step = 'password' | 'newLink' | 'done';
+/** The new password form, or the link that cannot work (with a form for a new one); done is in the history entry. */
+type Step = 'password' | 'newLink';
 
 const INVALID_LINK = 'apiError_AUTH_INVALID_RESET_TOKEN';
+
+/** What the history entry keeps once the reset is done, so the page still says so after signing out started it again. */
+interface ResetPasswordLocationState {
+  readonly passwordReset?: boolean;
+}
 
 /**
  * The page the emailed password reset link opens. The link's token is taken from the address and
@@ -35,7 +41,11 @@ const INVALID_LINK = 'apiError_AUTH_INVALID_RESET_TOKEN';
 function ResetPasswordPage({ t, theme, onSignIn }: ResetPasswordPageProps) {
   const { resetPassword, forgotPassword, isAuthenticated, logout } = useAuth();
   const token = useLinkToken();
-  const [step, setStep] = useState<Step>(token ? 'password' : 'newLink');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const resetDone = (location.state as ResetPasswordLocationState | null)?.passwordReset === true;
+  const [formStep, setStep] = useState<Step>(token ? 'password' : 'newLink');
+  const step: Step | 'done' = resetDone ? 'done' : formStep;
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -44,6 +54,8 @@ function ResetPasswordPage({ t, theme, onSignIn }: ResetPasswordPageProps) {
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const titleRef = useRef<HTMLHeadingElement>(null);
+  /** Set by this page's own reset in a signed-in browser, never by a history entry visited again. */
+  const signOutOnDone = useRef(false);
   const isDark = theme !== 'light';
   const fieldClass = isDark ? 'dark' : 'light';
   const passwordType = showPassword ? 'text' : 'password';
@@ -53,6 +65,18 @@ function ResetPasswordPage({ t, theme, onSignIn }: ResetPasswordPageProps) {
     // The form the focus was in is gone: start again from the page's title
     requestAnimationFrame(() => titleRef.current?.focus());
   };
+
+  // Done, the form the focus was in is gone (and signing out may have started the page again): start from the title.
+  // Every session of the account was revoked, so this browser signs in again too, once the history entry
+  // holds the outcome: signing out starts the app's pages again, and this one then still says it is done.
+  useEffect(() => {
+    if (!resetDone) return;
+    titleRef.current?.focus();
+    if (signOutOnDone.current) {
+      signOutOnDone.current = false;
+      void logout();
+    }
+  }, [logout, resetDone]);
 
   const handleReset = async (event: SubmitEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -66,13 +90,11 @@ function ResetPasswordPage({ t, theme, onSignIn }: ResetPasswordPageProps) {
     setLoading(true);
     const result = await resetPassword(token, password);
     if (result.success) {
-      // Every session of the account was revoked; this browser signs in again too
-      if (isAuthenticated) await logout();
-      setLoading(false);
       setPassword('');
       setConfirmPassword('');
-      setSuccessMessage(t('resetPasswordDone'));
-      goTo('done');
+      signOutOnDone.current = isAuthenticated;
+      navigate(location, { replace: true, state: { passwordReset: true } satisfies ResetPasswordLocationState });
+      setLoading(false);
       return;
     }
     setLoading(false);
@@ -170,7 +192,7 @@ function ResetPasswordPage({ t, theme, onSignIn }: ResetPasswordPageProps) {
 
         {step === 'done' && (
           <div className="sign-up-step">
-            <AuthStatusMessages successMessage={successMessage} />
+            <AuthStatusMessages successMessage={t('resetPasswordDone')} />
             <div className="sign-up-step-actions">
               <button type="button" className="auth-submit-btn" onClick={onSignIn}>{t('signIn')}</button>
             </div>

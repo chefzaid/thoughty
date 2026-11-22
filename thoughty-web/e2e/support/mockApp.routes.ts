@@ -115,7 +115,7 @@ async function handleAuthRoutes({
     state.authenticated = true;
     state.twoFactorChallengeToken = null;
     await fulfillJson(route, {
-      accessToken: "test-access-token",
+      accessToken: state.accessToken,
       user: state.user,
     });
     return true;
@@ -171,7 +171,7 @@ async function handleAuthRoutes({
     state.authenticated = true;
 
     await fulfillJson(route, {
-      accessToken: "test-access-token",
+      accessToken: state.accessToken,
       user: state.user,
     });
     return true;
@@ -184,7 +184,7 @@ async function handleAuthRoutes({
       await fulfillApiError(route, 401, "AUTH_REFRESH_TOKEN_MISSING", "Refresh token is missing");
       return true;
     }
-    await fulfillJson(route, { accessToken: "test-access-token" });
+    await fulfillJson(route, { accessToken: state.accessToken });
     return true;
   }
 

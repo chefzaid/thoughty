@@ -112,9 +112,9 @@ The frontend is one React SPA under `thoughty-web/src`. Its main boundary is the
 
 ```mermaid
 flowchart TD
-    App[App.tsx] --> Query[TanStack Query client]
-    App --> Router[BrowserRouter]
-    Router --> Shell[AppShell]
+    App[App.tsx] --> Router[BrowserRouter]
+    Router --> Query[TanStack Query client, one per session]
+    Query --> Shell[AppShell, keyed on the session]
     Shell --> Public[PublicAppLayout and public pages]
     Shell --> Layout[AuthenticatedAppLayout]
     Layout --> Routes[AuthenticatedRoutes]
@@ -146,7 +146,8 @@ flowchart TD
 - The writer's font settings follow one path from the API to the screen: `types/config.ts` turns each stored value into CSS (`resolveFontFamily`, `normalizeFontSize`, `resolveFontColor`, and for the spacing steps `resolveLineHeight` and `resolveLetterSpacing`). The font family and size apply to the whole app (`AuthenticatedAppLayout`); the color and spacing apply to entry text only, through `entryTextStyle` (color, line height and letter spacing as an inline style; `{ title: true }` leaves out the line height), which the composer, the entry editor, the journal's entry body, focus mode and the reader use, and `entrySpacingStyle` for the print view. `normal` spacing returns no value, so each view keeps its own stylesheet's spacing. The Markdown editor fixes its own line height with `!important`, so `MarkdownEditor` passes the spacing as custom properties (`entrySpacingVariables`) that `MarkdownEditor.css` applies to the editor's text. The easy-to-read font is the `@fontsource/atkinson-hyperlegible` package, whose regular and bold `@font-face` rules `main.tsx` imports; its license (SIL OFL 1.1) is served beside the app at `/licenses/atkinson-hyperlegible-OFL.txt` (`thoughty-web/public/licenses`).
 - Heavy, rarely used libraries load on demand: the book preview imports PDF.js (and its worker, a separate same-origin script) only when it opens ([ADR 0021](./adr/0021-in-app-book-preview-with-pdfjs.md)), and the build puts every translation file in its own `translations` chunk.
 - API types are generated from the server's OpenAPI document ([ADR 0004](./adr/0004-openapi-as-contract-source.md)). A test fails if the frontend stops calling a documented product endpoint.
-- Every API call goes through `authFetch` (`contexts/useAuthSession.ts`), which adds the access token, refreshes it once on a 401 and retries. Its headers come from `buildAuthHeaders` (`services/api/base.ts`): the caller's own, then `Content-Type: application/json` only when the caller set none and the body is JSON text or absent. A `FormData`, `Blob`, `ArrayBuffer`, `URLSearchParams` or stream body keeps the type the browser gives it, so uploads (attachments, memoir recordings, app-import files, book cover images) go out as `multipart/form-data` with their boundary; a JSON type on them makes the API's JSON parser refuse the request before the upload is read.
+- Everything held for a writer lives under the session: `App.tsx` reads `sessionKey` from the auth context, takes its query client from `useSessionQueryClient(sessionKey)` and keys the tree under the router on it, so a session that ends (sign-out, a failed refresh, account deletion, another tab) starts the app again from an empty cache and fresh state ([Security](./security.md#authentication-and-sessions)).
+- Every API call goes through `authFetch` (`contexts/useAuthSession.ts`), which adds the access token, refreshes it once on a 401 (for a request sent with a token, in a session still on) and retries. Its headers come from `buildAuthHeaders` (`services/api/base.ts`): the caller's own, then `Content-Type: application/json` only when the caller set none and the body is JSON text or absent. A `FormData`, `Blob`, `ArrayBuffer`, `URLSearchParams` or stream body keeps the type the browser gives it, so uploads (attachments, memoir recordings, app-import files, book cover images) go out as `multipart/form-data` with their boundary; a JSON type on them makes the API's JSON parser refuse the request before the upload is read.
 
 ## API Error Codes
 

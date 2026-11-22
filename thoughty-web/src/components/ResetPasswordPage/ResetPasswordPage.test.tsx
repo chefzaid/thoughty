@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -64,8 +64,8 @@ describe('ResetPasswordPage', () => {
     await choosePassword(STRONG);
 
     expect(resetPassword).toHaveBeenCalledWith('secret-token', STRONG);
+    expect(await screen.findByRole('status')).toHaveTextContent('resetPasswordDone');
     expect(logout).not.toHaveBeenCalled();
-    expect(screen.getByRole('status')).toHaveTextContent('resetPasswordDone');
     expect(screen.queryByLabelText('newPassword')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'resetPasswordTitle' })).toHaveFocus();
     await userEvent.click(screen.getByRole('button', { name: 'signIn' }));
@@ -79,8 +79,26 @@ describe('ResetPasswordPage', () => {
 
     await choosePassword(STRONG);
 
-    expect(logout).toHaveBeenCalled();
+    // Once the history entry holds the outcome, so the page signing out starts again still says it is done
+    await waitFor(() => expect(logout).toHaveBeenCalledTimes(1));
+    expect(globalThis.history.state?.usr).toEqual({ passwordReset: true });
     expect(screen.getByRole('status')).toHaveTextContent('resetPasswordDone');
+  });
+
+  it('still says the reset is done when signing out started the page again, and signs nobody out for it', () => {
+    isAuthenticated = true;
+    globalThis.history.replaceState({ usr: { passwordReset: true }, key: 'done', idx: 0 }, '', '/reset-password');
+    render(
+      <BrowserRouter>
+        <ResetPasswordPage t={t} onSignIn={vi.fn()} />
+      </BrowserRouter>,
+    );
+
+    expect(screen.getByRole('status')).toHaveTextContent('resetPasswordDone');
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('newPassword')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'resetPasswordTitle' })).toHaveFocus();
+    expect(logout).not.toHaveBeenCalled();
   });
 
   it.each([

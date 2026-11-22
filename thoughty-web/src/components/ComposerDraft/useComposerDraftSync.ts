@@ -79,6 +79,8 @@ export function useComposerDraftSync(
   const cooldown = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   /** Grows when the draft is published or cleared, so a save still on its way is undone, not kept. */
   const epoch = useRef(0);
+  /** Off once the composer is gone (signing out takes it away): a save still on its way then writes nothing here. */
+  const mounted = useRef(true);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const showOffer = useCallback((next: ComposerDraftOffer | null) => {
@@ -136,6 +138,8 @@ export function useComposerDraftSync(
       : await drafts.save(current, baseRevision.current);
     inFlight.current = false;
 
+    // The session ended meanwhile: the server keeps what it got, and this browser keeps nothing
+    if (!mounted.current) return;
     if (started !== epoch.current) {
       // Published or cleared meanwhile: a draft this save left behind goes too
       if (outcome.status === 'ok' && outcome.data) void drafts.discard(outcome.data.revision);
@@ -222,9 +226,13 @@ export function useComposerDraftSync(
     };
   }, [flush]);
 
-  useEffect(() => () => {
-    clearTimeout(timer.current);
-    clearTimeout(cooldown.current);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      clearTimeout(timer.current);
+      clearTimeout(cooldown.current);
+    };
   }, []);
 
   useLeaveWarning(useCallback(

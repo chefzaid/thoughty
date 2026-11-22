@@ -9,6 +9,7 @@ import {
   markKeycloakSsoFailed,
 } from '../utils/keycloakSso';
 import { forgetLocalComposerDrafts } from '../components/ComposerDraft/composerDraftStorage';
+import { openSessionChannel, type SessionChannel } from './sessionBroadcast';
 
 /** Keys where older versions kept tokens in localStorage; they are removed on load. */
 const LEGACY_TOKEN_KEYS = ['accessToken', 'refreshToken'] as const;
@@ -57,33 +58,78 @@ export async function exchangeKeycloakSession(
 
 /**
  * The signed-in user and their tokens: restores the session on load, refreshes the access token
- * when a request gets a 401, and signs out.
+ * when a request gets a 401, and signs out. Every way a session ends goes through `endSession`,
+ * which moves `sessionKey` on: the app keys its query cache and its writer state on it, so nothing
+ * read or typed for that writer outlives the session. This browser's other tabs hear of a sign-out
+ * or another writer's sign-in (`sessionBroadcast`) and end theirs too.
  */
 export function useAuthSession() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionKey, setSessionKey] = useState(0);
 
   // The access token lives in memory only; the refresh token is an httpOnly cookie the page
   // cannot read, so a reload gets a new access token through refreshAccessToken.
   const accessTokenRef = useRef<string | null>(null);
   const refreshInFlightRef = useRef<Promise<string | null> | null>(null);
+  /** Grows with each ended session, so a refresh or request that outlived it changes nothing. */
+  const sessionEpochRef = useRef(0);
+  const userIdRef = useRef<number | null>(null);
+  const channelRef = useRef<SessionChannel | null>(null);
+
+  useEffect(() => {
+    userIdRef.current = user?.id ?? null;
+  }, [user]);
 
   const getAccessToken = useCallback((): string | null => accessTokenRef.current, []);
 
-  const startSession = useCallback((session: TokenResponse): void => {
-    accessTokenRef.current = session.accessToken;
-    setUser(session.user);
-  }, []);
-
-  // Signing out also ends the PIN unlock of this tab
-  const clearSession = useCallback((): void => {
+  // The token, the PIN unlock of this tab and the user go; the new key drops the writer's data
+  const endSession = useCallback((): void => {
+    sessionEpochRef.current += 1;
     accessTokenRef.current = null;
     setContentUnlockToken(null);
+    setUser(null);
+    setSessionKey(sessionEpochRef.current);
   }, []);
 
+  // A sign-out the writer chose: this browser's draft copies go too, and so do the other tabs' sessions.
+  // A draft is private text: it stays on the server for the next sign-in, not in this browser.
+  const signOutLocally = useCallback((): void => {
+    forgetLocalComposerDrafts();
+    endSession();
+    channelRef.current?.post({ type: 'signed-out' });
+  }, [endSession]);
+
+  const startSession = useCallback((session: TokenResponse): void => {
+    // Another writer signs in over this one (a sign-up link opened while signed in): nothing of the first stays
+    if (userIdRef.current !== null && userIdRef.current !== session.user.id) {
+      endSession();
+    }
+    accessTokenRef.current = session.accessToken;
+    setUser(session.user);
+    channelRef.current?.post({ type: 'signed-in', userId: session.user.id });
+  }, [endSession]);
+
+  useEffect(() => {
+    const channel = openSessionChannel((message) => {
+      // The cookie this tab refreshes with is gone, or now another writer's
+      const current = userIdRef.current;
+      if (current !== null && (message.type === 'signed-out' || message.userId !== current)) {
+        endSession();
+      }
+    });
+    channelRef.current = channel;
+    return () => {
+      channel.close();
+      channelRef.current = null;
+    };
+  }, [endSession]);
+
   // Exchange the refresh token cookie for a new access token (and a rotated cookie). Concurrent
-  // callers share one request, since a refresh token works only once.
+  // callers share one request, since a refresh token works only once. A refresh that fails ends the
+  // session it was for; one that answers after that session ended is not used.
   const refreshAccessToken = useCallback((): Promise<string | null> => {
+    const epoch = sessionEpochRef.current;
     refreshInFlightRef.current ??= withRefreshLock(async () => {
       try {
         const response = await fetch(`${API_BASE}/refresh`, {
@@ -99,22 +145,25 @@ export function useAuthSession() {
         if (!data?.accessToken) {
           throw new Error('Token refresh failed');
         }
+        if (epoch !== sessionEpochRef.current) return null;
         accessTokenRef.current = data.accessToken;
         return data.accessToken;
       } catch {
-        accessTokenRef.current = null;
-        setUser(null);
+        if (epoch === sessionEpochRef.current && accessTokenRef.current !== null) {
+          endSession();
+        }
         return null;
       }
     }).finally(() => {
       refreshInFlightRef.current = null;
     });
     return refreshInFlightRef.current;
-  }, []);
+  }, [endSession]);
 
   // Fetch with auto token refresh
   const authFetch = useCallback(
     async (url: string, options: RequestInit = {}): Promise<Response> => {
+      const epoch = sessionEpochRef.current;
       let accessToken = getAccessToken();
 
       const makeRequest = async (token: string | null): Promise<Response> =>
@@ -122,8 +171,8 @@ export function useAuthSession() {
 
       let response = await makeRequest(accessToken);
 
-      // If token expired, try to refresh
-      if (response.status === 401) {
+      // An expired token is refreshed, for a request sent in a session that is still on
+      if (response.status === 401 && accessToken !== null && epoch === sessionEpochRef.current) {
         accessToken = await refreshAccessToken();
         if (accessToken) {
           response = await makeRequest(accessToken);
@@ -164,41 +213,35 @@ export function useAuthSession() {
 
       try {
         const response = await authFetch(`${API_BASE}/me`);
-        if (response.ok) {
-          const userData = await safeJsonParse<User>(response);
-          if (userData) {
-            setUser(userData);
-          } else {
-            clearSession();
-          }
+        const userData = response.ok ? await safeJsonParse<User>(response) : null;
+        if (userData) {
+          setUser(userData);
         } else {
-          clearSession();
+          endSession();
         }
       } catch (err) {
         console.error('Auth check failed:', err);
-        clearSession();
+        endSession();
       }
       setLoading(false);
     };
 
     checkAuth();
-  }, [authFetch, clearSession, refreshAccessToken, startSession]);
+  }, [authFetch, endSession, refreshAccessToken, startSession]);
 
-  // Logout: the server revokes the refresh token from its cookie and clears the cookie
+  // Logout ends the session here at once, then the server revokes the refresh token from its cookie
+  // and clears the cookie. It waits for a refresh in flight, so it revokes the cookie that refresh set.
   const logout = useCallback(async (): Promise<void> => {
+    const signedInWithKeycloak = user?.authProvider === 'keycloak';
+    signOutLocally();
     try {
-      await fetch(`${API_BASE}/logout`, {
+      await withRefreshLock(() => fetch(`${API_BASE}/logout`, {
         method: 'POST',
         credentials: 'same-origin',
-      });
+      }));
     } catch (err) {
       console.error('Logout error:', err);
     }
-    const signedInWithKeycloak = user?.authProvider === 'keycloak';
-    // A draft is private text: it stays on the server for the next sign-in, not in this browser
-    forgetLocalComposerDrafts();
-    clearSession();
-    setUser(null);
     // Only a Keycloak account also ends its Keycloak session; a local account just signs out here.
     if (import.meta.env.PROD && signedInWithKeycloak) {
       const returnUrl = `${window.location.origin}/`;
@@ -206,15 +249,16 @@ export function useAuthSession() {
         `https://keycloak.swirlit.dev/oauth2/sign_out?rd=${encodeURIComponent(returnUrl)}`,
       );
     }
-  }, [clearSession, user]);
+  }, [signOutLocally, user]);
 
   return {
     user,
     setUser,
     loading,
+    sessionKey,
     getAccessToken,
     startSession,
-    clearSession,
+    signOutLocally,
     authFetch,
     logout,
   };

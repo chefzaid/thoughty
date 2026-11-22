@@ -326,6 +326,22 @@ describe('useComposerDraftSync', () => {
     expect(result.current.fields.text).toBe('');
   });
 
+  it('keeps nothing in this browser from a save that answers after the composer is gone', async () => {
+    let answer: (outcome: DraftOutcome<ComposerDraft>) => void = () => undefined;
+    service.save.mockImplementation(() => new Promise((resolve) => { answer = resolve; }));
+    const { result, unmount } = renderDraft();
+    await settle();
+    await type(result, 'Before signing out');
+    localStorage.clear();
+    await act(async () => { result.current.draft.flush(); });
+
+    unmount();
+    await act(async () => { answer(ok(saved('Before signing out', 2))); });
+
+    expect(readLocalComposerDraft(7)).toBeNull();
+    expect(service.discard).not.toHaveBeenCalled();
+  });
+
   it('does nothing for a signed-out visitor', async () => {
     auth.user = null;
     const { result } = renderDraft();

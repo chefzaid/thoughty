@@ -58,7 +58,7 @@ export async function handleSignUpRoutes({ route, request, pathname, state }: Ro
     signUp.lastRegisterPayload = payload;
     if (signUp.instant) {
       signIn(state, payload.email || "new@example.com", payload.username || "NewUser", false);
-      await fulfillJson(route, { accessToken: "test-access-token", user: state.user }, { status: 201 });
+      await fulfillJson(route, { accessToken: state.accessToken, user: state.user }, { status: 201 });
       return true;
     }
     signUp.linkUsed = false;
@@ -90,7 +90,7 @@ export async function handleSignUpRoutes({ route, request, pathname, state }: Ro
     }
     signUp.linkUsed = true;
     signIn(state, registered.email || "new@example.com", username, true);
-    await fulfillJson(route, { accessToken: "test-access-token", user: state.user }, { status: 201 });
+    await fulfillJson(route, { accessToken: state.accessToken, user: state.user }, { status: 201 });
     return true;
   }
 
