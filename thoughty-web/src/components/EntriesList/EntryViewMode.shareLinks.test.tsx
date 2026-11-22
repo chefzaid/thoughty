@@ -20,7 +20,7 @@ const service = vi.hoisted(() => ({
     updateEntry: vi.fn().mockResolvedValue(true),
 }));
 
-const marie = { id: 1, name: 'Marie Dupont', handles: ['marie'], date: null, reachOutDays: null, lastContactOn: null, notes: null, entryCount: 1, lastMentionedOn: null, createdAt: '', updatedAt: '' };
+const marie = { id: 1, name: 'Marie Dupont', handles: ['marie'], date: null, reachOutDays: null, lastContactOn: null, notes: null, groups: [], entryCount: 1, lastMentionedOn: null, createdAt: '', updatedAt: '' };
 
 function renderCard(entry: Entry) {
     render(

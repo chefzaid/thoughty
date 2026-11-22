@@ -1,11 +1,25 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsDateString, IsIn, IsOptional, IsString, Matches, MaxLength, Min, MinLength, ValidateNested } from 'class-validator';
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsDateString,
+  IsIn,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  Min,
+  MinLength,
+  ValidateIf,
+  ValidateNested,
+} from 'class-validator';
 import { PEOPLE_LIMIT } from '@/modules/entries/entry-mentions.sync';
 import { StrictInt } from '@/common/validation';
 import { LOCAL_DAY_PATTERN } from '@/common/utils/writers-day.util';
 import { PERSON_DATE_KINDS, type PersonDateKind } from '@/database/entities/person.entity';
 import { PERSON_DATE_MIN_YEAR } from '../person-dates';
+import { PERSON_GROUP_NAME_MAX_LENGTH, PERSON_GROUPS_MAX } from '../person-groups';
 import { REACH_OUT_DAYS } from '../person-reach-out';
 
 export const PERSON_NAME_MAX_LENGTH = 80;
@@ -15,6 +29,8 @@ export const PERSON_NOTES_MAX_LENGTH = 2000;
 const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
 /** Trimmed notes, with blank ones read as none. */
 const trimNotes = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() || null : value);
+/** Each group name trimmed. */
+const trimEach = ({ value }: { value: unknown }) => (Array.isArray(value) ? value.map((item) => (typeof item === 'string' ? item.trim() : item)) : value);
 
 const KIND_DESCRIPTION = 'What the date marks: a birthday or an anniversary (a wedding, a meeting, a loss)';
 
@@ -52,7 +68,7 @@ export class PersonDateInputDto {
 }
 
 /**
- * The name shown for a person, their date, their reach-out reminder and the writer's notes on them. Their
+ * The name shown for a person, their date, their reach-out reminder, the writer's notes on them and their groups. Their
  * handles, and so the text of entries, stay as they are.
  */
 export class UpdatePersonDto {
@@ -113,6 +129,25 @@ export class UpdatePersonDto {
   @IsString()
   @MaxLength(PERSON_NOTES_MAX_LENGTH)
   notes?: string | null;
+
+  @ApiPropertyOptional({
+    type: [String],
+    maxItems: PERSON_GROUPS_MAX,
+    example: ['Friends', 'Climbing'],
+    description:
+      `The writer’s own groups the person belongs to, each name trimmed, 1 to ${PERSON_GROUP_NAME_MAX_LENGTH} characters, ` +
+      `at most ${PERSON_GROUPS_MAX}; a name given twice ignoring case is kept once, and one the writer already gives ` +
+      'another person in other letter case takes that spelling. An empty list removes them all, left out keeps them. ' +
+      'Merging two people joins their groups, which may then be more than a save accepts.',
+  })
+  @ValidateIf((_dto, value) => value !== undefined)
+  @Transform(trimEach)
+  @IsArray()
+  @ArrayMaxSize(PERSON_GROUPS_MAX)
+  @IsString({ each: true })
+  @MinLength(1, { each: true })
+  @MaxLength(PERSON_GROUP_NAME_MAX_LENGTH, { each: true })
+  groups?: string[];
 }
 
 export class MergePersonDto {
@@ -190,6 +225,13 @@ export class PersonResponseDto {
     description: 'The writer’s own notes on the person; null when there are none',
   })
   notes!: string | null;
+
+  @ApiProperty({
+    type: [String],
+    example: ['Friends', 'Climbing'],
+    description: 'The writer’s own groups the person belongs to, in the order the writer gave them; empty when none',
+  })
+  groups!: string[];
 
   @ApiProperty({ example: '2026-10-27T09:30:00.000Z' })
   createdAt!: Date;

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 
 import type { Person } from '../../services/api/peopleService';
@@ -12,28 +12,40 @@ import {
   samePersonDate,
   type PersonDateInput,
 } from '../../utils/personDates';
+import {
+  addPersonGroup,
+  personGroupKey,
+  PERSON_GROUPS_MAX,
+  samePersonGroups,
+  type PersonGroupSummary,
+} from '../../utils/personGroups';
 import { pluralPhrase } from '../../utils/pluralPhrase';
 import { reachOutDraft, readReachOutDraft, type ReachOutDays } from '../../utils/personReachOut';
 import { writersToday } from '../../utils/entryDate';
 import { mutedTextClass } from '../../utils/tintedText';
 import type { Language } from '../../utils/translations';
 import PersonDateFields from './PersonDateFields';
+import PersonGroupsField from './PersonGroupsField';
 import PersonNotesField, { PERSON_NOTES_MAX_LENGTH } from './PersonNotesField';
 import PersonReachOutFields from './PersonReachOutFields';
 
 /** The longest name the server keeps for a person. */
 const MAX_NAME_LENGTH = 80;
 
-/** What the editor saves: the name shown, and the date, reminder, last contact and notes that changed (null removes each). */
+/**
+ * What the editor saves: the name shown, and the date, reminder, last contact and notes that changed (null removes
+ * each), and the groups when they changed.
+ */
 export interface PersonChanges {
   readonly name: string;
   readonly date?: PersonDateInput | null;
   readonly reachOutDays?: ReachOutDays | null;
   readonly lastContactOn?: string | null;
   readonly notes?: string | null;
+  readonly groups?: string[];
 }
 
-type EditorField = 'name' | 'date' | 'reachOut' | 'notes';
+type EditorField = 'name' | 'date' | 'reachOut' | 'notes' | 'groups';
 
 /** The field a code the API refuses a save with is about: PERSON_DATE_* the date, PERSON_CONTACT_* the last contact. */
 function failedField(failure: string): EditorField {
@@ -44,6 +56,8 @@ function failedField(failure: string): EditorField {
 interface PersonRowProps {
   readonly person: Person;
   readonly canMerge: boolean;
+  /** Every group of the writer's, with how many people are in each. */
+  readonly groups: readonly PersonGroupSummary[];
   readonly theme: 'light' | 'dark';
   readonly language: Language;
   readonly t: TranslationFunction;
@@ -55,20 +69,27 @@ interface PersonRowProps {
 
 /**
  * One person on the People page: their name opens their entries; the name shown, their birthday or
- * anniversary, their reach-out reminder and the writer's notes on them can be changed in place.
+ * anniversary, their reach-out reminder, the writer's notes on them and their groups can be changed in place.
  */
-export default function PersonRow({ person, canMerge, theme, language, t, onSave, onMerge, onDelete }: PersonRowProps) {
+export default function PersonRow({ person, canMerge, groups: allGroups, theme, language, t, onSave, onMerge, onDelete }: PersonRowProps) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(person.name);
   const [dateDraft, setDateDraft] = useState(() => personDateDraft(person.date));
   const [reachOut, setReachOut] = useState(() => reachOutDraft(person));
   const [notes, setNotes] = useState(person.notes ?? '');
+  const [groups, setGroups] = useState<readonly string[]>(person.groups);
+  const [pendingGroup, setPendingGroup] = useState('');
   const [error, setError] = useState<{ field: EditorField; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const kindRef = useRef<HTMLSelectElement>(null);
   const lastContactRef = useRef<HTMLInputElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
+  const groupRef = useRef<HTMLInputElement>(null);
+  // The groups of the writer's other people: a group only this person is in can still be spelled anew
+  const otherGroups = useMemo(() => allGroups
+    .filter((group) => group.count > (person.groups.some((own) => personGroupKey(own) === group.key) ? 1 : 0))
+    .map((group) => group.name), [allGroups, person.groups]);
   const today = writersToday();
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const inputId = useId();
@@ -88,6 +109,8 @@ export default function PersonRow({ person, canMerge, theme, language, t, onSave
     setDateDraft(personDateDraft(person.date));
     setReachOut(reachOutDraft(person));
     setNotes(person.notes ?? '');
+    setGroups(person.groups);
+    setPendingGroup('');
     setEditing(true);
   };
 
@@ -99,7 +122,7 @@ export default function PersonRow({ person, canMerge, theme, language, t, onSave
 
   const fail = (field: EditorField, message: string) => {
     setError({ field, message });
-    ({ name: inputRef, date: kindRef, reachOut: lastContactRef, notes: notesRef })[field].current?.focus();
+    ({ name: inputRef, date: kindRef, reachOut: lastContactRef, notes: notesRef, groups: groupRef })[field].current?.focus();
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -125,6 +148,13 @@ export default function PersonRow({ person, canMerge, theme, language, t, onSave
       fail('notes', t('personNotesTooLong', { max: PERSON_NOTES_MAX_LENGTH.toLocaleString(language) }));
       return;
     }
+    // A group typed and not added yet is added on save; groups a merge joined past the limit stay until changed
+    const savedGroups = addPersonGroup(groups, pendingGroup, otherGroups);
+    const groupsChanged = !samePersonGroups(savedGroups, person.groups);
+    if (groupsChanged && savedGroups.length > PERSON_GROUPS_MAX) {
+      fail('groups', t('personGroupsTooMany', { max: PERSON_GROUPS_MAX }));
+      return;
+    }
     if (saving) return;
     const changes: PersonChanges = {
       name: trimmed,
@@ -132,6 +162,7 @@ export default function PersonRow({ person, canMerge, theme, language, t, onSave
       ...(readReachOut.reachOutDays === person.reachOutDays ? {} : { reachOutDays: readReachOut.reachOutDays }),
       ...(readReachOut.lastContactOn === person.lastContactOn ? {} : { lastContactOn: readReachOut.lastContactOn }),
       ...(savedNotes === person.notes ? {} : { notes: savedNotes }),
+      ...(groupsChanged ? { groups: savedGroups } : {}),
     };
     let failure: string | null = null;
     if (trimmed !== person.name || Object.keys(changes).length > 1) {
@@ -210,6 +241,18 @@ export default function PersonRow({ person, canMerge, theme, language, t, onSave
             errorId={error?.field === 'notes' ? errorId : undefined}
             textareaRef={notesRef}
           />
+          <PersonGroupsField
+            name={name.trim() || person.name}
+            groups={groups}
+            pending={pendingGroup}
+            known={otherGroups}
+            onGroupsChange={setGroups}
+            onPendingChange={setPendingGroup}
+            isDark={isDark}
+            t={t}
+            errorId={error?.field === 'groups' ? errorId : undefined}
+            inputRef={groupRef}
+          />
           {error && <p id={errorId} role="alert" className={`text-sm ${isDark ? 'text-red-300' : 'text-red-700'}`}>{error.message}</p>}
           <div className="flex gap-2 pt-1">
             <button type="submit" disabled={saving} className="h-10 rounded-lg bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-60">
@@ -229,6 +272,17 @@ export default function PersonRow({ person, canMerge, theme, language, t, onSave
             <p className={`text-sm break-words ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
               {person.handles.map((handle) => `@${handle}`).join(', ')}
             </p>
+            {person.groups.length > 0 && (
+              <ul aria-label={t('personGroupsLabel')} className="my-1 flex flex-wrap gap-1">
+                {person.groups.map((group) => (
+                  <li key={group} className={`rounded-full border px-2 py-0.5 text-xs break-all ${isDark
+                    ? 'border-gray-600 bg-gray-900 text-gray-200'
+                    : 'border-gray-300 bg-gray-100 text-gray-800'}`}>
+                    {group}
+                  </li>
+                ))}
+              </ul>
+            )}
             {person.date && (
               <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                 {t('personDateShown', { kind: t(`personDateKind_${person.date.kind}`), date: formatPersonDate(person.date, language) })}

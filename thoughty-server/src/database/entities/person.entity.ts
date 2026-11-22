@@ -63,6 +63,10 @@ export class Person {
   @Column({ type: 'text', nullable: true })
   notes: string | null;
 
+  /** The writer's own groups the person belongs to (Friends, Family, Colleagues…), as named; empty when none. */
+  @Column({ type: 'text', array: true, default: () => "'{}'" })
+  groups: string[];
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 

@@ -8,8 +8,8 @@ import { PeopleService } from './people.service';
 const createdAt = new Date('2026-10-27T09:00:00Z');
 const noDate = { dateKind: null, dateMonth: null, dateDay: null, dateYear: null };
 const noReachOut = { reachOutDays: null, lastContactOn: null };
-const marieRow = { id: 12, name: 'Marie', handles: ['marie'], entryCount: '3', lastMentionedOn: '2026-10-20', ...noDate, ...noReachOut, notes: null, createdAt, updatedAt: createdAt };
-const marie = { id: 12, name: 'Marie', handles: ['marie'], entryCount: 3, lastMentionedOn: '2026-10-20', date: null, ...noReachOut, notes: null, createdAt, updatedAt: createdAt };
+const marieRow = { id: 12, name: 'Marie', handles: ['marie'], entryCount: '3', lastMentionedOn: '2026-10-20', ...noDate, ...noReachOut, notes: null, groups: [], createdAt, updatedAt: createdAt };
+const marie = { id: 12, name: 'Marie', handles: ['marie'], entryCount: 3, lastMentionedOn: '2026-10-20', date: null, ...noReachOut, notes: null, groups: [], createdAt, updatedAt: createdAt };
 
 describe('PeopleService', () => {
   let repository: Record<string, jest.Mock> & { manager?: unknown };
@@ -20,6 +20,7 @@ describe('PeopleService', () => {
     manager = { query: jest.fn().mockResolvedValue([marieRow]), getRepository: jest.fn(() => repository) };
     repository = {
       findOne: jest.fn(),
+      query: jest.fn().mockResolvedValue([]),
       save: jest.fn(async (value) => value),
       count: jest.fn().mockResolvedValue(2),
       delete: jest.fn().mockResolvedValue({ affected: 1 }),
@@ -121,6 +122,23 @@ describe('PeopleService', () => {
     expect(repository.save).toHaveBeenLastCalledWith(expect.objectContaining({ notes: null }));
   });
 
+  it('shows a person’s groups and sets them when sent, once each and spelled as on the writer’s other people', async () => {
+    (repository.manager as { query: jest.Mock }).query.mockResolvedValue([{ ...marieRow, groups: ['Friends', 'Climbing'] }]);
+    repository.findOne.mockImplementation(async () => ({ id: 12, userId: 7, name: 'Marie', ...noDate, groups: ['Work'] }));
+    repository.query.mockResolvedValue([{ name: 'Climbing' }, { name: 'Friends' }]);
+
+    expect((await service.list(7)).people[0].groups).toEqual(['Friends', 'Climbing']);
+    expect((repository.manager as { query: jest.Mock }).query.mock.calls[0][0]).toContain('p.groups');
+    await service.update(7, 12, { name: 'Marie' });
+    expect(repository.query).not.toHaveBeenCalled();
+    expect(repository.save).toHaveBeenLastCalledWith(expect.objectContaining({ groups: ['Work'] }));
+    await service.update(7, 12, { name: 'Marie', groups: ['friends', 'Neighbours', 'FRIENDS', 'climbing'] });
+    expect(repository.query).toHaveBeenCalledWith(expect.stringContaining('unnest(p.groups) AS g WHERE p.user_id = $1 AND p.id <> $2'), [7, 12]);
+    expect(repository.save).toHaveBeenLastCalledWith(expect.objectContaining({ groups: ['Friends', 'Neighbours', 'Climbing'] }));
+    await service.update(7, 12, { name: 'Marie', groups: [] });
+    expect(repository.save).toHaveBeenLastCalledWith(expect.objectContaining({ groups: [] }));
+  });
+
   it('refuses a last contact on a day still to come everywhere on Earth, and saves nothing', async () => {
     repository.findOne.mockImplementation(async () => ({ id: 12, userId: 7, name: 'Marie', ...noDate, ...noReachOut }));
 
@@ -151,6 +169,8 @@ describe('PeopleService', () => {
     expect(statements[3]).toEqual([expect.stringContaining('reach_out_days = COALESCE(p.reach_out_days, d.reach_out_days)'), [12, 14]]);
     expect(statements[3][0]).toContain('last_contact_on = GREATEST(p.last_contact_on, d.last_contact_on)');
     expect(statements[3][0]).toContain("ELSE p.notes || E'\\n\\n' || d.notes END");
+    expect(statements[3][0]).toContain('groups = p.groups || ARRAY( SELECT g FROM unnest(d.groups) WITH ORDINALITY AS dg(g, n)');
+    expect(statements[3][0]).toContain('WHERE lower(g) <> ALL (SELECT lower(own) FROM unnest(p.groups) AS own) ORDER BY n)');
     expect(statements[4][0]).toContain('INSERT INTO entry_people (entry_id, person_id) SELECT entry_id, $1 FROM entry_people WHERE person_id = $2 ON CONFLICT DO NOTHING');
     expect(statements[5]).toEqual([expect.stringContaining("jsonb_set(filters, '{personId}', to_jsonb($2::int))"), [7, 12, '14']]);
     expect(manager.getRepository).toHaveBeenCalledWith(Person);

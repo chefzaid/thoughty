@@ -10,13 +10,29 @@ export const MOCK_PEOPLE_LIMIT = 1000;
 type PersonResponse = components['schemas']['PersonResponseDto'];
 /**
  * A person as the mock keeps them; their counts are read from the entries' text on each request. A spec may
- * leave out the reach-out reminder, the last contact and the notes, which then read as none.
+ * leave out the reach-out reminder, the last contact, the notes and the groups, which then read as none.
  */
-export type MockPerson = Omit<PersonResponse, 'entryCount' | 'lastMentionedOn' | 'reachOutDays' | 'lastContactOn' | 'notes'>
-  & Partial<Pick<PersonResponse, 'reachOutDays' | 'lastContactOn' | 'notes'>>;
+export type MockPerson = Omit<PersonResponse, 'entryCount' | 'lastMentionedOn' | 'reachOutDays' | 'lastContactOn' | 'notes' | 'groups'>
+  & Partial<Pick<PersonResponse, 'reachOutDays' | 'lastContactOn' | 'notes' | 'groups'>>;
 
 /** The longest notes the API saves on a person. */
 const MOCK_PERSON_NOTES_MAX_LENGTH = 2000;
+/** The most groups, and the longest group name, the API saves on a person. */
+const MOCK_PERSON_GROUPS_MAX = 10;
+const MOCK_PERSON_GROUP_NAME_MAX_LENGTH = 40;
+
+const groupKey = (name: string) => name.toLocaleLowerCase();
+
+/** The groups as the API saves them: trimmed, once each ignoring case, spelled as on the writer's other people. */
+function mockSavedGroups(state: MockAppState, person: MockPerson, groups: readonly string[]): string[] {
+  const others = state.people.filter((candidate) => candidate.id !== person.id).flatMap((candidate) => candidate.groups ?? []).sort();
+  const saved: string[] = [];
+  for (const name of groups.map((group) => group.trim())) {
+    if (saved.some((group) => groupKey(group) === groupKey(name))) continue;
+    saved.push(others.find((group) => groupKey(group) === groupKey(name)) ?? name);
+  }
+  return saved;
+}
 
 const mentionedHandles = (content: string) => new Set(findMentions(content).map((mention) => mention.handle));
 
@@ -49,6 +65,7 @@ function toResponse(state: MockAppState, person: MockPerson): PersonResponse {
     reachOutDays: person.reachOutDays ?? null,
     lastContactOn: person.lastContactOn ?? null,
     notes: person.notes ?? null,
+    groups: person.groups ?? [],
     entryCount: entries.length,
     lastMentionedOn: mockLastMentionedOn(entries),
   };
@@ -58,9 +75,9 @@ const byName = (left: MockPerson, right: MockPerson) => left.name.toLowerCase().
 
 /**
  * `/api/people` as the API answers it: people by name with their counts outside the recycle bin, renaming the
- * name shown and setting their date, reminder, last contact and notes (refused with the API's codes), recording a
+ * name shown and setting their date, reminder, last contact, notes and groups (refused with the API's codes), recording a
  * contact today, merging a duplicate (its handles move, its date and reminder too when the person kept has
- * none, the later contact stays, its notes follow the person's, saved searches follow) and deleting (saved searches widen).
+ * none, the later contact stays, its notes and groups follow the person's, saved searches follow) and deleting (saved searches widen).
  */
 export async function handlePeopleRoutes({ route, request, pathname, state }: RouteContext): Promise<boolean> {
   if (pathname === '/api/people' && request.method() === 'GET') {
@@ -100,6 +117,8 @@ export async function handlePeopleRoutes({ route, request, pathname, state }: Ro
     person.reachOutDays ??= duplicate.reachOutDays ?? null;
     person.lastContactOn = [person.lastContactOn, duplicate.lastContactOn].filter(Boolean).sort().at(-1) ?? null;
     person.notes = [person.notes, duplicate.notes].filter(Boolean).join('\n\n') || null;
+    const kept = person.groups ?? [];
+    person.groups = [...kept, ...(duplicate.groups ?? []).filter((group) => !kept.some((own) => groupKey(own) === groupKey(group)))];
     person.updatedAt = new Date().toISOString();
     state.people = state.people.filter((candidate) => candidate.id !== duplicate.id);
     for (const saved of state.savedSearches) {
@@ -110,10 +129,15 @@ export async function handlePeopleRoutes({ route, request, pathname, state }: Ro
   }
 
   if (!match[2] && request.method() === 'PATCH') {
-    const { name, date, reachOutDays, lastContactOn, notes } = request.postDataJSON() as components['schemas']['UpdatePersonDto'];
+    const { name, date, reachOutDays, lastContactOn, notes, groups } = request.postDataJSON() as components['schemas']['UpdatePersonDto'];
     const savedNotes = typeof notes === 'string' ? notes.trim() || null : notes;
     if (savedNotes && savedNotes.length > MOCK_PERSON_NOTES_MAX_LENGTH) {
       await fulfillApiError(route, 400, 'VALIDATION_FAILED', 'notes must be shorter than or equal to 2000 characters');
+      return true;
+    }
+    if (groups && (groups.length > MOCK_PERSON_GROUPS_MAX
+      || groups.some((group) => !group.trim() || group.trim().length > MOCK_PERSON_GROUP_NAME_MAX_LENGTH))) {
+      await fulfillApiError(route, 400, 'VALIDATION_FAILED', 'groups must hold at most 10 names of 1 to 40 characters');
       return true;
     }
     const refusal = (date ? mockPersonDateRefusal(date) : null) ?? (lastContactOn ? mockContactRefusal(lastContactOn) : null);
@@ -126,6 +150,7 @@ export async function handlePeopleRoutes({ route, request, pathname, state }: Ro
     if (reachOutDays !== undefined) person.reachOutDays = reachOutDays;
     if (lastContactOn !== undefined) person.lastContactOn = lastContactOn;
     if (savedNotes !== undefined) person.notes = savedNotes;
+    if (groups !== undefined) person.groups = mockSavedGroups(state, person, groups);
     person.updatedAt = new Date().toISOString();
     await fulfillJson(route, toResponse(state, person));
     return true;

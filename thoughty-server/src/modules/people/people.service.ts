@@ -6,6 +6,7 @@ import { Person } from '@/database/entities';
 import { PEOPLE_LIMIT, PEOPLE_LOCK_NAMESPACE } from '@/modules/entries';
 import { MergePersonDto, PersonListResponseDto, PersonResponseDto, UpdatePersonDto } from './dto';
 import { assertValidPersonDate, toPersonDate, type PersonDateColumns } from './person-dates';
+import { normalizePersonGroups } from './person-groups';
 import { assertValidContactDay } from './person-reach-out';
 import { hideLockedEntriesSql } from '@/common/content-lock';
 
@@ -18,6 +19,7 @@ interface PersonRow extends PersonDateColumns {
   reachOutDays: number | string | null;
   lastContactOn: string | null;
   notes: string | null;
+  groups: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -29,7 +31,7 @@ interface PersonRow extends PersonDateColumns {
 const personSummarySql = (lockFilter: string) => `
   SELECT p.id, p.name, p.created_at AS "createdAt", p.updated_at AS "updatedAt",
          p.date_kind AS "dateKind", p.date_month AS "dateMonth", p.date_day AS "dateDay", p.date_year AS "dateYear",
-         p.reach_out_days AS "reachOutDays", to_char(p.last_contact_on, 'YYYY-MM-DD') AS "lastContactOn", p.notes,
+         p.reach_out_days AS "reachOutDays", to_char(p.last_contact_on, 'YYYY-MM-DD') AS "lastContactOn", p.notes, p.groups,
          (SELECT array_agg(h.handle ORDER BY h.created_at, h.handle) FROM person_handles h WHERE h.person_id = p.id) AS handles,
          COUNT(e.id)::int AS "entryCount",
          to_char(MAX(e.date), 'YYYY-MM-DD') AS "lastMentionedOn"
@@ -42,7 +44,7 @@ const personSummarySql = (lockFilter: string) => `
 
 /**
  * The people the writer mentions. Mentions add them (see `syncEntryMentions`); here they are listed,
- * renamed, given a birthday or an anniversary, a reach-out reminder and notes, marked as contacted, merged and deleted. Text is never rewritten: renaming
+ * renamed, given a birthday or an anniversary, a reach-out reminder, notes and groups, marked as contacted, merged and deleted. Text is never rewritten: renaming
  * changes the name shown, merging moves a duplicate's handles to the person kept, and deleting unlinks
  * their entries and leaves `@handle` in the text.
  */
@@ -59,7 +61,7 @@ export class PeopleService {
 
   /**
    * Changes the name shown and, for each of them given, their birthday or anniversary, their reach-out reminder,
-   * their last contact and the writer's notes (null removes it).
+   * their last contact and the writer's notes (null removes it), and their groups (an empty list removes them).
    */
   async update(userId: number, id: number, dto: UpdatePersonDto, now = new Date()): Promise<PersonResponseDto> {
     const person = await this.findOwn(userId, id);
@@ -75,6 +77,9 @@ export class PeopleService {
     }
     if (dto.notes !== undefined) {
       person.notes = dto.notes;
+    }
+    if (dto.groups !== undefined) {
+      person.groups = normalizePersonGroups(dto.groups, await this.groupsOfOthers(userId, id));
     }
     if (dto.date !== undefined) {
       const date = dto.date;
@@ -100,7 +105,8 @@ export class PeopleService {
 
   /**
    * Moves a duplicate's handles, entries and (when the person has none) date and reach-out reminder to the person,
-   * keeps the later of their last contacts, adds the duplicate's notes after the person's, then deletes the duplicate.
+   * keeps the later of their last contacts, adds the duplicate's notes after the person's and the duplicate's groups the
+   * person is not in (ignoring case) after theirs, then deletes the duplicate.
    */
   async merge(userId: number, id: number, dto: MergePersonDto): Promise<PersonResponseDto> {
     const duplicateId = dto.duplicateId;
@@ -125,7 +131,11 @@ export class PeopleService {
         `UPDATE people p SET reach_out_days = COALESCE(p.reach_out_days, d.reach_out_days),
                              last_contact_on = GREATEST(p.last_contact_on, d.last_contact_on),
                              notes = CASE WHEN p.notes IS NULL OR d.notes IS NULL THEN COALESCE(p.notes, d.notes)
-                                          ELSE p.notes || E'\\n\\n' || d.notes END
+                                          ELSE p.notes || E'\\n\\n' || d.notes END,
+                             groups = p.groups || ARRAY(
+                               SELECT g FROM unnest(d.groups) WITH ORDINALITY AS dg(g, n)
+                                WHERE lower(g) <> ALL (SELECT lower(own) FROM unnest(p.groups) AS own)
+                                ORDER BY n)
            FROM people d WHERE p.id = $1 AND d.id = $2`,
         [id, duplicateId],
       );
@@ -170,6 +180,15 @@ export class PeopleService {
     return person;
   }
 
+  /** The group names the writer gives their other people, to spell a group the same way on everyone in it. */
+  private async groupsOfOthers(userId: number, id: number): Promise<string[]> {
+    const rows = (await this.personRepository.query(
+      'SELECT DISTINCT g AS name FROM people p, unnest(p.groups) AS g WHERE p.user_id = $1 AND p.id <> $2 ORDER BY g',
+      [userId, id],
+    )) as Array<{ name: string }>;
+    return rows.map((row) => row.name);
+  }
+
   private async summary(manager: EntityManager, userId: number, id: number): Promise<PersonResponseDto> {
     const [person] = await this.summaries(manager, userId, id);
     return person;
@@ -187,6 +206,7 @@ export class PeopleService {
       reachOutDays: row.reachOutDays === null ? null : Number(row.reachOutDays),
       lastContactOn: row.lastContactOn,
       notes: row.notes,
+      groups: row.groups,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     }));

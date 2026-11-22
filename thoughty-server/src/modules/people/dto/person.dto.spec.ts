@@ -1,4 +1,5 @@
 import { invalidPropertiesLikeApi, parseLikeApi } from '@/common/validation/dto-validation.test-helpers';
+import { PERSON_GROUP_NAME_MAX_LENGTH, PERSON_GROUPS_MAX } from '../person-groups';
 import { MergePersonDto, PERSON_NAME_MAX_LENGTH, PERSON_NOTES_MAX_LENGTH, UpdatePersonDto } from './person.dto';
 import { MarkPersonContactedDto } from './person-reach-out.dto';
 
@@ -59,6 +60,21 @@ describe('person DTOs', () => {
     await expect(withNotes('n'.repeat(PERSON_NOTES_MAX_LENGTH + 1))).resolves.toEqual(['notes']);
     for (const notes of [5, true, ['Loves novels'], { text: 'x' }]) {
       await expect(withNotes(notes)).resolves.toEqual(['notes']);
+    }
+  });
+
+  it('takes optional groups: up to 10 trimmed names of 1 to 40 characters; an empty list removes them', async () => {
+    const withGroups = (groups: unknown) => invalidPropertiesLikeApi(UpdatePersonDto, { name: 'Marie', groups });
+
+    await expect(parseLikeApi(UpdatePersonDto, { name: 'Marie', groups: ['  Friends ', 'Climbing'] }))
+      .resolves.toMatchObject({ groups: ['Friends', 'Climbing'] });
+    await expect(withGroups([])).resolves.toEqual([]);
+    await expect(withGroups(Array.from({ length: PERSON_GROUPS_MAX }, (_, index) => `Group ${index}`))).resolves.toEqual([]);
+    await expect(withGroups(['g'.repeat(PERSON_GROUP_NAME_MAX_LENGTH)])).resolves.toEqual([]);
+    await expect(withGroups(Array.from({ length: PERSON_GROUPS_MAX + 1 }, (_, index) => `Group ${index}`))).resolves.toEqual(['groups']);
+    await expect(withGroups(['g'.repeat(PERSON_GROUP_NAME_MAX_LENGTH + 1)])).resolves.toEqual(['groups']);
+    for (const groups of [null, 'Friends', ['  '], [''], [5], [null], { name: 'Friends' }]) {
+      await expect(withGroups(groups)).resolves.toEqual(['groups']);
     }
   });
 

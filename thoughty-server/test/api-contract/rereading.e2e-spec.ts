@@ -231,4 +231,25 @@ describeContract('rereading', (context) => {
     expect((download.body as { people: { id: number }[] }).people).toContainEqual(expect.objectContaining({ id: noor, notes: 'Loves Japanese novels.' }));
     expect((await save({ notes: '   ' })).body).toMatchObject({ notes: null });
   });
+
+  it('keeps the groups a person belongs to, once each and trimmed, in the list and the data download', async () => {
+    const { alice, bob } = context;
+    await createEntry(context, alice, { text: 'Climbing with @Sami and @Yara', date: '2025-06-01' });
+    const people = (await call('GET /api/people', { as: alice, status: 200 })).body as { people: { id: number; name: string }[] };
+    const idOf = (name: string) => people.people.find((person) => person.name === name)!.id;
+    const save = (name: string, json: Record<string, unknown>, as = alice, status = 200, code?: ApiErrorCode) =>
+      call('PATCH /api/people/{id}', { as, params: { id: idOf(name) }, json: { name, ...json }, status, ...(code ? { code } : {}) });
+
+    expect((await save('Sami', {})).body).toMatchObject({ groups: [] });
+    expect((await save('Sami', { groups: [' Climbing ', 'Friends', 'climbing'] })).body).toMatchObject({ groups: ['Climbing', 'Friends'] });
+    expect((await save('Yara', { groups: ['CLIMBING'] })).body).toMatchObject({ groups: ['Climbing'] });
+    await save('Yara', { groups: Array.from({ length: 11 }, (_, index) => `Group ${index}`) }, alice, 400, 'VALIDATION_FAILED');
+    await save('Yara', { groups: ['g'.repeat(41)] }, alice, 400, 'VALIDATION_FAILED');
+    await save('Yara', { groups: null }, alice, 400, 'VALIDATION_FAILED');
+    await save('Yara', { groups: ['Mine'] }, bob, 404, 'PERSON_NOT_FOUND');
+
+    const download = await call('GET /api/config/download-data', { as: alice, query: { today: todayIso() }, status: 200, contentType: /^application\/json/ });
+    expect((download.body as { people: { id: number }[] }).people).toContainEqual(expect.objectContaining({ id: idOf('Sami'), groups: ['Climbing', 'Friends'] }));
+    expect((await save('Sami', { groups: [] })).body).toMatchObject({ groups: [] });
+  });
 });

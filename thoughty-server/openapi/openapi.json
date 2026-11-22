@@ -14968,6 +14968,10 @@
                       "reachOutDays": 30,
                       "lastContactOn": "2026-11-03",
                       "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
+                      "groups": [
+                        "Friends",
+                        "Climbing"
+                      ],
                       "createdAt": "2026-10-27T09:30:00.000Z",
                       "updatedAt": "2026-10-27T09:30:00.000Z"
                     }
@@ -15019,7 +15023,11 @@
                 },
                 "reachOutDays": 30,
                 "lastContactOn": "2026-11-03",
-                "notes": "Met at the climbing gym in 2019. Loves Japanese novels."
+                "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
+                "groups": [
+                  "Friends",
+                  "Climbing"
+                ]
               }
             }
           }
@@ -15050,6 +15058,10 @@
                   "reachOutDays": 30,
                   "lastContactOn": "2026-11-03",
                   "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
+                  "groups": [
+                    "Friends",
+                    "Climbing"
+                  ],
                   "createdAt": "2026-10-27T09:30:00.000Z",
                   "updatedAt": "2026-10-27T09:30:00.000Z"
                 }
@@ -15057,7 +15069,7 @@
             }
           },
           "400": {
-            "description": "Invalid name, reminder or notes (more than 2,000 characters), a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), or a last contact after today (PERSON_CONTACT_IN_FUTURE)",
+            "description": "Invalid name, reminder, notes (more than 2,000 characters) or groups (more than 10, or a name over 40 characters), a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), or a last contact after today (PERSON_CONTACT_IN_FUTURE)",
             "content": {
               "application/json": {
                 "schema": {
@@ -15065,7 +15077,7 @@
                 },
                 "example": {
                   "statusCode": 400,
-                  "message": "Invalid name, reminder or notes (more than 2,000 characters), a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), or a last contact after today (PERSON_CONTACT_IN_FUTURE)",
+                  "message": "Invalid name, reminder, notes (more than 2,000 characters) or groups (more than 10, or a name over 40 characters), a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), or a last contact after today (PERSON_CONTACT_IN_FUTURE)",
                   "error": "Bad Request",
                   "code": "VALIDATION_FAILED"
                 }
@@ -15094,7 +15106,7 @@
             "bearer": []
           }
         ],
-        "summary": "Change the name shown for a person, their birthday or anniversary, their reach-out reminder, their last contact and the writer’s notes on them; their handles and the entries’ text stay as they are",
+        "summary": "Change the name shown for a person, their birthday or anniversary, their reach-out reminder, their last contact, the writer’s notes on them and the groups they belong to; their handles and the entries’ text stay as they are",
         "tags": [
           "People"
         ]
@@ -15205,6 +15217,10 @@
                   "reachOutDays": 30,
                   "lastContactOn": "2026-11-03",
                   "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
+                  "groups": [
+                    "Friends",
+                    "Climbing"
+                  ],
                   "createdAt": "2026-10-27T09:30:00.000Z",
                   "updatedAt": "2026-10-27T09:30:00.000Z"
                 }
@@ -15308,6 +15324,10 @@
                   "reachOutDays": 30,
                   "lastContactOn": "2026-11-03",
                   "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
+                  "groups": [
+                    "Friends",
+                    "Climbing"
+                  ],
                   "createdAt": "2026-10-27T09:30:00.000Z",
                   "updatedAt": "2026-10-27T09:30:00.000Z"
                 }
@@ -15352,7 +15372,7 @@
             "bearer": []
           }
         ],
-        "summary": "Merge a duplicate into this person: its handles and entries move here, its notes follow theirs, then it is deleted",
+        "summary": "Merge a duplicate into this person: its handles and entries move here, its notes and groups follow theirs, then it is deleted",
         "tags": [
           "People"
         ]
@@ -29665,6 +29685,17 @@
             "example": "Met at the climbing gym in 2019. Loves Japanese novels.",
             "description": "The writer’s own notes on the person; null when there are none"
           },
+          "groups": {
+            "example": [
+              "Friends",
+              "Climbing"
+            ],
+            "description": "The writer’s own groups the person belongs to, in the order the writer gave them; empty when none",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string",
@@ -29686,6 +29717,7 @@
           "reachOutDays",
           "lastContactOn",
           "notes",
+          "groups",
           "createdAt",
           "updatedAt"
         ],
@@ -29707,6 +29739,10 @@
           "reachOutDays": 30,
           "lastContactOn": "2026-11-03",
           "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
+          "groups": [
+            "Friends",
+            "Climbing"
+          ],
           "createdAt": "2026-10-27T09:30:00.000Z",
           "updatedAt": "2026-10-27T09:30:00.000Z"
         }
@@ -29751,6 +29787,10 @@
               "reachOutDays": 30,
               "lastContactOn": "2026-11-03",
               "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
+              "groups": [
+                "Friends",
+                "Climbing"
+              ],
               "createdAt": "2026-10-27T09:30:00.000Z",
               "updatedAt": "2026-10-27T09:30:00.000Z"
             }
@@ -29849,6 +29889,18 @@
             "maxLength": 2000,
             "example": "Met at the climbing gym in 2019. Loves Japanese novels.",
             "description": "The writer’s own notes on the person, trimmed; null or blank removes them, left out keeps them. Merging two people joins their notes, which may then be longer than a save accepts."
+          },
+          "groups": {
+            "maxItems": 10,
+            "example": [
+              "Friends",
+              "Climbing"
+            ],
+            "description": "The writer’s own groups the person belongs to, each name trimmed, 1 to 40 characters, at most 10; a name given twice ignoring case is kept once, and one the writer already gives another person in other letter case takes that spelling. An empty list removes them all, left out keeps them. Merging two people joins their groups, which may then be more than a save accepts.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -29864,7 +29916,11 @@
           },
           "reachOutDays": 30,
           "lastContactOn": "2026-11-03",
-          "notes": "Met at the climbing gym in 2019. Loves Japanese novels."
+          "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
+          "groups": [
+            "Friends",
+            "Climbing"
+          ]
         }
       },
       "MarkPersonContactedDto": {

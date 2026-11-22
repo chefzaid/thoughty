@@ -354,14 +354,14 @@ export class UserDataExportService {
 
   /**
    * The people the writer mentions, with their handles, their birthday or anniversary, their reach-out
-   * reminder and last contact, the writer's notes on them, and the entries
+   * reminder and last contact, the writer's notes on them, their groups, and the entries
    * (recycle bin included) that mention them. The ID is what a saved search's `personId` filter refers to.
    */
   private async collectPeople(userId: number) {
     const rows = (await this.personRepository.query(
       `SELECT p.id, p.name, p.created_at AS "createdAt", p.updated_at AS "updatedAt",
               p.date_kind AS "dateKind", p.date_month AS "dateMonth", p.date_day AS "dateDay", p.date_year AS "dateYear",
-              p.reach_out_days AS "reachOutDays", to_char(p.last_contact_on, 'YYYY-MM-DD') AS "lastContactOn", p.notes,
+              p.reach_out_days AS "reachOutDays", to_char(p.last_contact_on, 'YYYY-MM-DD') AS "lastContactOn", p.notes, p.groups,
               COALESCE((SELECT array_agg(h.handle ORDER BY h.created_at, h.handle) FROM person_handles h WHERE h.person_id = p.id), '{}') AS handles,
               COALESCE((SELECT array_agg(ep.entry_id ORDER BY ep.entry_id) FROM entry_people ep WHERE ep.person_id = p.id), '{}') AS "entryIds"
          FROM people p
@@ -369,7 +369,7 @@ export class UserDataExportService {
         ORDER BY p.id`,
       [userId],
     )) as Array<PersonDateColumns & { id: number; name: string; handles: string[]; entryIds: number[]; createdAt: Date; updatedAt: Date }
-      & { reachOutDays: number | string | null; lastContactOn: string | null; notes: string | null }>;
+      & { reachOutDays: number | string | null; lastContactOn: string | null; notes: string | null; groups: string[] }>;
     return rows.map((person) => ({
       id: person.id,
       name: person.name,
@@ -378,6 +378,7 @@ export class UserDataExportService {
       reachOutDays: person.reachOutDays === null ? null : Number(person.reachOutDays),
       lastContactOn: person.lastContactOn,
       notes: person.notes,
+      groups: person.groups,
       entryIds: person.entryIds.map(Number),
       createdAt: person.createdAt,
       updatedAt: person.updatedAt,

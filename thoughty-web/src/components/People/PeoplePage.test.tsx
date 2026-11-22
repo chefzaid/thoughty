@@ -7,7 +7,7 @@ import type { Person } from '../../services/api';
 import { getTranslation } from '../../utils/translations';
 
 const person = (id: number, name: string, handles: string[], entryCount: number, lastMentionedOn: string | null = null, date: Person['date'] = null): Person => ({
-  id, name, handles, entryCount, lastMentionedOn, date, reachOutDays: null, lastContactOn: null, notes: null, createdAt: '', updatedAt: '',
+  id, name, handles, entryCount, lastMentionedOn, date, reachOutDays: null, lastContactOn: null, notes: null, groups: [], createdAt: '', updatedAt: '',
 });
 
 const peopleHook = vi.hoisted(() => ({

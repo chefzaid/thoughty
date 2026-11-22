@@ -13,7 +13,7 @@ const service = vi.hoisted(() => ({ updateEntry: vi.fn() }));
 vi.mock('../../hooks/useAuthenticatedService', () => ({ useAuthenticatedService: () => service }));
 
 const t = (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params);
-const marie: Person = { id: 1, name: 'Marie', handles: ['marie'], date: null, reachOutDays: null, lastContactOn: null, notes: null, entryCount: 1, lastMentionedOn: null, createdAt: '', updatedAt: '' };
+const marie: Person = { id: 1, name: 'Marie', handles: ['marie'], date: null, reachOutDays: null, lastContactOn: null, notes: null, groups: [], entryCount: 1, lastMentionedOn: null, createdAt: '', updatedAt: '' };
 
 const entry = (id: number, content: string, visibility: Entry['visibility'] = 'private'): Entry => ({
   id, content, title: null, tags: ['life'], date: '2026-11-20T00:00:00.000Z', index: 1, visibility, format: 'plain',
