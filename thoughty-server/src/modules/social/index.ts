@@ -19,4 +19,6 @@ export * from './achievements.controller';
 export * from './achievements.service';
 export * from './writer-controls.controller';
 export * from './writer-controls.service';
+export * from './notifications.controller';
+export * from './notifications.service';
 export * from './dto';

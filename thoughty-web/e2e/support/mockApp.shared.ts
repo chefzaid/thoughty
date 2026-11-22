@@ -129,6 +129,8 @@ export interface SetupMockAppOptions {
   likedEntryIds?: number[];
   likedCommentIds?: number[];
   savedEntryIds?: number[];
+  /** The writer's notifications, newest first; opening them marks every one read. */
+  notifications?: components["schemas"]["NotificationDto"][];
   /** Feed topics followed, in lower case. */
   followedTopics?: string[];
   /** A started guided memoir (defaults filled in), or null/omitted for one not started yet. */
@@ -211,6 +213,7 @@ export interface MockAppState {
   likedEntryIds: number[];
   likedCommentIds: number[];
   savedEntryIds: number[];
+  notifications: components["schemas"]["NotificationDto"][];
   followedTopics: string[];
   bookVersions: MockBookVersion[];
   /** What each saved version held, so the next one can count what it adds. */
@@ -385,6 +388,7 @@ export function createMockAppState(
     likedEntryIds: [...(options.likedEntryIds || [])],
     likedCommentIds: [...(options.likedCommentIds || [])],
     savedEntryIds: [...(options.savedEntryIds || [])],
+    notifications: (options.notifications || []).map((notification) => ({ ...notification })),
     followedTopics: [...(options.followedTopics || [])],
     bookVersions: [],
     bookVersionManifests: {},

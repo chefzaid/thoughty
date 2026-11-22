@@ -11,8 +11,11 @@ export type FollowsResponse = components['schemas']['FollowsResponseDto'];
 export type FollowState = components['schemas']['FollowStateDto'];
 export type FollowedTopic = components['schemas']['FollowedTopicDto'];
 export type TopicFollowState = components['schemas']['TopicFollowStateDto'];
-/** What narrows any feed tab: a topic (a tag, ignoring case) and a word search. */
-export type PublicFeedFilters = Pick<PublicFeedQuery, 'tag' | 'search'>;
+/**
+ * What narrows any feed tab: a topic (a tag, ignoring case) and a word search; or one entry by its id (where a
+ * notification leads), shown whichever tab it would be in.
+ */
+export type PublicFeedFilters = Pick<PublicFeedQuery, 'tag' | 'search' | 'entry'>;
 export type EntryComment = components['schemas']['EntryCommentDto'];
 export type EntryCommentsResponse = components['schemas']['EntryCommentsResponseDto'];
 export type EntryCommentDeleted = components['schemas']['EntryCommentDeletedDto'];
@@ -41,6 +44,7 @@ export const createFeedService = (authFetch: (url: string, options?: RequestInit
     const params = new URLSearchParams({ scope, page: String(page), limit: String(limit) });
     if (filters.tag) params.set('tag', filters.tag);
     if (filters.search) params.set('search', filters.search);
+    if (filters.entry) params.set('entry', String(filters.entry));
     return requestJson(authFetch(`/api/entries/feed?${params}`), 'Failed to load the public feed');
   },
 

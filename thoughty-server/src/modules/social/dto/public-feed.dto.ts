@@ -35,6 +35,18 @@ export class GetPublicFeedQueryDto {
   @MaxLength(500)
   search?: string;
 
+  @ApiPropertyOptional({
+    description:
+      'Only this entry, yours or another writer\'s, whichever tab it would be in, when the feed may show it to you ' +
+      '(where a notification leads); `scope` then only names the tab, and a writer you muted is not left out.',
+    minimum: 1,
+    example: 42,
+  })
+  @IsOptional()
+  @StrictInt()
+  @Min(1)
+  entry?: number;
+
   @ApiPropertyOptional({ minimum: 1, default: 1 })
   @IsOptional()
   @StrictInt()

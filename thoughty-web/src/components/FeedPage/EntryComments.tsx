@@ -130,13 +130,15 @@ interface EntryCommentsProps {
   readonly theme: 'light' | 'dark';
   /** Writers the reader muted or blocked on this page, whose comments leave an open thread. */
   readonly hiddenAuthorIds?: ReadonlySet<number>;
+  /** Whether the thread starts open, as on the one entry a notification leads to. */
+  readonly initiallyOpen?: boolean;
   readonly t: Translate;
 }
 
-function EntryComments({ entryId, authorName, commentCount, currentUserId, actions, feedService, theme, hiddenAuthorIds, t }: EntryCommentsProps) {
+function EntryComments({ entryId, authorName, commentCount, currentUserId, actions, feedService, theme, hiddenAuthorIds, initiallyOpen = false, t }: EntryCommentsProps) {
   const threadId = useId();
   const quiet = useQuietMode();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initiallyOpen);
   const [total, setTotal] = useState(commentCount);
 
   return (

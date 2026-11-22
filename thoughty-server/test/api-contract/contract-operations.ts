@@ -218,6 +218,7 @@ export const CONTRACT_SUITES = {
     'DELETE /api/writers/{userId}/block',
     'DELETE /api/follows/followers/{userId}',
   ],
+  notifications: ['GET /api/notifications', 'GET /api/notifications/unread', 'PUT /api/notifications/read'],
   featureFlags: ['GET /api/config/feature-flags'],
   account: [
     'GET /api/health',

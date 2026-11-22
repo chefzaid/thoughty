@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import './NavMenu.css';
 import type { ViewType } from '../../types';
 import NavGroup from './NavGroup';
@@ -21,9 +21,11 @@ interface NavMenuProps {
     readonly privacyBlur?: PrivacyBlurState;
     /** Quick capture, which its button opens, beside the privacy blur. */
     readonly quickCapture?: { readonly isOpen: boolean; readonly open: () => void };
+    /** The notifications bell, first among the buttons beside the profile. */
+    readonly notifications?: ReactNode;
 }
 
-function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVerified, t, onLogout, privacyBlur, quickCapture }: NavMenuProps) {
+function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVerified, t, onLogout, privacyBlur, quickCapture, notifications }: NavMenuProps) {
     const isLight = theme === 'light';
     const displayName = name || t('user');
     const initial = displayName.charAt(0).toUpperCase();
@@ -64,6 +66,7 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
 
             {/* User Profile Section */}
             <div className="nav-user-section">
+                {notifications}
                 {quickCapture && (
                     <QuickCaptureButton isOpen={quickCapture.isOpen} onOpen={quickCapture.open} className="nav-icon-btn nav-capture-btn" t={t} />
                 )}

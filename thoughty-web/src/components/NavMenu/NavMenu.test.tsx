@@ -32,6 +32,13 @@ describe('NavMenu', () => {
     expect(mockOnViewChange).toHaveBeenCalledWith('journal');
   });
 
+  it('puts the notifications it is given first beside the profile', () => {
+    render(<NavMenu {...defaultProps} notifications={<button type="button">bell</button>} />);
+    const bell = screen.getByRole('button', { name: 'bell' });
+    expect(bell.parentElement).toHaveClass('nav-user-section');
+    expect(bell.parentElement?.firstElementChild).toBe(bell);
+  });
+
   it('closes an open group when the brand takes you to the journal', () => {
     render(<NavMenu {...defaultProps} currentView="stats" />);
     fireEvent.click(screen.getByRole('button', { name: 'navGroupInsights' }));

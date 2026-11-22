@@ -2295,6 +2295,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the comments and likes on your public entries, the likes on your comments, and new followers */
+        get: operations["NotificationsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/unread": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Count the notifications that came after they were last opened */
+        get: operations["NotificationsController_countUnread"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Mark every notification until now as read */
+        put: operations["NotificationsController_markRead"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/memoir": {
         parameters: {
             query?: never;
@@ -9365,6 +9416,150 @@ export interface components {
             userId: number;
             /** @example true */
             blocked: boolean;
+        };
+        /**
+         * @example {
+         *       "id": 2,
+         *       "username": "maya",
+         *       "avatarUrl": null
+         *     }
+         */
+        NotificationActorDto: {
+            /** @example 2 */
+            id: number;
+            /** @example maya */
+            username: string;
+            /** @example null */
+            avatarUrl: string | null;
+        };
+        /**
+         * @example {
+         *       "id": 42,
+         *       "date": "2026-11-20",
+         *       "index": 1,
+         *       "title": "Morning walk by the river"
+         *     }
+         */
+        NotificationEntryDto: {
+            /** @example 42 */
+            id: number;
+            /** @example 2026-11-20 */
+            date: string;
+            /** @example 1 */
+            index: number;
+            /** @example Morning walk by the river */
+            title: string | null;
+        };
+        /**
+         * @example {
+         *       "id": 7,
+         *       "excerpt": "What a lovely morning to read about."
+         *     }
+         */
+        NotificationCommentDto: {
+            /** @example 7 */
+            id: number;
+            /**
+             * @description The comment's first 140 characters
+             * @example What a lovely morning to read about.
+             */
+            excerpt: string;
+        };
+        /**
+         * @example {
+         *       "id": "comment:7",
+         *       "type": "comment",
+         *       "createdAt": "2026-11-21T08:30:00.000Z",
+         *       "unread": true,
+         *       "actor": {
+         *         "id": 2,
+         *         "username": "maya",
+         *         "avatarUrl": null
+         *       },
+         *       "entry": {
+         *         "id": 42,
+         *         "date": "2026-11-20",
+         *         "index": 1,
+         *         "title": "Morning walk by the river"
+         *       },
+         *       "comment": {
+         *         "id": 7,
+         *         "excerpt": "What a lovely morning to read about."
+         *       }
+         *     }
+         */
+        NotificationDto: {
+            /**
+             * @description Stable key of the notification, made of its type and what it is about
+             * @example comment:7
+             */
+            id: string;
+            /**
+             * @example comment
+             * @enum {string}
+             */
+            type: "comment" | "entryLike" | "commentLike" | "follow";
+            /** @example 2026-11-21T08:30:00.000Z */
+            createdAt: string;
+            /**
+             * @description Whether it came after the notifications were last opened
+             * @example true
+             */
+            unread: boolean;
+            actor: components["schemas"]["NotificationActorDto"];
+            /** @description Null for a new follower */
+            entry: components["schemas"]["NotificationEntryDto"] | null;
+            /** @description The comment written (`comment`) or liked (`commentLike`); null otherwise */
+            comment: components["schemas"]["NotificationCommentDto"] | null;
+        };
+        /**
+         * @example {
+         *       "notifications": [
+         *         {
+         *           "id": "comment:7",
+         *           "type": "comment",
+         *           "createdAt": "2026-11-21T08:30:00.000Z",
+         *           "unread": true,
+         *           "actor": {
+         *             "id": 2,
+         *             "username": "maya",
+         *             "avatarUrl": null
+         *           },
+         *           "entry": {
+         *             "id": 42,
+         *             "date": "2026-11-20",
+         *             "index": 1,
+         *             "title": "Morning walk by the river"
+         *           },
+         *           "comment": {
+         *             "id": 7,
+         *             "excerpt": "What a lovely morning to read about."
+         *           }
+         *         }
+         *       ],
+         *       "unreadCount": 3
+         *     }
+         */
+        NotificationsResponseDto: {
+            /** @description The 30 most recent notifications, newest first */
+            notifications: components["schemas"]["NotificationDto"][];
+            /**
+             * @description Notifications that came after they were last opened
+             * @example 3
+             */
+            unreadCount: number;
+        };
+        /**
+         * @example {
+         *       "unreadCount": 3
+         *     }
+         */
+        UnreadNotificationsDto: {
+            /**
+             * @description Notifications that came after they were last opened
+             * @example 3
+             */
+            unreadCount: number;
         };
         /**
          * @example {
@@ -20464,6 +20659,8 @@ export interface operations {
                 tag?: string;
                 /** @description Word search over the entries' titles, text and tags (never moods or feelings), with the operators of the journal search: "exact phrases", a leading minus to leave a word out, and OR between alternatives. */
                 search?: string;
+                /** @description Only this entry, yours or another writer's, whichever tab it would be in, when the feed may show it to you (where a notification leads); `scope` then only names the tab, and a writer you muted is not left out. */
+                entry?: number;
                 page?: number;
                 limit?: number;
             };
@@ -22333,6 +22530,155 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["WriterBlockStateDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    NotificationsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The most recent notifications, newest first, and how many are new */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "notifications": [
+                     *         {
+                     *           "id": "comment:7",
+                     *           "type": "comment",
+                     *           "createdAt": "2026-11-21T08:30:00.000Z",
+                     *           "unread": true,
+                     *           "actor": {
+                     *             "id": 2,
+                     *             "username": "maya",
+                     *             "avatarUrl": null
+                     *           },
+                     *           "entry": {
+                     *             "id": 42,
+                     *             "date": "2026-11-20",
+                     *             "index": 1,
+                     *             "title": "Morning walk by the river"
+                     *           },
+                     *           "comment": {
+                     *             "id": 7,
+                     *             "excerpt": "What a lovely morning to read about."
+                     *           }
+                     *         }
+                     *       ],
+                     *       "unreadCount": 3
+                     *     }
+                     */
+                    "application/json": components["schemas"]["NotificationsResponseDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    NotificationsController_countUnread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description How many notifications are new */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "unreadCount": 3
+                     *     }
+                     */
+                    "application/json": components["schemas"]["UnreadNotificationsDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    NotificationsController_markRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No notification is new any more */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "unreadCount": 3
+                     *     }
+                     */
+                    "application/json": components["schemas"]["UnreadNotificationsDto"];
                 };
             };
             /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */

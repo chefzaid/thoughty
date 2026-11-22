@@ -110,4 +110,29 @@ describe('FeedRoute', () => {
     fireEvent.click(screen.getByRole('button', { name: 'clear filters' }));
     expect(screen.getByRole('status')).toHaveTextContent(/^\/feed$/);
   });
+
+  it('shows the one entry of the address, ignoring an id that is not one, and leaves it with any other filter', () => {
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/feed?entry=42']}>
+        <Routes>
+          <Route path="/feed" element={<><FeedRoute t={(key) => key} /><LocationProbe /></>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('button', { name: 'feed page' })).toHaveAttribute('data-filters', '{"entry":42}');
+    fireEvent.click(screen.getByRole('button', { name: 'clear filters' }));
+    expect(screen.getByRole('status')).toHaveTextContent(/^\/feed$/);
+    unmount();
+
+    for (const id of ['0', '-3', '4.5', 'abc', '99999999999999999999']) {
+      const view = render(
+        <MemoryRouter initialEntries={[`/feed?entry=${id}`]}>
+          <FeedRoute t={(key) => key} />
+        </MemoryRouter>,
+      );
+      expect(screen.getByRole('button', { name: 'feed page' })).toHaveAttribute('data-filters', '{}');
+      view.unmount();
+    }
+  });
 });

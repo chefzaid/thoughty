@@ -288,4 +288,37 @@ describe('PublicFeedService', () => {
     expect(result.entries[0].saved).toBe(true);
     expect(savedEntriesService.findSavedIds).not.toHaveBeenCalled();
   });
+
+  it('shows one entry asked for by its id wherever it would be, keeping blocks out but not muted writers', async () => {
+    const qb = createQueryBuilder();
+    qb.getCount.mockResolvedValue(1);
+    qb.getMany.mockResolvedValue([
+      {
+        id: 9,
+        date: '2026-08-03',
+        index: 1,
+        tags: [],
+        content: 'Mine, commented on',
+        format: 'plain',
+        createdAt: new Date(),
+        user: { id: 7, username: 'reader', avatarUrl: null },
+      },
+    ]);
+    repository.createQueryBuilder.mockReturnValue(qb);
+    savedEntriesService.findSavedIds.mockResolvedValue(new Set());
+
+    const result = await service.getFeed(7, { scope: 'saved', entry: 9 });
+
+    expect(qb.andWhere).toHaveBeenCalledWith('e.id = :entryId', { entryId: 9 });
+    expect(qb.orderBy).toHaveBeenCalledWith('e.createdAt', 'DESC');
+    const conditions = qb.andWhere.mock.calls.map(([sql]) => String(sql));
+    expect(conditions.some((sql) => sql.includes('user_blocks'))).toBe(true);
+    expect(conditions.some((sql) => sql.includes('user_mutes'))).toBe(false);
+    expect(conditions).not.toContain('e.user_id != :userId');
+    expect(qb.innerJoin).not.toHaveBeenCalledWith('saved_entries', 's', expect.anything(), expect.anything());
+    // Asked for from the Saved tab, it is saved only when it really is
+    expect(savedEntriesService.findSavedIds).toHaveBeenCalledWith(7, [9]);
+    expect(result.entries.map((entry) => entry.id)).toEqual([9]);
+    expect(result.entries[0].saved).toBe(false);
+  });
 });

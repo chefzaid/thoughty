@@ -62,7 +62,7 @@ function FeedPage({
   onFiltersChange,
   t,
 }: Readonly<FeedPageProps>) {
-  const { tag, search } = filters;
+  const { tag, search, entry: entryId } = filters;
   const uiLanguage = resolveLanguage(language);
   const feedService = useFeedService();
   const currentUserId = useAuth().user?.id;
@@ -94,7 +94,7 @@ function FeedPage({
 
     setLoading(true);
     setError(null);
-    const request = feedService.fetchPublicFeed(requestScope, requestedPage, PAGE_SIZE, { tag, search }).then((result) => {
+    const request = feedService.fetchPublicFeed(requestScope, requestedPage, PAGE_SIZE, { tag, search, entry: entryId }).then((result) => {
       pendingRequestsRef.current.delete(requestKey);
       if (generation !== generationRef.current) return [];
 
@@ -114,7 +114,7 @@ function FeedPage({
     });
     pendingRequestsRef.current.set(requestKey, request);
     return request;
-  }, [feedService, tag, search]);
+  }, [feedService, tag, search, entryId]);
 
   useEffect(() => {
     const generation = generationRef.current + 1;
@@ -184,9 +184,9 @@ function FeedPage({
     void fetchPage(scope, entries.length === 0 ? 1 : page + 1, entries.length === 0, generation);
   };
 
-  const emptyMessage = tag || search
-    ? t('feedEmptyFiltered')
-    : t(SCOPES.find((option) => option.scope === scope)!.empty);
+  let emptyMessage = t(SCOPES.find((option) => option.scope === scope)!.empty);
+  if (entryId) emptyMessage = t('feedEntryGone');
+  else if (tag || search) emptyMessage = t('feedEmptyFiltered');
 
   return (
     <section ref={sectionRef} className={`feed-page ${theme}`} aria-labelledby="feed-heading">
@@ -202,7 +202,7 @@ function FeedPage({
                 {t('leaderboard')}
               </button>
             )}
-            <fieldset className="feed-scope" aria-label={t('feedScope')}>
+            {!entryId && <fieldset className="feed-scope" aria-label={t('feedScope')}>
               {SCOPES.map((option) => (
                 <button
                   key={option.scope}
@@ -215,7 +215,7 @@ function FeedPage({
                   {t(option.label)}
                 </button>
               ))}
-            </fieldset>
+            </fieldset>}
           </>
         )}
       />
@@ -233,7 +233,7 @@ function FeedPage({
         />
       )}
 
-      {scope === 'following' && (
+      {scope === 'following' && !entryId && (
         <FollowingPanel
           following={follows.following}
           topics={follows.topics}
@@ -260,121 +260,125 @@ function FeedPage({
       </p>
 
       <div className="feed-list">
-        {entries.map((entry) => (
-          <article className={`feed-entry${speech.activeEntryId === entry.id ? ' reading' : ''}`} key={entry.id}>
-            <FeedAuthor
-              author={entry.author}
-              date={entry.date}
-              time={entry.timeOfDay}
-              t={t}
-              follow={scope === 'mine' ? undefined : {
-                followed: follows.isFollowed(entry.author),
-                pending: follows.pendingIds.has(entry.author.id),
-                onToggle: () => void follows.setFollow(entry.author, !follows.isFollowed(entry.author)),
-              }}
-              menu={entry.author.id === currentUserId ? undefined : (
-                <WriterMenu
-                  username={entry.author.username}
-                  disabled={writers.pendingIds.has(entry.author.id)}
-                  onMute={() => writers.mute(entry.author)}
-                  onBlock={() => writers.requestBlock(entry.author)}
-                  t={t}
-                />
-              )}
-            />
-            {entry.title && <h2 className="feed-entry-title">{entry.title}</h2>}
-            <div className="feed-content privacy-text">
-              <EntryContentRenderer content={entry.content} format={entry.format} />
-            </div>
-            {entry.tags.length > 0 && (
-              <ul className="feed-tags" aria-label={t('tags')}>
-                {entry.tags.map((entryTag) => (
-                  <li key={entryTag}>
-                    {onFiltersChange ? (
-                      <button
-                        type="button"
-                        className="feed-tag"
-                        title={t('feedOpenTopic', { tag: entryTag })}
-                        onClick={() => openTopic(entryTag)}
-                      >
-                        #{entryTag}
-                      </button>
-                    ) : `#${entryTag}`}
-                  </li>
-                ))}
-              </ul>
-            )}
-            <EntryComments
-              entryId={entry.id}
-              authorName={entry.author.username}
-              commentCount={entry.commentCount}
-              currentUserId={currentUserId}
-              feedService={feedService}
-              theme={theme}
-              hiddenAuthorIds={writers.hiddenIds}
-              t={t}
-              actions={(
-                <>
-                  <LikeButton
-                    liked={entry.liked}
-                    likeCount={entry.likeCount}
-                    canLike={scope !== 'mine'}
-                    label={t('likeEntryBy', { username: entry.author.username })}
-                    onChange={(like) => feedService.setEntryLike(entry.id, like)}
+        {entries.map((entry) => {
+          const isOwn = scope === 'mine' || entry.author.id === currentUserId;
+          return (
+            <article className={`feed-entry${speech.activeEntryId === entry.id ? ' reading' : ''}`} key={entry.id}>
+              <FeedAuthor
+                author={entry.author}
+                date={entry.date}
+                time={entry.timeOfDay}
+                t={t}
+                follow={isOwn ? undefined : {
+                  followed: follows.isFollowed(entry.author),
+                  pending: follows.pendingIds.has(entry.author.id),
+                  onToggle: () => void follows.setFollow(entry.author, !follows.isFollowed(entry.author)),
+                }}
+                menu={isOwn ? undefined : (
+                  <WriterMenu
+                    username={entry.author.username}
+                    disabled={writers.pendingIds.has(entry.author.id)}
+                    onMute={() => writers.mute(entry.author)}
+                    onBlock={() => writers.requestBlock(entry.author)}
                     t={t}
                   />
-                  {speech.supported && (
-                    <ListenButton
-                      entryId={entry.id}
-                      speaking={speech.speaking}
-                      activeEntryId={speech.activeEntryId}
-                      onListenOne={() => speech.readEntry(entry)}
-                      onListenFrom={() => speech.readFromEntry(entry)}
-                      onStop={speech.stop}
-                      theme={theme}
-                      menuAlign="start"
-                      label={t('listenEntryBy', { username: entry.author.username })}
-                      t={t}
-                    />
-                  )}
-                  {entry.author.id !== currentUserId && (
-                    <>
-                      <SaveButton
-                        saved={entry.saved}
-                        label={t('saveEntryBy', { username: entry.author.username })}
-                        onChange={(save) => feedService.setEntrySaved(entry.id, save)}
-                        t={t}
-                      />
-                      {onWriteAbout && (
+                )}
+              />
+              {entry.title && <h2 className="feed-entry-title">{entry.title}</h2>}
+              <div className="feed-content privacy-text">
+                <EntryContentRenderer content={entry.content} format={entry.format} />
+              </div>
+              {entry.tags.length > 0 && (
+                <ul className="feed-tags" aria-label={t('tags')}>
+                  {entry.tags.map((entryTag) => (
+                    <li key={entryTag}>
+                      {onFiltersChange ? (
                         <button
                           type="button"
-                          className="feed-entry-action"
-                          aria-label={t('writeAboutEntryBy', { username: entry.author.username })}
-                          onClick={() => onWriteAbout(entry)}
+                          className="feed-tag"
+                          title={t('feedOpenTopic', { tag: entryTag })}
+                          onClick={() => openTopic(entryTag)}
                         >
-                          <span className="codicon codicon-edit" aria-hidden="true" />
-                          {t('writeAboutThis')}
+                          #{entryTag}
                         </button>
-                      )}
-                    </>
-                  )}
-                  {entry.author.id === currentUserId && (
-                    <button
-                      type="button"
-                      className="feed-share-image"
-                      title={t('shareAsImage')}
-                      aria-label={t('shareAsImageBy', { date: formatCardDate(entry.date, uiLanguage) })}
-                      onClick={() => setImageEntry(entry)}
-                    >
-                      <span className="codicon codicon-file-media" aria-hidden="true" />
-                      {t('shareAsImage')}
-                    </button>
-                  )}
-                </>
+                      ) : `#${entryTag}`}
+                    </li>
+                  ))}
+                </ul>
               )}
-            />
-          </article>
-        ))}
+              <EntryComments
+                entryId={entry.id}
+                authorName={entry.author.username}
+                commentCount={entry.commentCount}
+                currentUserId={currentUserId}
+                feedService={feedService}
+                theme={theme}
+                hiddenAuthorIds={writers.hiddenIds}
+                initiallyOpen={entryId !== undefined}
+                t={t}
+                actions={(
+                  <>
+                    <LikeButton
+                      liked={entry.liked}
+                      likeCount={entry.likeCount}
+                      canLike={!isOwn}
+                      label={t('likeEntryBy', { username: entry.author.username })}
+                      onChange={(like) => feedService.setEntryLike(entry.id, like)}
+                      t={t}
+                    />
+                    {speech.supported && (
+                      <ListenButton
+                        entryId={entry.id}
+                        speaking={speech.speaking}
+                        activeEntryId={speech.activeEntryId}
+                        onListenOne={() => speech.readEntry(entry)}
+                        onListenFrom={() => speech.readFromEntry(entry)}
+                        onStop={speech.stop}
+                        theme={theme}
+                        menuAlign="start"
+                        label={t('listenEntryBy', { username: entry.author.username })}
+                        t={t}
+                      />
+                    )}
+                    {!isOwn && (
+                      <>
+                        <SaveButton
+                          saved={entry.saved}
+                          label={t('saveEntryBy', { username: entry.author.username })}
+                          onChange={(save) => feedService.setEntrySaved(entry.id, save)}
+                          t={t}
+                        />
+                        {onWriteAbout && (
+                          <button
+                            type="button"
+                            className="feed-entry-action"
+                            aria-label={t('writeAboutEntryBy', { username: entry.author.username })}
+                            onClick={() => onWriteAbout(entry)}
+                          >
+                            <span className="codicon codicon-edit" aria-hidden="true" />
+                            {t('writeAboutThis')}
+                          </button>
+                        )}
+                      </>
+                    )}
+                    {isOwn && (
+                      <button
+                        type="button"
+                        className="feed-share-image"
+                        title={t('shareAsImage')}
+                        aria-label={t('shareAsImageBy', { date: formatCardDate(entry.date, uiLanguage) })}
+                        onClick={() => setImageEntry(entry)}
+                      >
+                        <span className="codicon codicon-file-media" aria-hidden="true" />
+                        {t('shareAsImage')}
+                      </button>
+                    )}
+                  </>
+                )}
+              />
+            </article>
+          );
+        })}
       </div>
 
       {loading && <output className="feed-state"><span className="codicon codicon-loading codicon-modifier-spin" aria-hidden="true" /> {t('loading')}</output>}

@@ -16,8 +16,28 @@ interface FeedTopicBarProps {
   readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-/** The feed's word search, and the open topic with **Follow the topic** and a way back to every topic. */
+/**
+ * The feed's word search, and the open topic with **Follow the topic** and a way back to every topic; or, on the one
+ * entry a notification leads to, a way to the whole feed.
+ */
 function FeedTopicBar({ filters, onChange, topicFollow, t }: FeedTopicBarProps) {
+  if (filters.entry) {
+    return (
+      <div className="feed-topic-bar">
+        <section className="feed-topic feed-one-entry" aria-label={t('feedOneEntry')}>
+          <p>{t('feedOneEntry')}</p>
+          <button type="button" className="feed-whole-feed" onClick={() => onChange({})}>
+            <span className="codicon codicon-arrow-left" aria-hidden="true" />
+            {t('feedShowWholeFeed')}
+          </button>
+        </section>
+      </div>
+    );
+  }
+  return <FeedSearchAndTopic filters={filters} onChange={onChange} topicFollow={topicFollow} t={t} />;
+}
+
+function FeedSearchAndTopic({ filters, onChange, topicFollow, t }: FeedTopicBarProps) {
   const { tag, search } = filters;
   const [draft, setDraft] = useState(search ?? '');
   const headingId = useId();

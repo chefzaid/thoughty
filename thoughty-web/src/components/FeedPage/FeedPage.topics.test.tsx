@@ -149,4 +149,37 @@ describe('FeedPage topics and search', () => {
     expect(follow).toBeEnabled();
     expect(follow).toHaveAttribute('aria-pressed', 'true');
   });
+
+  it('shows the one entry a notification leads to, its comments open, with a way to the whole feed', async () => {
+    const own = { ...entry(42, []), author: { id: 1, username: 'Me', avatarUrl: null, isFollowed: false } };
+    const fetchComments = vi.fn().mockResolvedValue({
+      data: { comments: [], commentPolicy: 'everyone', canComment: true, canModerate: true },
+      error: null,
+    });
+    Object.assign(feedService, { fetchComments });
+    fetchPublicFeed.mockResolvedValue(page([own]));
+    render(<FeedWithFilters initial={{ entry: 42 }} />);
+
+    expect(await screen.findByText('Entry 42')).toBeInTheDocument();
+    expect(fetchPublicFeed).toHaveBeenLastCalledWith('community', 1, 10, { entry: 42 });
+    expect(screen.getByRole('region', { name: 'One entry, from your notifications' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Feed view' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('search')).not.toBeInTheDocument();
+    // The writer's own entry: no follow, no like of their own, and its thread already open
+    expect(screen.queryByRole('button', { name: /^Follow/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /comments/i, expanded: true })).toBeInTheDocument();
+    await waitFor(() => expect(fetchComments).toHaveBeenCalledWith(42));
+
+    fetchPublicFeed.mockResolvedValue(page([entry(1, [])]));
+    fireEvent.click(screen.getByRole('button', { name: 'Show the whole feed' }));
+    await waitFor(() => expect(fetchPublicFeed).toHaveBeenLastCalledWith('community', 1, 10, {}));
+    expect(await screen.findByRole('search')).toBeInTheDocument();
+  });
+
+  it('says when the entry a notification leads to is no longer in the feed', async () => {
+    fetchPublicFeed.mockResolvedValue(page([]));
+    render(<FeedWithFilters initial={{ entry: 42 }} />);
+
+    expect(await screen.findByText('This entry is no longer in the feed.')).toBeInTheDocument();
+  });
 });

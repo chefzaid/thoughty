@@ -3,6 +3,7 @@ import type { MockEntry } from './mockApp.shared';
 import { handleCommentRoutes, visibleComments } from './mockApp.routes.comments';
 import { authorId, feedEligibleEntries, likeState, setLiked } from './mockApp.social-shared';
 import { handleWriterControlRoutes } from './mockApp.routes.writer-controls';
+import { handleNotificationRoutes } from './mockApp.routes.notifications';
 import {
   carriesFollowedTopic,
   carriesTopic,
@@ -35,9 +36,10 @@ async function handlePublicFeedRoute({ route, request, pathname, searchParams, s
     || !state.writers.muted.includes(authorId(entry, state));
   // The Saved list goes by when each entry was saved, the newest first; the rest by when it was written
   const savedOrder = (entry: MockEntry) => state.savedEntryIds.indexOf(entry.id);
+  // One entry asked for by its id (where a notification leads) is shown whichever tab it would be in
+  const entryId = Number(searchParams.get('entry'));
   const eligibleEntries = feedEligibleEntries(state)
-    .filter(inScope)
-    .filter(unmuted)
+    .filter((entry) => (entryId ? entry.id === entryId : inScope(entry) && unmuted(entry)))
     .filter((entry) => !tag || carriesTopic(entry, tag))
     .filter((entry) => !search || matchesFeedSearch(entry, search))
     .sort((left, right) => {
@@ -262,6 +264,7 @@ export async function handleSocialRoutes(context: RouteContext): Promise<boolean
     || (await handleLeaderboardRoute(context))
     || (await handleTopicFollowRoutes(context))
     || (await handleWriterControlRoutes(context))
+    || (await handleNotificationRoutes(context))
     || (await handleFollowRoutes(context))
     || (await handleLikeRoutes(context))
     || (await handleSaveRoute(context))

@@ -11507,6 +11507,17 @@
             }
           },
           {
+            "name": "entry",
+            "required": false,
+            "in": "query",
+            "description": "Only this entry, yours or another writer's, whichever tab it would be in, when the feed may show it to you (where a notification leads); `scope` then only names the tab, and a writer you muted is not left out.",
+            "schema": {
+              "minimum": 1,
+              "example": 42,
+              "type": "number"
+            }
+          },
+          {
             "name": "page",
             "required": false,
             "in": "query",
@@ -13712,6 +13723,167 @@
           }
         ],
         "summary": "Unblock a writer; the follows that ended stay ended",
+        "tags": [
+          "Social"
+        ]
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "operationId": "NotificationsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The most recent notifications, newest first, and how many are new",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationsResponseDto"
+                },
+                "example": {
+                  "notifications": [
+                    {
+                      "id": "comment:7",
+                      "type": "comment",
+                      "createdAt": "2026-11-21T08:30:00.000Z",
+                      "unread": true,
+                      "actor": {
+                        "id": 2,
+                        "username": "maya",
+                        "avatarUrl": null
+                      },
+                      "entry": {
+                        "id": 42,
+                        "date": "2026-11-20",
+                        "index": 1,
+                        "title": "Morning walk by the river"
+                      },
+                      "comment": {
+                        "id": 7,
+                        "excerpt": "What a lovely morning to read about."
+                      }
+                    }
+                  ],
+                  "unreadCount": 3
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the comments and likes on your public entries, the likes on your comments, and new followers",
+        "tags": [
+          "Social"
+        ]
+      }
+    },
+    "/api/notifications/unread": {
+      "get": {
+        "operationId": "NotificationsController_countUnread",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "How many notifications are new",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadNotificationsDto"
+                },
+                "example": {
+                  "unreadCount": 3
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Count the notifications that came after they were last opened",
+        "tags": [
+          "Social"
+        ]
+      }
+    },
+    "/api/notifications/read": {
+      "put": {
+        "operationId": "NotificationsController_markRead",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "No notification is new any more",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadNotificationsDto"
+                },
+                "example": {
+                  "unreadCount": 3
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark every notification until now as read",
         "tags": [
           "Social"
         ]
@@ -28432,6 +28604,235 @@
         "example": {
           "userId": 2,
           "blocked": true
+        }
+      },
+      "NotificationActorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 2
+          },
+          "username": {
+            "type": "string",
+            "example": "maya"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "avatarUrl"
+        ],
+        "example": {
+          "id": 2,
+          "username": "maya",
+          "avatarUrl": null
+        }
+      },
+      "NotificationEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 42
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-11-20"
+          },
+          "index": {
+            "type": "number",
+            "example": 1
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "example": "Morning walk by the river"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "index",
+          "title"
+        ],
+        "example": {
+          "id": 42,
+          "date": "2026-11-20",
+          "index": 1,
+          "title": "Morning walk by the river"
+        }
+      },
+      "NotificationCommentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 7
+          },
+          "excerpt": {
+            "type": "string",
+            "example": "What a lovely morning to read about.",
+            "description": "The comment's first 140 characters"
+          }
+        },
+        "required": [
+          "id",
+          "excerpt"
+        ],
+        "example": {
+          "id": 7,
+          "excerpt": "What a lovely morning to read about."
+        }
+      },
+      "NotificationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "comment:7",
+            "description": "Stable key of the notification, made of its type and what it is about"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "comment",
+              "entryLike",
+              "commentLike",
+              "follow"
+            ],
+            "example": "comment"
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-11-21T08:30:00.000Z"
+          },
+          "unread": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether it came after the notifications were last opened"
+          },
+          "actor": {
+            "$ref": "#/components/schemas/NotificationActorDto"
+          },
+          "entry": {
+            "nullable": true,
+            "description": "Null for a new follower",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NotificationEntryDto"
+              }
+            ]
+          },
+          "comment": {
+            "nullable": true,
+            "description": "The comment written (`comment`) or liked (`commentLike`); null otherwise",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NotificationCommentDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "createdAt",
+          "unread",
+          "actor",
+          "entry",
+          "comment"
+        ],
+        "example": {
+          "id": "comment:7",
+          "type": "comment",
+          "createdAt": "2026-11-21T08:30:00.000Z",
+          "unread": true,
+          "actor": {
+            "id": 2,
+            "username": "maya",
+            "avatarUrl": null
+          },
+          "entry": {
+            "id": 42,
+            "date": "2026-11-20",
+            "index": 1,
+            "title": "Morning walk by the river"
+          },
+          "comment": {
+            "id": 7,
+            "excerpt": "What a lovely morning to read about."
+          }
+        }
+      },
+      "NotificationsResponseDto": {
+        "type": "object",
+        "properties": {
+          "notifications": {
+            "description": "The 30 most recent notifications, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationDto"
+            }
+          },
+          "unreadCount": {
+            "type": "number",
+            "example": 3,
+            "description": "Notifications that came after they were last opened"
+          }
+        },
+        "required": [
+          "notifications",
+          "unreadCount"
+        ],
+        "example": {
+          "notifications": [
+            {
+              "id": "comment:7",
+              "type": "comment",
+              "createdAt": "2026-11-21T08:30:00.000Z",
+              "unread": true,
+              "actor": {
+                "id": 2,
+                "username": "maya",
+                "avatarUrl": null
+              },
+              "entry": {
+                "id": 42,
+                "date": "2026-11-20",
+                "index": 1,
+                "title": "Morning walk by the river"
+              },
+              "comment": {
+                "id": 7,
+                "excerpt": "What a lovely morning to read about."
+              }
+            }
+          ],
+          "unreadCount": 3
+        }
+      },
+      "UnreadNotificationsDto": {
+        "type": "object",
+        "properties": {
+          "unreadCount": {
+            "type": "number",
+            "example": 3,
+            "description": "Notifications that came after they were last opened"
+          }
+        },
+        "required": [
+          "unreadCount"
+        ],
+        "example": {
+          "unreadCount": 3
         }
       },
       "MemoirProgramDto": {

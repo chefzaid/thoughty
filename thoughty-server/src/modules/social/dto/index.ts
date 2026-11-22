@@ -6,3 +6,4 @@ export * from './leaderboard.dto';
 export * from './achievements.dto';
 export * from './saved-entries.dto';
 export * from './writer-controls.dto';
+export * from './notifications.dto';

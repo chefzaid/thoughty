@@ -49,6 +49,8 @@ interface AuthenticatedAppLayoutProps {
   readonly onSendChat: (entryId: number, entryContent: string, messages: { role: 'user' | 'assistant'; content: string }[]) => Promise<string | null>;
   /** The quick capture box, which the navigation's button and its shortcut open on every page. */
   readonly quickCapture?: QuickCaptureState;
+  /** The notifications bell in the navigation, built where the router and the session are at hand. */
+  readonly notifications?: ReactNode;
 }
 
 function AuthenticatedAppLayout({
@@ -77,6 +79,7 @@ function AuthenticatedAppLayout({
   onLoadChatHistory,
   onSendChat,
   quickCapture,
+  notifications,
 }: Readonly<AuthenticatedAppLayoutProps>) {
   const mainContentRef = useRef<HTMLElement>(null);
   const appTypographyStyle = {
@@ -134,6 +137,7 @@ function AuthenticatedAppLayout({
               onLogout={logOut}
               privacyBlur={privacyBlur}
               quickCapture={quickCapture}
+              notifications={notifications}
             />}
 
             {quickCapture && !chromeless && <QuickCaptureDialog quickCapture={quickCapture} theme={config.theme} t={t} />}

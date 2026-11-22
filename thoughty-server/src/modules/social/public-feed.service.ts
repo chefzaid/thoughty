@@ -46,11 +46,17 @@ export class PublicFeedService {
         'u.avatarUrl',
       ]);
     applyPublicFeedVisibility(qb);
-    // Muting keeps a writer out of the stream tabs; the reader's own Saved list keeps what they chose
+    // Muting keeps a writer out of the stream tabs; the reader's own Saved list keeps what they chose, and
+    // one entry asked for by its id (from a notification) is shown wherever it would be
+    const oneEntry = query.entry !== undefined;
     excludeHiddenWriters(qb, 'e.user_id', userId, {
-      muted: scope === 'community' || scope === 'following',
+      muted: !oneEntry && (scope === 'community' || scope === 'following'),
     });
-    applyFeedScope(qb, scope, userId);
+    if (oneEntry) {
+      qb.andWhere('e.id = :entryId', { entryId: query.entry }).orderBy('e.createdAt', 'DESC');
+    } else {
+      applyFeedScope(qb, scope, userId);
+    }
     if (query.tag !== undefined) {
       applyFeedTopic(qb, query.tag);
     }
@@ -74,7 +80,7 @@ export class PublicFeedService {
       ),
       this.countComments(userId, entryIds),
       this.likesService.summarizeEntryLikes(userId, entryIds),
-      scope === 'saved'
+      scope === 'saved' && !oneEntry
         ? Promise.resolve(new Set(entryIds))
         : this.savedEntriesService.findSavedIds(userId, entryIds),
     ]);

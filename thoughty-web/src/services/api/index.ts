@@ -33,3 +33,4 @@ export * from './contentLockService';
 export * from './contentUnlockToken';
 export * from './accountActivityService';
 export * from './accessTokensService';
+export * from './notificationsService';

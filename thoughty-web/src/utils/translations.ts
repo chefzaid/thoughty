@@ -42,6 +42,7 @@ import { writerControlsTranslations, type WriterControlsTranslationKey } from ".
 import { accountActivityTranslations, type AccountActivityTranslationKey } from "./translations.accountActivity";
 import { accessTokensTranslations, type AccessTokensTranslationKey } from "./translations.accessTokens";
 import { feedTopicsTranslations, type FeedTopicsTranslationKey } from "./translations.feedTopics";
+import { notificationsTranslations, type NotificationsTranslationKey } from "./translations.notifications";
 import { commentControlsTranslations, type CommentControlsTranslationKey } from "./translations.commentControls";
 import { peopleCheckTranslations, type PeopleCheckTranslationKey } from "./translations.peopleCheck";
 import { navigationTranslations, type NavigationTranslationKey } from "./translations.navigation";
@@ -138,6 +139,7 @@ export type TranslationKey =
   | CommentControlsTranslationKey
   | PeopleCheckTranslationKey
   | FeedTopicsTranslationKey
+  | NotificationsTranslationKey
   | NavigationTranslationKey
   | QuickCaptureTranslationKey
   | QuietModeTranslationKey
@@ -235,6 +237,7 @@ export const translations: Translations = {
     ...accountActivityTranslations.en,
     ...accessTokensTranslations.en,
     ...feedTopicsTranslations.en,
+    ...notificationsTranslations.en,
     ...commentControlsTranslations.en,
     ...peopleCheckTranslations.en,
     ...navigationTranslations.en,
@@ -327,6 +330,7 @@ export const translations: Translations = {
     ...accountActivityTranslations.fr,
     ...accessTokensTranslations.fr,
     ...feedTopicsTranslations.fr,
+    ...notificationsTranslations.fr,
     ...commentControlsTranslations.fr,
     ...peopleCheckTranslations.fr,
     ...navigationTranslations.fr,

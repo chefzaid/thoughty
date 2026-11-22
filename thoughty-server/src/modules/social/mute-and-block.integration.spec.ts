@@ -206,4 +206,19 @@ describePostgres('Muting and blocking writers on PostgreSQL', () => {
     await follows.removeFollower(ids.bob, ids.quiet);
     expect((await follows.list(ids.bob)).followers.map((user) => user.username)).toEqual(['alice']);
   });
+
+  it('shows one entry asked for by its id, a muted writer’s or the reader’s own, never across a block', async () => {
+    const oneEntry = async (userId: number, entryId: number) =>
+      (await feed.getFeed(userId, { entry: entryId })).entries.map((entry) => entry.id);
+
+    // Bob still mutes carol, and her entry is not in his stream, but a link to it opens it
+    expect(await feedIds(ids.bob)).toEqual(expect.not.arrayContaining([entries.carol]));
+    expect(await oneEntry(ids.bob, entries.carol)).toEqual([entries.carol]);
+    expect(await oneEntry(ids.bob, entries.bob)).toEqual([entries.bob]);
+
+    await controls.setBlocked(ids.carol, ids.bob, true);
+    expect(await oneEntry(ids.bob, entries.carol)).toEqual([]);
+    expect(await oneEntry(ids.carol, entries.bob)).toEqual([]);
+    await controls.setBlocked(ids.carol, ids.bob, false);
+  });
 });

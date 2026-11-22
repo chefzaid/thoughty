@@ -317,7 +317,8 @@ Parts of tasks that cannot advance without the owner's decision or information. 
 - [x] Likes for entries and comments
 - [ ] Chatting and messaging between users, with one-to-one and group conversations
 - [ ] Discuss button offers two choices: "With AI" for the existing entry AI chat, and "With Someone" using the planned user chat feature (depends on chat implementation)
-- [ ] Notifications for messages, comments, likes, new followers
+- [x] Notifications for comments, likes and new followers: a bell beside quick capture shows how many came since it was last opened (a dot without the number in quiet mode), read on load, every minute while the page is in front and when it comes back; opening it lists the 30 most recent (comments on your public entries, likes on them and on your comments, new followers), the new ones marked, and marks them read. One about an entry opens it alone in the feed with its comments open (`/feed?entry=42`, feed query `entry`). They are read from the likes, comments and follows themselves, so whatever is taken back, hidden, deleted or leaves the feed goes with them, and nothing comes from yourself or from writers muted or blocked either way; only when they were last opened is stored (`notification_reads`, migration `1789776000000-notification-reads`; `GET /api/notifications`, `GET /api/notifications/unread`, `PUT /api/notifications/read`).
+- [ ] Notifications for messages, once **Chatting and messaging between users** exists: a new message joins the bell's list and its count (a `message` type read from the conversations, as the others are read from their tables), opening the conversation.
 - [x] Leaderboard for most active users, most liked entries, most commented entries
 - [x] Badges for achievements and karma points
 - [x] Feature requests and voting system for new features

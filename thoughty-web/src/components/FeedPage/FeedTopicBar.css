@@ -159,3 +159,49 @@
 .feed-page.light .feed-topic h2 {
   color: #0e7490;
 }
+
+/* The one entry a notification leads to, and the way back to the whole feed. */
+.feed-topic.feed-one-entry {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.feed-one-entry p {
+  margin: 0;
+  color: #e5e7eb;
+  font-size: 0.875rem;
+}
+
+.feed-page.light .feed-one-entry p {
+  color: #374151;
+}
+
+.feed-whole-feed {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  border: 0;
+  border-radius: 0.35rem;
+  background: #374151;
+  color: #f3f4f6;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.feed-whole-feed:hover {
+  background: #4b5563;
+}
+
+.feed-page.light .feed-whole-feed {
+  background: #1f2937;
+  color: #f9fafb;
+}
+
+.feed-whole-feed:focus-visible {
+  outline: 3px solid #38bdf8;
+  outline-offset: 2px;
+}

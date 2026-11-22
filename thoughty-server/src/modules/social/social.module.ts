@@ -5,6 +5,7 @@ import {
   Entry,
   EntryComment,
   EntryLike,
+  NotificationRead,
   SavedEntry,
   Setting,
   TopicFollow,
@@ -27,6 +28,8 @@ import { LeaderboardController } from './leaderboard.controller';
 import { LeaderboardService } from './leaderboard.service';
 import { LikesController } from './likes.controller';
 import { LikesService } from './likes.service';
+import { NotificationsController } from './notifications.controller';
+import { NotificationsService } from './notifications.service';
 import { PublicFeedService } from './public-feed.service';
 import { SavedEntriesController } from './saved-entries.controller';
 import { SavedEntriesService } from './saved-entries.service';
@@ -47,6 +50,7 @@ import { WriterControlsService } from './writer-controls.service';
       Entry,
       UserMute,
       UserBlock,
+      NotificationRead,
     ]),
     EntriesModule,
   ],
@@ -60,6 +64,7 @@ import { WriterControlsService } from './writer-controls.service';
     LeaderboardController,
     AchievementsController,
     WriterControlsController,
+    NotificationsController,
   ],
   providers: [
     PublicFeedService,
@@ -73,6 +78,7 @@ import { WriterControlsService } from './writer-controls.service';
     LeaderboardService,
     AchievementsService,
     WriterControlsService,
+    NotificationsService,
   ],
 })
 export class SocialModule {}
