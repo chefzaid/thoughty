@@ -185,7 +185,7 @@ export interface paths {
         put?: never;
         /**
          * Exchange the refresh token cookie for a new access token
-         * @description Each refresh token works once: it is replaced by a new one in the cookie, and reusing the old one fails.
+         * @description Each refresh token works once: it is replaced by a new one in the cookie, and reusing the old one fails. Refreshes are limited per account (per address without a signed refresh token), under a looser ceiling per address.
          */
         post: operations["AuthController_refresh"];
         delete?: never;
@@ -13074,6 +13074,25 @@ export interface operations {
                      *       "message": "Missing, invalid, expired, or reused refresh token",
                      *       "error": "Unauthorized",
                      *       "code": "UNAUTHORIZED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Too many refreshes; the session is untouched and the cookie still works after the wait */
+            429: {
+                headers: {
+                    /** @description Seconds until a refresh is accepted again */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 429,
+                     *       "message": "Too many refreshes; the session is untouched and the cookie still works after the wait",
+                     *       "error": "Too Many Requests",
+                     *       "code": "RATE_LIMITED"
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];

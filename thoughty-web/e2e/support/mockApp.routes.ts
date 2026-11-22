@@ -199,7 +199,7 @@ async function handleAuthRoutes({
 
   if (pathname === "/api/auth/me") {
     if (!state.authenticated) {
-      await fulfillJson(route, { error: "Unauthorized" }, { status: 401 });
+      await fulfillApiError(route, 401, "UNAUTHORIZED", "Unauthorized");
       return true;
     }
 

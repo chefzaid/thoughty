@@ -61,6 +61,7 @@ import {
   TwoFactorService,
 } from './services';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RefreshThrottlerGuard } from './guards/refresh-throttler.guard';
 import { Public, CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { SuccessMessageResponseDto, SuccessResponseDto } from '@/common/dto';
 import { RATE_LIMITS, throttleDefault } from '@/common';
@@ -240,13 +241,15 @@ export class AuthController {
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @Throttle(throttleDefault(RATE_LIMITS.tokenRefresh))
+  @Throttle(throttleDefault(RATE_LIMITS.tokenRefreshAddress))
+  @UseGuards(RefreshThrottlerGuard)
   @ApiCookieAuth(REFRESH_TOKEN_COOKIE)
   @ApiOperation({
     summary: 'Exchange the refresh token cookie for a new access token',
     description:
       'Each refresh token works once: it is replaced by a new one in the cookie, and reusing ' +
-      'the old one fails.',
+      'the old one fails. Refreshes are limited per account (per address without a signed ' +
+      'refresh token), under a looser ceiling per address.',
   })
   @ApiResponse({
     status: 200,
@@ -254,6 +257,11 @@ export class AuthController {
     type: AccessTokenResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Missing, invalid, expired, or reused refresh token' })
+  @ApiResponse({
+    status: 429,
+    description: 'Too many refreshes; the session is untouched and the cookie still works after the wait',
+    headers: { 'Retry-After': { description: 'Seconds until a refresh is accepted again', schema: { type: 'integer' } } },
+  })
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,

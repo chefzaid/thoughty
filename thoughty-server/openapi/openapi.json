@@ -597,7 +597,7 @@
     },
     "/api/auth/refresh": {
       "post": {
-        "description": "Each refresh token works once: it is replaced by a new one in the cookie, and reusing the old one fails.",
+        "description": "Each refresh token works once: it is replaced by a new one in the cookie, and reusing the old one fails. Refreshes are limited per account (per address without a signed refresh token), under a looser ceiling per address.",
         "operationId": "AuthController_refresh",
         "parameters": [],
         "responses": {
@@ -626,6 +626,30 @@
                   "message": "Missing, invalid, expired, or reused refresh token",
                   "error": "Unauthorized",
                   "code": "UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many refreshes; the session is untouched and the cookie still works after the wait",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until a refresh is accepted again",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 429,
+                  "message": "Too many refreshes; the session is untouched and the cookie still works after the wait",
+                  "error": "Too Many Requests",
+                  "code": "RATE_LIMITED"
                 }
               }
             }

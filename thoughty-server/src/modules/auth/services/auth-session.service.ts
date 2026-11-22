@@ -97,6 +97,23 @@ export class AuthSessionService {
   }
 
   /**
+   * The account a refresh token was signed for, or null when it is missing, expired, or not signed
+   * with the refresh secret. It checks the signature only (no query), so a revoked token still names
+   * its account: this is for counting refreshes per account, never for deciding who is signed in.
+   */
+  refreshTokenAccount(refreshToken?: string): number | null {
+    if (!refreshToken) return null;
+    try {
+      const { userId } = this.jwtService.verify<{ userId?: unknown }>(refreshToken, {
+        secret: this.refreshSecret,
+      });
+      return typeof userId === 'number' && Number.isInteger(userId) ? userId : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Rotates a refresh token. The presented token's row is deleted and returned in one statement,
    * so each token works once: a replayed or concurrently reused token finds no row. A new access
    * token and refresh token are issued in its place.

@@ -9,6 +9,7 @@ import { PasswordService } from './services/password.service';
 import { AccountService } from './services/account.service';
 import { EmailVerificationService } from './services/email-verification.service';
 import { TwoFactorService } from './services/two-factor.service';
+import { RefreshThrottlerGuard } from './guards/refresh-throttler.guard';
 
 const COOKIE = 'thoughty_refresh_token';
 const COOKIE_OPTIONS = { httpOnly: true, secure: false, sameSite: 'strict', path: '/api/auth' };
@@ -64,7 +65,11 @@ describe('AuthController', () => {
         { provide: EmailVerificationService, useValue: emailVerificationService },
         { provide: TwoFactorService, useValue: twoFactorService },
       ],
-    }).compile();
+    })
+      // The per-account refresh limit has its own spec
+      .overrideGuard(RefreshThrottlerGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<AuthController>(AuthController);
   });
@@ -79,7 +84,8 @@ describe('AuthController', () => {
       ['verifyTwoFactor', RATE_LIMITS.authAttempt],
       ['resendTwoFactor', RATE_LIMITS.authAttempt],
       ['oauth', RATE_LIMITS.authAttempt],
-      ['refresh', RATE_LIMITS.tokenRefresh],
+      // Per address, the ceiling; per account, RefreshThrottlerGuard
+      ['refresh', RATE_LIMITS.tokenRefreshAddress],
       ['revokeOtherSessions', RATE_LIMITS.accountSecurity],
       ['setupTwoFactor', RATE_LIMITS.accountSecurity],
       ['enableTwoFactor', RATE_LIMITS.accountSecurity],
@@ -97,6 +103,10 @@ describe('AuthController', () => {
       const handler = AuthController.prototype[methodName];
 
       expect(getThrottleMetadata(handler)).toEqual(expected);
+    });
+
+    it('counts refreshes per account under the per-address ceiling', () => {
+      expect(Reflect.getMetadata('__guards__', AuthController.prototype.refresh)).toEqual([RefreshThrottlerGuard]);
     });
   });
 

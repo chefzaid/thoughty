@@ -129,6 +129,27 @@ describe('AuthSessionService', () => {
     expect(activity.recordSignIn).toHaveBeenCalledWith(mockUser);
   });
 
+  describe('refreshTokenAccount', () => {
+    it('names the account a refresh token was signed for, checking the refresh secret', () => {
+      jwtService.verify.mockReturnValue({ userId: 7, jti: 'x' });
+
+      expect(service.refreshTokenAccount('signed')).toBe(7);
+      expect(jwtService.verify).toHaveBeenCalledWith('signed', { secret: expect.any(String) });
+      expect(refreshTokenRepository.createQueryBuilder).not.toHaveBeenCalled();
+    });
+
+    it('names none for a missing, unsigned, expired or odd token', () => {
+      expect(service.refreshTokenAccount(undefined)).toBeNull();
+      jwtService.verify.mockReturnValueOnce({ userId: '7' }).mockReturnValueOnce({});
+      expect(service.refreshTokenAccount('odd')).toBeNull();
+      expect(service.refreshTokenAccount('empty')).toBeNull();
+      jwtService.verify.mockImplementation(() => {
+        throw new Error('invalid signature');
+      });
+      expect(service.refreshTokenAccount('forged')).toBeNull();
+    });
+  });
+
   describe('logout', () => {
     const endRows = (rows: Array<{ user_id: number }>) => {
       const builder = {

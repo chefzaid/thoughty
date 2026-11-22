@@ -18,6 +18,7 @@ import {
   readOfflineUser,
   rememberOfflineUser,
 } from './offlineSession';
+import { clearRefreshThrottle, noteRefreshThrottled, refreshWaitMs } from './refreshThrottle';
 
 /** Keys where older versions kept tokens in localStorage; they are removed on load. */
 const LEGACY_TOKEN_KEYS = ['accessToken', 'refreshToken'] as const;
@@ -38,13 +39,18 @@ export function removeLegacyStoredTokens(): void {
 }
 
 /**
- * A refresh's outcome: a new access token, or none, and whether the API answered at all. A request that
- * never got an answer, or got one from a server that is down (5xx), says nothing about the session.
+ * A refresh's outcome: a new access token, or none, and whether the server refused the session. Only a
+ * `401` or `403` refuses it. A request that never got an answer, one from a server that is down (5xx),
+ * and any other answer say nothing about the session; nor does a `429`, which also says how long to wait.
  */
 interface RefreshOutcome {
   token: string | null;
-  reached: boolean;
+  refused: boolean;
+  /** Set when the API asked to wait (`429`, or a wait still running): how long until a refresh may go. */
+  retryInMs?: number;
 }
+
+const NO_ANSWER: RefreshOutcome = { token: null, refused: false };
 
 /**
  * Refresh tokens are single-use, so refreshes from several tabs must not race with the same
@@ -106,14 +112,15 @@ export function useAuthSession() {
   const [sessionKey, setSessionKey] = useState(0);
   /**
    * Set while the journal is open for the writer last signed in on this browser without the API having
-   * confirmed the session, because it could not be reached when the app opened. It ends when the API
-   * answers: the session goes on, or ends there if the server refuses it.
+   * confirmed the session, because it could not be reached when the app opened, or because it asked to
+   * wait before the next refresh (429, on load or when a token expired). It ends when the API answers a
+   * refresh: the session goes on, or ends there if the server refuses it.
    */
   const [offline, setOffline] = useState(false);
   const offlineRef = useRef(false);
 
   // The access token lives in memory only; the refresh token is an httpOnly cookie the page
-  // cannot read, so a reload gets a new access token through refreshAccessToken.
+  // cannot read, so a reload gets a new access token through refreshSession.
   const accessTokenRef = useRef<string | null>(null);
   const refreshInFlightRef = useRef<Promise<RefreshOutcome> | null>(null);
   /** Grows with each ended session, so a refresh or request that outlived it changes nothing. */
@@ -121,6 +128,8 @@ export function useAuthSession() {
   const userIdRef = useRef<number | null>(null);
   const channelRef = useRef<SessionChannel | null>(null);
   const reconnectInFlightRef = useRef<Promise<string | null> | null>(null);
+  /** When a refresh may go again after a `429`, so a journal kept offline meanwhile gets its session back then. */
+  const [refreshRetry, setRefreshRetry] = useState<{ at: number } | null>(null);
 
   useEffect(() => {
     userIdRef.current = user?.id ?? null;
@@ -188,11 +197,19 @@ export function useAuthSession() {
 
   // Exchange the refresh token cookie for a new access token (and a rotated cookie). Concurrent
   // callers share one request, since a refresh token works only once. A refresh the server refuses
-  // ends the session it was for; one that answers after that session ended is not used. One that
-  // reaches no working API leaves the session as it is: losing the connection signs no one out.
+  // (401, 403) ends the session it was for; one that answers after that session ended is not used.
+  // Anything else leaves the session as it is: losing the connection, or the API asking to wait (429),
+  // signs no one out. While a wait asked for runs, no tab sends a refresh (`refreshThrottle`).
   const refreshSession = useCallback((): Promise<RefreshOutcome> => {
     const epoch = sessionEpochRef.current;
+    const throttled = (retryInMs: number): RefreshOutcome => {
+      setRefreshRetry({ at: Date.now() + retryInMs });
+      return { token: null, refused: false, retryInMs };
+    };
     refreshInFlightRef.current ??= withRefreshLock(async (): Promise<RefreshOutcome> => {
+      // Read under the lock: a tab whose turn comes after another one's 429 waits too
+      const wait = refreshWaitMs();
+      if (wait > 0) return throttled(wait);
       let response: Response;
       try {
         response = await fetch(`${API_BASE}/refresh`, {
@@ -200,29 +217,26 @@ export function useAuthSession() {
           credentials: 'same-origin',
         });
       } catch {
-        return { token: null, reached: false };
+        return NO_ANSWER;
       }
-      if (response.status >= 500) return { token: null, reached: false };
+      if (response.status === 429) return throttled(noteRefreshThrottled(response.headers.get('Retry-After')));
+      clearRefreshThrottle();
+      setRefreshRetry(null);
 
-      const data = response.ok ? await safeJsonParse<{ accessToken?: string }>(response) : null;
       const current = epoch === sessionEpochRef.current;
-      if (!data?.accessToken) {
+      if (response.status === 401 || response.status === 403) {
         if (current && (accessTokenRef.current !== null || offlineRef.current)) endSession();
-        return { token: null, reached: true };
+        return { token: null, refused: true };
       }
-      if (!current) return { token: null, reached: true };
+      const data = response.ok ? await safeJsonParse<{ accessToken?: string }>(response) : null;
+      if (!data?.accessToken || !current) return NO_ANSWER;
       accessTokenRef.current = data.accessToken;
-      return { token: data.accessToken, reached: true };
+      return { token: data.accessToken, refused: false };
     }).finally(() => {
       refreshInFlightRef.current = null;
     });
     return refreshInFlightRef.current;
   }, [endSession]);
-
-  const refreshAccessToken = useCallback(
-    async (): Promise<string | null> => (await refreshSession()).token,
-    [refreshSession],
-  );
 
   // A journal opened offline gets its session back once the API answers: the refresh cookie decides
   // whether it goes on (and for whom: `/me` says), and a refusal ends it. Callers share one attempt.
@@ -249,13 +263,20 @@ export function useAuthSession() {
     return reconnectInFlightRef.current;
   }, [refreshSession, setOfflineMode, startSession]);
 
+  // Kept offline while a refresh waits (429): the session is tried again once the wait is over
+  useEffect(() => {
+    if (!offline || !refreshRetry) return undefined;
+    const timer = setTimeout(() => void reconnect(), Math.max(0, refreshRetry.at - Date.now()));
+    return () => clearTimeout(timer);
+  }, [offline, refreshRetry, reconnect]);
+
   // Fetch with auto token refresh
   const authFetch = useCallback(
     async (url: string, options: RequestInit = {}): Promise<Response> => {
       // Offline, each request first tries to get the session back, so what waited goes with a token
       if (offlineRef.current && accessTokenRef.current === null) await reconnect();
       const epoch = sessionEpochRef.current;
-      let accessToken = getAccessToken();
+      const accessToken = getAccessToken();
 
       const makeRequest = async (token: string | null): Promise<Response> =>
         fetch(url, { ...options, headers: buildAuthHeaders(options, token) });
@@ -264,15 +285,20 @@ export function useAuthSession() {
 
       // An expired token is refreshed, for a request sent in a session that is still on
       if (response.status === 401 && accessToken !== null && epoch === sessionEpochRef.current) {
-        accessToken = await refreshAccessToken();
-        if (accessToken) {
-          response = await makeRequest(accessToken);
+        const { token, retryInMs } = await refreshSession();
+        if (token) {
+          response = await makeRequest(token);
+        } else if (retryInMs !== undefined && epoch === sessionEpochRef.current) {
+          // Thoughty asked to wait before the next refresh: the writer stays signed in, unconfirmed, as
+          // offline, and the expired token is not sent again; the session comes back once the wait is over
+          accessTokenRef.current = null;
+          setOfflineMode(true);
         }
       }
 
       return response;
     },
-    [getAccessToken, reconnect, refreshAccessToken]
+    [getAccessToken, reconnect, refreshSession, setOfflineMode]
   );
 
   // A connection coming back gets the session back at once, not only at the next request
@@ -311,18 +337,19 @@ export function useAuthSession() {
         return;
       }
       const epoch = sessionEpochRef.current;
-      const { token: accessToken, reached } = await refreshSession();
+      const { token: accessToken, refused } = await refreshSession();
       if (!accessToken) {
-        // Thoughty cannot be reached: the writer last signed in here keeps their journal, offline,
-        // unless another tab signed them out meanwhile
-        const remembered = reached || epoch !== sessionEpochRef.current ? null : readOfflineUser();
+        // Thoughty cannot be reached, or asks to wait (429): the writer last signed in here keeps their
+        // journal, offline, unless another tab signed them out meanwhile. After a 429 the session is tried
+        // again once the wait is over, so the journal opens at once rather than after a wait of minutes.
+        const remembered = refused || epoch !== sessionEpochRef.current ? null : readOfflineUser();
         if (remembered) {
           setOfflineMode(true);
           setUser(remembered);
           setLoading(false);
           return;
         }
-        if (reached) forgetOfflineSession();
+        if (refused) forgetOfflineSession();
         await restoreSsoSession();
         return;
       }

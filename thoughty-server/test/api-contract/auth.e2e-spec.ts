@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import request from 'supertest';
 import {
   describeContract,
   readRefreshCookie,
@@ -6,6 +7,7 @@ import {
   CONTRACT_PASSWORD,
 } from './contract-suite';
 import type { ContractUser } from './contract-client';
+import { RATE_LIMITS } from '../../src/common/rate-limit.constants';
 
 const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
 
@@ -273,5 +275,25 @@ describeContract('auth', (context) => {
       status: 401,
       code: 'AUTH_INVALID_CREDENTIALS',
     });
+  });
+
+  // Last: it uses up alice's refreshes for the window
+  it('counts refreshes per account, so writers at one address do not use up each other\'s', async () => {
+    const { alice, bob } = context;
+    // Alice's cookie went with the password change: a token signed for her still counts against her
+    const refresh = () => request(context.api.http).post('/api/auth/refresh').set(withCookie(alice));
+    let refreshed = await refresh();
+    for (let sent = 1; refreshed.status === 401 && sent <= RATE_LIMITS.tokenRefresh.limit; sent += 1) {
+      refreshed = await refresh();
+    }
+    expect(refreshed.status).toBe(429);
+    const refused = await call('POST /api/auth/refresh', { headers: withCookie(alice), status: 429, code: 'RATE_LIMITED' });
+    // The wait is said, and the cookie is left alone
+    expect(Number(refused.headers['retry-after'])).toBeGreaterThan(0);
+    expect(refused.headers['set-cookie']).toBeUndefined();
+
+    // Bob refreshes from the same address all the same
+    const rotated = await call('POST /api/auth/refresh', { headers: withCookie(bob), status: 200 });
+    bob.refreshCookie = readRefreshCookie(rotated.headers['set-cookie']);
   });
 });

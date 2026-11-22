@@ -4,7 +4,11 @@ export const ONE_HOUR_MS = 60 * 60 * 1000;
 export const RATE_LIMITS = {
   default: { limit: 100, ttl: FIFTEEN_MINUTES_MS },
   authAttempt: { limit: 5, ttl: FIFTEEN_MINUTES_MS },
+  // Refresh counts per account (a refresh token signed for it), or per address without one; the opt-in
+  // email unsubscribes use it per address.
   tokenRefresh: { limit: 30, ttl: FIFTEEN_MINUTES_MS },
+  // Every refresh from one address: the ceiling for writers who share it (one network, one NAT).
+  tokenRefreshAddress: { limit: 300, ttl: FIFTEEN_MINUTES_MS },
   passwordRecovery: { limit: 3, ttl: ONE_HOUR_MS },
   accountSecurity: { limit: 5, ttl: ONE_HOUR_MS },
   socialWrite: { limit: 30, ttl: FIFTEEN_MINUTES_MS },
