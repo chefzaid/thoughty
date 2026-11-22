@@ -22,11 +22,19 @@ const PUBLIC_ROUTES: Record<string, RouteContent> = {
   '/privacy': (page) => [page.getByRole('heading', { name: 'Security and providers' })],
   '/terms': (page) => [page.getByRole('heading', { name: 'Service changes' })],
   '/contact': (page) => [page.getByRole('button', { name: 'Open the community board' }), page.getByRole('heading', { name: 'Which formats are available?' })],
-  '/feedback': (page) => [page.getByRole('button', { name: 'Sign in to vote for Mood calendar' })],
+  // Signed out the vote button asks to sign in first; signed in it votes
+  '/feedback': (page) => [page.getByRole('button', { name: /^(Sign in to vote|Vote) for Mood calendar$/ })],
   '/blog': (page) => [page.getByRole('heading', { name: 'Prompts for writing when the day feels noisy' })],
   '/memoir-questions': (page) => [page.getByRole('region', { name: 'Themes to add' })],
   '/journal-templates': (page) => [page.getByRole('article', { name: 'Dream log' })],
 };
+
+/**
+ * Public routes only a visitor without a session reaches: a signed-in writer opening them lands in the journal.
+ * A visitor without a session sees the public pages in the dark theme, since the theme is a setting of the
+ * account, so these routes have no light scan.
+ */
+const SIGNED_OUT_ONLY_ROUTES = new Set(['/login', '/register']);
 
 const AUTHENTICATED_ROUTES: Record<string, RouteContent> = {
   '/welcome': (page) => [page.getByRole('list', { name: 'What brings you here?' }), page.getByRole('button', { name: 'Skip and open my journal' })],
@@ -72,6 +80,13 @@ const AUTHENTICATED_ROUTES: Record<string, RouteContent> = {
 };
 
 const THEMES = ['dark', 'light'] as const;
+type Theme = typeof THEMES[number];
+
+/** Checks the public page really renders in `theme` before a scan, so a scan cannot check the wrong colours. */
+async function expectPublicPageTheme(page: Page, theme: Theme) {
+  await expect(page.locator('body')).toHaveClass(new RegExp(`(^|\\s)${theme}-mode(\\s|$)`));
+  await expect(page.locator('#public-page-content > *').first()).toHaveClass(new RegExp(`(^|\\s)${theme}(\\s|$)`));
+}
 
 async function expectNoAccessibilityViolations(page: Page, include?: string) {
   await expect(page.locator('body')).toBeVisible();
@@ -92,17 +107,31 @@ async function expectNoAccessibilityViolations(page: Page, include?: string) {
 test.describe('route accessibility', () => {
   test.setTimeout(60_000);
 
+  for (const [path, content] of Object.entries(PUBLIC_ROUTES)) {
+    // The way a visitor without a session sees it
+    test(`dark public route ${path}`, async ({ page }) => {
+      await setupMockApp(page);
+      await page.goto(path);
+      for (const part of content(page)) await expect(part).toBeVisible();
+      await expectPublicPageTheme(page, 'dark');
+
+      await expectNoAccessibilityViolations(page);
+    });
+
+    if (SIGNED_OUT_ONLY_ROUTES.has(path)) continue;
+
+    // The public pages follow the writer's theme, so a signed-in writer with the light theme sees them light
+    test(`light public route ${path}`, async ({ page }) => {
+      await setupMockApp(page, { startAuthenticated: true, config: { theme: 'light' } });
+      await page.goto(path);
+      for (const part of content(page)) await expect(part).toBeVisible();
+      await expectPublicPageTheme(page, 'light');
+
+      await expectNoAccessibilityViolations(page);
+    });
+  }
+
   for (const theme of THEMES) {
-    for (const [path, content] of Object.entries(PUBLIC_ROUTES)) {
-      test(`${theme} public route ${path}`, async ({ page }) => {
-        await setupMockApp(page, { config: { theme } });
-        await page.goto(path);
-        for (const part of content(page)) await expect(part).toBeVisible();
-
-        await expectNoAccessibilityViolations(page);
-      });
-    }
-
     for (const [path, content] of Object.entries(AUTHENTICATED_ROUTES)) {
       test(`${theme} authenticated route ${path}`, async ({ page }) => {
         await setupMockApp(page, { startAuthenticated: true, config: { theme } });
