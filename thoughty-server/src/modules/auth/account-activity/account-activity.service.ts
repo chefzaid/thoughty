@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { type BeforeApplicationShutdown, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, LessThan, MoreThan, Repository } from 'typeorm';
@@ -14,6 +14,8 @@ export const ACCOUNT_ACTIVITY_RETENTION_DAYS = 365;
 export const ACCOUNT_ACTIVITY_PAGE_SIZE = 50;
 /** The setting that turns the new-browser sign-in email off (`false`); on when it was never set. */
 export const NEW_BROWSER_EMAIL_SETTING = 'newBrowserSignInEmail';
+/** Namespace of the advisory lock that serializes one account's sign-ins, so two at once send one email. */
+const SIGN_IN_LOCK_NAMESPACE = 'account_sign_ins';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -38,8 +40,10 @@ function toEventDto(event: AccountEvent): AccountEventDto {
  * and system the account has not signed in from in the past year sends an email, unless turned off.
  */
 @Injectable()
-export class AccountActivityService {
+export class AccountActivityService implements BeforeApplicationShutdown {
   private readonly logger = new Logger(AccountActivityService.name);
+  /** The new sign-in emails being sent in the background. */
+  private readonly emailsInFlight = new Set<Promise<void>>();
 
   constructor(
     @InjectRepository(AccountEvent)
@@ -56,7 +60,7 @@ export class AccountActivityService {
    */
   async record(userId: number, kind: AccountEventKind): Promise<void> {
     try {
-      await this.insert(userId, kind, currentClientSoftware());
+      await this.insert(this.eventRepository, userId, kind, currentClientSoftware());
     } catch (error) {
       this.logFailure(kind, error);
     }
@@ -64,30 +68,47 @@ export class AccountActivityService {
 
   /**
    * Records a sign-in, and emails the writer when it comes from a browser and system the account has
-   * not signed in from before (a first sign-in, such as right after sign-up, sends nothing).
+   * not signed in from before, though not for its first sign-in. The check and the record run under a
+   * lock per account, so two sign-ins at once from a new browser send one email.
    */
   async recordSignIn(user: Pick<User, 'id' | 'email'>): Promise<void> {
     const software = currentClientSoftware();
     try {
-      const [signedInBefore, knownSoftware] = await Promise.all([
-        this.eventRepository.exists({ where: { userId: user.id, kind: 'sign_in' } }),
-        this.eventRepository.exists({
+      const { event, notify } = await this.eventRepository.manager.transaction(async (manager) => {
+        await manager.query('SELECT pg_advisory_xact_lock(hashtext($1), $2)', [SIGN_IN_LOCK_NAMESPACE, user.id]);
+        const events = manager.getRepository(AccountEvent);
+        const knownSoftware = await events.exists({
           where: {
             userId: user.id,
             kind: 'sign_in',
             browser: software.browser ?? IsNull(),
             system: software.system ?? IsNull(),
           },
-        }),
-      ]);
-      const event = await this.insert(user.id, 'sign_in', software);
-      if (signedInBefore && !knownSoftware) {
+        });
+        // A first sign-in, such as right after sign-up, sends nothing
+        const notify =
+          !knownSoftware && (await events.exists({ where: { userId: user.id, kind: 'sign_in' } }));
+        return { event: await this.insert(events, user.id, 'sign_in', software), notify };
+      });
+      if (notify) {
         // Sent in the background, so a slow mail server never holds up the sign-in
-        void this.sendNewSignInEmail(user, software, event.createdAt);
+        this.sendInBackground(this.sendNewSignInEmail(user, software, event.createdAt));
       }
     } catch (error) {
       this.logFailure('sign_in', error);
     }
+  }
+
+  /** Resolves once every new sign-in email in flight has been sent or has failed (each failure is logged). */
+  async emailsSettled(): Promise<void> {
+    while (this.emailsInFlight.size > 0) {
+      await Promise.all(this.emailsInFlight);
+    }
+  }
+
+  /** Lets the emails in flight go out before the database and the process close. */
+  beforeApplicationShutdown(): Promise<void> {
+    return this.emailsSettled();
   }
 
   /** The past year's events, newest first, a page at a time (`before`: the last id of the page before). */
@@ -143,10 +164,19 @@ export class AccountActivityService {
     return affected ?? 0;
   }
 
-  private insert(userId: number, kind: AccountEventKind, software: ClientSoftware): Promise<AccountEvent> {
-    return this.eventRepository.save(
-      this.eventRepository.create({ userId, kind, browser: software.browser, system: software.system }),
-    );
+  private insert(
+    events: Repository<AccountEvent>,
+    userId: number,
+    kind: AccountEventKind,
+    software: ClientSoftware,
+  ): Promise<AccountEvent> {
+    return events.save(events.create({ userId, kind, browser: software.browser, system: software.system }));
+  }
+
+  /** Keeps `sending` (which never rejects: it logs its own failure) in flight until it settles. */
+  private sendInBackground(sending: Promise<void>): void {
+    const tracked = sending.finally(() => this.emailsInFlight.delete(tracked));
+    this.emailsInFlight.add(tracked);
   }
 
   private async sendNewSignInEmail(

@@ -19,6 +19,8 @@ function setup() {
     find: jest.fn().mockResolvedValue([]),
     delete: jest.fn().mockResolvedValue({ affected: 3 }),
   };
+  const manager = { query: jest.fn().mockResolvedValue([]), getRepository: jest.fn(() => events) };
+  Object.assign(events, { manager: { transaction: jest.fn((work: (m: typeof manager) => unknown) => work(manager)) } });
   const settings = {
     findOne: jest.fn().mockResolvedValue(null),
     upsert: jest.fn().mockResolvedValue(undefined),
@@ -29,11 +31,8 @@ function setup() {
   };
   const config = { get: jest.fn((_key: string, fallback: string) => fallback) };
   const service = new AccountActivityService(events as never, settings as never, email as never, config as never);
-  return { events, settings, email, service };
+  return { events, manager, settings, email, service };
 }
-
-/** Lets the email the sign-in sends in the background go out. */
-const flush = () => new Promise((resolve) => setImmediate(resolve));
 
 describe('AccountActivityService', () => {
   afterEach(() => jest.restoreAllMocks());
@@ -53,15 +52,16 @@ describe('AccountActivityService', () => {
   });
 
   it('emails a sign-in from a browser and system the account has not signed in from before', async () => {
-    const { events, settings, email, service } = setup();
+    const { events, manager, settings, email, service } = setup();
     events.exists.mockImplementation(async ({ where }: { where: { browser?: unknown } }) => !('browser' in where));
     settings.findOne.mockImplementation(async ({ where }: { where: { key: string } }) =>
       where.key === 'language' ? { value: 'fr' } : null,
     );
 
     await runWithClientSoftware(FIREFOX_LINUX, () => service.recordSignIn(user));
-    await flush();
+    await service.emailsSettled();
 
+    expect(manager.query).toHaveBeenCalledWith('SELECT pg_advisory_xact_lock(hashtext($1), $2)', ['account_sign_ins', 4]);
     expect(events.exists).toHaveBeenCalledWith({
       where: { userId: 4, kind: 'sign_in', browser: 'Firefox', system: 'Linux' },
     });
@@ -87,12 +87,12 @@ describe('AccountActivityService', () => {
     ['a server without mail', [true, false], true, false],
   ])('sends nothing for %s', async (_label, [before, known], emailOn, mailConfigured) => {
     const { events, settings, email, service } = setup();
-    events.exists.mockResolvedValueOnce(before).mockResolvedValueOnce(known);
+    events.exists.mockResolvedValueOnce(known).mockResolvedValueOnce(before);
     settings.findOne.mockResolvedValue(emailOn ? null : { value: 'false' });
     email.isConfigured.mockReturnValue(mailConfigured);
 
     await service.recordSignIn(user);
-    await flush();
+    await service.emailsSettled();
 
     expect(events.save).toHaveBeenCalled();
     expect(email.sendRenderedEmail).not.toHaveBeenCalled();
@@ -100,17 +100,36 @@ describe('AccountActivityService', () => {
 
   it('sends nothing to an account without an address, and logs a failed send without the address', async () => {
     const { events, email, service } = setup();
-    events.exists.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+    events.exists.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
     await service.recordSignIn({ id: 4, email: '' });
-    await flush();
+    await service.emailsSettled();
     expect(email.sendRenderedEmail).not.toHaveBeenCalled();
 
     const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
-    events.exists.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+    events.exists.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
     email.sendRenderedEmail.mockRejectedValueOnce(Object.assign(new Error('to writer@example.com refused'), { responseCode: 550 }));
     await service.recordSignIn(user);
-    await flush();
+    await service.emailsSettled();
     expect(warn).toHaveBeenCalledWith('New sign-in email not sent to user 4: Error 550');
+  });
+
+  it('waits for the emails in flight, before shutting down too', async () => {
+    const { events, email, service } = setup();
+    events.exists.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    let finishSending!: () => void;
+    email.sendRenderedEmail.mockReturnValueOnce(new Promise<void>((resolve) => (finishSending = resolve)));
+    await service.recordSignIn(user);
+
+    let settled = false;
+    const shutdown = service.beforeApplicationShutdown().then(() => (settled = true));
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(email.sendRenderedEmail).toHaveBeenCalledTimes(1);
+    expect(settled).toBe(false);
+
+    finishSending();
+    await shutdown;
+    expect(settled).toBe(true);
+    await expect(service.emailsSettled()).resolves.toBeUndefined();
   });
 
   it('never fails a sign-in it cannot record', async () => {

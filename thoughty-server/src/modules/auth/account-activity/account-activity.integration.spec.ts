@@ -13,7 +13,6 @@ describePostgres('AccountActivityService on PostgreSQL', () => {
   let service: AccountActivityService;
   let writer = 0;
   const email = { isConfigured: () => true, sendRenderedEmail: jest.fn().mockResolvedValue(undefined) };
-  const flush = () => new Promise((resolve) => setImmediate(resolve));
 
   beforeAll(async () => {
     database = await createPostgresTestDatabase();
@@ -38,27 +37,43 @@ describePostgres('AccountActivityService on PostgreSQL', () => {
     );
   });
 
-  const signIn = async (browser: string | null, system: string | null) => {
-    await runWithClientSoftware({ browser, system }, () => service.recordSignIn({ id: writer, email: 'writer@example.com' }));
-    await flush();
+  const signIn = (browser: string | null, system: string | null) =>
+    runWithClientSoftware({ browser, system }, () => service.recordSignIn({ id: writer, email: 'writer@example.com' }));
+
+  /** Signs in and waits for the email it may send in the background. */
+  const signInAndSettle = async (browser: string | null, system: string | null) => {
+    await signIn(browser, system);
+    await service.emailsSettled();
   };
 
   it('emails a sign-in only from a browser and system the account has not signed in from', async () => {
-    await signIn('Firefox', 'Linux');
-    await signIn('Firefox', 'Linux');
+    await signInAndSettle('Firefox', 'Linux');
+    await signInAndSettle('Firefox', 'Linux');
     expect(email.sendRenderedEmail).not.toHaveBeenCalled();
 
-    await signIn('Firefox', 'Windows');
-    await signIn(null, null);
-    await signIn(null, null);
+    await signInAndSettle('Firefox', 'Windows');
+    await signInAndSettle(null, null);
+    await signInAndSettle(null, null);
     expect(email.sendRenderedEmail).toHaveBeenCalledTimes(2);
 
     await service.setNewBrowserEmail(writer, false);
-    await signIn('Safari', 'iOS');
+    await signInAndSettle('Safari', 'iOS');
     expect(email.sendRenderedEmail).toHaveBeenCalledTimes(2);
     await expect(service.newBrowserEmailEnabled(writer)).resolves.toBe(false);
     await service.setNewBrowserEmail(writer, true);
     await expect(service.newBrowserEmailEnabled(writer)).resolves.toBe(true);
+  });
+
+  it('sends one email for two sign-ins at once from a new browser', async () => {
+    await signInAndSettle('Firefox', 'Linux');
+    // Opens the pool's connections first, so the two sign-ins run side by side
+    await Promise.all([1, 2, 3, 4].map(() => database.dataSource.query('SELECT pg_sleep(0.05)')));
+    await Promise.all([signIn('Chrome', 'macOS'), signIn('Chrome', 'macOS')]);
+    await service.emailsSettled();
+    expect(email.sendRenderedEmail).toHaveBeenCalledTimes(1);
+    await expect(
+      database.dataSource.query(`SELECT count(*)::int AS n FROM account_events WHERE browser = 'Chrome'`),
+    ).resolves.toEqual([{ n: 2 }]);
   });
 
   it('lists the past year newest first, a page at a time, and removes what is older', async () => {

@@ -160,7 +160,13 @@ test.describe('Modal dialogs', () => {
 
       await entry.getByTitle('Discuss with AI').click();
       const chat = page.getByRole('dialog', { name: 'AI Chat' });
-      await expect(chat.getByRole('textbox', { name: 'Message to the AI' })).toBeEnabled();
+      const message = chat.getByRole('textbox', { name: 'Message to the AI' });
+      await expect(message).toBeEnabled();
+      // The saved history holds only the AI's message, so send one to scan the writer's bubble too.
+      await message.fill('What stands out?');
+      await chat.getByRole('button', { name: 'Send message' }).click();
+      await expect(chat.getByText('What stands out?', { exact: true })).toBeVisible();
+      await expect(chat.getByText('This entry reflects a thoughtful focus on the day.')).toBeVisible();
       await expectNoAxeViolations(page);
       await page.keyboard.press('Escape');
       await expect(chat).toHaveCount(0);
