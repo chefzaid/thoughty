@@ -74,7 +74,7 @@ interface AppShellModel {
 }
 
 export function useAppShellModel(): AppShellModel {
-  const { isAuthenticated, loading: authLoading, user, logout } = useAuth();
+  const { isAuthenticated, loading: authLoading, user, logout, offline } = useAuth();
   const navigate = useNavigate();
   const {
     searchParams,
@@ -100,7 +100,7 @@ export function useAppShellModel(): AppShellModel {
     updateConfig,
     downloadUserData,
     t,
-  } = useConfig(isAuthenticated);
+  } = useConfig(isAuthenticated, offline);
   const appNotice = useAppNotice(t, resolveLanguage(config.language));
   const { notifier } = appNotice;
   // Settings the reader changes on purpose say so when they could not be saved
@@ -422,6 +422,7 @@ export function useAppShellModel(): AppShellModel {
     handleAiChat,
     handleLoadAiChatHistory,
     isEmailVerified: user?.emailVerified ?? false,
+    offline,
     quickCapture,
     routingState,
     setChatEntry,

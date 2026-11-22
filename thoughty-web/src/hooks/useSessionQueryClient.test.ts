@@ -27,3 +27,19 @@ describe('useSessionQueryClient', () => {
     expect(second.getQueryData(['app', 'entries'])).toBeUndefined();
   });
 });
+
+describe('useSessionQueryClient › a session back from offline', () => {
+  it('reads everything again once the session is back, and not before', () => {
+    const hook = renderHook(({ offline }) => useSessionQueryClient(0, offline), { initialProps: { offline: true } });
+    const invalidate = vi.spyOn(hook.result.current, 'invalidateQueries');
+
+    hook.rerender({ offline: true });
+    expect(invalidate).not.toHaveBeenCalled();
+
+    hook.rerender({ offline: false });
+    expect(invalidate).toHaveBeenCalledTimes(1);
+
+    hook.rerender({ offline: false });
+    expect(invalidate).toHaveBeenCalledTimes(1);
+  });
+});

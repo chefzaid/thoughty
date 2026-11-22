@@ -13,7 +13,9 @@ export type ComposerDraftTranslationKey =
   | 'composerDraftKeepThis'
   | 'composerDraftGone'
   | 'composerDraftKeepWriting'
-  | 'composerDraftClear';
+  | 'composerDraftClear'
+  | 'offlineNotice'
+  | 'offlineNoticeDetail';
 
 export const composerDraftTranslations: Record<Language, Record<ComposerDraftTranslationKey, string>> = {
   en: {
@@ -30,6 +32,8 @@ export const composerDraftTranslations: Record<Language, Record<ComposerDraftTra
     composerDraftGone: 'This draft was published or discarded on another device.',
     composerDraftKeepWriting: 'Keep writing it',
     composerDraftClear: 'Clear it',
+    offlineNotice: 'You’re offline',
+    offlineNoticeDetail: 'You can keep writing: your draft stays on this device and is saved once Thoughty can be reached again.',
   },
   fr: {
     composerDraftSaving: 'Enregistrement…',
@@ -45,5 +49,7 @@ export const composerDraftTranslations: Record<Language, Record<ComposerDraftTra
     composerDraftGone: 'Ce brouillon a été publié ou supprimé sur un autre appareil.',
     composerDraftKeepWriting: 'Continuer à l’écrire',
     composerDraftClear: 'L’effacer',
+    offlineNotice: 'Vous êtes hors ligne',
+    offlineNoticeDetail: 'Vous pouvez continuer à écrire : votre brouillon reste sur cet appareil et sera enregistré dès que Thoughty sera de nouveau joignable.',
   },
 };

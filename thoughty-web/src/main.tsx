@@ -10,6 +10,7 @@ import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 import { shareTokenFromPath } from './services/api/shareLinksService';
 import { captureSharedContent } from './utils/shareTarget';
+import { registerServiceWorker } from './serviceWorker/registerServiceWorker';
 
 const rootElement = document.getElementById('root');
 
@@ -58,6 +59,8 @@ if (globalThis.location.pathname === '/cloud-callback') {
 } else {
   // Text or a link shared to the installed app waits for the journal's composer, past a sign-in if need be
   captureSharedContent(globalThis.location, globalThis.history);
+  // The app shell kept for offline use, so the journal opens and the draft can be written without a connection
+  registerServiceWorker();
   createRoot(rootElement).render(
     <StrictMode>
       <AuthProvider>

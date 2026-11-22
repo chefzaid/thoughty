@@ -18,6 +18,7 @@ export interface MockAuthState {
   isAuthenticated: boolean;
   loading: boolean;
   sessionKey: number;
+  offline: boolean;
   error: string | null;
   login: ReturnType<typeof vi.fn>;
   logout: ReturnType<typeof vi.fn>;
@@ -44,6 +45,7 @@ function createMockAuthState(overrides: Partial<MockAuthState> = {}): MockAuthSt
     isAuthenticated: true,
     loading: false,
     sessionKey: 0,
+    offline: false,
     error: null,
     login: vi.fn(),
     logout: vi.fn(),

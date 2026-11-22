@@ -5,6 +5,7 @@ import ConfirmModal from '../components/ConfirmModal/ConfirmModal';
 import Footer from '../components/Footer/Footer';
 import AiChatModal from '../components/AiChatModal/AiChatModal';
 import NoticeToast from '../components/NoticeToast/NoticeToast';
+import OfflineNotice from '../components/OfflineNotice/OfflineNotice';
 import QuickCaptureDialog from '../components/QuickCapture/QuickCaptureDialog';
 import type { QuickCaptureState } from '../components/QuickCapture/useQuickCapture';
 import type { ViewType, Config, Entry } from '../types';
@@ -27,6 +28,8 @@ interface AuthenticatedAppLayoutProps {
   readonly userName: string;
   readonly avatarUrl?: string;
   readonly isEmailVerified?: boolean;
+  /** Set while the journal is open without the API having confirmed the session. */
+  readonly offline?: boolean;
   readonly onViewChange: (view: ViewType) => void;
   readonly onLogout: () => void;
   readonly t: (key: string, params?: Record<string, string | number>) => string;
@@ -60,6 +63,7 @@ function AuthenticatedAppLayout({
   userName,
   avatarUrl,
   isEmailVerified,
+  offline = false,
   onViewChange,
   onLogout,
   t,
@@ -185,6 +189,8 @@ function AuthenticatedAppLayout({
             )}
 
             {contentLock.dialog}
+
+            <OfflineNotice offline={offline} theme={config.theme} t={t} />
 
             {/* A change of the unlock draws the view again, reading entries with or without it */}
             <main key={contentLock.epoch} id="main-content" ref={mainContentRef} tabIndex={-1}>

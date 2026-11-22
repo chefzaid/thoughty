@@ -37,6 +37,7 @@ export function createLayoutParams(
     chatEntry: null,
     config: { theme: 'dark', name: 'Zaid' },
     currentView: null,
+    offline: false,
     deleteModalState: {
       cancelDelete: vi.fn(),
       confirmDelete: vi.fn(),

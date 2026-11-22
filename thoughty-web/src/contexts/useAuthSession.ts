@@ -10,6 +10,14 @@ import {
 } from '../utils/keycloakSso';
 import { forgetLocalComposerDrafts } from '../components/ComposerDraft/composerDraftStorage';
 import { openSessionChannel, type SessionChannel } from './sessionBroadcast';
+import {
+  clearSignOutPending,
+  forgetOfflineSession,
+  isSignOutPending,
+  markSignOutPending,
+  readOfflineUser,
+  rememberOfflineUser,
+} from './offlineSession';
 
 /** Keys where older versions kept tokens in localStorage; they are removed on load. */
 const LEGACY_TOKEN_KEYS = ['accessToken', 'refreshToken'] as const;
@@ -30,6 +38,15 @@ export function removeLegacyStoredTokens(): void {
 }
 
 /**
+ * A refresh's outcome: a new access token, or none, and whether the API answered at all. A request that
+ * never got an answer, or got one from a server that is down (5xx), says nothing about the session.
+ */
+interface RefreshOutcome {
+  token: string | null;
+  reached: boolean;
+}
+
+/**
  * Refresh tokens are single-use, so refreshes from several tabs must not race with the same
  * cookie. The Web Locks API runs them one at a time across tabs; each then sends the cookie the
  * previous one received.
@@ -37,6 +54,26 @@ export function removeLegacyStoredTokens(): void {
 function withRefreshLock<T>(task: () => Promise<T>): Promise<T> {
   const locks = typeof navigator === 'undefined' ? undefined : navigator.locks;
   return locks ? locks.request(REFRESH_LOCK_NAME, task) as Promise<T> : task();
+}
+
+/**
+ * Asks the server to revoke the refresh token in its cookie and clear the cookie, after a refresh in
+ * flight. A sign-out that reaches no working API is kept and sent again on the next load.
+ */
+async function revokeRefreshCookie(): Promise<void> {
+  try {
+    const response = await withRefreshLock(() => fetch(`${API_BASE}/logout`, {
+      method: 'POST',
+      credentials: 'same-origin',
+    }));
+    if (response.status < 500) {
+      clearSignOutPending();
+      return;
+    }
+  } catch (err) {
+    console.error('Logout error:', err);
+  }
+  markSignOutPending();
 }
 
 export async function exchangeKeycloakSession(
@@ -67,19 +104,37 @@ export function useAuthSession() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessionKey, setSessionKey] = useState(0);
+  /**
+   * Set while the journal is open for the writer last signed in on this browser without the API having
+   * confirmed the session, because it could not be reached when the app opened. It ends when the API
+   * answers: the session goes on, or ends there if the server refuses it.
+   */
+  const [offline, setOffline] = useState(false);
+  const offlineRef = useRef(false);
 
   // The access token lives in memory only; the refresh token is an httpOnly cookie the page
   // cannot read, so a reload gets a new access token through refreshAccessToken.
   const accessTokenRef = useRef<string | null>(null);
-  const refreshInFlightRef = useRef<Promise<string | null> | null>(null);
+  const refreshInFlightRef = useRef<Promise<RefreshOutcome> | null>(null);
   /** Grows with each ended session, so a refresh or request that outlived it changes nothing. */
   const sessionEpochRef = useRef(0);
   const userIdRef = useRef<number | null>(null);
   const channelRef = useRef<SessionChannel | null>(null);
+  const reconnectInFlightRef = useRef<Promise<string | null> | null>(null);
 
   useEffect(() => {
     userIdRef.current = user?.id ?? null;
   }, [user]);
+
+  // The writer a confirmed session belongs to is remembered for a journal opened without a connection
+  useEffect(() => {
+    if (user && !offline) rememberOfflineUser(user);
+  }, [offline, user]);
+
+  const setOfflineMode = useCallback((next: boolean): void => {
+    offlineRef.current = next;
+    setOffline(next);
+  }, []);
 
   const getAccessToken = useCallback((): string | null => accessTokenRef.current, []);
 
@@ -88,9 +143,11 @@ export function useAuthSession() {
     sessionEpochRef.current += 1;
     accessTokenRef.current = null;
     setContentUnlockToken(null);
+    forgetOfflineSession();
+    setOfflineMode(false);
     setUser(null);
     setSessionKey(sessionEpochRef.current);
-  }, []);
+  }, [setOfflineMode]);
 
   // A sign-out the writer chose: this browser's draft copies go too, and so do the other tabs' sessions.
   // A draft is private text: it stays on the server for the next sign-in, not in this browser.
@@ -106,6 +163,7 @@ export function useAuthSession() {
       endSession();
     }
     accessTokenRef.current = session.accessToken;
+    clearSignOutPending();
     setUser(session.user);
     channelRef.current?.post({ type: 'signed-in', userId: session.user.id });
   }, [endSession]);
@@ -126,43 +184,69 @@ export function useAuthSession() {
   }, [endSession]);
 
   // Exchange the refresh token cookie for a new access token (and a rotated cookie). Concurrent
-  // callers share one request, since a refresh token works only once. A refresh that fails ends the
-  // session it was for; one that answers after that session ended is not used.
-  const refreshAccessToken = useCallback((): Promise<string | null> => {
+  // callers share one request, since a refresh token works only once. A refresh the server refuses
+  // ends the session it was for; one that answers after that session ended is not used. One that
+  // reaches no working API leaves the session as it is: losing the connection signs no one out.
+  const refreshSession = useCallback((): Promise<RefreshOutcome> => {
     const epoch = sessionEpochRef.current;
-    refreshInFlightRef.current ??= withRefreshLock(async () => {
+    refreshInFlightRef.current ??= withRefreshLock(async (): Promise<RefreshOutcome> => {
+      let response: Response;
       try {
-        const response = await fetch(`${API_BASE}/refresh`, {
+        response = await fetch(`${API_BASE}/refresh`, {
           method: 'POST',
           credentials: 'same-origin',
         });
-
-        if (!response.ok) {
-          throw new Error('Token refresh failed');
-        }
-
-        const data = await safeJsonParse<{ accessToken?: string }>(response);
-        if (!data?.accessToken) {
-          throw new Error('Token refresh failed');
-        }
-        if (epoch !== sessionEpochRef.current) return null;
-        accessTokenRef.current = data.accessToken;
-        return data.accessToken;
       } catch {
-        if (epoch === sessionEpochRef.current && accessTokenRef.current !== null) {
-          endSession();
-        }
-        return null;
+        return { token: null, reached: false };
       }
+      if (response.status >= 500) return { token: null, reached: false };
+
+      const data = response.ok ? await safeJsonParse<{ accessToken?: string }>(response) : null;
+      const current = epoch === sessionEpochRef.current;
+      if (!data?.accessToken) {
+        if (current && (accessTokenRef.current !== null || offlineRef.current)) endSession();
+        return { token: null, reached: true };
+      }
+      if (!current) return { token: null, reached: true };
+      accessTokenRef.current = data.accessToken;
+      return { token: data.accessToken, reached: true };
     }).finally(() => {
       refreshInFlightRef.current = null;
     });
     return refreshInFlightRef.current;
   }, [endSession]);
 
+  const refreshAccessToken = useCallback(
+    async (): Promise<string | null> => (await refreshSession()).token,
+    [refreshSession],
+  );
+
+  // A journal opened offline gets its session back once the API answers: the refresh cookie decides
+  // whether it goes on (and for whom: `/me` says), and a refusal ends it. Callers share one attempt.
+  const reconnect = useCallback((): Promise<string | null> => {
+    reconnectInFlightRef.current ??= (async () => {
+      const { token } = await refreshSession();
+      if (!token) return null;
+      setOfflineMode(false);
+      try {
+        const response = await fetch(`${API_BASE}/me`, { headers: buildAuthHeaders({}, token) });
+        const me = response.ok ? await safeJsonParse<User>(response) : null;
+        if (me) startSession({ accessToken: token, user: me });
+      } catch {
+        // The token stands; `/me` is read again on the next load
+      }
+      return accessTokenRef.current;
+    })().finally(() => {
+      reconnectInFlightRef.current = null;
+    });
+    return reconnectInFlightRef.current;
+  }, [refreshSession, setOfflineMode, startSession]);
+
   // Fetch with auto token refresh
   const authFetch = useCallback(
     async (url: string, options: RequestInit = {}): Promise<Response> => {
+      // Offline, each request first tries to get the session back, so what waited goes with a token
+      if (offlineRef.current && accessTokenRef.current === null) await reconnect();
       const epoch = sessionEpochRef.current;
       let accessToken = getAccessToken();
 
@@ -181,8 +265,16 @@ export function useAuthSession() {
 
       return response;
     },
-    [getAccessToken, refreshAccessToken]
+    [getAccessToken, reconnect, refreshAccessToken]
   );
+
+  // A connection coming back gets the session back at once, not only at the next request
+  useEffect(() => {
+    if (!offline) return undefined;
+    const onOnline = () => void reconnect();
+    globalThis.addEventListener('online', onOnline);
+    return () => globalThis.removeEventListener('online', onOnline);
+  }, [offline, reconnect]);
 
   // Check if user is logged in on mount
   useEffect(() => {
@@ -205,8 +297,23 @@ export function useAuthSession() {
     };
     const checkAuth = async () => {
       removeLegacyStoredTokens();
-      const accessToken = await refreshAccessToken();
+      // A sign-out the server has not heard yet goes first: the cookie it revokes must not sign in
+      if (isSignOutPending()) {
+        await revokeRefreshCookie();
+        setLoading(false);
+        return;
+      }
+      const { token: accessToken, reached } = await refreshSession();
       if (!accessToken) {
+        // Thoughty cannot be reached: the writer last signed in here keeps their journal, offline
+        const remembered = reached ? null : readOfflineUser();
+        if (remembered) {
+          setOfflineMode(true);
+          setUser(remembered);
+          setLoading(false);
+          return;
+        }
+        if (reached) forgetOfflineSession();
         await restoreSsoSession();
         return;
       }
@@ -227,21 +334,14 @@ export function useAuthSession() {
     };
 
     checkAuth();
-  }, [authFetch, endSession, refreshAccessToken, startSession]);
+  }, [authFetch, endSession, refreshSession, setOfflineMode, startSession]);
 
   // Logout ends the session here at once, then the server revokes the refresh token from its cookie
   // and clears the cookie. It waits for a refresh in flight, so it revokes the cookie that refresh set.
   const logout = useCallback(async (): Promise<void> => {
     const signedInWithKeycloak = user?.authProvider === 'keycloak';
     signOutLocally();
-    try {
-      await withRefreshLock(() => fetch(`${API_BASE}/logout`, {
-        method: 'POST',
-        credentials: 'same-origin',
-      }));
-    } catch (err) {
-      console.error('Logout error:', err);
-    }
+    await revokeRefreshCookie();
     // Only a Keycloak account also ends its Keycloak session; a local account just signs out here.
     if (import.meta.env.PROD && signedInWithKeycloak) {
       const returnUrl = `${window.location.origin}/`;
@@ -256,6 +356,7 @@ export function useAuthSession() {
     setUser,
     loading,
     sessionKey,
+    offline,
     getAccessToken,
     startSession,
     signOutLocally,

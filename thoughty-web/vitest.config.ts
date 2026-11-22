@@ -31,6 +31,8 @@ export default defineConfig({
         'src/test/',
         'src/**/*.test-helpers.{ts,tsx}',
         'src/main.tsx',
+        // The service worker's entry: only wires `serviceWorkerCore` to its global scope
+        'src/serviceWorker/sw.ts',
         'src/App.tsx',
         'src/contexts/AuthContext.tsx',
         'src/hooks/useAppState.ts',

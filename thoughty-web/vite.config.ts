@@ -1,10 +1,12 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'node:path';
+import { serviceWorkerPlugin } from './scripts/serviceWorkerPlugin.ts';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  // The service worker that keeps the app shell for offline use is written after each build (`/sw.js`).
+  plugins: [react(), serviceWorkerPlugin()],
   // The book preview's PDF.js worker is an ES module; bundle it as one, served from the app's origin.
   worker: {
     format: 'es',

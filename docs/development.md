@@ -87,6 +87,10 @@ The `test` journal exercises every feature: Markdown, pins, archive, revisions, 
 
 Tests are in the [Testing Guide](./testing.md).
 
+## Service Worker
+
+Only a production build has the service worker (`/sw.js`, written by `scripts/serviceWorkerPlugin.ts` after `vite build` from `src/serviceWorker/sw.ts`, with the build's files to keep and a version hashed from them); the dev server registers none, so it never caches what you are changing. Its logic is in `src/serviceWorker/serviceWorkerCore.ts` (unit tested), and which files it keeps in `precacheManifest.ts`. To try it, run `npm run build && npx vite preview` and open the preview; in the browser's dev tools, **Application › Service workers** shows it and **Network › Offline** cuts the connection. The Playwright suite runs on the dev server, so its offline specs (`e2e/journal/offline-journal.spec.ts`) cut the API instead and cover the journal opened offline, not the worker.
+
 ## File Length and Stylesheets
 
 Source files stay at 500 lines or fewer: every `.ts`, `.tsx`, `.js`, `.mjs`, `.cjs` and `.css` file of `thoughty-web` (`src`, the Playwright specs and mock API in `e2e`, `scripts` and the config files; except the generated `src/generated/`) and every `.ts`, `.js`, `.mjs` and `.cjs` file of `thoughty-server` (`src`, the real-API contract specs in `test`, `scripts` and the config files; except the frozen migrations in `src/database/migrations`), specs included. Installed, built and test-run output (`node_modules`, `dist`, `coverage`, `test-results`, `playwright-report`) and hidden folders are skipped. Two tests enforce it and name each file over the limit: `thoughty-web/src/fileLength.test.js` (Vitest) and `thoughty-server/src/file-length.spec.ts` (Jest). Split a file that outgrows it by responsibility rather than raising the limit.

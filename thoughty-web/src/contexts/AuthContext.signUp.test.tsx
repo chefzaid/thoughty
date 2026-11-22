@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, waitFor } from '@testing-library/react';
-import { json, locationRestorers, renderSignedOut, routeFetch } from './AuthContext.test-helpers';
+import { expectNoTokenStored, json, locationRestorers, renderSignedOut, routeFetch } from './AuthContext.test-helpers';
 import type { AuthResult } from './authTypes';
 
 describe('AuthContext verify-first sign-up', () => {
@@ -52,7 +52,7 @@ describe('AuthContext verify-first sign-up', () => {
         }));
         await waitFor(() => expect(auth.current().user?.email).toBe('new@example.com'));
         expect(auth.current().getAccessToken()).toBe('access');
-        expect(localStorage.length).toBe(0);
+        expectNoTokenStored();
     });
 
     it('sends another username when one is given, and reports the API code of a refusal', async () => {

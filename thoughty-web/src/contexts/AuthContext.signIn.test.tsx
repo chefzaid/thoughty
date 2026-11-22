@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, waitFor } from '@testing-library/react';
-import { json, locationRestorers, renderAuth, renderSignedOut, routeFetch } from './AuthContext.test-helpers';
+import { expectNoTokenStored, json, locationRestorers, renderAuth, renderSignedOut, routeFetch } from './AuthContext.test-helpers';
 
 describe('AuthContext', () => {
     beforeEach(() => {
@@ -37,7 +37,7 @@ describe('AuthContext', () => {
                 website: '',
             }),
         }));
-        expect(localStorage.length).toBe(0);
+        expectNoTokenStored();
         await waitFor(() => {
             expect(auth.current().user?.email).toBe('new@example.com');
         });
@@ -168,7 +168,7 @@ describe('AuthContext', () => {
             expect.objectContaining({ body: JSON.stringify({ challengeToken: 'challenge-two', code: '123456' }) }),
         );
         expect(auth.current().getAccessToken()).toBe('access');
-        expect(localStorage.length).toBe(0);
+        expectNoTokenStored();
         expect(auth.current().user?.twoFactorEnabled).toBe(true);
     });
 

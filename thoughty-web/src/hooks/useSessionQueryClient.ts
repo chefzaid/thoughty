@@ -16,9 +16,10 @@ export function createAppQueryClient(): QueryClient {
  * One query cache per session: when `sessionKey` moves on (a session ended), the app reads from a new,
  * empty cache in that same render, and the old one has its requests cancelled and everything in it
  * dropped. A request or callback that outlived the session can only write into the old cache, which
- * nothing reads any more.
+ * nothing reads any more. A session that was `offline` (opened without reaching the API) reads
+ * everything again once it is back, since what it asked for meanwhile could not be answered.
  */
-export function useSessionQueryClient(sessionKey: number): QueryClient {
+export function useSessionQueryClient(sessionKey: number, offline = false): QueryClient {
   const [scope, setScope] = useState(() => ({ sessionKey, client: createAppQueryClient() }));
   let current = scope;
   if (scope.sessionKey !== sessionKey) {
@@ -34,6 +35,12 @@ export function useSessionQueryClient(sessionKey: number): QueryClient {
     void previous.cancelQueries();
     previous.clear();
   }, [current.client]);
+
+  const wasOffline = useRef(offline);
+  useEffect(() => {
+    if (wasOffline.current && !offline) void current.client.invalidateQueries();
+    wasOffline.current = offline;
+  }, [current.client, offline]);
 
   return current.client;
 }

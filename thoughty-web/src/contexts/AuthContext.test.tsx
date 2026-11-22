@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { act, render, waitFor } from '@testing-library/react';
 import { exchangeKeycloakSession, useAuth } from './AuthContext';
-import { callsTo, json, locationRestorers, renderAuth, renderSignedOut, routeFetch, stubLocationAssign } from './AuthContext.test-helpers';
+import { callsTo, expectNoTokenStored, json, locationRestorers, renderAuth, renderSignedOut, routeFetch, stubLocationAssign } from './AuthContext.test-helpers';
 
 describe('AuthContext', () => {
     beforeEach(() => {
@@ -53,7 +53,7 @@ describe('AuthContext', () => {
         expect(fetchMock).toHaveBeenCalledWith('/api/auth/me', expect.objectContaining({
             headers: expect.objectContaining({ Authorization: 'Bearer fresh-access' }),
         }));
-        expect(localStorage.length).toBe(0);
+        expectNoTokenStored();
     });
 
     it('deletes tokens an older version left in localStorage without ever sending them', async () => {

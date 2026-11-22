@@ -10,8 +10,8 @@ import { useSessionQueryClient } from './hooks/useSessionQueryClient';
 function App() {
   // A session that ends takes its query cache and every piece of the writer's state with it: the
   // tree below starts again from nothing (the router stays, so the address and history do too)
-  const { sessionKey } = useAuth();
-  const queryClient = useSessionQueryClient(sessionKey);
+  const { sessionKey, offline } = useAuth();
+  const queryClient = useSessionQueryClient(sessionKey, offline);
   return (
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>

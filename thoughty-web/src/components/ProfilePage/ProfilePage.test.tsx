@@ -87,7 +87,7 @@ function createAuthValue(overrides: Partial<MockAuthValue> = {}): MockAuthValue 
         user: { id: 1, username: 'johndoe', email: 'john@example.com', authProvider: 'local', emailVerified: false, twoFactorEnabled: false },
         loading: false,
         error: null,
-        isAuthenticated: true, sessionKey: 0,
+        isAuthenticated: true, sessionKey: 0, offline: false,
         register: vi.fn().mockResolvedValue({ success: true }),
         completeSignUp: vi.fn().mockResolvedValue({ success: true }),
         login: vi.fn().mockResolvedValue({ success: true }),

@@ -89,3 +89,13 @@ export async function renderSignedOut(): Promise<{ current: () => AuthContextVal
     await waitFor(() => expect(auth.current().loading).toBe(false));
     return auth;
 }
+
+/**
+ * Asserts that the browser's storage holds no token: the only key a session leaves is the writer
+ * remembered for a journal opened offline (`offlineSession`), which holds no token either.
+ */
+export function expectNoTokenStored(): void {
+    const keys = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index));
+    expect(keys.filter((key) => key !== 'thoughty.offlineUser')).toEqual([]);
+    expect(localStorage.getItem('thoughty.offlineUser') ?? '').not.toMatch(/token|access/i);
+}

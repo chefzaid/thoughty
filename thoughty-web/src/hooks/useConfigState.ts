@@ -1,23 +1,28 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Config, ProfileStats } from '../types';
 import type { Notifier } from './useAppNotice';
 import { getTranslation } from '../utils/translations';
 import { useApiServices } from './useApiServices';
+import { readOfflineDisplay, rememberOfflineDisplay } from '../contexts/offlineSession';
 
 const CONFIG_QUERY_KEY = ['app', 'config'] as const;
 const PROFILE_STATS_QUERY_KEY = ['app', 'profile-stats'] as const;
 
-export const useConfig = (isAuthenticated: boolean) => {
+/**
+ * The writer's settings. `offline` is set while the journal is open without a connection (see
+ * `useAuthSession`): the app then counts as loaded at once, and looks and reads as it did when the
+ * settings were last read on this browser, until the API answers.
+ */
+export const useConfig = (isAuthenticated: boolean, offline = false) => {
   const { configService } = useApiServices();
   const queryClient = useQueryClient();
+  const offlineDisplay = useMemo(() => (offline ? readOfflineDisplay() : null), [offline]);
 
   const configQuery = useQuery({
     queryKey: CONFIG_QUERY_KEY,
-    queryFn: async (): Promise<Config> => {
-      const data = await configService.fetchConfig();
-      return data ?? {};
-    },
+    // Null when the settings could not be read: the defaults (or offline, the remembered look) apply
+    queryFn: async (): Promise<Config | null> => (await configService.fetchConfig()) ?? null,
     enabled: isAuthenticated,
   });
 
@@ -30,9 +35,14 @@ export const useConfig = (isAuthenticated: boolean) => {
     enabled: isAuthenticated,
   });
 
-  const config = configQuery.data ?? {};
+  const config: Config = configQuery.data ?? offlineDisplay ?? {};
   /** True once the profile config has arrived (or failed to), so page-size based lookups use the user's setting. */
-  const configLoaded = !configQuery.isPending;
+  const configLoaded = !configQuery.isPending || offline;
+
+  useEffect(() => {
+    if (configQuery.data) rememberOfflineDisplay(configQuery.data);
+  }, [configQuery.data]);
+
   const profileStats = profileStatsQuery.data ?? null;
 
   const fetchConfig = useCallback(async () => {

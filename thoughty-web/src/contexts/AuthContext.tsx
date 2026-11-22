@@ -21,6 +21,8 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   /** Moves on each time a session ends; what the app holds for a writer is keyed on it. */
   sessionKey: number;
+  /** Set while the journal is open without the API having confirmed the session (Thoughty could not be reached). */
+  offline: boolean;
   register: (email: string, password: string, username: string, website?: string) => Promise<AuthResult>;
   completeSignUp: (token: string, password: string, username?: string) => Promise<AuthResult>;
   login: (identifier: string, password: string, website?: string) => Promise<AuthResult>;
@@ -55,6 +57,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     setUser,
     loading,
     sessionKey,
+    offline,
     getAccessToken,
     startSession,
     signOutLocally,
@@ -84,6 +87,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     error,
     isAuthenticated: !!user,
     sessionKey,
+    offline,
     register,
     completeSignUp,
     login,
@@ -105,6 +109,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     loading,
     error,
     sessionKey,
+    offline,
     register,
     completeSignUp,
     login,

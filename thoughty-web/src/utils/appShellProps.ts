@@ -53,6 +53,7 @@ interface BuildAuthenticatedLayoutPropsParams {
   handleAiChat: (entryId: number, entryContent: string, messages: { role: 'user' | 'assistant'; content: string }[]) => Promise<string | null>;
   handleLoadAiChatHistory: (entryId: number) => Promise<Array<{ role: 'user' | 'assistant'; content: string }>>;
   isEmailVerified: boolean;
+  offline: boolean;
   quickCapture?: AuthenticatedLayoutProps['quickCapture'];
   routingState: Pick<AppShellRoutingState, 'handleLogout' | 'handleViewChange'>;
   setChatEntry: (entry: Entry | null) => void;
@@ -110,6 +111,7 @@ export function buildAuthenticatedLayoutProps({
   handleAiChat,
   handleLoadAiChatHistory,
   isEmailVerified,
+  offline,
   quickCapture,
   routingState,
   setChatEntry,
@@ -122,6 +124,7 @@ export function buildAuthenticatedLayoutProps({
     userName,
     avatarUrl,
     isEmailVerified,
+    offline,
     onViewChange: routingState.handleViewChange,
     onLogout: routingState.handleLogout,
     t,
