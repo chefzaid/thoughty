@@ -1,5 +1,6 @@
 import type { Language } from './translations';
 
+/** Quick capture, and what is shared to the installed app from another one. */
 export type QuickCaptureTranslationKey =
   | 'quickCapture'
   | 'quickCaptureHint'
@@ -8,7 +9,8 @@ export type QuickCaptureTranslationKey =
   | 'quickCaptureOpenInFull'
   | 'quickCaptureSaving'
   | 'quickCaptureSaved'
-  | 'quickCaptureViewEntry';
+  | 'quickCaptureViewEntry'
+  | 'shareTargetReplaceMessage';
 
 export const quickCaptureTranslations: Record<Language, Record<QuickCaptureTranslationKey, string>> = {
   en: {
@@ -20,6 +22,8 @@ export const quickCaptureTranslations: Record<Language, Record<QuickCaptureTrans
     quickCaptureSaving: 'Saving...',
     quickCaptureSaved: 'Saved as a private entry for today.',
     quickCaptureViewEntry: 'View entry',
+    shareTargetReplaceMessage:
+      'The new entry form already holds a draft. What you shared to Thoughty replaces its text, title, tags, time and mood, in a private entry dated today.',
   },
   fr: {
     quickCapture: 'Capture rapide',
@@ -30,5 +34,7 @@ export const quickCaptureTranslations: Record<Language, Record<QuickCaptureTrans
     quickCaptureSaving: 'Enregistrement...',
     quickCaptureSaved: 'Enregistrée comme entrée privée du jour.',
     quickCaptureViewEntry: 'Voir l’entrée',
+    shareTargetReplaceMessage:
+      'Le formulaire de nouvelle entrée contient déjà un brouillon. Ce que vous avez partagé avec Thoughty remplace son texte, son titre, ses tags, son heure et son humeur, dans une entrée privée à la date d’aujourd’hui.',
   },
 };

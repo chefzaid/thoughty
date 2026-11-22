@@ -9,6 +9,7 @@ import './index.css';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 import { shareTokenFromPath } from './services/api/shareLinksService';
+import { captureSharedContent } from './utils/shareTarget';
 
 const rootElement = document.getElementById('root');
 
@@ -55,6 +56,8 @@ if (globalThis.location.pathname === '/cloud-callback') {
     </StrictMode>
   );
 } else {
+  // Text or a link shared to the installed app waits for the journal's composer, past a sign-in if need be
+  captureSharedContent(globalThis.location, globalThis.history);
   createRoot(rootElement).render(
     <StrictMode>
       <AuthProvider>

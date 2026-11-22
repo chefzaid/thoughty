@@ -5,6 +5,7 @@ import type { Entry, TranslationFunction } from '../../types';
 import { entryStartingPoint, hasComposerDraft } from '../../utils/entryStartingPoint';
 import { resolveLanguage } from '../../utils/language';
 import { entryReplyDraft, feedEntryDraft, type FeedEntrySource } from '../EntriesList/entryReply';
+import type { SharedContent } from '../../utils/shareTarget';
 
 type ComposerState = Pick<ComponentProps<typeof EntryForm>,
   'newEntryText' | 'setNewEntryText' | 'title' | 'setTitle' | 'timeOfDay' | 'setTimeOfDay' | 'mood' | 'setMood'
@@ -26,8 +27,10 @@ interface ComposerSeedOptions {
 
 /** What the new entry form is filled with, and why (which the replace warning says). */
 interface ComposerSeed {
-  readonly kind: 'startingPoint' | 'reply' | 'writeAbout';
+  readonly kind: 'startingPoint' | 'reply' | 'writeAbout' | 'shared';
   readonly text: string;
+  /** The new entry's title; none when unset. */
+  readonly title?: string;
   readonly tags: string[];
   readonly format: 'plain' | 'markdown';
   /** Set when the entry is kept private whatever the default visibility. */
@@ -43,6 +46,7 @@ const REPLACE_MESSAGES = {
   startingPoint: 'startFromEntryReplaceMessage',
   reply: 'replyReplaceMessage',
   writeAbout: 'writeAboutReplaceMessage',
+  shared: 'shareTargetReplaceMessage',
 } as const;
 
 /**
@@ -55,11 +59,14 @@ const REPLACE_MESSAGES = {
  *   public default never publishes its words.
  * - **Write about this** (from the feed): a short quote of another writer's entry and their name (see
  *   `feedEntryDraft`), on today, in the entry's format, with no tags, and always private.
+ * - **Shared to Thoughty** (the installed app's share target): the text or link shared from another app,
+ *   and its title (see `sharedContentFrom`), on today, as plain text, with no tags, and always private.
  */
 export function useComposerSeed({ composer, defaultVisibility, formRef, language, theme, t }: ComposerSeedOptions): {
   startFromEntry: (entry: Entry) => void;
   replyToEntry: (entry: Entry) => void;
   writeAbout: (source: FeedEntrySource) => void;
+  shareInto: (shared: SharedContent) => void;
   /** Scrolls to the form and focuses its writing field, the caret after the text. */
   focusComposer: () => void;
   dialog: ReactNode;
@@ -81,7 +88,7 @@ export function useComposerSeed({ composer, defaultVisibility, formRef, language
     if (seed.today) {
       form.setSelectedDate?.(new Date());
     }
-    form.setTitle?.('');
+    form.setTitle?.(seed.title ?? '');
     form.setTimeOfDay?.('');
     form.setMood?.(null);
     form.setFeelings?.([]);
@@ -115,6 +122,10 @@ export function useComposerSeed({ composer, defaultVisibility, formRef, language
   const writeAbout = useCallback((source: FeedEntrySource) => {
     const draft = feedEntryDraft(source, resolveLanguage(latest.current.language));
     seedComposer({ kind: 'writeAbout', ...draft, tags: [], privateOnly: true, today: true });
+  }, [seedComposer]);
+
+  const shareInto = useCallback((shared: SharedContent) => {
+    seedComposer({ kind: 'shared', text: shared.text, title: shared.title, tags: [], format: 'plain', privateOnly: true, today: true });
   }, [seedComposer]);
 
   useEffect(() => {
@@ -163,5 +174,5 @@ export function useComposerSeed({ composer, defaultVisibility, formRef, language
     />
   );
 
-  return { startFromEntry, replyToEntry, writeAbout, focusComposer, dialog };
+  return { startFromEntry, replyToEntry, writeAbout, shareInto, focusComposer, dialog };
 }

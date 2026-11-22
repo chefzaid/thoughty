@@ -26,6 +26,7 @@ import PersonFilterBanner from './PersonFilterBanner';
 import { usePersonFilterRoute } from './usePersonFilterRoute';
 import { useComposerSeed } from './useComposerSeed';
 import { useComposerFocusRoute } from './composerFocusRoute';
+import { useShareTargetSeed } from './useShareTargetSeed';
 import RandomEntryButton from './RandomEntryButton';
 import EntryReader from '../EntryReader/EntryReader';
 import ReadEntriesButton from '../EntryReader/ReadEntriesButton';
@@ -156,6 +157,7 @@ function JournalView({
     t,
   });
   useComposerFocusRoute(composerSeed.focusComposer, composerSeed.writeAbout);
+  useShareTargetSeed(entryForm.draft?.ready ?? true, composerSeed.shareInto);
 
   const keywordSearch = filters.searchMode === 'keyword';
   const calendarFilters = {

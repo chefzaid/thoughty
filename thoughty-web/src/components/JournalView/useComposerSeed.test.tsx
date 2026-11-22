@@ -55,7 +55,7 @@ function Harness({ initialText = '', defaultVisibility, swapFieldOnFill = false,
     const [format, setFormat] = useState<'plain' | 'markdown'>('plain');
     const [selectedDate, setSelectedDate] = useState(new Date(2024, 0, 2));
     const [swapped, setSwapped] = useState(false);
-    const { startFromEntry, replyToEntry, writeAbout, focusComposer, dialog } = useComposerSeed({
+    const { startFromEntry, replyToEntry, writeAbout, shareInto, focusComposer, dialog } = useComposerSeed({
         composer: {
             newEntryText, setNewEntryText: (value) => {
                 setNewEntryText(value);
@@ -88,6 +88,7 @@ function Harness({ initialText = '', defaultVisibility, swapFieldOnFill = false,
             <button type="button" onClick={() => writeAbout({ content: 'Rain on the **pier**. Then sun.', format: 'markdown', username: 'maya' })}>
                 Write about
             </button>
+            <button type="button" onClick={() => shareInto({ title: 'Tide tables', text: 'High tide at 6\nhttps://example.org/tides' })}>Share</button>
             {dialog}
         </>
     );
@@ -237,5 +238,21 @@ describe('useComposerSeed', () => {
         expect(field).toHaveFocus();
         expect(screen.getByTestId('date')).toHaveTextContent(formatEntryDate(new Date()));
         expect(state()).toEqual({ title: '', timeOfDay: '', mood: null, tags: [], visibility: 'private', format: 'markdown', timeCapsule: null });
+    });
+
+    it('fills the form with what was shared to the app on today: its title and text, plain, no tags, always private', async () => {
+        const user = userEvent.setup();
+        render(<Harness defaultVisibility="public" initialText="My own draft" language="fr" />);
+
+        await user.click(screen.getByRole('button', { name: 'Share' }));
+        const dialog = screen.getByRole('alertdialog', { name: 'Replace your draft?' });
+        expect(dialog).toHaveAccessibleDescription(/What you shared to Thoughty replaces its text, title, tags, time and mood/);
+        await user.click(screen.getByRole('button', { name: 'Replace draft' }));
+
+        const field = screen.getByLabelText<HTMLTextAreaElement>('Writing');
+        expect(field).toHaveValue('High tide at 6\nhttps://example.org/tides');
+        expect(field).toHaveFocus();
+        expect(screen.getByTestId('date')).toHaveTextContent(formatEntryDate(new Date()));
+        expect(state()).toEqual({ title: 'Tide tables', timeOfDay: '', mood: null, tags: [], visibility: 'private', format: 'plain', timeCapsule: null });
     });
 });
