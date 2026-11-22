@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState as useLocalState, type Dispatch, type KeyboardEvent, type PointerEvent, type SetStateAction } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState as useLocalState, type Dispatch, type KeyboardEvent, type PointerEvent, type ReactNode, type SetStateAction } from 'react';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useSpeech, type SpeechEntry } from '../../hooks/useSpeech';
 import type { Attachment, Config, Diary, Entry, GroupedEntries, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
@@ -35,6 +35,8 @@ interface EntriesListProps extends EntryCardActions {
     groupedEntries: GroupedEntries;
     /** Show entries in the order they came (best search match first), under their dates, instead of by day. */
     rankedOrder?: boolean;
+    /** Shown under a day's heading (the day's calendar events), given the day and every day listed. */
+    renderDayEvents?: (date: string, days: readonly string[]) => ReactNode;
     config: Config;
     onEdit: (entry: Entry) => void;
     onDelete: (id: number) => void;
@@ -98,6 +100,7 @@ function EntriesList({
     loadingMore = false,
     groupedEntries,
     rankedOrder = false,
+    renderDayEvents,
     config,
     onEdit,
     onDelete,
@@ -361,6 +364,7 @@ function EntriesList({
                                         config={config}
                                         t={t}
                                     />
+                                    {group.date !== null && renderDayEvents?.(group.date, sortedDates)}
                                 </div>
                             )}
                             <div

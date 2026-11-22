@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsISO8601, IsOptional, IsString, Matches } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsISO8601, IsOptional, IsString, Matches } from 'class-validator';
 import { WritersTimeZone } from '@/common/validation';
 
 /** How many imported calendar events one writer can keep. */
@@ -8,6 +9,9 @@ export const CALENDAR_EVENT_LIMIT = 10_000;
 export const CALENDAR_FILE_MAX_SIZE = 5 * 1024 * 1024;
 /** The most events the composer lists for one day. */
 export const CALENDAR_DAY_EVENT_LIMIT = 50;
+
+/** The most days one request for several days' events asks for: the journal keeps up to 200 entries loaded. */
+export const CALENDAR_DAYS_LIMIT = 200;
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -30,6 +34,23 @@ export class CalendarEventsQueryDto extends CalendarImportQueryDto {
   @Matches(DATE_PATTERN)
   @IsISO8601({ strict: true })
   date!: string;
+}
+
+/** `GET /api/calendar/days`: the days to list, comma-separated, in the writer's time zone. */
+export class CalendarDaysQueryDto extends CalendarImportQueryDto {
+  @ApiProperty({
+    type: String,
+    example: '2026-11-20,2026-11-22',
+    description: `The days whose events to list (\`YYYY-MM-DD\`), comma-separated; at most ${CALENDAR_DAYS_LIMIT}`,
+  })
+  @Transform(({ value }: { value: unknown }) => (typeof value === 'string' ? value.split(',') : value))
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(CALENDAR_DAYS_LIMIT)
+  @IsString({ each: true })
+  @Matches(DATE_PATTERN, { each: true })
+  @IsISO8601({ strict: true }, { each: true })
+  dates!: string[];
 }
 
 export class CalendarEventResponseDto {
@@ -64,6 +85,19 @@ export class CalendarEventResponseDto {
 export class CalendarDayResponseDto {
   @ApiProperty({ type: [CalendarEventResponseDto], description: `The day’s events, repeating ones by their occurrence that day, all-day ones first, then by start; at most ${CALENDAR_DAY_EVENT_LIMIT}` })
   events!: CalendarEventResponseDto[];
+}
+
+export class CalendarDayEventsDto {
+  @ApiProperty({ example: '2026-11-22', format: 'date' })
+  date!: string;
+
+  @ApiProperty({ type: [CalendarEventResponseDto], description: `The day’s events, in the order and at most the ${CALENDAR_DAY_EVENT_LIMIT} of \`GET /api/calendar/events\`` })
+  events!: CalendarEventResponseDto[];
+}
+
+export class CalendarDaysResponseDto {
+  @ApiProperty({ type: [CalendarDayEventsDto], description: 'The days asked for that have events, in date order; days without events are left out' })
+  days!: CalendarDayEventsDto[];
 }
 
 export class CalendarSummaryResponseDto {

@@ -39,6 +39,7 @@ import type { SavedEntry } from '../ComfortReads/comfortReadsState';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import { useJournalPeopleCheck } from './useJournalPeopleCheck';
 import ComposerCalendarEvents from '../CalendarEvents/ComposerCalendarEvents';
+import JournalDayEvents from '../CalendarEvents/JournalDayEvents';
 import { appendPrompt } from '../EntryForm/appendPrompt';
 
 type DiaryTabsProps = Pick<ComponentProps<typeof DiaryTabs>, 'diaries' | 'currentDiaryId' | 'onDiaryChange' | 'onManageDiaries'>;
@@ -177,6 +178,11 @@ function JournalView({
     filters.setFilterDateObj(parseSavedSearchDate(date));
     layoutRoute.setLayout('list');
   };
+  /** Each day's imported calendar events under its heading; stable, so the memoized list is not drawn again for it. */
+  const renderDayEvents = useCallback(
+    (date: string, days: readonly string[]) => <JournalDayEvents date={date} days={days} language={language} theme={theme} t={t} />,
+    [language, theme, t],
+  );
   /** The reader reads the list's entries as they are filtered now, or a month of the calendar. */
   const readCurrentFilters = () => reader.open(readerScopeFromList(randomEntry.query));
   const readMonth = (month: string) => reader.open(readerScopeOfMonth({ ...calendarFilters, month }));
@@ -398,6 +404,7 @@ function JournalView({
               onReply={composerSeed.replyToEntry}
               config={config}
               searchTerm={filters.searchMode === 'keyword' ? filters.search : undefined}
+              renderDayEvents={renderDayEvents}
               t={t}
             />
           </JournalFeed>

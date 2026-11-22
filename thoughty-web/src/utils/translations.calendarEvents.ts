@@ -1,6 +1,6 @@
 import type { Language } from './translations';
 
-/** Imported calendars: the import panel in Import/Export and the day's events beside the composer. */
+/** Imported calendars: the import panel in Import/Export and the day's events beside the composer and under the journal's days. */
 export type CalendarEventsTranslationKey =
   | 'calendarImportTitle'
   | 'calendarImportDescription'
@@ -26,12 +26,15 @@ export type CalendarEventsTranslationKey =
   | 'calendarUntitled'
   | 'calendarWriteAbout'
   | 'calendarWriteAboutLabel'
-  | 'calendarEventPrompt';
+  | 'calendarEventPrompt'
+  | 'calendarShowMore_one'
+  | 'calendarShowMore_other'
+  | 'calendarShowFewer';
 
 export const calendarEventsTranslations: Record<Language, Record<CalendarEventsTranslationKey, string>> = {
   en: {
     calendarImportTitle: 'Calendar',
-    calendarImportDescription: 'Import a calendar file (.ics) exported from Google Calendar, Apple Calendar or Outlook. The composer then lists the events of the day you write about, a reminder of what happened. Importing the same file again updates its events. Repeating events show on each day they fall on.',
+    calendarImportDescription: 'Import a calendar file (.ics) exported from Google Calendar, Apple Calendar or Outlook. The composer then lists the events of the day you write about, and the journal those of each day under its date, a reminder of what happened. Importing the same file again updates its events. Repeating events show on each day they fall on.',
     calendarImportChoose: 'Choose a calendar file (.ics)',
     calendarImporting: 'Importing {name}…',
     calendarImported_one: 'Imported {count} event.',
@@ -55,10 +58,13 @@ export const calendarEventsTranslations: Record<Language, Record<CalendarEventsT
     calendarWriteAbout: 'Write about it',
     calendarWriteAboutLabel: 'Write about “{summary}”',
     calendarEventPrompt: '{summary}: how was it?',
+    calendarShowMore_one: 'Show {count} more event',
+    calendarShowMore_other: 'Show {count} more events',
+    calendarShowFewer: 'Show fewer events',
   },
   fr: {
     calendarImportTitle: 'Agenda',
-    calendarImportDescription: 'Importez un fichier d’agenda (.ics) exporté depuis Google Agenda, Calendrier d’Apple ou Outlook. Le rédacteur liste alors les événements du jour dont vous écrivez, pour vous rappeler ce qui s’est passé. Importer le même fichier à nouveau met ses événements à jour. Les événements récurrents apparaissent chaque jour où ils ont lieu.',
+    calendarImportDescription: 'Importez un fichier d’agenda (.ics) exporté depuis Google Agenda, Calendrier d’Apple ou Outlook. Le rédacteur liste alors les événements du jour dont vous écrivez, et le journal ceux de chaque jour sous sa date, pour vous rappeler ce qui s’est passé. Importer le même fichier à nouveau met ses événements à jour. Les événements récurrents apparaissent chaque jour où ils ont lieu.',
     calendarImportChoose: 'Choisir un fichier d’agenda (.ics)',
     calendarImporting: 'Import de {name}…',
     calendarImported_one: '{count} événement importé.',
@@ -82,5 +88,8 @@ export const calendarEventsTranslations: Record<Language, Record<CalendarEventsT
     calendarWriteAbout: 'En parler',
     calendarWriteAboutLabel: 'Écrire à propos de « {summary} »',
     calendarEventPrompt: '{summary} : comment c’était ?',
+    calendarShowMore_one: 'Afficher {count} autre événement',
+    calendarShowMore_other: 'Afficher {count} autres événements',
+    calendarShowFewer: 'Afficher moins d’événements',
   },
 };

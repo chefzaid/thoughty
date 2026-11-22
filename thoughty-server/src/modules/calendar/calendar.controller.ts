@@ -7,8 +7,11 @@ import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { SuccessResponseDto } from '@/common/dto';
 import { MULTIPART_FIELD_LIMITS } from '@/common/multipart-limits';
 import {
+  CALENDAR_DAYS_LIMIT,
   CALENDAR_FILE_MAX_SIZE,
   CalendarDayResponseDto,
+  CalendarDaysQueryDto,
+  CalendarDaysResponseDto,
   CalendarEventsQueryDto,
   CalendarImportQueryDto,
   CalendarImportResponseDto,
@@ -36,6 +39,17 @@ export class CalendarController {
   @ApiResponse({ status: 400, description: 'Invalid day or time zone' })
   async events(@CurrentUser() user: AuthenticatedUser, @Query() query: CalendarEventsQueryDto): Promise<CalendarDayResponseDto> {
     return this.calendarService.eventsOn(user.userId, query.date, query.timeZone);
+  }
+
+  @Get('days')
+  @ApiOperation({
+    summary: 'The imported calendar events on several days, in the writer’s time zone',
+    description: 'Each day is listed as `GET /api/calendar/events` lists one; the journal asks for the days of the entries it shows.',
+  })
+  @ApiResponse({ status: 200, description: 'The days that have events, with their events', type: CalendarDaysResponseDto })
+  @ApiResponse({ status: 400, description: `Invalid days (none, more than ${CALENDAR_DAYS_LIMIT}, or not dates) or time zone` })
+  async days(@CurrentUser() user: AuthenticatedUser, @Query() query: CalendarDaysQueryDto): Promise<CalendarDaysResponseDto> {
+    return this.calendarService.eventsOnDays(user.userId, query.dates, query.timeZone);
   }
 
   @Post('import')

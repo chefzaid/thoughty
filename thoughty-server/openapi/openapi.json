@@ -15634,6 +15634,92 @@
         ]
       }
     },
+    "/api/calendar/days": {
+      "get": {
+        "description": "Each day is listed as `GET /api/calendar/events` lists one; the journal asks for the days of the entries it shows.",
+        "operationId": "CalendarController_days",
+        "parameters": [
+          {
+            "name": "timeZone",
+            "required": false,
+            "in": "query",
+            "description": "The writer’s IANA time zone, which times without a zone of their own (or with a zone that is not an IANA name) are read in; UTC when left out",
+            "schema": {
+              "maxLength": 64,
+              "example": "Europe/Paris",
+              "type": "string"
+            }
+          },
+          {
+            "name": "dates",
+            "required": true,
+            "in": "query",
+            "description": "The days whose events to list (`YYYY-MM-DD`), comma-separated; at most 200",
+            "schema": {
+              "example": "2026-11-20,2026-11-22",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The days that have events, with their events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarDaysResponseDto"
+                },
+                "example": {
+                  "days": [
+                    {
+                      "date": "2026-11-22",
+                      "events": [
+                        {
+                          "id": 12,
+                          "summary": "Dinner with Lina",
+                          "location": "Le Petit Zinc",
+                          "allDay": false,
+                          "startsAt": "2026-11-22T19:30:00.000Z",
+                          "endsAt": "2026-11-22T22:00:00.000Z",
+                          "startDate": null,
+                          "endDate": null,
+                          "repeats": false
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid days (none, more than 200, or not dates) or time zone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Invalid days (none, more than 200, or not dates) or time zone",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "The imported calendar events on several days, in the writer’s time zone",
+        "tags": [
+          "Calendar"
+        ]
+      }
+    },
     "/api/calendar/import": {
       "post": {
         "description": "Up to 5 MB. Events already imported (the same UID) are updated. Repeating events keep their rule (daily, weekly, monthly or yearly) and each changed occurrence becomes an event of its own; those repeating within a day, by week number or year day are counted and left out.",
@@ -31097,6 +31183,78 @@
               "startDate": null,
               "endDate": null,
               "repeats": false
+            }
+          ]
+        }
+      },
+      "CalendarDayEventsDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-11-22",
+            "format": "date"
+          },
+          "events": {
+            "description": "The day’s events, in the order and at most the 50 of `GET /api/calendar/events`",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalendarEventResponseDto"
+            }
+          }
+        },
+        "required": [
+          "date",
+          "events"
+        ],
+        "example": {
+          "date": "2026-11-22",
+          "events": [
+            {
+              "id": 12,
+              "summary": "Dinner with Lina",
+              "location": "Le Petit Zinc",
+              "allDay": false,
+              "startsAt": "2026-11-22T19:30:00.000Z",
+              "endsAt": "2026-11-22T22:00:00.000Z",
+              "startDate": null,
+              "endDate": null,
+              "repeats": false
+            }
+          ]
+        }
+      },
+      "CalendarDaysResponseDto": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "description": "The days asked for that have events, in date order; days without events are left out",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalendarDayEventsDto"
+            }
+          }
+        },
+        "required": [
+          "days"
+        ],
+        "example": {
+          "days": [
+            {
+              "date": "2026-11-22",
+              "events": [
+                {
+                  "id": 12,
+                  "summary": "Dinner with Lina",
+                  "location": "Le Petit Zinc",
+                  "allDay": false,
+                  "startsAt": "2026-11-22T19:30:00.000Z",
+                  "endsAt": "2026-11-22T22:00:00.000Z",
+                  "startDate": null,
+                  "endDate": null,
+                  "repeats": false
+                }
+              ]
             }
           ]
         }

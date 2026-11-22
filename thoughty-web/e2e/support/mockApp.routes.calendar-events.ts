@@ -112,7 +112,7 @@ function eventsOn(state: MockAppState, date: string, timeZone: string): Calendar
     .sort((left, right) => Number(right.allDay) - Number(left.allDay) || (left.startsAt ?? '').localeCompare(right.startsAt ?? ''));
 }
 
-/** `/api/calendar` as the API answers it: a file imported by UID, the events of a day in the writer's zone, and removing them all. */
+/** `/api/calendar` as the API answers it: a file imported by UID, the events of a day (or of several) in the writer's zone, and removing them all. */
 export async function handleCalendarEventRoutes({ route, request, pathname, searchParams, state }: RouteContext): Promise<boolean> {
   if (pathname === '/api/calendar' && request.method() === 'GET') {
     const lastImportedAt = state.calendarEvents.length ? state.calendarImportedAt : null;
@@ -121,6 +121,16 @@ export async function handleCalendarEventRoutes({ route, request, pathname, sear
   }
   if (pathname === '/api/calendar/events' && request.method() === 'GET') {
     await fulfillJson(route, { events: eventsOn(state, searchParams.get('date') ?? '', searchParams.get('timeZone') ?? 'UTC') });
+    return true;
+  }
+  if (pathname === '/api/calendar/days' && request.method() === 'GET') {
+    const timeZone = searchParams.get('timeZone') ?? 'UTC';
+    const dates = [...new Set((searchParams.get('dates') ?? '').split(','))].sort();
+    const days = dates.flatMap((date) => {
+      const events = eventsOn(state, date, timeZone);
+      return events.length > 0 ? [{ date, events }] : [];
+    });
+    await fulfillJson(route, { days });
     return true;
   }
   if (pathname === '/api/calendar/import' && request.method() === 'POST') {

@@ -60,4 +60,24 @@ describe('EntriesList as a feed', () => {
         fireEvent.click(boxes[1]!);
         expect(onToggleSelect).toHaveBeenCalledWith(mockEntries[1]!.id);
     });
+
+    it('shows what is given for each day under its heading, with every day listed, but not for pinned entries or best matches', () => {
+        const renderDayEvents = vi.fn((date: string) => <p>Events of {date}</p>);
+        const pinned = { ...mockEntries[2]!, is_pinned: true };
+        const { rerender } = render(<EntriesList {...createEntriesListProps({
+            renderDayEvents,
+            entries: [pinned, mockEntries[0]!, mockEntries[1]!],
+            groupedEntries: { '2024-01-15': [mockEntries[0]!, mockEntries[1]!], '2024-01-14': [pinned] },
+        })} />);
+
+        const articles = screen.getAllByRole('article');
+        expect(within(articles[1]!).getByText('Events of 2024-01-15')).toBeInTheDocument();
+        expect(within(articles[0]!).queryByText(/Events of/)).not.toBeInTheDocument();
+        expect(screen.getAllByText(/Events of/)).toHaveLength(1);
+        expect(renderDayEvents).toHaveBeenCalledWith('2024-01-15', ['2024-01-15']);
+
+        renderDayEvents.mockClear();
+        rerender(<EntriesList {...createEntriesListProps({ renderDayEvents, rankedOrder: true })} />);
+        expect(renderDayEvents).not.toHaveBeenCalled();
+    });
 });

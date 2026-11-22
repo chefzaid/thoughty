@@ -67,7 +67,9 @@ describe('CalendarService', () => {
       orderBy: jest.fn().mockReturnThis(),
       addOrderBy: jest.fn().mockReturnThis(),
       limit: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
       getMany: jest.fn().mockResolvedValue([]),
+      getRawAndEntities: jest.fn().mockResolvedValue({ raw: [], entities: [] }),
     };
     repository = {
       createQueryBuilder: jest.fn(() => queryBuilder),
@@ -129,6 +131,38 @@ describe('CalendarService', () => {
     expect(events).toHaveLength(50);
     expect(events[0].id).toBe(6);
     expect(events[49].id).toBe(148);
+  });
+
+  it('lists several days at once, each as one day is listed, with only the days that have events', async () => {
+    const market = { ...birthday, id: 4, summary: 'Market', recurrence: null, startDate: '2026-11-22', endDate: '2026-11-23' } as CalendarEvent;
+    queryBuilder.getRawAndEntities.mockResolvedValueOnce({
+      raw: [{ event_id: 5, event_days: ['2026-11-22'] }, { event_id: 4, event_days: ['2026-11-22', '2026-11-23'] }],
+      entities: [dinner, market],
+    });
+    queryBuilder.getMany.mockResolvedValueOnce([run]);
+
+    const { days } = await service.eventsOnDays(7, ['2026-11-23', '2026-11-20', '2026-11-22', '2026-11-23'], 'Europe/Paris');
+
+    expect(days.map(({ date, events }) => [date, events.map(({ id }) => id)])).toEqual([
+      ['2026-11-22', [4, 7, 5]],
+      ['2026-11-23', [4]],
+    ]);
+    expect(days[0].events[1]).toMatchObject({ startsAt: new Date('2026-11-22T09:00:00Z'), repeats: true });
+    expect(queryBuilder.addSelect).toHaveBeenCalledWith(expect.stringContaining('unnest(CAST(:days AS date[]))'), 'event_days');
+    expect(queryBuilder.andWhere).toHaveBeenCalledWith(expect.stringContaining('EXISTS'), {
+      days: ['2026-11-20', '2026-11-22', '2026-11-23'],
+      timeZone: 'Europe/Paris',
+    });
+    // Repeating events that start by the end of the last day asked for
+    expect(queryBuilder.andWhere).toHaveBeenLastCalledWith(expect.any(String), { date: '2026-11-23', timeZone: 'Europe/Paris' });
+  });
+
+  it('asks nothing for no day, and reads the days in UTC without a zone', async () => {
+    await expect(service.eventsOnDays(7, [])).resolves.toEqual({ days: [] });
+    expect(repository.createQueryBuilder).not.toHaveBeenCalled();
+
+    await expect(service.eventsOnDays(7, ['2026-11-22'])).resolves.toEqual({ days: [] });
+    expect(queryBuilder.andWhere).toHaveBeenLastCalledWith(expect.any(String), { date: '2026-11-22', timeZone: 'UTC' });
   });
 
   it('imports a file’s events by UID under the writer’s lock, counting the repeating ones it cannot read', async () => {

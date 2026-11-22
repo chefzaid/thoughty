@@ -2625,6 +2625,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/calendar/days": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The imported calendar events on several days, in the writer’s time zone
+         * @description Each day is listed as `GET /api/calendar/events` lists one; the journal asks for the days of the entries it shows.
+         */
+        get: operations["CalendarController_days"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/calendar/import": {
         parameters: {
             query?: never;
@@ -10877,6 +10897,59 @@ export interface components {
         CalendarDayResponseDto: {
             /** @description The day’s events, repeating ones by their occurrence that day, all-day ones first, then by start; at most 50 */
             events: components["schemas"]["CalendarEventResponseDto"][];
+        };
+        /**
+         * @example {
+         *       "date": "2026-11-22",
+         *       "events": [
+         *         {
+         *           "id": 12,
+         *           "summary": "Dinner with Lina",
+         *           "location": "Le Petit Zinc",
+         *           "allDay": false,
+         *           "startsAt": "2026-11-22T19:30:00.000Z",
+         *           "endsAt": "2026-11-22T22:00:00.000Z",
+         *           "startDate": null,
+         *           "endDate": null,
+         *           "repeats": false
+         *         }
+         *       ]
+         *     }
+         */
+        CalendarDayEventsDto: {
+            /**
+             * Format: date
+             * @example 2026-11-22
+             */
+            date: string;
+            /** @description The day’s events, in the order and at most the 50 of `GET /api/calendar/events` */
+            events: components["schemas"]["CalendarEventResponseDto"][];
+        };
+        /**
+         * @example {
+         *       "days": [
+         *         {
+         *           "date": "2026-11-22",
+         *           "events": [
+         *             {
+         *               "id": 12,
+         *               "summary": "Dinner with Lina",
+         *               "location": "Le Petit Zinc",
+         *               "allDay": false,
+         *               "startsAt": "2026-11-22T19:30:00.000Z",
+         *               "endsAt": "2026-11-22T22:00:00.000Z",
+         *               "startDate": null,
+         *               "endDate": null,
+         *               "repeats": false
+         *             }
+         *           ]
+         *         }
+         *       ]
+         *     }
+         */
+        CalendarDaysResponseDto: {
+            /** @description The days asked for that have events, in date order; days without events are left out */
+            days: components["schemas"]["CalendarDayEventsDto"][];
         };
         /**
          * @example {
@@ -24445,6 +24518,70 @@ export interface operations {
                      * @example {
                      *       "statusCode": 400,
                      *       "message": "Invalid day or time zone",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    CalendarController_days: {
+        parameters: {
+            query: {
+                /** @description The writer’s IANA time zone, which times without a zone of their own (or with a zone that is not an IANA name) are read in; UTC when left out */
+                timeZone?: string;
+                /** @description The days whose events to list (`YYYY-MM-DD`), comma-separated; at most 200 */
+                dates: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The days that have events, with their events */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "days": [
+                     *         {
+                     *           "date": "2026-11-22",
+                     *           "events": [
+                     *             {
+                     *               "id": 12,
+                     *               "summary": "Dinner with Lina",
+                     *               "location": "Le Petit Zinc",
+                     *               "allDay": false,
+                     *               "startsAt": "2026-11-22T19:30:00.000Z",
+                     *               "endsAt": "2026-11-22T22:00:00.000Z",
+                     *               "startDate": null,
+                     *               "endDate": null,
+                     *               "repeats": false
+                     *             }
+                     *           ]
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CalendarDaysResponseDto"];
+                };
+            };
+            /** @description Invalid days (none, more than 200, or not dates) or time zone */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "Invalid days (none, more than 200, or not dates) or time zone",
                      *       "error": "Bad Request",
                      *       "code": "VALIDATION_FAILED"
                      *     }

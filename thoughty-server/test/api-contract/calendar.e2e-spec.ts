@@ -81,18 +81,25 @@ describeContract('calendar', (context) => {
         repeats: true,
       }],
     });
+    // Several days at once, as each is listed, without the days that have none
+    const days = await call('GET /api/calendar/days', { as: alice, query: { dates: '2026-11-23,2026-11-21,2026-11-22', timeZone: 'Europe/Paris' }, status: 200 });
+    expect(days.body).toEqual({ days: [{ date: '2026-11-22', events: day.body.events }, { date: '2026-11-23', events: monday.body.events }] });
     // Each writer sees only their own calendar
     expect((await call('GET /api/calendar/events', { as: bob, query: { date: '2026-11-22' }, status: 200 })).body).toEqual({ events: [] });
+    expect((await call('GET /api/calendar/days', { as: bob, query: { dates: '2026-11-22' }, status: 200 })).body).toEqual({ days: [] });
 
     await call('DELETE /api/calendar', { as: alice, status: 200 });
     expect((await call('GET /api/calendar', { as: alice, status: 200 })).body).toMatchObject({ eventCount: 0 });
   });
 
-  it('refuses a file that is not a calendar, a missing one, and a bad day or zone', async () => {
+  it('refuses a file that is not a calendar, a missing one, and a bad day, list of days or zone', async () => {
     const { alice } = context;
     await call('POST /api/calendar/import', { as: alice, multipart: icsFile('hello', 'notes.txt'), status: 400, code: 'CALENDAR_FILE_INVALID' });
     await call('POST /api/calendar/import', { as: alice, multipart: {}, status: 400, code: 'CALENDAR_FILE_INVALID' });
     await call('GET /api/calendar/events', { as: alice, query: { date: '2026-02-30' }, status: 400, code: 'VALIDATION_FAILED' });
     await call('GET /api/calendar/events', { as: alice, query: { date: '2026-11-22', timeZone: '+05:30' }, status: 400, code: 'VALIDATION_FAILED' });
+    await call('GET /api/calendar/days', { as: alice, query: { dates: '2026-11-22,2026-02-30' }, status: 400, code: 'VALIDATION_FAILED' });
+    const tooMany = Array.from({ length: 201 }, (_, index) => new Date(Date.UTC(2026, 0, 1 + index)).toISOString().slice(0, 10)).join(',');
+    await call('GET /api/calendar/days', { as: alice, query: { dates: tooMany }, status: 400, code: 'VALIDATION_FAILED' });
   });
 });

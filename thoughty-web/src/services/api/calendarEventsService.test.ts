@@ -5,23 +5,25 @@ import { createCalendarEventsService } from './calendarEventsService';
 const ok = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
 
 describe('calendarEventsService', () => {
-  it('sums up, lists a day, imports a file and removes the imported events', async () => {
+  it('sums up, lists a day or several, imports a file and removes the imported events', async () => {
     const authFetch = vi.fn().mockImplementation(async () => ok({ events: [] }));
     const service = createCalendarEventsService(authFetch);
     const file = new File(['BEGIN:VCALENDAR'], 'calendar.ics', { type: 'text/calendar' });
 
     await service.summary();
     await expect(service.eventsOn('2026-11-22', 'Europe/Paris')).resolves.toEqual({ data: { events: [] }, error: null });
+    await service.eventsOnDays(['2026-11-20', '2026-11-22'], 'UTC');
     await service.importFile(file, 'Europe/Paris');
     await service.clear();
 
     expect(authFetch.mock.calls.map(([url, options]) => [url, options?.method])).toEqual([
       ['/api/calendar', undefined],
       ['/api/calendar/events?date=2026-11-22&timeZone=Europe%2FParis', undefined],
+      ['/api/calendar/days?dates=2026-11-20%2C2026-11-22&timeZone=UTC', undefined],
       ['/api/calendar/import?timeZone=Europe%2FParis', 'POST'],
       ['/api/calendar', 'DELETE'],
     ]);
-    const body = authFetch.mock.calls[2]?.[1]?.body as FormData;
+    const body = authFetch.mock.calls[3]?.[1]?.body as FormData;
     expect(body.get('file')).toBe(file);
   });
 

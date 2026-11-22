@@ -3,6 +3,7 @@ import type { components } from '../../generated/openapi';
 
 export type CalendarEvent = components['schemas']['CalendarEventResponseDto'];
 export type CalendarDay = components['schemas']['CalendarDayResponseDto'];
+export type CalendarDays = components['schemas']['CalendarDaysResponseDto'];
 export type CalendarSummary = components['schemas']['CalendarSummaryResponseDto'];
 export type CalendarImportResult = components['schemas']['CalendarImportResponseDto'];
 type CalendarClearResult = components['schemas']['SuccessResponseDto'];
@@ -17,6 +18,12 @@ export const createCalendarEventsService = (authFetch: AuthFetchFunction) => ({
   eventsOn(date: string, timeZone: string): Promise<ServiceResult<CalendarDay>> {
     const query = new URLSearchParams({ date, timeZone });
     return requestJson(authFetch(`/api/calendar/events?${query}`), 'calendarEventsLoadFailed');
+  },
+
+  /** The events of several days (`YYYY-MM-DD`) in the writer's time zone; only the days that have events come back. */
+  eventsOnDays(dates: readonly string[], timeZone: string): Promise<ServiceResult<CalendarDays>> {
+    const query = new URLSearchParams({ dates: dates.join(','), timeZone });
+    return requestJson(authFetch(`/api/calendar/days?${query}`), 'calendarEventsLoadFailed');
   },
 
   /** Sends a calendar file; times without a zone of their own are read in `timeZone`. */

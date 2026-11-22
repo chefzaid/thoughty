@@ -105,6 +105,33 @@ describePostgres('PostgreSQL imported calendar events', () => {
     await expect(summaries(writerId, '2027-11-23')).resolves.toEqual(['Later', 'Lina’s birthday']);
   });
 
+  it('lists several days at once as it lists each, leaving out the days without events', async () => {
+    await service.import(writerId, file(
+      ['UID:late', 'SUMMARY:Late dinner', 'DTSTART:20261122T231500Z', 'DTEND:20261122T234500Z'],
+      ['UID:trip', 'SUMMARY:Trip to Lyon', 'DTSTART;VALUE=DATE:20261121', 'DTEND;VALUE=DATE:20261124'],
+      ['UID:night', 'SUMMARY:Night train', 'DTSTART:20261121T220000Z', 'DTEND:20261122T060000Z'],
+      ['UID:yoga', 'SUMMARY:Yoga', 'DTSTART;TZID=Europe/Paris:20261102T190000', 'DTEND;TZID=Europe/Paris:20261102T200000', 'RRULE:FREQ=WEEKLY'],
+      ['UID:birthday', 'SUMMARY:Lina’s birthday', 'DTSTART;VALUE=DATE:19901123', 'RRULE:FREQ=YEARLY'],
+    ), 'Europe/Paris');
+    await service.import(otherId, file(['UID:other', 'SUMMARY:Not mine', 'DTSTART;VALUE=DATE:20261122']));
+    const dates = ['2026-11-23', '2026-11-20', '2026-11-22', '2026-11-30', '2026-11-22', '2026-11-21'];
+
+    const { days } = await service.eventsOnDays(writerId, dates, 'Europe/Paris');
+
+    expect(days.map((day) => day.date)).toEqual(['2026-11-21', '2026-11-22', '2026-11-23', '2026-11-30']);
+    for (const day of days) {
+      expect(day.events).toEqual((await service.eventsOn(writerId, day.date, 'Europe/Paris')).events);
+    }
+    expect(days.map((day) => day.events.map((event) => event.summary))).toEqual([
+      ['Trip to Lyon', 'Night train'],
+      ['Trip to Lyon', 'Night train'],
+      ['Lina’s birthday', 'Trip to Lyon', 'Late dinner', 'Yoga'],
+      ['Yoga'],
+    ]);
+    await expect(service.eventsOnDays(writerId, ['2026-11-20'], 'Europe/Paris')).resolves.toEqual({ days: [] });
+    await expect(service.eventsOnDays(otherId, dates)).resolves.toEqual({ days: [{ date: '2026-11-22', events: [expect.objectContaining({ summary: 'Not mine' })] }] });
+  });
+
   it('refuses an import past the limit and keeps what was there', async () => {
     const limit = jest.replaceProperty(dto, 'CALENDAR_EVENT_LIMIT', 2 as never);
     try {

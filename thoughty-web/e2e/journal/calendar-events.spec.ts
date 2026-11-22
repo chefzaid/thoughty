@@ -59,6 +59,22 @@ const TRIP: MockCalendarEvent = {
   repeats: false,
 };
 
+/** Timed one-off events on 22 November 2026, in UTC (an hour before Paris). */
+const timed = (id: number, summary: string, hour: number, location: string | null = null): MockCalendarEvent => ({
+  id,
+  uid: `${summary}@example`,
+  summary,
+  location,
+  allDay: false,
+  startsAt: `2026-11-22T${String(hour).padStart(2, '0')}:00:00.000Z`,
+  endsAt: `2026-11-22T${String(hour + 1).padStart(2, '0')}:00:00.000Z`,
+  startDate: null,
+  endDate: null,
+  repeats: false,
+});
+const YOGA: MockCalendarEvent = { ...timed(10, 'Yoga', 18), startsAt: '2026-11-02T18:00:00.000Z', endsAt: '2026-11-02T19:00:00.000Z', repeats: true, rule: { freq: 'WEEKLY', interval: 1 } };
+const entryOn = (id: number, date: string, content: string) => ({ id, date, index: 1, content, tags: [], visibility: 'private' as const, diaryId: 1 });
+
 async function expectNoAxeViolations(page: Page, selector: string) {
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
@@ -154,5 +170,78 @@ test.describe('Imported calendar', () => {
     await goToView(page, 'Journal', 'fr');
     await expect(page.getByRole('textbox', { name: 'Date de l’entrée' })).toBeVisible();
     await expect(events).toHaveCount(0);
+  });
+
+  test('shows each journal day’s events under its date from one request, the first three with the rest a click away', async ({ page }) => {
+    await setupMockApp(page, {
+      startAuthenticated: true,
+      calendarEvents: [TRIP, YOGA, timed(11, 'Standup', 8), timed(12, 'Lunch with Sam', 11, 'Canteen'), timed(13, 'Review', 14)],
+      initialEntries: [
+        entryOn(31, '2026-11-23', 'A Monday of rain.'),
+        entryOn(32, '2026-11-22', 'A busy Sunday.'),
+        entryOn(33, '2026-11-20', 'A quiet Friday.'),
+      ],
+    });
+    const dayRequests: string[] = [];
+    page.on('request', (request) => {
+      const url = new URL(request.url());
+      if (url.pathname === '/api/calendar/days') dayRequests.push(url.searchParams.get('dates') ?? '');
+    });
+    await page.goto('/journal');
+
+    const sunday = page.getByRole('article').filter({ hasText: 'A busy Sunday.' });
+    const sundayEvents = sunday.getByRole('region', { name: 'On your calendar' });
+    await expect(sundayEvents.getByRole('listitem')).toHaveText([
+      /^All day\s*Trip to Lyon$/,
+      /^9:00\s*–\s*10:00\s*AM\s*Standup$/,
+      /^12:00\s*–\s*1:00\s*PM\s*Lunch with Sam\s*Canteen$/,
+    ]);
+    await expect(sundayEvents.getByText('Lunch with Sam')).toHaveClass(/privacy-text/);
+    await expectNoAxeViolations(page, '.journal-day-events');
+    const more = sundayEvents.getByRole('button', { name: 'Show 1 more event' });
+    await expect(more).toHaveAttribute('aria-expanded', 'false');
+    await more.click();
+    await expect(sundayEvents.getByRole('listitem')).toHaveCount(4);
+    await expect(sundayEvents.getByRole('listitem').last()).toHaveText(/^3:00\s*–\s*4:00\s*PM\s*Review$/);
+    await expectNoAxeViolations(page, '.journal-day-events');
+    await sundayEvents.getByRole('button', { name: 'Show fewer events', expanded: true }).click();
+    await expect(sundayEvents.getByRole('listitem')).toHaveCount(3);
+
+    // The trip's last day and the weekly class on Monday; nothing on the Friday
+    const monday = page.getByRole('article').filter({ hasText: 'A Monday of rain.' });
+    await expect(monday.getByRole('region', { name: 'On your calendar' }).getByRole('listitem')).toHaveText([
+      /^All day\s*Trip to Lyon$/,
+      /^7:00\s*–\s*8:00\s*PM\s*Yoga$/,
+    ]);
+    await expect(monday.getByRole('img', { name: 'Repeats' })).toBeVisible();
+    await expect(page.getByRole('article').filter({ hasText: 'A quiet Friday.' }).getByRole('region')).toHaveCount(0);
+    // No Write about it in the journal: that is the composer's
+    await expect(monday.getByRole('button', { name: /Write about/ })).toHaveCount(0);
+    expect(dayRequests).toEqual(['2026-11-20,2026-11-22,2026-11-23']);
+  });
+
+  test('asks nothing for the journal’s days without an imported calendar', async ({ page }) => {
+    const dayRequests: string[] = [];
+    page.on('request', (request) => {
+      if (new URL(request.url()).pathname === '/api/calendar/days') dayRequests.push(request.url());
+    });
+    await setupMockApp(page, { startAuthenticated: true, initialEntries: [entryOn(41, '2026-11-22', 'A busy Sunday.')] });
+    await page.goto('/journal');
+    await expect(page.getByText('A busy Sunday.')).toBeVisible();
+    await expect(page.getByRole('article').getByRole('region')).toHaveCount(0);
+    expect(dayRequests).toEqual([]);
+  });
+
+  test('shows a journal day’s events in French in the light theme', async ({ page }) => {
+    await setupMockApp(page, {
+      startAuthenticated: true,
+      calendarEvents: [TRIP],
+      config: { language: 'fr', theme: 'light' },
+      initialEntries: [entryOn(41, '2026-11-22', 'Un dimanche chargé.')],
+    });
+    await page.goto('/journal');
+    const day = page.getByRole('article').filter({ hasText: 'Un dimanche chargé.' }).getByRole('region', { name: 'Dans votre agenda' });
+    await expect(day.getByRole('listitem')).toHaveText([/^Toute la journée\s*Trip to Lyon$/]);
+    await expectNoAxeViolations(page, '.journal-day-events');
   });
 });
