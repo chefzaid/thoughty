@@ -133,6 +133,12 @@ describe('JournalView calendar layout', () => {
     expect(screen.getByTestId('entry-reader')).toHaveAttribute('data-entry-id', '12');
   });
 
+  it('follows a save whose words carry a sign of crisis with the support card above the comfort reads offer', () => {
+    renderJournal(createProps({ savedEntry: { id: 31, mood: null, crisisSignal: true } }), '?diary=1');
+    const support = screen.getByTestId('support-resources');
+    expect(support.compareDocumentPosition(screen.getByTestId('comfort-reads')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('leaves the comfort reads offer off when the writer turned it off', () => {
     const props = createProps();
     renderJournal({ ...props, config: { ...props.config, comfortReads: false } });

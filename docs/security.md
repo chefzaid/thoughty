@@ -158,6 +158,7 @@ AI is optional and uses OpenRouter. A user's personal key, when set, replaces th
 | Audio transcription | the one selected audio attachment, up to 5 MB |
 
 - Every prompt treats journal text as untrusted data: it is wrapped in tagged blocks (`ai/untrusted-content.ts`, which escapes a closing tag inside the text) and the system prompt tells the model to ignore instructions inside them. New prompts must use the same helper.
+- The entry chat's system prompt carries `COMPANION_SAFETY_INSTRUCTIONS` (`ai/companion-safety.ts`): the companion never acts as a therapist, and on signs of suicide, self-harm or danger it stops analyzing and sends the writer to a crisis line, emergency services or someone they trust, without giving phone numbers (the web app lists vetted ones itself). The web app's crisis check (`utils/crisisSignals.ts`) runs in the browser only and sends nothing.
 - Mood readings with clinical labels are discarded, and so is a weekly reflection whose summary or question uses one (a theme that does is dropped). Applying a tag plan does not call the provider again.
 - Usage rows store metadata only (model, tokens, cost, time), never prompts or completions.
 

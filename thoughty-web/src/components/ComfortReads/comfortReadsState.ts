@@ -3,10 +3,12 @@ export const VERY_LOW_MOOD = 1;
 
 const OFFERED_STORAGE_PREFIX = 'thoughty.comfortReadsOfferedOn.';
 
-/** The entry the composer just saved, as the offer needs it. A new object for every save. */
+/** The entry the composer just saved, as the offers after a save need it. A new object for every save. */
 export interface SavedEntry {
   readonly id: number;
   readonly mood: number | null;
+  /** Whether its title or text carries a sign of crisis (`utils/crisisSignals`), which calls for the support card. */
+  readonly crisisSignal?: boolean;
 }
 
 /** Whether a save calls for the offer: a very low mood, with the setting on. */

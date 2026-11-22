@@ -14,6 +14,9 @@ test.describe('Contact and support page', () => {
     await expect(panel).toContainText('No inbox receives messages from this page yet');
     await expect(page.locator('main').locator('form, input, textarea, select')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Which formats are available?' })).toBeVisible();
+    const support = page.getByRole('region', { name: "You don't have to face this alone" });
+    await expect(support.getByRole('link', { name: '3114' })).toHaveAttribute('href', 'tel:3114');
+    await expect(support).toContainText('not a replacement for a doctor');
 
     await panel.getByRole('button', { name: 'Open the community board' }).click();
     await expect(page).toHaveURL(/\/feedback$/);
@@ -29,6 +32,7 @@ test.describe('Contact and support page', () => {
     const panel = page.getByRole('region', { name: 'Les messages ne peuvent pas encore être envoyés d’ici' });
     await expect(panel).toContainText('Aucune boîte de réception ne reçoit encore les messages de cette page');
     await expect(panel.getByRole('button', { name: 'Ouvrir le tableau de la communauté' })).toBeVisible();
+    await expect(page.getByRole('region', { name: "De l'aide est là pour vous" })).toContainText('Royaume-Uni et Irlande');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   });
 });

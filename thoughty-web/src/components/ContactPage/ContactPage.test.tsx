@@ -63,6 +63,16 @@ describe('ContactPage', () => {
     expect(panel).toHaveTextContent('No inbox receives messages from this page yet.');
   });
 
+  it('always lists the crisis lines', () => {
+    renderPage();
+
+    const section = screen.getByRole('region', { name: 'supportTitle' });
+    expect(section).toHaveTextContent('supportIntro');
+    expect(section).toHaveTextContent('supportNotTherapy');
+    expect(screen.getByRole('link', { name: '3114' })).toHaveAttribute('href', 'tel:3114');
+    expect(screen.getByRole('link', { name: 'findahelpline.com' })).toHaveAttribute('href', 'https://findahelpline.com');
+  });
+
   it('opens the community board from the panel', async () => {
     const user = userEvent.setup();
     const onOpenFeedback = vi.fn();

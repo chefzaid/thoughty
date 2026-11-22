@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect, useCallback, useId } from 'react';
 import { useDialogFocus } from '../../hooks/useDialogFocus';
 import type { Entry } from '../../types';
+import { hasCrisisSignal } from '../../utils/crisisSignals';
 import { downloadBlob } from '../../utils/downloadFile';
 import { scrollBehavior } from '../../utils/motion';
 import { mutedTextClass } from '../../utils/tintedText';
 import type { TranslationParams } from '../../utils/translations';
+import SupportResourcesCard from '../SupportResources/SupportResourcesCard';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -67,6 +69,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [error, setError] = useState('');
+  const [supportClosed, setSupportClosed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -87,6 +90,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
     setMessages([]);
     setInput('');
     setError('');
+    setSupportClosed(false);
     setLoading(false);
     setHistoryLoading(true);
 
@@ -107,10 +111,17 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
     };
   }, [entry.id, isOpen, onLoadHistory]);
 
+  // The writer's own words, never the AI's, call for the support resources
+  const supportCalledFor = !supportClosed && hasCrisisSignal(
+    entry.title,
+    entry.content,
+    ...messages.filter((message) => message.role === 'user').map((message) => message.content),
+  );
+
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView?.({ behavior: scrollBehavior() });
-  }, [messages, loading, historyLoading]);
+  }, [messages, loading, historyLoading, supportCalledFor]);
 
   // The message field is disabled while the history loads, which drops focus out of the dialog;
   // bring it back to the field once it can be typed in, unless the reader moved on inside the dialog.
@@ -274,6 +285,9 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
             }`}>
               {error}
             </div>
+          )}
+          {supportCalledFor && (
+            <SupportResourcesCard onClose={() => setSupportClosed(true)} theme={theme} t={t} headingLevel={4} />
           )}
           <div ref={messagesEndRef} />
         </div>

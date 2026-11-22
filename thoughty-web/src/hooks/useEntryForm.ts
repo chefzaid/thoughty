@@ -9,6 +9,7 @@ import { storePlacedFiles } from '../utils/inlineImages';
 import { useApiServices } from './useApiServices';
 import { useEntryTagSuggestions } from './useEntryTagSuggestions';
 import type { SavedEntry } from '../components/ComfortReads/comfortReadsState';
+import { hasCrisisSignal } from '../utils/crisisSignals';
 import { useFeatureFlag } from '../components/FeatureFlags/featureFlags';
 import { useComposerDraftSync } from '../components/ComposerDraft/useComposerDraftSync';
 import type { ComposerDraftFields } from '../services/api/composerDraftService';
@@ -167,7 +168,7 @@ export const useEntryForm = (
       }
     }
 
-    setSavedEntry({ id: result.entryId, mood });
+    setSavedEntry({ id: result.entryId, mood, crisisSignal: hasCrisisSignal(title, newEntryText) });
     onDraftPublished();
     resetEntryForm();
     onSuccess();

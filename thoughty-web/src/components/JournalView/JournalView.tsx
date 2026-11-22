@@ -31,6 +31,7 @@ import EntryReader from '../EntryReader/EntryReader';
 import ReadEntriesButton from '../EntryReader/ReadEntriesButton';
 import { useEntryReaderRoute } from '../EntryReader/useEntryReaderRoute';
 import { readerScopeFromList, readerScopeOfMonth } from '../../services/api/entryReaderService';
+import SupportAfterSave from '../SupportResources/SupportAfterSave';
 import ComfortReadsCard from '../ComfortReads/ComfortReadsCard';
 import type { SavedEntry } from '../ComfortReads/comfortReadsState';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
@@ -229,6 +230,8 @@ function JournalView({
       </div>
       {composerSeed.dialog}
       {peopleCheck.dialog}
+
+      <SupportAfterSave saved={savedEntry} theme={theme} t={t} />
 
       <ComfortReadsCard
         saved={savedEntry}

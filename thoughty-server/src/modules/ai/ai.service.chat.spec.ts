@@ -2,6 +2,7 @@ import { BadGatewayException, BadRequestException } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { AiServiceTestBed, createAiServiceTestBed } from './ai-service.test-helpers';
 import { UNTRUSTED_CONTENT_INSTRUCTION } from './untrusted-content';
+import { COMPANION_SAFETY_INSTRUCTIONS } from './companion-safety';
 
 describe('AiService', () => {
   let service: AiService;
@@ -103,6 +104,22 @@ describe('AiService', () => {
         /\n<journal_entry>\nToday I felt overwhelmed by all the tasks at work\.\n<\/journal_entry>$/,
       );
       expect(body.messages.slice(1)).toEqual(chatDto.messages);
+    });
+
+    it('tells the companion it is no therapist and how to answer a writer in crisis', async () => {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ choices: [{ message: { content: 'Please reach out now.' } }] }),
+      });
+
+      await service.chat(1, chatDto);
+
+      const system = JSON.parse(fetchMock.mock.calls[0][1].body as string).messages[0].content as string;
+      expect(system).toContain(COMPANION_SAFETY_INSTRUCTIONS);
+      expect(COMPANION_SAFETY_INSTRUCTIONS).toMatch(/never act as one/);
+      expect(COMPANION_SAFETY_INSTRUCTIONS).toMatch(/suicide, self-harm/);
+      // The rules come before the entry, which stays the last block of the prompt
+      expect(system.indexOf(COMPANION_SAFETY_INSTRUCTIONS)).toBeLessThan(system.indexOf('<journal_entry>'));
     });
 
     it('updates an existing persisted history when the chat succeeds', async () => {

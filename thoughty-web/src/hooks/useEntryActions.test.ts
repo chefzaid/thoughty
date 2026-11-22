@@ -205,7 +205,7 @@ describe("useEntryActions", () => {
       await act(async () => {
         await result.current.handleSubmit(mockEvent);
       });
-      expect(result.current.savedEntry).toEqual({ id: 42, mood: 1 });
+      expect(result.current.savedEntry).toEqual({ id: 42, mood: 1, crisisSignal: false });
 
       // A save that fails leaves the last saved entry as it was
       const saved = result.current.savedEntry;
@@ -217,6 +217,24 @@ describe("useEntryActions", () => {
         await result.current.handleSubmit(mockEvent);
       });
       expect(result.current.savedEntry).toBe(saved);
+    });
+
+    it("handleSubmit marks a saved entry whose title or text carries a sign of crisis, for the support card", async () => {
+      const createEntry = vi.fn().mockResolvedValue({ success: true, entryId: 43 });
+      await createEntriesServiceMock({ createEntry });
+      const { result } = renderHook(() =>
+        useEntryForm({ defaultVisibility: "private" }, 1, mockOnSuccess),
+      );
+
+      act(() => {
+        result.current.setTitle("Je n'ai plus envie de vivre");
+        result.current.setNewEntryText("Une longue nuit.");
+        result.current.setTags(["days"]);
+      });
+      await act(async () => {
+        await result.current.handleSubmit(mockEvent);
+      });
+      expect(result.current.savedEntry).toEqual({ id: 43, mood: null, crisisSignal: true });
     });
 
     it("handleSubmit sends no title or time when they are left empty", async () => {

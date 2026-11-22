@@ -1,4 +1,5 @@
 import Footer from '../Footer/Footer';
+import SupportResourceList from '../SupportResources/SupportResourceList';
 import '../IntroPage/IntroPage.css';
 import './ContactPage.css';
 
@@ -49,6 +50,18 @@ function ContactPage({ theme, t, onBackHome, onOpenFeedback }: Readonly<ContactP
               {t('contactOpenFeedback')}
             </button>
           </section>
+        </section>
+
+        <section className="landing-section contact-support" aria-labelledby="contact-support-title">
+          <div className="section-heading">
+            <p className="section-kicker">{t('contactSupportKicker')}</p>
+            <h2 id="contact-support-title">{t('supportTitle')}</h2>
+          </div>
+          <div className="contact-panel">
+            <p>{t('supportIntro')}</p>
+            <SupportResourceList t={t} className="contact-support-list" />
+            <p className="contact-support-note">{t('supportNotTherapy')}</p>
+          </div>
         </section>
 
         <section className="landing-section contact-guides">
