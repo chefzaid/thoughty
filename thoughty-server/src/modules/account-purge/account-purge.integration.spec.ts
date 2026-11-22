@@ -88,6 +88,7 @@ describePostgres('PostgreSQL account purge', () => {
     );
     await dataSource.query(`INSERT INTO memoir_programs (user_id, diary_id, delivery_weekday, next_delivery_at) VALUES ($1, $2, 1, NOW())`, [userId, diaryId]);
     await dataSource.query(`INSERT INTO memoir_answers (user_id, question_id, entry_id) VALUES ($1, 'q1', $2)`, [userId, entryId]);
+    await dataSource.query(`INSERT INTO memoir_photo_answers (user_id, entry_id) VALUES ($1, $2)`, [userId, entryId]);
     await dataSource.query(
       `INSERT INTO year_review_moods (user_id, diary_id, year, months, summary, analyzed_entries) VALUES ($1, $2, 2026, '[]', 'Calm', 1)`,
       [userId, diaryId],

@@ -187,6 +187,9 @@ export const API_ERROR_MESSAGES = {
   MEMOIR_ANSWER_EMPTY: 'Write an answer or attach a recording',
   MEMOIR_ALREADY_ANSWERED: 'This question already has an answer',
   MEMOIR_NO_OPEN_QUESTION: 'This week has no unanswered question to set aside',
+  MEMOIR_PHOTO_EMPTY: 'Tell what is happening in the photo',
+  MEMOIR_PHOTO_NOT_IMAGE: 'A photo story starts from a JPEG, PNG, GIF or WebP picture',
+  MEMOIR_PHOTO_IN_USE: 'This picture is already on an entry',
 
   // The opt-in emails ("On this day" and the monthly recap).
   ON_THIS_DAY_UNSUBSCRIBE_INVALID: 'This unsubscribe link is not valid',

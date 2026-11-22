@@ -14,6 +14,7 @@ describe('MemoirService', () => {
   let userRepository: Record<string, jest.Mock>;
   let diariesService: Record<string, jest.Mock>;
   let emailService: Record<string, jest.Mock>;
+  let photoAnswerRepository: Record<string, jest.Mock>;
   let service: MemoirService;
 
   const program = (overrides: Record<string, unknown> = {}) => ({
@@ -59,6 +60,7 @@ describe('MemoirService', () => {
     userRepository = { findOne: jest.fn().mockResolvedValue({ id: 3, email: 'writer@example.com', emailVerified: true }) };
     diariesService = { create: jest.fn().mockResolvedValue({ id: 11 }), findByName: jest.fn().mockResolvedValue(null) };
     emailService = { isConfigured: jest.fn().mockReturnValue(true) };
+    photoAnswerRepository = { find: jest.fn().mockResolvedValue([]) };
     service = new MemoirService(
       programRepository as never,
       answerRepository as never,
@@ -67,6 +69,7 @@ describe('MemoirService', () => {
       userRepository as never,
       diariesService as never,
       emailService as never,
+      photoAnswerRepository as never,
     );
   });
 
@@ -136,6 +139,27 @@ describe('MemoirService', () => {
       expect(overview.chapters[0].questions[1].answer).toBeNull();
       expect(overview.progress).toEqual({ answered: 1, total: 52, words: 302, estimatedPages: 2 });
       expect(answerRepository.find).toHaveBeenCalledWith(expect.objectContaining({ where: { userId: 3 } }));
+    });
+
+    it('lists the photo stories newest first and counts their words without the photo, the binned and the locked', async () => {
+      programRepository.findOne.mockResolvedValue(program());
+      photoAnswerRepository.find.mockResolvedValue([
+        { entryId: 95, createdAt: new Date('2026-10-12T09:00:00Z'), entry: { id: 95, content: '### What is happening here?\n\n![Bakery](attachment:4)\n\nGrandpa opens shop' } },
+        { entryId: 94, createdAt: new Date('2026-10-11T09:00:00Z'), entry: { id: 94, userId: 3, content: 'secret words', isLocked: true } },
+        { entryId: 93, createdAt: new Date('2026-10-10T09:00:00Z'), entry: null },
+      ]);
+
+      const overview = await service.getOverview(3);
+
+      expect(overview.photoAnswers).toEqual([
+        { entryId: 95, answeredAt: '2026-10-12T09:00:00.000Z' },
+        { entryId: 94, answeredAt: '2026-10-11T09:00:00.000Z' },
+      ]);
+      expect(overview.progress).toEqual({ answered: 0, total: 52, words: 3, estimatedPages: 1 });
+      expect(photoAnswerRepository.find).toHaveBeenCalledWith(expect.objectContaining({
+        where: { userId: 3 },
+        order: { createdAt: 'DESC', entryId: 'DESC' },
+      }));
     });
 
     it('reports that emails cannot arrive without a verified address or mail server', async () => {

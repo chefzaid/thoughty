@@ -67,5 +67,6 @@ export function memoirOverview(
     chapters,
     themes: memoirThemes,
     progress: { answered: 1, total: 3, words: 1200, estimatedPages: 5 },
+    photoAnswers: [],
   };
 }

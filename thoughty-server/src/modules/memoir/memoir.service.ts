@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Diary, MemoirAnswer, MemoirProgram, MemoirSnooze, User } from '@/database/entities';
+import { Diary, MemoirAnswer, MemoirPhotoAnswer, MemoirProgram, MemoirSnooze, User } from '@/database/entities';
 import { EmailService } from '@/modules/auth/services/email.service';
 import { DiariesService } from '@/modules/diaries';
 import type {
@@ -59,16 +59,19 @@ export class MemoirService {
     private readonly userRepository: Repository<User>,
     private readonly diariesService: DiariesService,
     private readonly emailService: EmailService,
+    @InjectRepository(MemoirPhotoAnswer)
+    private readonly photoAnswerRepository: Repository<MemoirPhotoAnswer>,
   ) {}
 
   async getOverview(userId: number): Promise<MemoirOverviewDto> {
-    const [program, answers] = await Promise.all([
+    const [program, answers, photoAnswers] = await Promise.all([
       this.programRepository.findOne({ where: { userId } }),
       this.loadAnswers(userId),
+      this.loadPhotoAnswers(userId),
     ]);
     const answersById = new Map(answers.map((answer) => [answer.questionId, answer]));
     // Every answer is in the memoir diary, so its words count even when its theme was left out since
-    const words = answers.reduce((total, answer) => total + countAnswerWords(answer.content), 0);
+    const words = [...answers, ...photoAnswers].reduce((total, answer) => total + countAnswerWords(answer.content), 0);
     const themes = program?.themes ?? [];
     const questions = memoirQuestionsFor(themes);
     const answered = questions.filter((question) => answersById.has(question.id)).length;
@@ -101,6 +104,7 @@ export class MemoirService {
         words,
         estimatedPages: Math.ceil(words / WORDS_PER_PAGE),
       },
+      photoAnswers: photoAnswers.map((answer) => ({ entryId: answer.entryId, answeredAt: answer.createdAt.toISOString() })),
     };
   }
 
@@ -322,6 +326,23 @@ export class MemoirService {
             content: isEntryWithheld(entry) ? '' : entry.content,
           }]
         : [],
+    );
+  }
+
+  /** Photo stories, newest first, read like answers: those in the recycle bin left out, locked ones without words. */
+  private async loadPhotoAnswers(userId: number): Promise<Omit<AnswerSummary, 'questionId'>[]> {
+    const answers = await this.photoAnswerRepository.find({
+      where: { userId },
+      relations: { entry: true },
+      select: {
+        entryId: true,
+        createdAt: true,
+        entry: { id: true, userId: true, content: true, isLocked: true, diaryLocked: true },
+      },
+      order: { createdAt: 'DESC', entryId: 'DESC' },
+    });
+    return answers.flatMap(({ entry, entryId, createdAt }) =>
+      entry ? [{ entryId, createdAt, content: isEntryWithheld(entry) ? '' : entry.content }] : [],
     );
   }
 }

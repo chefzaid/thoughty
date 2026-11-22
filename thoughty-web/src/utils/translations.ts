@@ -2,6 +2,7 @@ import { apiErrorsTranslations, type ApiErrorTranslationKey } from "./translatio
 import { appImportTranslations, type AppImportTranslationKey } from "./translations.appImport";
 import { memoirTranslations, type MemoirTranslationKey } from "./translations.memoir";
 import { memoirSimpleTranslations, type MemoirSimpleTranslationKey } from "./translations.memoirSimple";
+import { memoirPhotosTranslations, type MemoirPhotosTranslationKey } from "./translations.memoirPhotos";
 import { welcomeTranslations, type WelcomeTranslationKey } from "./translations.welcome";
 import { publicLibraryTranslations, type PublicLibraryTranslationKey } from "./translations.publicLibrary";
 import { reviewTranslations, type ReviewTranslationKey } from "./translations.review";
@@ -89,6 +90,7 @@ export type TranslationKey =
   | AppImportTranslationKey
   | MemoirTranslationKey
   | MemoirSimpleTranslationKey
+  | MemoirPhotosTranslationKey
   | WelcomeTranslationKey
   | PublicLibraryTranslationKey
   | ReviewTranslationKey
@@ -181,6 +183,7 @@ export const translations: Translations = {
     ...appImportTranslations.en,
     ...memoirTranslations.en,
     ...memoirSimpleTranslations.en,
+    ...memoirPhotosTranslations.en,
     ...welcomeTranslations.en,
     ...publicLibraryTranslations.en,
     ...reviewTranslations.en,
@@ -266,6 +269,7 @@ export const translations: Translations = {
     ...appImportTranslations.fr,
     ...memoirTranslations.fr,
     ...memoirSimpleTranslations.fr,
+    ...memoirPhotosTranslations.fr,
     ...welcomeTranslations.fr,
     ...publicLibraryTranslations.fr,
     ...reviewTranslations.fr,

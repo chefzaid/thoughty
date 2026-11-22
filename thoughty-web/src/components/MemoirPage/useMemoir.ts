@@ -3,9 +3,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useMemoirService } from '../../hooks/useMemoirService';
 import type {
+  AnswerMemoirPhotoRequest,
   AnswerMemoirRequest,
   MemoirAnswerResult,
   MemoirOverview,
+  MemoirPhotoAnswerResult,
   ServiceResult,
   StartMemoirRequest,
   UpdateMemoirRequest,
@@ -49,6 +51,12 @@ export function useMemoir() {
     return result;
   }, [memoirService, refresh]);
 
+  const answerPhoto = useCallback(async (request: AnswerMemoirPhotoRequest): Promise<ServiceResult<MemoirPhotoAnswerResult>> => {
+    const result = await memoirService.answerPhoto(request);
+    if (result.data) await refresh();
+    return result;
+  }, [memoirService, refresh]);
+
   const leave = useCallback(async () => {
     const result = await memoirService.leave();
     if (result.data) await refresh();
@@ -65,6 +73,7 @@ export function useMemoir() {
     skip,
     snooze,
     answer,
+    answerPhoto,
     leave,
   };
 }

@@ -62,4 +62,22 @@ describe('memoirService', () => {
 
     expect(result).toEqual({ data: null, error: 'This question already has an answer' });
   });
+
+  it('sends a photo story as JSON, and reads a refusal by its code, else its own message', async () => {
+    const authFetch = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ entryId: 12 }), { status: 201 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ statusCode: 409, code: 'MEMOIR_PHOTO_IN_USE', message: 'In use' }), { status: 409 }))
+      .mockResolvedValueOnce(new Response('', { status: 500 }));
+    const service = createMemoirService(authFetch);
+    const request = { attachmentId: 7, caption: 'The bakery', text: 'Grandpa opens his shop.', chapterId: 'family' as const };
+
+    await expect(service.answerPhoto(request)).resolves.toEqual({ data: { entryId: 12 }, error: null });
+    await expect(service.answerPhoto(request)).resolves.toEqual({ data: null, error: 'apiError_MEMOIR_PHOTO_IN_USE' });
+    await expect(service.answerPhoto(request)).resolves.toEqual({ data: null, error: 'memoirPhotoSaveError' });
+    expect(authFetch).toHaveBeenCalledWith('/api/memoir/photo-answers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+  });
 });

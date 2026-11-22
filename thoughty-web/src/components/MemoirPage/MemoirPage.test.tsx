@@ -15,6 +15,7 @@ const memoirService = {
   skip: vi.fn(),
   snooze: vi.fn(),
   answer: vi.fn(),
+  answerPhoto: vi.fn(),
   leave: vi.fn(),
 };
 // One stand-in for every authenticated service the page uses: attachments and life eras
@@ -72,6 +73,7 @@ const overview = (programOverrides: Partial<MemoirProgram> | null = {}, answered
   chapters,
   themes: memoirThemes,
   progress: { answered, total: 3, words: 1200, estimatedPages: 5 },
+  photoAnswers: [],
 });
 
 const diaries = [
@@ -321,6 +323,34 @@ describe('MemoirPage', () => {
     expect(screen.getByText('memoirComplete')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'memoirMakeBook' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'memoirAnswerQuestion: How did you find your work?' })).toBeDisabled();
+    // Without its diary, the memoir takes no photo story either
+    expect(screen.queryByRole('heading', { name: 'memoirPhotoTitle' })).not.toBeInTheDocument();
+  });
+
+  it('saves a photo story, confirms it and refreshes the memoir, or says why it was refused', async () => {
+    URL.createObjectURL = vi.fn(() => 'blob:photo');
+    URL.revokeObjectURL = vi.fn();
+    attachmentsService.uploadAttachment.mockResolvedValue({ id: 57 });
+    memoirService.answerPhoto
+      .mockResolvedValueOnce({ data: null, error: 'apiError_MEMOIR_PHOTO_NOT_IMAGE' })
+      .mockResolvedValueOnce({ data: null, error: null })
+      .mockResolvedValueOnce({ data: { entryId: 96 }, error: null });
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'memoirPhotoStart' }));
+    fireEvent.change(document.querySelector('.memoir-photo-form input[type="file"]') as HTMLInputElement, {
+      target: { files: [new File(['jpeg'], 'wedding.jpg', { type: 'image/jpeg' })] },
+    });
+    fireEvent.change(screen.getByLabelText('memoirPhotoQuestion'), { target: { value: 'My parents marry.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'memoirPhotoSave' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('apiError_MEMOIR_PHOTO_NOT_IMAGE');
+    fireEvent.click(screen.getByRole('button', { name: 'memoirPhotoSave' }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('memoirPhotoSaveError'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'memoirPhotoSave' }));
+    expect(await screen.findByText('memoirPhotoSaved')).toBeInTheDocument();
+    expect(memoirService.answerPhoto).toHaveBeenLastCalledWith({ attachmentId: 57, text: 'My parents marry.' });
+    expect(memoirService.fetchOverview).toHaveBeenCalledTimes(2);
   });
 
   it('saves settings, pauses and resumes, and stops the memoir after confirmation', async () => {

@@ -13,6 +13,9 @@ export type StartMemoirRequest = components['schemas']['StartMemoirDto'];
 export type UpdateMemoirRequest = components['schemas']['UpdateMemoirDto'];
 export type AnswerMemoirRequest = components['schemas']['AnswerMemoirQuestionDto'];
 export type MemoirAnswerResult = components['schemas']['MemoirAnswerResultDto'];
+export type MemoirAnswerRef = components['schemas']['MemoirAnswerRefDto'];
+export type AnswerMemoirPhotoRequest = components['schemas']['AnswerMemoirPhotoDto'];
+export type MemoirPhotoAnswerResult = components['schemas']['MemoirPhotoAnswerResultDto'];
 export type MemoirLeft = components['schemas']['MemoirLeftDto'];
 export type MemoirQuestionBank = components['schemas']['MemoirQuestionBankDto'];
 export type MemoirBankChapter = components['schemas']['MemoirBankChapterDto'];
@@ -60,6 +63,14 @@ export const createMemoirService = (authFetch: (url: string, options?: RequestIn
     return requestJson(
       authFetch('/api/memoir/answers', { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(request) }),
       'Failed to save the answer',
+    );
+  },
+
+  /** A photo prompt answered: the uploaded photo and its story become a private entry in the memoir diary. */
+  answerPhoto(request: AnswerMemoirPhotoRequest): Promise<ServiceResult<MemoirPhotoAnswerResult>> {
+    return requestJson(
+      authFetch('/api/memoir/photo-answers', { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(request) }),
+      'memoirPhotoSaveError',
     );
   },
 });

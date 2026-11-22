@@ -130,6 +130,7 @@ export const CONTRACT_SUITES = {
   ],
   'app-import': ['POST /api/io/import/entries', 'POST /api/io/import/attachments'],
   media: ['POST /api/attachments/{id}/poster'],
+  'memoir-photos': ['POST /api/memoir/photo-answers'],
   rereading: [
     'PUT /api/entries/{id}/reread-reminder',
     'DELETE /api/entries/{id}/reread-reminder',

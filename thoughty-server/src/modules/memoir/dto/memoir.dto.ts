@@ -242,7 +242,7 @@ export class MemoirProgressDto {
   @ApiProperty({ example: 52, description: "Questions in the writer's memoir: the year of questions and the chosen themes" })
   total!: number;
 
-  @ApiProperty({ example: 8400, description: 'Words written in the answers, question headings excluded' })
+  @ApiProperty({ example: 8400, description: 'Words written in the answers and photo stories, question headings and photos excluded' })
   words!: number;
 
   @ApiProperty({ example: 34, description: 'Approximate printed pages at 250 words per page' })
@@ -261,6 +261,9 @@ export class MemoirOverviewDto {
 
   @ApiProperty({ type: MemoirProgressDto })
   progress!: MemoirProgressDto;
+
+  @ApiProperty({ type: [MemoirAnswerRefDto], description: 'The photo stories told from photo prompts, newest first; those in the recycle bin are left out' })
+  photoAnswers!: MemoirAnswerRefDto[];
 }
 
 export class MemoirAnswerResultDto {

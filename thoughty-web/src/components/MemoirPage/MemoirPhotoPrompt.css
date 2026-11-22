@@ -1,0 +1,45 @@
+.memoir-photo-form {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.memoir-photo-chosen {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  justify-items: start;
+}
+
+.memoir-photo-preview {
+  max-width: 100%;
+  max-height: 16rem;
+  border-radius: 0.5rem;
+  object-fit: contain;
+}
+
+.memoir-photo-chapter {
+  margin-top: 0.25rem;
+}
+
+.memoir-photo-stories-heading {
+  margin: 1rem 0 0.4rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.memoir-photo-stories {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.memoir-photo-stories li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}

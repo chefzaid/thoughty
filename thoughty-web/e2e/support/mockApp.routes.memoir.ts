@@ -9,7 +9,8 @@ import {
   type MockMemoirState,
 } from './mockApp.memoir';
 import { mockDiary } from './mockApp.diaries';
-import { fulfillJson, type RouteContext } from './mockApp.route-utils';
+import { findUnplacedAttachment, placeInlineImages } from './mockApp.routes.attachments';
+import { fulfillApiError, fulfillJson, type RouteContext } from './mockApp.route-utils';
 import { sortEntries } from './mockApp.shared';
 
 /** The questions of the memoir with its chosen themes, in life order. */
@@ -36,9 +37,11 @@ function overview({ state }: RouteContext) {
   const memoir = state.memoir;
   const schedule = scheduleOf(memoir);
   const answered = schedule.filter((question) => memoir.answers[question.id]).length;
-  const words = Object.values(memoir.answers).reduce((total, answer) => {
+  // Words after the question heading, photos left out, as `countAnswerWords` counts them
+  const words = [...Object.values(memoir.answers), ...memoir.photoAnswers].reduce((total, answer) => {
     const entry = state.entries.find((candidate) => candidate.id === answer.entryId);
-    return total + (entry?.content.split('\n\n').slice(1).join(' ').split(/\s+/).filter(Boolean).length ?? 0);
+    const body = entry?.content.split('\n\n').slice(1).join(' ').replaceAll(/!\[[^\]]*\]\(attachment:[^)]*\)/g, ' ');
+    return total + (body?.split(/\s+/).filter(Boolean).length ?? 0);
   }, 0);
 
   return {
@@ -53,6 +56,8 @@ function overview({ state }: RouteContext) {
     themes: MOCK_MEMOIR_CHAPTERS.filter((chapter) => MOCK_MEMOIR_THEME_IDS.includes(chapter.id))
       .map((chapter) => ({ id: chapter.id, title: chapter.title, questionCount: chapter.questions.length })),
     progress: { answered, total: schedule.length, words, estimatedPages: Math.ceil(words / 250) },
+    // Newest first, leaving out those whose entry is gone
+    photoAnswers: memoir.photoAnswers.filter((answer) => state.entries.some((entry) => entry.id === answer.entryId)).reverse(),
   };
 }
 
@@ -168,5 +173,45 @@ export async function handleMemoirRoutes(context: RouteContext): Promise<boolean
     return true;
   }
 
+  if (pathname === '/api/memoir/photo-answers' && method === 'POST') {
+    await answerPhoto(context);
+    return true;
+  }
+
   return false;
+}
+
+const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const CHAPTER_TITLES: Record<string, string> = Object.fromEntries(MOCK_MEMOIR_CHAPTERS.map((chapter) => [chapter.id, chapter.title.en]));
+
+/** A photo story, refused and saved as `MemoirPhotoAnswersService` does it. */
+async function answerPhoto({ route, request, state }: RouteContext): Promise<void> {
+  const memoir = state.memoir;
+  const payload = request.postDataJSON() as { attachmentId: number; text: string; caption?: string; chapterId?: string; eraId?: number };
+  memoir.lastPhotoPayload = payload;
+  if (!memoir.program) return fulfillApiError(route, 404, 'MEMOIR_NOT_STARTED', 'The guided memoir has not been started');
+  if (!payload.text.trim()) return fulfillApiError(route, 400, 'MEMOIR_PHOTO_EMPTY', 'Tell what is happening in the photo');
+  const { attachment, onEntry } = findUnplacedAttachment(state, payload.attachmentId);
+  if (onEntry) return fulfillApiError(route, 409, 'MEMOIR_PHOTO_IN_USE', 'This picture is already on an entry');
+  if (!attachment) return fulfillApiError(route, 404, 'ATTACHMENT_NOT_FOUND', 'Attachment not found');
+  if (!PHOTO_TYPES.includes(attachment.mimetype)) {
+    return fulfillApiError(route, 400, 'MEMOIR_PHOTO_NOT_IMAGE', 'A photo story starts from a JPEG, PNG, GIF or WebP picture');
+  }
+
+  const entryId = state.nextEntryId++;
+  const alt = (payload.caption ?? '').replaceAll(/\s+/g, ' ').trim().replaceAll(/([\\[\]])/g, '\\$1');
+  const entry = {
+    id: entryId,
+    date: '2026-10-19',
+    index: 1,
+    content: `### What is happening here?\n\n![${alt}](attachment:${attachment.id})\n\n${payload.text.trim()}`,
+    tags: [payload.chapterId ? CHAPTER_TITLES[payload.chapterId] ?? 'Photos' : 'Photos', ...state.lifeEras.filter((era) => era.id === payload.eraId).map((era) => era.name)],
+    visibility: 'private' as const,
+    format: 'markdown' as const,
+    diaryId: memoir.program.diaryId,
+  };
+  placeInlineImages(state, entry);
+  state.entries = sortEntries([...state.entries, entry]);
+  memoir.photoAnswers.push({ entryId, answeredAt: '2026-10-19T09:00:00.000Z' });
+  await fulfillJson(route, { entryId }, { status: 201 });
 }

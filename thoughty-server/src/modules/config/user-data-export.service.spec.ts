@@ -10,7 +10,7 @@ import {
   EntryLike,
   EntryRevision,
   MemoirAnswer,
-  YearReviewMood, WeeklyReflection, PersonalAccessToken, WritingReminderEmail,
+  YearReviewMood, WeeklyReflection, PersonalAccessToken, WritingReminderEmail, MemoirPhotoAnswer,
   SavedSearch,
   LifeEra,
   Person,
@@ -95,7 +95,7 @@ describe('UserDataExportService', () => {
         { provide: getRepositoryToken(TimeCapsule), useValue: { find: jest.fn().mockResolvedValue([]) } },
         noTimeCapsules(),
         accountActivityProvider(),
-        ...[ShareLink, ComposerDraft, SavedEntry, TopicFollow, UserMute, UserBlock, WeeklyReflection, PersonalAccessToken, WritingReminderEmail].map((entity) => ({ provide: getRepositoryToken(entity), useValue: { find: jest.fn().mockResolvedValue([]), findOne: jest.fn().mockResolvedValue(null) } })),
+        ...[ShareLink, ComposerDraft, SavedEntry, TopicFollow, UserMute, UserBlock, WeeklyReflection, PersonalAccessToken, WritingReminderEmail, MemoirPhotoAnswer].map((entity) => ({ provide: getRepositoryToken(entity), useValue: { find: jest.fn().mockResolvedValue([]), findOne: jest.fn().mockResolvedValue(null) } })),
       ],
     }).compile();
 
@@ -233,7 +233,7 @@ describe('UserDataExportService', () => {
       entries: [{ entryId: 40, likedAt: new Date('2024-03-02') }],
       comments: [{ commentId: 12, likedAt: new Date('2024-03-03') }],
     });
-    expect(result.memoir).toEqual({ program: null, answers: [] });
+    expect(result.memoir).toEqual({ program: null, answers: [], photoAnswers: [] });
     expect(commentRepository.find).toHaveBeenCalledWith(expect.objectContaining({ where: { userId: 1 } }));
     expect(followRepository.find).toHaveBeenCalledWith(expect.objectContaining({ where: { followerId: 1 } }));
   });
@@ -270,6 +270,7 @@ describe('UserDataExportService', () => {
         setAside: [{ questionId: 'work-path', snoozedUntil: '2026-11-22' }],
       },
       answers: [{ questionId: 'childhood-home', entryId: 81, answeredAt: new Date('2026-10-05T09:00:00Z') }],
+      photoAnswers: [],
     });
     expect(memoirAnswerRepository.find).toHaveBeenCalledWith({ where: { userId: 1 }, order: { createdAt: 'ASC' } });
     expect(memoirSnoozeRepository.find).toHaveBeenCalledWith({ where: { programId: 4 }, order: { snoozedUntil: 'ASC' } });

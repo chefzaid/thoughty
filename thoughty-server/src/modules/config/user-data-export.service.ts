@@ -11,6 +11,7 @@ import {
   EntryLike,
   EntryRevision,
   MemoirAnswer,
+  MemoirPhotoAnswer,
   MemoirProgram,
   MemoirSnooze,
   OnThisDayEmail,
@@ -119,6 +120,8 @@ export class UserDataExportService {
     private readonly accessTokenRepository: Repository<PersonalAccessToken>,
     @InjectRepository(WritingReminderEmail)
     private readonly writingReminderEmailRepository: Repository<WritingReminderEmail>,
+    @InjectRepository(MemoirPhotoAnswer)
+    private readonly memoirPhotoAnswerRepository: Repository<MemoirPhotoAnswer>,
   ) {}
 
   /**
@@ -364,9 +367,10 @@ export class UserDataExportService {
   }
 
   private async collectMemoirData(userId: number) {
-    const [program, answers] = await Promise.all([
+    const [program, answers, photoAnswers] = await Promise.all([
       this.memoirProgramRepository.findOne({ where: { userId } }),
       this.memoirAnswerRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
+      this.memoirPhotoAnswerRepository.find({ where: { userId }, order: { createdAt: 'ASC', entryId: 'ASC' } }),
     ]);
 
     const snoozes = program
@@ -394,6 +398,7 @@ export class UserDataExportService {
         entryId: answer.entryId,
         answeredAt: answer.createdAt,
       })),
+      photoAnswers: photoAnswers.map((answer) => ({ entryId: answer.entryId, answeredAt: answer.createdAt })),
     };
   }
 

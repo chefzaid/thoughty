@@ -2,14 +2,17 @@ import { Body, Controller, Delete, Get, HttpCode, Patch, Post } from '@nestjs/co
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthenticatedUser, CurrentUser } from '@/common';
 import {
+  AnswerMemoirPhotoDto,
   AnswerMemoirQuestionDto,
   MemoirAnswerResultDto,
   MemoirLeftDto,
   MemoirOverviewDto,
+  MemoirPhotoAnswerResultDto,
   StartMemoirDto,
   UpdateMemoirDto,
 } from './dto';
 import { MemoirAnswersService } from './memoir-answers.service';
+import { MemoirPhotoAnswersService } from './memoir-photo-answers.service';
 import { MemoirService } from './memoir.service';
 
 @ApiTags('Memoir')
@@ -19,6 +22,7 @@ export class MemoirController {
   constructor(
     private readonly memoirService: MemoirService,
     private readonly memoirAnswersService: MemoirAnswersService,
+    private readonly memoirPhotoAnswersService: MemoirPhotoAnswersService,
   ) {}
 
   @Get()
@@ -89,5 +93,23 @@ export class MemoirController {
     @Body() dto: AnswerMemoirQuestionDto,
   ): Promise<MemoirAnswerResultDto> {
     return this.memoirAnswersService.answer(user.userId, dto);
+  }
+
+  @Post('photo-answers')
+  @ApiOperation({
+    summary: 'Answer a photo prompt: an old photo and what is happening in it, as a private entry in the memoir diary',
+    description:
+      'The entry opens with the question, places the photo (captioned) before the story, so a book prints it next to the answer, ' +
+      'and is tagged with the chosen life chapter (Photos without one) and life era.',
+  })
+  @ApiResponse({ status: 201, description: 'The entry holding the photo and its story', type: MemoirPhotoAnswerResultDto })
+  @ApiResponse({ status: 400, description: 'The story is empty, or the attachment is not a JPEG, PNG, GIF or WebP picture' })
+  @ApiResponse({ status: 404, description: 'Memoir not started, or attachment or life era not yours' })
+  @ApiResponse({ status: 409, description: 'The picture is already on an entry, or the memoir has no diary' })
+  answerPhoto(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: AnswerMemoirPhotoDto,
+  ): Promise<MemoirPhotoAnswerResultDto> {
+    return this.memoirPhotoAnswersService.answer(user.userId, dto);
   }
 }

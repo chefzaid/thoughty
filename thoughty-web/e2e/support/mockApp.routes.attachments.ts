@@ -34,6 +34,12 @@ function filePart(request: RouteContext["request"]): { name: string; type: strin
   return { name: header[1]!, type: header[2]!, body: body.subarray(start, end) };
 }
 
+/** An upload on no entry yet, or null; `onEntry` tells a picture already placed from one never uploaded. */
+export function findUnplacedAttachment(state: MockAppState, id: number): { attachment: MockAttachment | null; onEntry: boolean } {
+  const attachment = poolOf(state).find((candidate) => candidate.id === id) ?? null;
+  return { attachment, onEntry: !attachment && Boolean(findAttachment(state, id)) };
+}
+
 function findAttachment(state: MockAppState, id: number): MockAttachment | undefined {
   return [...state.entries.flatMap((entry) => entry.attachments ?? []), ...poolOf(state)].find((attachment) => attachment.id === id);
 }

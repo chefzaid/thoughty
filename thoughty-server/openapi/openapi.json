@@ -13436,7 +13436,13 @@
                     "total": 52,
                     "words": 8400,
                     "estimatedPages": 34
-                  }
+                  },
+                  "photoAnswers": [
+                    {
+                      "entryId": 812,
+                      "answeredAt": "2026-10-12T09:41:00.000Z"
+                    }
+                  ]
                 }
               }
             }
@@ -13536,7 +13542,13 @@
                     "total": 52,
                     "words": 8400,
                     "estimatedPages": 34
-                  }
+                  },
+                  "photoAnswers": [
+                    {
+                      "entryId": 812,
+                      "answeredAt": "2026-10-12T09:41:00.000Z"
+                    }
+                  ]
                 }
               }
             }
@@ -13669,7 +13681,13 @@
                     "total": 52,
                     "words": 8400,
                     "estimatedPages": 34
-                  }
+                  },
+                  "photoAnswers": [
+                    {
+                      "entryId": 812,
+                      "answeredAt": "2026-10-12T09:41:00.000Z"
+                    }
+                  ]
                 }
               }
             }
@@ -13796,7 +13814,13 @@
                     "total": 52,
                     "words": 8400,
                     "estimatedPages": 34
-                  }
+                  },
+                  "photoAnswers": [
+                    {
+                      "entryId": 812,
+                      "answeredAt": "2026-10-12T09:41:00.000Z"
+                    }
+                  ]
                 }
               }
             }
@@ -13895,7 +13919,13 @@
                     "total": 52,
                     "words": 8400,
                     "estimatedPages": 34
-                  }
+                  },
+                  "photoAnswers": [
+                    {
+                      "entryId": 812,
+                      "answeredAt": "2026-10-12T09:41:00.000Z"
+                    }
+                  ]
                 }
               }
             }
@@ -14036,6 +14066,102 @@
           }
         ],
         "summary": "Answer a memoir question as a private entry in the memoir diary",
+        "tags": [
+          "Memoir"
+        ]
+      }
+    },
+    "/api/memoir/photo-answers": {
+      "post": {
+        "description": "The entry opens with the question, places the photo (captioned) before the story, so a book prints it next to the answer, and is tagged with the chosen life chapter (Photos without one) and life era.",
+        "operationId": "MemoirController_answerPhoto",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerMemoirPhotoDto"
+              },
+              "example": {
+                "attachmentId": 57,
+                "text": "My grandfather on the day he opened his bakery, flour still on his hands.",
+                "caption": "The bakery on Rue Saint-Jean, 1962",
+                "chapterId": "family",
+                "eraId": 3
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The entry holding the photo and its story",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoirPhotoAnswerResultDto"
+                },
+                "example": {
+                  "entryId": 815
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The story is empty, or the attachment is not a JPEG, PNG, GIF or WebP picture",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "The story is empty, or the attachment is not a JPEG, PNG, GIF or WebP picture",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Memoir not started, or attachment or life era not yours",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Memoir not started, or attachment or life era not yours",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The picture is already on an entry, or the memoir has no diary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "The picture is already on an entry, or the memoir has no diary",
+                  "error": "Conflict",
+                  "code": "CONFLICT"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Answer a photo prompt: an old photo and what is happening in it, as a private entry in the memoir diary",
         "tags": [
           "Memoir"
         ]
@@ -27572,7 +27698,7 @@
           "words": {
             "type": "number",
             "example": 8400,
-            "description": "Words written in the answers, question headings excluded"
+            "description": "Words written in the answers and photo stories, question headings and photos excluded"
           },
           "estimatedPages": {
             "type": "number",
@@ -27622,13 +27748,21 @@
           },
           "progress": {
             "$ref": "#/components/schemas/MemoirProgressDto"
+          },
+          "photoAnswers": {
+            "description": "The photo stories told from photo prompts, newest first; those in the recycle bin are left out",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoirAnswerRefDto"
+            }
           }
         },
         "required": [
           "program",
           "chapters",
           "themes",
-          "progress"
+          "progress",
+          "photoAnswers"
         ],
         "example": {
           "program": {
@@ -27683,7 +27817,13 @@
             "total": 52,
             "words": 8400,
             "estimatedPages": 34
-          }
+          },
+          "photoAnswers": [
+            {
+              "entryId": 812,
+              "answeredAt": "2026-10-12T09:41:00.000Z"
+            }
+          ]
         }
       },
       "StartMemoirDto": {
@@ -27892,6 +28032,79 @@
         "example": {
           "questionId": "childhood-home",
           "entryId": 812
+        }
+      },
+      "AnswerMemoirPhotoDto": {
+        "type": "object",
+        "properties": {
+          "attachmentId": {
+            "type": "number",
+            "example": 57,
+            "description": "The uploaded photo (JPEG, PNG, GIF or WebP), on no entry yet"
+          },
+          "text": {
+            "type": "string",
+            "example": "My grandfather on the day he opened his bakery, flour still on his hands.",
+            "maxLength": 45000,
+            "description": "What is happening in the photo; may not be empty"
+          },
+          "caption": {
+            "type": "string",
+            "example": "The bakery on Rue Saint-Jean, 1962",
+            "maxLength": 200,
+            "description": "Describes the photo: its alt text in the entry and its caption in books"
+          },
+          "chapterId": {
+            "type": "string",
+            "enum": [
+              "childhood",
+              "growing-up",
+              "family",
+              "love",
+              "parenthood",
+              "work",
+              "careers",
+              "places",
+              "migration",
+              "history",
+              "faith",
+              "lessons"
+            ],
+            "example": "family",
+            "description": "The life chapter the photo belongs to: its title tags the story, so the book places it there. Omit for the Photos chapter"
+          },
+          "eraId": {
+            "type": "number",
+            "example": 3,
+            "description": "Life era the photo belongs to: the story is also tagged with the era’s name"
+          }
+        },
+        "required": [
+          "attachmentId",
+          "text"
+        ],
+        "example": {
+          "attachmentId": 57,
+          "text": "My grandfather on the day he opened his bakery, flour still on his hands.",
+          "caption": "The bakery on Rue Saint-Jean, 1962",
+          "chapterId": "family",
+          "eraId": 3
+        }
+      },
+      "MemoirPhotoAnswerResultDto": {
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "number",
+            "example": 815,
+            "description": "The private entry in the memoir diary that holds the photo and its story"
+          }
+        },
+        "required": [
+          "entryId"
+        ],
+        "example": {
+          "entryId": 815
         }
       },
       "MemoirBankQuestionDto": {
@@ -31179,6 +31392,9 @@
           "MEMOIR_ANSWER_EMPTY",
           "MEMOIR_ALREADY_ANSWERED",
           "MEMOIR_NO_OPEN_QUESTION",
+          "MEMOIR_PHOTO_EMPTY",
+          "MEMOIR_PHOTO_NOT_IMAGE",
+          "MEMOIR_PHOTO_IN_USE",
           "ON_THIS_DAY_UNSUBSCRIBE_INVALID",
           "EMAIL_UNSUBSCRIBE_INVALID",
           "STATS_INVALID_DATE_RANGE",

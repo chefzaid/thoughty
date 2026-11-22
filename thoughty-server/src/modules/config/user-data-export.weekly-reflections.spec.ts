@@ -20,6 +20,7 @@ function build(weeklyReflectionRepository: ReturnType<typeof emptyRepository>) {
     weeklyReflectionRepository,
     emptyRepository(),
     emptyRepository(),
+    emptyRepository(),
   );
 }
 

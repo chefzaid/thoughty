@@ -5,7 +5,7 @@ import {
   POSTGRES_SETUP_TIMEOUT_MS,
   type PostgresTestDatabase,
 } from '@/database/postgres-test-database.test-helpers';
-import { Diary, Entry, MemoirAnswer, MemoirProgram, MemoirSnooze, User } from '@/database/entities';
+import { Diary, Entry, MemoirAnswer, MemoirPhotoAnswer, MemoirProgram, MemoirSnooze, User } from '@/database/entities';
 import type { DiariesService } from '@/modules/diaries';
 import { MemoirDeliveryService } from './memoir-delivery.service';
 import { memoirQuestionsFor } from './memoir-questions';
@@ -34,6 +34,7 @@ describePostgres('PostgreSQL memoir "Not this week"', () => {
       dataSource.getRepository(User),
       {} as DiariesService,
       emailService as never,
+      dataSource.getRepository(MemoirPhotoAnswer),
     );
     delivery = new MemoirDeliveryService(
       dataSource,

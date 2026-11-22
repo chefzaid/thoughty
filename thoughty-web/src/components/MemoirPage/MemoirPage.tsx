@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { useTransientMessage } from '../../hooks/useTransientMessage';
-import type { AnswerMemoirRequest, StartMemoirRequest, UpdateMemoirRequest } from '../../services/api';
+import type { AnswerMemoirPhotoRequest, AnswerMemoirRequest, StartMemoirRequest, UpdateMemoirRequest } from '../../services/api';
 import type { Diary, TranslationFunction } from '../../types';
 import AutoDismiss from '../AutoDismiss/AutoDismiss';
 import PageHeader from '../PageHeader/PageHeader';
 import MemoirAnswerForm from './MemoirAnswerForm';
 import MemoirChapters from './MemoirChapters';
 import MemoirIntro from './MemoirIntro';
+import MemoirPhotoPrompt from './MemoirPhotoPrompt';
 import MemoirProgress from './MemoirProgress';
 import MemoirQuestionCard, { type MemoirWeekAction } from './MemoirQuestionCard';
 import MemoirSettings from './MemoirSettings';
@@ -92,6 +93,13 @@ function MemoirPage({
       showToast(t('memoirAnswerSaved'));
     }
     return Boolean(result.data);
+  };
+
+  const handlePhotoAnswer = async (request: AnswerMemoirPhotoRequest) => {
+    const result = await memoir.answerPhoto(request);
+    if (!result.data) return result.error ?? 'memoirPhotoSaveError';
+    showToast(t('memoirPhotoSaved'));
+    return null;
   };
 
   const showToast = (text: string) => {
@@ -195,6 +203,20 @@ function MemoirPage({
             onOpenEntry={onOpenEntry}
             t={t}
           />
+
+          {program.diaryId && (
+            <MemoirPhotoPrompt
+              chapters={overview.chapters}
+              photoAnswers={overview.photoAnswers}
+              eras={eras}
+              answerDate={todayIn(program.timeZone)}
+              timeZone={program.timeZone}
+              language={language}
+              onSubmit={handlePhotoAnswer}
+              onOpenEntry={onOpenEntry}
+              t={t}
+            />
+          )}
 
           <MemoirSettings
             key={program.startedAt}

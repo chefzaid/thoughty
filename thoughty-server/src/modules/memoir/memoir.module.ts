@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Diary, MemoirAnswer, MemoirProgram, MemoirSnooze, User } from '@/database/entities';
+import { Diary, MemoirAnswer, MemoirPhotoAnswer, MemoirProgram, MemoirSnooze, User } from '@/database/entities';
 import { AttachmentsModule } from '@/modules/attachments';
 import { AuthModule } from '@/modules/auth';
 import { UserConfigModule } from '@/modules/config';
@@ -8,6 +8,7 @@ import { DiariesModule } from '@/modules/diaries';
 import { EntriesModule } from '@/modules/entries';
 import { LifeErasModule } from '@/modules/life-eras';
 import { MemoirAnswersService } from './memoir-answers.service';
+import { MemoirPhotoAnswersService } from './memoir-photo-answers.service';
 import { MemoirDeliveryWorkerService } from './memoir-delivery-worker.service';
 import { MemoirDeliveryService } from './memoir-delivery.service';
 import { MemoirController } from './memoir.controller';
@@ -16,7 +17,7 @@ import { MemoirService } from './memoir.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([MemoirProgram, MemoirAnswer, MemoirSnooze, Diary, User]),
+    TypeOrmModule.forFeature([MemoirProgram, MemoirAnswer, MemoirPhotoAnswer, MemoirSnooze, Diary, User]),
     AttachmentsModule,
     AuthModule,
     DiariesModule,
@@ -25,7 +26,7 @@ import { MemoirService } from './memoir.service';
     UserConfigModule,
   ],
   controllers: [MemoirController, MemoirQuestionsController],
-  providers: [MemoirService, MemoirAnswersService, MemoirDeliveryService, MemoirDeliveryWorkerService],
+  providers: [MemoirService, MemoirAnswersService, MemoirPhotoAnswersService, MemoirDeliveryService, MemoirDeliveryWorkerService],
   exports: [MemoirDeliveryWorkerService],
 })
 export class MemoirModule {}

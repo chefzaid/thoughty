@@ -28,3 +28,8 @@ export function todayIn(timeZone: string, now = new Date()): string {
     return format();
   }
 }
+
+/** The day something was written, such as a photo story, in the memoir's time zone. */
+export function formatAnsweredDay(iso: string, timeZone: string, language: MemoirLanguage): string {
+  return new Intl.DateTimeFormat(language, { dateStyle: 'long', timeZone }).format(new Date(iso));
+}

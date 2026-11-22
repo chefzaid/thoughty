@@ -57,6 +57,9 @@ export interface MockMemoirState {
   lastStartPayload: unknown;
   lastUpdatePayload: unknown;
   lastAnswerPayload: unknown;
+  /** Photo stories, oldest first, as `memoir_photo_answers` keeps them. */
+  photoAnswers: Array<{ entryId: number; answeredAt: string }>;
+  lastPhotoPayload: unknown;
 }
 
 export function createMockMemoirState(program: Partial<MockMemoirProgram> | null = null): MockMemoirState {
@@ -79,6 +82,8 @@ export function createMockMemoirState(program: Partial<MockMemoirProgram> | null
     lastStartPayload: null,
     lastUpdatePayload: null,
     lastAnswerPayload: null,
+    photoAnswers: [],
+    lastPhotoPayload: null,
   };
 }
 
