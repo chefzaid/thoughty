@@ -1,5 +1,6 @@
 import { invalidPropertiesLikeApi, parseLikeApi } from '@/common/validation/dto-validation.test-helpers';
 import { MergePersonDto, PERSON_NAME_MAX_LENGTH, UpdatePersonDto } from './person.dto';
+import { MarkPersonContactedDto } from './person-reach-out.dto';
 
 describe('person DTOs', () => {
   it('takes a trimmed name of 1 to 80 characters', async () => {
@@ -30,6 +31,27 @@ describe('person DTOs', () => {
     await expect(withDate({ kind: 'birthday', day: 14 })).resolves.toEqual(['date.month']);
     await expect(withDate({ kind: 'birthday', month: 3, day: 14, label: 'x' })).resolves.toEqual(['date.label']);
     await expect(withDate('2026-03-14')).resolves.toEqual(['date']);
+  });
+
+  it('takes an optional reach-out reminder from the offered intervals and an optional last contact day; null removes each', async () => {
+    const withReachOut = (fields: Record<string, unknown>) => invalidPropertiesLikeApi(UpdatePersonDto, { name: 'Marie', ...fields });
+
+    await expect(withReachOut({ reachOutDays: 30, lastContactOn: '2026-11-03' })).resolves.toEqual([]);
+    await expect(withReachOut({ reachOutDays: 365 })).resolves.toEqual([]);
+    await expect(withReachOut({ reachOutDays: null, lastContactOn: null })).resolves.toEqual([]);
+    for (const reachOutDays of [0, 31, '30', 30.5, true]) {
+      await expect(withReachOut({ reachOutDays })).resolves.toEqual(['reachOutDays']);
+    }
+    for (const lastContactOn of ['2026-02-30', '2026-11-03T10:00:00Z', '26-11-03', 20261103]) {
+      await expect(withReachOut({ lastContactOn })).resolves.toEqual(['lastContactOn']);
+    }
+  });
+
+  it('takes the writer’s current day as the contact day', async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    await expect(invalidPropertiesLikeApi(MarkPersonContactedDto, { today })).resolves.toEqual([]);
+    await expect(invalidPropertiesLikeApi(MarkPersonContactedDto, {})).resolves.toEqual(['today']);
+    await expect(invalidPropertiesLikeApi(MarkPersonContactedDto, { today: '2020-01-01' })).resolves.toEqual(['today']);
   });
 
   it('takes the duplicate to merge by its ID, as a number or as digits', async () => {

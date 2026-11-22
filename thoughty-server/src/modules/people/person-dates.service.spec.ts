@@ -35,4 +35,22 @@ describe('PersonDatesService', () => {
     entryRepository.find.mockResolvedValueOnce([]);
     await expect(service.findOn(7, '2028-02-29')).resolves.toEqual([expect.objectContaining({ id: 12, years: 28, latestEntry: null })]);
   });
+
+  it('finds the people due a reach-out on the writer’s day, reading numbers sent back as text', async () => {
+    personRepository.query.mockResolvedValue([
+      { id: 13, name: 'Paul', reachOutDays: 14, lastContactOn: null, lastMentionedOn: null, daysSince: null },
+      { id: 12, name: 'Marie', reachOutDays: '30', lastContactOn: '2026-09-01', lastMentionedOn: '2026-10-01', daysSince: '52' },
+    ]);
+
+    await expect(service.findReachOutsDue(7, '2026-11-22')).resolves.toEqual([
+      { id: 13, name: 'Paul', reachOutDays: 14, lastContactOn: null, lastMentionedOn: null, daysSince: null },
+      { id: 12, name: 'Marie', reachOutDays: 30, lastContactOn: '2026-09-01', lastMentionedOn: '2026-10-01', daysSince: 52 },
+    ]);
+    const [sql, parameters] = personRepository.query.mock.calls[0];
+    expect(parameters).toEqual([7, '2026-11-22']);
+    expect(sql).toContain('p.reach_out_days IS NOT NULL');
+    expect(sql).toContain('e.deleted_at IS NULL AND e.sealed_until IS NULL');
+    expect(sql).toContain('GREATEST(p.last_contact_on, m.last_mentioned_on) >= p.reach_out_days, TRUE)');
+    expect(sql).toContain('LIMIT 10');
+  });
 });

@@ -30,6 +30,11 @@ export function daysInMonth(month: number, year: number | null): number {
 
 const pad = (value: number) => String(value).padStart(2, '0');
 
+/** The latest day (`YYYY-MM-DD`) any writer can be living at `now`: the day in Kiritimati (UTC+14). */
+export function latestDayOnEarth(now: Date): string {
+  return utcDay(new Date(now.getTime() + LATEST_OFFSET_MS));
+}
+
 /**
  * Refuses a date on a person that cannot be: a month outside 1 to 12 or a day the month never has
  * (`PERSON_DATE_INVALID`, 29 February too when the year given had none), a year before 1000
@@ -46,8 +51,7 @@ export function assertValidPersonDate({ month, day, year = null }: PersonDatePar
   if (year < PERSON_DATE_MIN_YEAR) {
     throw apiError(BadRequestException, 'PERSON_DATE_YEAR_INVALID');
   }
-  const latestDay = utcDay(new Date(now.getTime() + LATEST_OFFSET_MS));
-  if (`${year}-${pad(month)}-${pad(day)}` > latestDay) {
+  if (`${year}-${pad(month)}-${pad(day)}` > latestDayOnEarth(now)) {
     throw apiError(BadRequestException, 'PERSON_DATE_IN_FUTURE');
   }
 }

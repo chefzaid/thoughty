@@ -48,6 +48,17 @@ export class Person {
   @Column({ name: 'date_year', type: 'smallint', nullable: true })
   dateYear: number | null;
 
+  /**
+   * At most how many days the writer wants to go without being in touch with the person; null for no reminder.
+   * Highlights shows them once this many days have passed since `lastContactOn` or their newest mention.
+   */
+  @Column({ name: 'reach_out_days', type: 'smallint', nullable: true })
+  reachOutDays: number | null;
+
+  /** The last day (`YYYY-MM-DD`) the writer was in touch with the person, as they recorded it; null when never recorded. */
+  @Column({ name: 'last_contact_on', type: 'date', nullable: true })
+  lastContactOn: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 

@@ -23,6 +23,7 @@ import { printTranslations, type PrintTranslationKey } from "./translations.prin
 import { rereadReminderTranslations, type RereadReminderTranslationKey } from "./translations.rereadReminder";
 import { moveToDiaryTranslations, type MoveToDiaryTranslationKey } from "./translations.moveToDiary";
 import { personDatesTranslations, type PersonDatesTranslationKey } from "./translations.personDates";
+import { personReachOutTranslations, type PersonReachOutTranslationKey } from "./translations.personReachOut";
 import { focusModeTranslations, type FocusModeTranslationKey } from "./translations.focusMode";
 import { composerDraftTranslations, type ComposerDraftTranslationKey } from "./translations.composerDraft";
 import { signUpTranslations, type SignUpTranslationKey } from "./translations.signUp";
@@ -111,6 +112,7 @@ export type TranslationKey =
   | RereadReminderTranslationKey
   | MoveToDiaryTranslationKey
   | PersonDatesTranslationKey
+  | PersonReachOutTranslationKey
   | FocusModeTranslationKey
   | ComposerDraftTranslationKey
   | SignUpTranslationKey
@@ -204,6 +206,7 @@ export const translations: Translations = {
     ...rereadReminderTranslations.en,
     ...moveToDiaryTranslations.en,
     ...personDatesTranslations.en,
+    ...personReachOutTranslations.en,
     ...focusModeTranslations.en,
     ...composerDraftTranslations.en,
     ...signUpTranslations.en,
@@ -290,6 +293,7 @@ export const translations: Translations = {
     ...rereadReminderTranslations.fr,
     ...moveToDiaryTranslations.fr,
     ...personDatesTranslations.fr,
+    ...personReachOutTranslations.fr,
     ...focusModeTranslations.fr,
     ...composerDraftTranslations.fr,
     ...signUpTranslations.fr,

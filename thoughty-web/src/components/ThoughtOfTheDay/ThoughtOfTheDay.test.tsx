@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
 import ThoughtOfTheDay from './ThoughtOfTheDay';
+import { createTestQueryClient } from '../../test/queryClient';
 
 vi.mock('../../contexts/AuthContext', () => {
     const authFetch = (...args: Parameters<typeof fetch>) => globalThis.fetch(...args);
@@ -119,6 +121,35 @@ describe('ThoughtOfTheDay', () => {
         expect(onNavigateToEntry).toHaveBeenCalledWith('2026-03-01', 1, null);
         fireEvent.click(screen.getByRole('link', { name: 'personMentionTitle' }));
         expect(onClose).toHaveBeenCalledTimes(2);
+    });
+
+    it('shows the people due a reach-out after the birthdays, and closes on a person', async () => {
+        const latest = { id: 11, date: '2026-03-01', index: 1, content: 'Tea with @Marie' };
+        (globalThis.fetch as Mock).mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+                randomEntry: null,
+                onThisDay: {},
+                openedCapsules: [],
+                rereadReminders: [],
+                personDates: [{ id: 5, name: 'Marie', date: { kind: 'birthday', month: 3, day: 14, year: null }, years: null, entryCount: 1, latestEntry: latest }],
+                reachOuts: [{ id: 6, name: 'Paul', reachOutDays: 30, lastContactOn: null, lastMentionedOn: '2026-01-01', daysSince: 72 }],
+            }),
+        });
+        const onClose = vi.fn();
+
+        render(
+            <QueryClientProvider client={createTestQueryClient()}>
+                <MemoryRouter><ThoughtOfTheDay isOpen={true} onClose={onClose} theme="light" t={mockT} /></MemoryRouter>
+            </QueryClientProvider>,
+        );
+
+        expect(await screen.findByText('reachOutHighlightsTitle')).toBeInTheDocument();
+        const titles = screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent);
+        expect(titles).toEqual(['personDatesHighlightsTitle', 'reachOutHighlightsTitle']);
+        expect(screen.queryByText('noHighlights')).not.toBeInTheDocument();
+        fireEvent.click(screen.getAllByRole('link', { name: 'personMentionTitle' })[1]!);
+        expect(onClose).toHaveBeenCalledTimes(1);
     });
 
     it('shows empty state when no highlights', async () => {

@@ -1,0 +1,102 @@
+/* People due a reach-out: after the birthdays and anniversaries in Highlights, each in a 2px sky-blue frame.
+   The title, names and lines are sky blue too, a shade that reaches 4.5:1 on the modal and on the framed
+   item in both themes. */
+.thought-of-day-modal.light .reach-outs .section-title,
+.thought-of-day-modal.light .reach-outs .reach-out {
+    color: #075985;
+}
+
+.thought-of-day-modal.dark .reach-outs .section-title,
+.thought-of-day-modal.dark .reach-outs .reach-out {
+    color: #bae6fd;
+}
+
+.thought-of-day-modal .reach-outs .reach-out-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.thought-of-day-modal .reach-outs .reach-out {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.375rem;
+    padding: 0.875rem 1rem;
+    border: 2px solid #0ea5e9;
+    border-radius: 0.75rem;
+}
+
+.thought-of-day-modal.light .reach-outs .reach-out {
+    background: #f0f9ff;
+}
+
+.thought-of-day-modal.dark .reach-outs .reach-out {
+    background: #082f49;
+}
+
+.thought-of-day-modal .reach-outs .reach-out-heading {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.thought-of-day-modal .reach-outs .reach-out-after {
+    font-weight: 400;
+}
+
+.thought-of-day-modal .reach-outs .reach-out-name {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    border-radius: 2px;
+}
+
+.thought-of-day-modal .reach-outs .reach-out-since,
+.thought-of-day-modal .reach-outs .reach-out-dates {
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+.thought-of-day-modal .reach-outs .reach-out-contacted {
+    margin-top: 0.25rem;
+    padding: 0.375rem 0.875rem;
+    border: 0;
+    border-radius: 9999px;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.thought-of-day-modal.light .reach-outs .reach-out-contacted {
+    background: #075985;
+    color: #ffffff;
+}
+
+.thought-of-day-modal.dark .reach-outs .reach-out-contacted {
+    background: #bae6fd;
+    color: #082f49;
+}
+
+.thought-of-day-modal .reach-outs .reach-out-name:focus-visible,
+.thought-of-day-modal .reach-outs .reach-out-contacted:focus-visible {
+    outline: 3px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+.thought-of-day-modal .reach-outs .reach-out-contacted[aria-disabled='true'] {
+    cursor: wait;
+    opacity: 0.7;
+}
+
+.thought-of-day-modal.light .reach-outs .reach-out-error {
+    color: #b91c1c;
+}
+
+.thought-of-day-modal.dark .reach-outs .reach-out-error {
+    color: #fca5a5;
+}

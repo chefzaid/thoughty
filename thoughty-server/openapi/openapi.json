@@ -3254,6 +3254,16 @@
                         ]
                       }
                     }
+                  ],
+                  "reachOuts": [
+                    {
+                      "id": 12,
+                      "name": "Marie",
+                      "reachOutDays": 30,
+                      "lastContactOn": "2026-09-02",
+                      "lastMentionedOn": "2026-10-01",
+                      "daysSince": 52
+                    }
                   ]
                 }
               }
@@ -14955,6 +14965,8 @@
                         "day": 14,
                         "year": 1992
                       },
+                      "reachOutDays": 30,
+                      "lastContactOn": "2026-11-03",
                       "createdAt": "2026-10-27T09:30:00.000Z",
                       "updatedAt": "2026-10-27T09:30:00.000Z"
                     }
@@ -15003,7 +15015,9 @@
                   "month": 3,
                   "day": 14,
                   "year": 1992
-                }
+                },
+                "reachOutDays": 30,
+                "lastContactOn": "2026-11-03"
               }
             }
           }
@@ -15031,6 +15045,8 @@
                     "day": 14,
                     "year": 1992
                   },
+                  "reachOutDays": 30,
+                  "lastContactOn": "2026-11-03",
                   "createdAt": "2026-10-27T09:30:00.000Z",
                   "updatedAt": "2026-10-27T09:30:00.000Z"
                 }
@@ -15038,7 +15054,7 @@
             }
           },
           "400": {
-            "description": "Invalid name, or a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE)",
+            "description": "Invalid name or reminder, a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), or a last contact after today (PERSON_CONTACT_IN_FUTURE)",
             "content": {
               "application/json": {
                 "schema": {
@@ -15046,7 +15062,7 @@
                 },
                 "example": {
                   "statusCode": 400,
-                  "message": "Invalid name, or a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE)",
+                  "message": "Invalid name or reminder, a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), or a last contact after today (PERSON_CONTACT_IN_FUTURE)",
                   "error": "Bad Request",
                   "code": "VALIDATION_FAILED"
                 }
@@ -15075,7 +15091,7 @@
             "bearer": []
           }
         ],
-        "summary": "Change the name shown for a person and their birthday or anniversary; their handles and the entries’ text stay as they are",
+        "summary": "Change the name shown for a person, their birthday or anniversary, their reach-out reminder and their last contact; their handles and the entries’ text stay as they are",
         "tags": [
           "People"
         ]
@@ -15134,6 +15150,107 @@
         ]
       }
     },
+    "/api/people/{id}/contacted": {
+      "post": {
+        "operationId": "PeopleController_markContacted",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkPersonContactedDto"
+              },
+              "example": {
+                "today": "2026-11-22"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Person saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonResponseDto"
+                },
+                "example": {
+                  "id": 12,
+                  "name": "Marie",
+                  "handles": [
+                    "marie",
+                    "marie-c"
+                  ],
+                  "entryCount": 8,
+                  "lastMentionedOn": "2026-10-21",
+                  "date": {
+                    "kind": "birthday",
+                    "month": 3,
+                    "day": 14,
+                    "year": 1992
+                  },
+                  "reachOutDays": 30,
+                  "lastContactOn": "2026-11-03",
+                  "createdAt": "2026-10-27T09:30:00.000Z",
+                  "updatedAt": "2026-10-27T09:30:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`today` is not the writer’s current day",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "`today` is not the writer’s current day",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Person not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Person not found",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Record the writer’s day as the last contact with a person, which ends a reach-out reminder until it is due again",
+        "tags": [
+          "People"
+        ]
+      }
+    },
     "/api/people/{id}/merge": {
       "post": {
         "operationId": "PeopleController_merge",
@@ -15184,6 +15301,8 @@
                     "day": 14,
                     "year": 1992
                   },
+                  "reachOutDays": 30,
+                  "lastContactOn": "2026-11-03",
                   "createdAt": "2026-10-27T09:30:00.000Z",
                   "updatedAt": "2026-10-27T09:30:00.000Z"
                 }
@@ -19630,6 +19749,68 @@
           }
         }
       },
+      "PersonReachOutHighlightDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 12
+          },
+          "name": {
+            "type": "string",
+            "example": "Marie"
+          },
+          "reachOutDays": {
+            "type": "number",
+            "enum": [
+              14,
+              30,
+              60,
+              90,
+              180,
+              365
+            ],
+            "example": 30,
+            "description": "The reminder the writer chose: at most this many days without being in touch"
+          },
+          "lastContactOn": {
+            "type": "string",
+            "nullable": true,
+            "format": "date",
+            "example": "2026-09-02",
+            "description": "The last contact the writer recorded; null when none is"
+          },
+          "lastMentionedOn": {
+            "type": "string",
+            "nullable": true,
+            "format": "date",
+            "example": "2026-10-01",
+            "description": "The newest entry that mentions the person, leaving out the recycle bin and sealed time capsules; null when none does"
+          },
+          "daysSince": {
+            "type": "number",
+            "nullable": true,
+            "example": 52,
+            "description": "Days from the later of the last contact and the newest mention to the writer’s day; null when there is neither"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "reachOutDays",
+          "lastContactOn",
+          "lastMentionedOn",
+          "daysSince"
+        ],
+        "example": {
+          "id": 12,
+          "name": "Marie",
+          "reachOutDays": 30,
+          "lastContactOn": "2026-09-02",
+          "lastMentionedOn": "2026-10-01",
+          "daysSince": 52
+        }
+      },
       "EntryHighlightsResponseDto": {
         "type": "object",
         "properties": {
@@ -19679,6 +19860,13 @@
             "items": {
               "$ref": "#/components/schemas/PersonDateHighlightDto"
             }
+          },
+          "reachOuts": {
+            "description": "People with a reach-out reminder that is due on the writer’s day (`today`): at least as many days as it asks since the later of their last contact and the newest entry that mentions them, or neither on record; the longest out of touch first, up to 10. Each stays until the writer records a contact or writes an entry that mentions them.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PersonReachOutHighlightDto"
+            }
           }
         },
         "required": [
@@ -19687,7 +19875,8 @@
           "currentDate",
           "openedCapsules",
           "rereadReminders",
-          "personDates"
+          "personDates",
+          "reachOuts"
         ],
         "example": {
           "randomEntry": {
@@ -19911,6 +20100,16 @@
                   "swimming"
                 ]
               }
+            }
+          ],
+          "reachOuts": [
+            {
+              "id": 12,
+              "name": "Marie",
+              "reachOutDays": 30,
+              "lastContactOn": "2026-09-02",
+              "lastMentionedOn": "2026-10-01",
+              "daysSince": 52
             }
           ]
         }
@@ -29434,6 +29633,27 @@
               }
             ]
           },
+          "reachOutDays": {
+            "type": "number",
+            "enum": [
+              14,
+              30,
+              60,
+              90,
+              180,
+              365
+            ],
+            "nullable": true,
+            "example": 30,
+            "description": "The reach-out reminder: at most this many days without being in touch; null when there is none"
+          },
+          "lastContactOn": {
+            "type": "string",
+            "nullable": true,
+            "format": "date",
+            "example": "2026-11-03",
+            "description": "The last contact the writer recorded; null when none is"
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string",
@@ -29452,6 +29672,8 @@
           "entryCount",
           "lastMentionedOn",
           "date",
+          "reachOutDays",
+          "lastContactOn",
           "createdAt",
           "updatedAt"
         ],
@@ -29470,6 +29692,8 @@
             "day": 14,
             "year": 1992
           },
+          "reachOutDays": 30,
+          "lastContactOn": "2026-11-03",
           "createdAt": "2026-10-27T09:30:00.000Z",
           "updatedAt": "2026-10-27T09:30:00.000Z"
         }
@@ -29511,6 +29735,8 @@
                 "day": 14,
                 "year": 1992
               },
+              "reachOutDays": 30,
+              "lastContactOn": "2026-11-03",
               "createdAt": "2026-10-27T09:30:00.000Z",
               "updatedAt": "2026-10-27T09:30:00.000Z"
             }
@@ -29581,6 +29807,27 @@
                 "$ref": "#/components/schemas/PersonDateInputDto"
               }
             ]
+          },
+          "reachOutDays": {
+            "type": "number",
+            "enum": [
+              14,
+              30,
+              60,
+              90,
+              180,
+              365
+            ],
+            "nullable": true,
+            "example": 30,
+            "description": "Remind the writer in Highlights to reach out once this many days have passed since the last contact or the newest mention; null turns the reminder off, left out keeps it"
+          },
+          "lastContactOn": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "example": "2026-11-03",
+            "description": "The last day the writer was in touch with the person (YYYY-MM-DD), not after today anywhere on Earth (`400 PERSON_CONTACT_IN_FUTURE`); null removes it, left out keeps it"
           }
         },
         "required": [
@@ -29593,7 +29840,26 @@
             "month": 3,
             "day": 14,
             "year": 1992
+          },
+          "reachOutDays": 30,
+          "lastContactOn": "2026-11-03"
+        }
+      },
+      "MarkPersonContactedDto": {
+        "type": "object",
+        "properties": {
+          "today": {
+            "type": "string",
+            "example": "2026-11-22",
+            "format": "date",
+            "description": "The writer’s own day (YYYY-MM-DD), the UTC day or the one before or after it; it becomes the last contact"
           }
+        },
+        "required": [
+          "today"
+        ],
+        "example": {
+          "today": "2026-11-22"
         }
       },
       "MergePersonDto": {
@@ -31575,6 +31841,7 @@
           "PERSON_DATE_INVALID",
           "PERSON_DATE_YEAR_INVALID",
           "PERSON_DATE_IN_FUTURE",
+          "PERSON_CONTACT_IN_FUTURE",
           "ATTACHMENT_NOT_FOUND",
           "ATTACHMENT_FILE_NOT_FOUND",
           "ATTACHMENT_FILE_MISSING",

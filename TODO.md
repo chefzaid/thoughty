@@ -739,9 +739,9 @@ What already exists becomes an input instead of being rebuilt: entries and templ
 
 ### Socials
 
-- [ ] The People page grows into a directory: groups (Friends, Family, Colleagues…), notes on a person, several important dates (one birthday or anniversary exists today), and an explicit last contact date besides the last mention.
+- [ ] The People page grows into a directory: groups (Friends, Family, Colleagues…), notes on a person, several important dates (one birthday or anniversary exists today), and an explicit last contact date besides the last mention. Done: the **explicit last contact date** (`people.last_contact_on`, set in the People page editor or by **Contacted today** in Highlights, shown on the row beside the last mention; see Socials › Reminders to reach out).
 - [ ] Mentions and social events per person and per group over time (entries mentioning them and log items with them), with relationship health trends.
-- [ ] Reminders to reach out to someone not contacted for a chosen time.
+- [x] Reminders to reach out to someone not contacted for a chosen time: **Reach out** on the People page editor (**Remind me after** 2 weeks to a year, and the **Last contact**; `people.reach_out_days` and `last_contact_on`, migration `1789430400000-person-reach-out`), shown in Highlights under **Time to reach out** once that long has passed since the later of the last contact and the newest mention (or at once with neither), with **Contacted today** (`POST /api/people/:id/contacted`) to record the day (see docs/features.md "Reach-out reminders").
 - [ ] Relationship and living-with history (homes, roommates, partners) as state spans on life eras, with a quality rating per relationship.
 
 ### Finances

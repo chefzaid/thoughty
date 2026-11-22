@@ -181,4 +181,36 @@ describeContract('rereading', (context) => {
     expect((await save(alice, null)).body).toMatchObject({ date: null });
     expect(await birthdays()).toEqual([]);
   });
+
+  it('reminds the writer to reach out to a person once the days have passed, until they record a contact', async () => {
+    const { alice, bob } = context;
+    const today = todayIso();
+    await createEntry(context, alice, { text: 'Coffee with @Lena', date: '2024-05-01' });
+    const people = (await call('GET /api/people', { as: alice, status: 200 })).body as { people: { id: number; name: string }[] };
+    const lena = people.people.find((person) => person.name === 'Lena')!.id;
+    const save = (json: Record<string, unknown>, status = 200, code?: ApiErrorCode) =>
+      call('PATCH /api/people/{id}', { as: alice, params: { id: lena }, json: { name: 'Lena', ...json }, status, ...(code ? { code } : {}) });
+    const reachOuts = async () => ((await call('GET /api/entries/highlights', {
+      as: alice,
+      query: new URLSearchParams({ today }),
+      status: 200,
+    })).body as { reachOuts: { id: number; reachOutDays: number; lastMentionedOn: string | null; daysSince: number | null }[] }).reachOuts;
+
+    expect((await save({ reachOutDays: 30 })).body).toMatchObject({ id: lena, reachOutDays: 30, lastContactOn: null });
+    expect(await reachOuts()).toEqual([expect.objectContaining({ id: lena, reachOutDays: 30, lastMentionedOn: '2024-05-01' })]);
+    await save({ reachOutDays: 31 }, 400, 'VALIDATION_FAILED');
+    await save({ lastContactOn: todayIso(3) }, 400, 'PERSON_CONTACT_IN_FUTURE');
+
+    const contacted = await call('POST /api/people/{id}/contacted', { as: alice, params: { id: lena }, json: { today }, status: 200 });
+    expect(contacted.body).toMatchObject({ id: lena, reachOutDays: 30, lastContactOn: today });
+    expect(await reachOuts()).toEqual([]);
+    await call('POST /api/people/{id}/contacted', { as: bob, params: { id: lena }, json: { today }, status: 404, code: 'PERSON_NOT_FOUND' });
+    await call('POST /api/people/{id}/contacted', { as: alice, params: { id: lena }, json: { today: '2020-01-01' }, status: 400, code: 'VALIDATION_FAILED' });
+
+    const download = await call('GET /api/config/download-data', { as: alice, query: { today }, status: 200, contentType: /^application\/json/ });
+    expect((download.body as { people: { id: number }[] }).people).toContainEqual(
+      expect.objectContaining({ id: lena, reachOutDays: 30, lastContactOn: today }),
+    );
+    expect((await save({ reachOutDays: null, lastContactOn: null })).body).toMatchObject({ reachOutDays: null, lastContactOn: null });
+  });
 });

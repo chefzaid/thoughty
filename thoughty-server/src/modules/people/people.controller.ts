@@ -3,7 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@ne
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { SuccessResponseDto } from '@/common/dto';
-import { MergePersonDto, PersonListResponseDto, PersonResponseDto, UpdatePersonDto } from './dto';
+import { MarkPersonContactedDto, MergePersonDto, PersonListResponseDto, PersonResponseDto, UpdatePersonDto } from './dto';
 import { PeopleService } from './people.service';
 
 @ApiTags('People')
@@ -22,13 +22,17 @@ export class PeopleController {
 
   @Patch(':id')
   @ApiOperation({
-    summary: 'Change the name shown for a person and their birthday or anniversary; their handles and the entries’ text stay as they are',
+    summary:
+      'Change the name shown for a person, their birthday or anniversary, their reach-out reminder and their last contact; ' +
+      'their handles and the entries’ text stay as they are',
   })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Person saved', type: PersonResponseDto })
   @ApiResponse({
     status: 400,
-    description: 'Invalid name, or a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE)',
+    description:
+      'Invalid name or reminder, a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), ' +
+      'or a last contact after today (PERSON_CONTACT_IN_FUTURE)',
   })
   @ApiResponse({ status: 404, description: 'Person not found' })
   async update(
@@ -37,6 +41,21 @@ export class PeopleController {
     @Body() dto: UpdatePersonDto,
   ): Promise<PersonResponseDto> {
     return this.peopleService.update(user.userId, id, dto);
+  }
+
+  @Post(':id/contacted')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Record the writer’s day as the last contact with a person, which ends a reach-out reminder until it is due again' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Person saved', type: PersonResponseDto })
+  @ApiResponse({ status: 400, description: '`today` is not the writer’s current day' })
+  @ApiResponse({ status: 404, description: 'Person not found' })
+  async markContacted(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: MarkPersonContactedDto,
+  ): Promise<PersonResponseDto> {
+    return this.peopleService.markContacted(user.userId, id, dto.today);
   }
 
   @Post(':id/merge')

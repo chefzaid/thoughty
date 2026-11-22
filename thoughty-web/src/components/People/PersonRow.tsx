@@ -13,17 +13,30 @@ import {
   type PersonDateInput,
 } from '../../utils/personDates';
 import { pluralPhrase } from '../../utils/pluralPhrase';
+import { reachOutDraft, readReachOutDraft, type ReachOutDays } from '../../utils/personReachOut';
+import { writersToday } from '../../utils/entryDate';
 import { mutedTextClass } from '../../utils/tintedText';
 import type { Language } from '../../utils/translations';
 import PersonDateFields from './PersonDateFields';
+import PersonReachOutFields from './PersonReachOutFields';
 
 /** The longest name the server keeps for a person. */
 const MAX_NAME_LENGTH = 80;
 
-/** What the editor saves: the name shown, and the date when it changed (null removes it). */
+/** What the editor saves: the name shown, and the date, reminder and last contact that changed (null removes each). */
 export interface PersonChanges {
   readonly name: string;
   readonly date?: PersonDateInput | null;
+  readonly reachOutDays?: ReachOutDays | null;
+  readonly lastContactOn?: string | null;
+}
+
+type EditorField = 'name' | 'date' | 'reachOut';
+
+/** The field a code the API refuses a save with is about: PERSON_DATE_* the date, PERSON_CONTACT_* the last contact. */
+function failedField(failure: string): EditorField {
+  if (failure.startsWith('apiError_PERSON_DATE_')) return 'date';
+  return failure.startsWith('apiError_PERSON_CONTACT_') ? 'reachOut' : 'name';
 }
 
 interface PersonRowProps {
@@ -39,17 +52,20 @@ interface PersonRowProps {
 }
 
 /**
- * One person on the People page: their name opens their entries; the name shown and their birthday or
- * anniversary can be changed in place.
+ * One person on the People page: their name opens their entries; the name shown, their birthday or
+ * anniversary and their reach-out reminder can be changed in place.
  */
 export default function PersonRow({ person, canMerge, theme, language, t, onSave, onMerge, onDelete }: PersonRowProps) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(person.name);
   const [dateDraft, setDateDraft] = useState(() => personDateDraft(person.date));
-  const [error, setError] = useState<{ field: 'name' | 'date'; message: string } | null>(null);
+  const [reachOut, setReachOut] = useState(() => reachOutDraft(person));
+  const [error, setError] = useState<{ field: EditorField; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const kindRef = useRef<HTMLSelectElement>(null);
+  const lastContactRef = useRef<HTMLInputElement>(null);
+  const today = writersToday();
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const inputId = useId();
   const errorId = useId();
@@ -66,6 +82,7 @@ export default function PersonRow({ person, canMerge, theme, language, t, onSave
   const startEditing = () => {
     setName(person.name);
     setDateDraft(personDateDraft(person.date));
+    setReachOut(reachOutDraft(person));
     setEditing(true);
   };
 
@@ -75,9 +92,9 @@ export default function PersonRow({ person, canMerge, theme, language, t, onSave
     globalThis.setTimeout(() => editButtonRef.current?.focus(), 0);
   };
 
-  const fail = (field: 'name' | 'date', message: string) => {
+  const fail = (field: EditorField, message: string) => {
     setError({ field, message });
-    (field === 'name' ? inputRef.current : kindRef.current)?.focus();
+    ({ name: inputRef, date: kindRef, reachOut: lastContactRef })[field].current?.focus();
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -92,17 +109,26 @@ export default function PersonRow({ person, canMerge, theme, language, t, onSave
       fail('date', t(read.error));
       return;
     }
+    const readReachOut = readReachOutDraft(reachOut, today);
+    if ('error' in readReachOut) {
+      fail('reachOut', t(readReachOut.error));
+      return;
+    }
     if (saving) return;
-    const dateChanged = !samePersonDate(read.date, person.date);
+    const changes: PersonChanges = {
+      name: trimmed,
+      ...(samePersonDate(read.date, person.date) ? {} : { date: read.date }),
+      ...(readReachOut.reachOutDays === person.reachOutDays ? {} : { reachOutDays: readReachOut.reachOutDays }),
+      ...(readReachOut.lastContactOn === person.lastContactOn ? {} : { lastContactOn: readReachOut.lastContactOn }),
+    };
     let failure: string | null = null;
-    if (trimmed !== person.name || dateChanged) {
+    if (trimmed !== person.name || Object.keys(changes).length > 1) {
       setSaving(true);
-      failure = await onSave(dateChanged ? { name: trimmed, date: read.date } : { name: trimmed });
+      failure = await onSave(changes);
       setSaving(false);
     }
     if (failure) {
-      // The codes the API refuses a date with name it: PERSON_DATE_INVALID, _YEAR_INVALID, _IN_FUTURE
-      fail(failure.startsWith('apiError_PERSON_DATE_') ? 'date' : 'name', t(failure));
+      fail(failedField(failure), t(failure));
       return;
     }
     stopEditing();
@@ -111,6 +137,10 @@ export default function PersonRow({ person, canMerge, theme, language, t, onSave
   const details = [
     pluralPhrase(t, 'personEntryCount', person.entryCount, language),
     person.lastMentionedOn ? t('personLastMentioned', { date: formatEraDate(person.lastMentionedOn, language) }) : null,
+  ].filter(Boolean).join(' · ');
+  const reachOutLine = [
+    person.reachOutDays === null ? null : t('reachOutShown', { interval: t(`reachOutAfter_${person.reachOutDays}`) }),
+    person.lastContactOn ? t('reachOutLastContactShown', { date: formatEraDate(person.lastContactOn, language) }) : null,
   ].filter(Boolean).join(' · ');
 
   return (
@@ -148,6 +178,16 @@ export default function PersonRow({ person, canMerge, theme, language, t, onSave
             errorId={error?.field === 'date' ? errorId : undefined}
             kindRef={kindRef}
           />
+          <PersonReachOutFields
+            name={name.trim() || person.name}
+            draft={reachOut}
+            onChange={setReachOut}
+            today={today}
+            isDark={isDark}
+            t={t}
+            errorId={error?.field === 'reachOut' ? errorId : undefined}
+            lastContactRef={lastContactRef}
+          />
           {error && <p id={errorId} role="alert" className={`text-sm ${isDark ? 'text-red-300' : 'text-red-700'}`}>{error.message}</p>}
           <div className="flex gap-2 pt-1">
             <button type="submit" disabled={saving} className="h-10 rounded-lg bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-60">
@@ -172,6 +212,7 @@ export default function PersonRow({ person, canMerge, theme, language, t, onSave
                 {t('personDateShown', { kind: t(`personDateKind_${person.date.kind}`), date: formatPersonDate(person.date, language) })}
               </p>
             )}
+            {reachOutLine && <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{reachOutLine}</p>}
             <p className={`text-xs ${muted}`}>{details}</p>
           </div>
           <div className="flex gap-2">

@@ -7,6 +7,7 @@ import { fulfillJson, sortStrings, toEntryResponse, type RouteContext } from './
 import { isMockSealed, mockOpenedCapsules } from './mockApp.routes.time-capsules';
 import { mockDueRereads } from './mockApp.routes.reread-reminders';
 import { mockPersonDates } from './mockApp.person-dates';
+import { mockReachOuts } from './mockApp.reach-outs';
 import { mockCurrentDate, mockOnThisDay } from './mockApp.on-this-day';
 import { buildMockGoals } from './mockApp.goals';
 import { buildMockStreak } from './mockApp.streak';
@@ -274,6 +275,7 @@ async function handleEntryReferenceRoutes({ route, pathname, searchParams, state
       rereadReminders: mockDueRereads(scopedEntries, today, state),
       // People are the writer's, not a diary's
       personDates: mockPersonDates(state, today),
+      reachOuts: mockReachOuts(state, today),
     });
     return true;
   }

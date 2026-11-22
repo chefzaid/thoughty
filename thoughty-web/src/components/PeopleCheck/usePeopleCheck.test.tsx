@@ -6,7 +6,7 @@ import type { Person } from '../../services/api/peopleService';
 import { getTranslation, type Language } from '../../utils/translations';
 import { usePeopleCheck, type PeopleCheckRequest } from './usePeopleCheck';
 
-const marie: Person = { id: 1, name: 'Marie Dupont', handles: ['marie'], date: null, entryCount: 1, lastMentionedOn: null, createdAt: '', updatedAt: '' };
+const marie: Person = { id: 1, name: 'Marie Dupont', handles: ['marie'], date: null, reachOutDays: null, lastContactOn: null, entryCount: 1, lastMentionedOn: null, createdAt: '', updatedAt: '' };
 
 function Harness({ request, language = 'en', theme = 'dark' }: { request: PeopleCheckRequest; language?: Language; theme?: 'light' | 'dark' }) {
   const t = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);

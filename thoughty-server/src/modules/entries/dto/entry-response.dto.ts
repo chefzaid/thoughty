@@ -2,6 +2,7 @@
 import { ApiProperty, ApiPropertyOptional, getSchemaPath } from '@nestjs/swagger';
 import { MAX_MOOD, MIN_MOOD } from '@/common/utils/entry-mood.util';
 import { PersonDateDto } from '@/modules/people/dto/person.dto';
+import { PersonReachOutHighlightDto } from '@/modules/people/dto/person-reach-out.dto';
 
 export class EntryResponseDto {
   @ApiProperty()
@@ -160,6 +161,15 @@ export class EntryHighlightsResponseDto {
       '28 February in a year without a 29th',
   })
   personDates: PersonDateHighlightDto[];
+
+  @ApiProperty({
+    type: () => [PersonReachOutHighlightDto],
+    description:
+      'People with a reach-out reminder that is due on the writer’s day (`today`): at least as many days as it asks since ' +
+      'the later of their last contact and the newest entry that mentions them, or neither on record; the longest out of ' +
+      'touch first, up to 10. Each stays until the writer records a contact or writes an entry that mentions them.',
+  })
+  reachOuts: PersonReachOutHighlightDto[];
 }
 
 export class PersonDateHighlightDto {

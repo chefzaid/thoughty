@@ -3,6 +3,7 @@ import HighlightCard from './HighlightCard';
 import OpenedCapsulesSection from './OpenedCapsulesSection';
 import RereadRemindersSection from './RereadRemindersSection';
 import PersonDatesSection from './PersonDatesSection';
+import ReachOutSection from './ReachOutSection';
 import WeeklyReflectionSection from './WeeklyReflectionSection';
 import { writersToday } from '../../utils/entryDate';
 import OnThisDaySection from './OnThisDaySection';
@@ -44,7 +45,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
     const fetchHighlights = useCallback(async (): Promise<void> => {
         try {
             setLoading(true);
-            // On This Day, reread reminders and birthdays go by the writer's own day
+            // On This Day, reread reminders, birthdays and reach-outs go by the writer's own day
             const params = new URLSearchParams({ today: writersToday() });
             if (diaryId) params.append('diaryId', diaryId.toString());
             const response = await authFetch(`/api/entries/highlights?${params}`);
@@ -143,7 +144,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
         }
 
         const weeklyReflection = <WeeklyReflectionSection diaryId={diaryId ?? null} language={language} t={t} />;
-        if (!hasRandomEntry && !hasOnThisDay && openedCapsules.length === 0 && dueRereads.length === 0 && personDates.length === 0) {
+        if (!hasRandomEntry && !hasOnThisDay && openedCapsules.length === 0 && dueRereads.length === 0 && personDates.length === 0 && reachOuts.length === 0) {
             return (
                 <div className="thought-of-day-content">
                     <div className="thought-of-day-empty">
@@ -178,6 +179,10 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
                         onOpenPerson={onClose}
                         t={t}
                     />
+                )}
+                {/* Waiting until a contact is recorded, like the reread reminders below */}
+                {reachOuts.length > 0 && (
+                    <ReachOutSection people={reachOuts} language={language} onOpenPerson={onClose} t={t} />
                 )}
                 {dueRereads.length > 0 && (
                     <RereadRemindersSection
@@ -248,6 +253,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
     const openedCapsules = highlights?.openedCapsules ?? [];
     const dueRereads = highlights?.rereadReminders ?? [];
     const personDates = highlights?.personDates ?? [];
+    const reachOuts = highlights?.reachOuts ?? [];
 
     return (
         <div className={`thought-of-day-overlay ${themeClass}`}>

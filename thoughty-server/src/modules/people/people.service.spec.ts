@@ -7,8 +7,9 @@ import { PeopleService } from './people.service';
 
 const createdAt = new Date('2026-10-27T09:00:00Z');
 const noDate = { dateKind: null, dateMonth: null, dateDay: null, dateYear: null };
-const marieRow = { id: 12, name: 'Marie', handles: ['marie'], entryCount: '3', lastMentionedOn: '2026-10-20', ...noDate, createdAt, updatedAt: createdAt };
-const marie = { id: 12, name: 'Marie', handles: ['marie'], entryCount: 3, lastMentionedOn: '2026-10-20', date: null, createdAt, updatedAt: createdAt };
+const noReachOut = { reachOutDays: null, lastContactOn: null };
+const marieRow = { id: 12, name: 'Marie', handles: ['marie'], entryCount: '3', lastMentionedOn: '2026-10-20', ...noDate, ...noReachOut, createdAt, updatedAt: createdAt };
+const marie = { id: 12, name: 'Marie', handles: ['marie'], entryCount: 3, lastMentionedOn: '2026-10-20', date: null, ...noReachOut, createdAt, updatedAt: createdAt };
 
 describe('PeopleService', () => {
   let repository: Record<string, jest.Mock> & { manager?: unknown };
@@ -86,6 +87,45 @@ describe('PeopleService', () => {
     expect(repository.save).not.toHaveBeenCalled();
   });
 
+  it('shows a person’s reach-out reminder and last contact, reading a reminder sent back as text as a number', async () => {
+    (repository.manager as { query: jest.Mock }).query.mockResolvedValue([{ ...marieRow, reachOutDays: '30', lastContactOn: '2026-11-03' }]);
+
+    const { people } = await service.list(7);
+    expect(people.map(({ reachOutDays, lastContactOn }) => ({ reachOutDays, lastContactOn }))).toEqual([{ reachOutDays: 30, lastContactOn: '2026-11-03' }]);
+    expect((repository.manager as { query: jest.Mock }).query.mock.calls[0][0]).toContain(`to_char(p.last_contact_on, 'YYYY-MM-DD') AS "lastContactOn"`);
+  });
+
+  it('sets the reach-out reminder and the last contact when sent, keeps them when left out and removes them with null', async () => {
+    const now = new Date('2026-11-22T12:00:00Z');
+    repository.findOne.mockImplementation(async () => ({ id: 12, userId: 7, name: 'Marie', ...noDate, reachOutDays: 90, lastContactOn: '2026-10-01' }));
+
+    await service.update(7, 12, { name: 'Marie' }, now);
+    expect(repository.save).toHaveBeenLastCalledWith(expect.objectContaining({ reachOutDays: 90, lastContactOn: '2026-10-01' }));
+    await service.update(7, 12, { name: 'Marie', reachOutDays: 30, lastContactOn: '2026-11-23' }, now);
+    expect(repository.save).toHaveBeenLastCalledWith(expect.objectContaining({ reachOutDays: 30, lastContactOn: '2026-11-23' }));
+    await service.update(7, 12, { name: 'Marie', reachOutDays: null, lastContactOn: null }, now);
+    expect(repository.save).toHaveBeenLastCalledWith(expect.objectContaining(noReachOut));
+  });
+
+  it('refuses a last contact on a day still to come everywhere on Earth, and saves nothing', async () => {
+    repository.findOne.mockImplementation(async () => ({ id: 12, userId: 7, name: 'Marie', ...noDate, ...noReachOut }));
+
+    await expectApiError(
+      service.update(7, 12, { name: 'Marie', lastContactOn: '2026-11-24' }, new Date('2026-11-22T12:00:00Z')),
+      BadRequestException,
+      'PERSON_CONTACT_IN_FUTURE',
+    );
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('records the writer’s day as the last contact with their own person only', async () => {
+    repository.findOne.mockResolvedValueOnce({ id: 12, userId: 7, name: 'Marie', ...noDate, reachOutDays: 30, lastContactOn: '2026-09-01' }).mockResolvedValueOnce(null);
+
+    await expect(service.markContacted(7, 12, '2026-11-22')).resolves.toEqual(marie);
+    expect(repository.save).toHaveBeenCalledWith(expect.objectContaining({ id: 12, reachOutDays: 30, lastContactOn: '2026-11-22' }));
+    await expectApiError(service.markContacted(8, 12, '2026-11-22'), NotFoundException, 'PERSON_NOT_FOUND');
+  });
+
   it('merges a duplicate under the people lock: handles, entries and saved searches move, then it goes', async () => {
     await expect(service.merge(7, 12, { duplicateId: 14 })).resolves.toEqual(marie);
 
@@ -94,8 +134,10 @@ describe('PeopleService', () => {
     expect(repository.count).toHaveBeenCalledWith({ where: { id: In([12, 14]), userId: 7 } });
     expect(statements[1]).toEqual(['UPDATE person_handles SET person_id = $1 WHERE person_id = $2', [12, 14]]);
     expect(statements[2]).toEqual([expect.stringContaining('p.date_month IS NULL AND d.date_month IS NOT NULL'), [12, 14]]);
-    expect(statements[3][0]).toContain('INSERT INTO entry_people (entry_id, person_id) SELECT entry_id, $1 FROM entry_people WHERE person_id = $2 ON CONFLICT DO NOTHING');
-    expect(statements[4]).toEqual([expect.stringContaining("jsonb_set(filters, '{personId}', to_jsonb($2::int))"), [7, 12, '14']]);
+    expect(statements[3]).toEqual([expect.stringContaining('reach_out_days = COALESCE(p.reach_out_days, d.reach_out_days)'), [12, 14]]);
+    expect(statements[3][0]).toContain('last_contact_on = GREATEST(p.last_contact_on, d.last_contact_on)');
+    expect(statements[4][0]).toContain('INSERT INTO entry_people (entry_id, person_id) SELECT entry_id, $1 FROM entry_people WHERE person_id = $2 ON CONFLICT DO NOTHING');
+    expect(statements[5]).toEqual([expect.stringContaining("jsonb_set(filters, '{personId}', to_jsonb($2::int))"), [7, 12, '14']]);
     expect(manager.getRepository).toHaveBeenCalledWith(Person);
     expect(repository.delete).toHaveBeenCalledWith({ id: 14, userId: 7 });
     expect(repository.update).toHaveBeenCalledWith({ id: 12, userId: 7 }, { updatedAt: expect.any(Date) });

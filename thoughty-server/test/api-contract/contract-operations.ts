@@ -136,6 +136,7 @@ export const CONTRACT_SUITES = {
     'DELETE /api/entries/{id}/reread-reminder',
     'GET /api/entries/reader',
     'GET /api/entries/comfort-reads',
+    'POST /api/people/{id}/contacted',
   ],
   drafts: ['GET /api/composer-draft', 'PUT /api/composer-draft', 'DELETE /api/composer-draft'],
   'content-lock': [

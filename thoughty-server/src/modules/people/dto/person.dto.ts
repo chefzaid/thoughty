@@ -1,10 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsIn, IsOptional, IsString, MaxLength, Min, MinLength, ValidateNested } from 'class-validator';
+import { IsDateString, IsIn, IsOptional, IsString, Matches, MaxLength, Min, MinLength, ValidateNested } from 'class-validator';
 import { PEOPLE_LIMIT } from '@/modules/entries/entry-mentions.sync';
 import { StrictInt } from '@/common/validation';
+import { LOCAL_DAY_PATTERN } from '@/common/utils/writers-day.util';
 import { PERSON_DATE_KINDS, type PersonDateKind } from '@/database/entities/person.entity';
 import { PERSON_DATE_MIN_YEAR } from '../person-dates';
+import { REACH_OUT_DAYS } from '../person-reach-out';
 
 export const PERSON_NAME_MAX_LENGTH = 80;
 
@@ -45,7 +47,10 @@ export class PersonDateInputDto {
   year?: number | null;
 }
 
-/** The name shown for a person, and their date. Their handles, and so the text of entries, stay as they are. */
+/**
+ * The name shown for a person, their date and their reach-out reminder. Their handles, and so the text of
+ * entries, stay as they are.
+ */
 export class UpdatePersonDto {
   @ApiProperty({ example: 'Marie Curie', minLength: 1, maxLength: PERSON_NAME_MAX_LENGTH })
   @Transform(trim)
@@ -63,6 +68,32 @@ export class UpdatePersonDto {
   @ValidateNested()
   @Type(() => PersonDateInputDto)
   date?: PersonDateInputDto | null;
+
+  @ApiPropertyOptional({
+    enum: REACH_OUT_DAYS,
+    nullable: true,
+    example: 30,
+    description:
+      'Remind the writer in Highlights to reach out once this many days have passed since the last contact or the newest ' +
+      'mention; null turns the reminder off, left out keeps it',
+  })
+  @IsOptional()
+  @IsIn(REACH_OUT_DAYS)
+  reachOutDays?: number | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    format: 'date',
+    nullable: true,
+    example: '2026-11-03',
+    description:
+      'The last day the writer was in touch with the person (YYYY-MM-DD), not after today anywhere on Earth ' +
+      '(`400 PERSON_CONTACT_IN_FUTURE`); null removes it, left out keeps it',
+  })
+  @IsOptional()
+  @Matches(LOCAL_DAY_PATTERN)
+  @IsDateString({ strict: true })
+  lastContactOn?: string | null;
 }
 
 export class MergePersonDto {
@@ -121,6 +152,17 @@ export class PersonResponseDto {
     description: 'Their birthday or anniversary, shown in Highlights on its day; null when none is set',
   })
   date!: PersonDateDto | null;
+
+  @ApiProperty({
+    enum: REACH_OUT_DAYS,
+    nullable: true,
+    example: 30,
+    description: 'The reach-out reminder: at most this many days without being in touch; null when there is none',
+  })
+  reachOutDays!: number | null;
+
+  @ApiProperty({ type: String, nullable: true, format: 'date', example: '2026-11-03', description: 'The last contact the writer recorded; null when none is' })
+  lastContactOn!: string | null;
 
   @ApiProperty({ example: '2026-10-27T09:30:00.000Z' })
   createdAt!: Date;

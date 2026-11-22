@@ -14,13 +14,22 @@ export const createPeopleService = (authFetch: AuthFetchFunction) => ({
   },
 
   /**
-   * Changes the name shown and sets their birthday or anniversary (null removes it, leaving it out keeps it);
-   * the person's handles and the entries' text stay as they are.
+   * Changes the name shown and sets their birthday or anniversary, their reach-out reminder and their last contact
+   * (null removes each, leaving it out keeps it); the person's handles and the entries' text stay as they are.
    */
   update(id: number, body: components['schemas']['UpdatePersonDto']): Promise<ServiceResult<Person>> {
     return requestJson(
       authFetch(`/api/people/${id}`, { method: 'PATCH', headers: JSON_HEADERS, body: JSON.stringify(body) }),
       'personSaveFailed',
+    );
+  },
+
+  /** Records the writer's day `today` as the last contact with the person, which ends a due reach-out reminder. */
+  markContacted(id: number, today: string): Promise<ServiceResult<Person>> {
+    const body: components['schemas']['MarkPersonContactedDto'] = { today };
+    return requestJson(
+      authFetch(`/api/people/${id}/contacted`, { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(body) }),
+      'reachOutContactFailed',
     );
   },
 

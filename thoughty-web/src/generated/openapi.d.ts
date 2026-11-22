@@ -2547,8 +2547,25 @@ export interface paths {
         delete: operations["PeopleController_delete"];
         options?: never;
         head?: never;
-        /** Change the name shown for a person and their birthday or anniversary; their handles and the entries’ text stay as they are */
+        /** Change the name shown for a person, their birthday or anniversary, their reach-out reminder and their last contact; their handles and the entries’ text stay as they are */
         patch: operations["PeopleController_update"];
+        trace?: never;
+    };
+    "/api/people/{id}/contacted": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record the writer’s day as the last contact with a person, which ends a reach-out reminder until it is due again */
+        post: operations["PeopleController_markContacted"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/people/{id}/merge": {
@@ -4257,6 +4274,45 @@ export interface components {
         };
         /**
          * @example {
+         *       "id": 12,
+         *       "name": "Marie",
+         *       "reachOutDays": 30,
+         *       "lastContactOn": "2026-09-02",
+         *       "lastMentionedOn": "2026-10-01",
+         *       "daysSince": 52
+         *     }
+         */
+        PersonReachOutHighlightDto: {
+            /** @example 12 */
+            id: number;
+            /** @example Marie */
+            name: string;
+            /**
+             * @description The reminder the writer chose: at most this many days without being in touch
+             * @example 30
+             * @enum {number}
+             */
+            reachOutDays: 14 | 30 | 60 | 90 | 180 | 365;
+            /**
+             * Format: date
+             * @description The last contact the writer recorded; null when none is
+             * @example 2026-09-02
+             */
+            lastContactOn: string | null;
+            /**
+             * Format: date
+             * @description The newest entry that mentions the person, leaving out the recycle bin and sealed time capsules; null when none does
+             * @example 2026-10-01
+             */
+            lastMentionedOn: string | null;
+            /**
+             * @description Days from the later of the last contact and the newest mention to the writer’s day; null when there is neither
+             * @example 52
+             */
+            daysSince: number | null;
+        };
+        /**
+         * @example {
          *       "randomEntry": {
          *         "id": 1,
          *         "user_id": 1,
@@ -4479,6 +4535,16 @@ export interface components {
          *             ]
          *           }
          *         }
+         *       ],
+         *       "reachOuts": [
+         *         {
+         *           "id": 12,
+         *           "name": "Marie",
+         *           "reachOutDays": 30,
+         *           "lastContactOn": "2026-09-02",
+         *           "lastMentionedOn": "2026-10-01",
+         *           "daysSince": 52
+         *         }
          *       ]
          *     }
          */
@@ -4501,6 +4567,8 @@ export interface components {
             rereadReminders: components["schemas"]["EntryResponseDto"][];
             /** @description People whose birthday or anniversary is on the writer’s day (`today`), by name; a 29 February date comes on 28 February in a year without a 29th */
             personDates: components["schemas"]["PersonDateHighlightDto"][];
+            /** @description People with a reach-out reminder that is due on the writer’s day (`today`): at least as many days as it asks since the later of their last contact and the newest entry that mentions them, or neither on record; the longest out of touch first, up to 10. Each stays until the writer records a contact or writes an entry that mentions them. */
+            reachOuts: components["schemas"]["PersonReachOutHighlightDto"][];
         };
         /**
          * @example {
@@ -10329,6 +10397,8 @@ export interface components {
          *         "day": 14,
          *         "year": 1992
          *       },
+         *       "reachOutDays": 30,
+         *       "lastContactOn": "2026-11-03",
          *       "createdAt": "2026-10-27T09:30:00.000Z",
          *       "updatedAt": "2026-10-27T09:30:00.000Z"
          *     }
@@ -10363,6 +10433,18 @@ export interface components {
             /** @description Their birthday or anniversary, shown in Highlights on its day; null when none is set */
             date: components["schemas"]["PersonDateDto"] | null;
             /**
+             * @description The reach-out reminder: at most this many days without being in touch; null when there is none
+             * @example 30
+             * @enum {number|null}
+             */
+            reachOutDays: 14 | 30 | 60 | 90 | 180 | 365 | null;
+            /**
+             * Format: date
+             * @description The last contact the writer recorded; null when none is
+             * @example 2026-11-03
+             */
+            lastContactOn: string | null;
+            /**
              * Format: date-time
              * @example 2026-10-27T09:30:00.000Z
              */
@@ -10391,6 +10473,8 @@ export interface components {
          *             "day": 14,
          *             "year": 1992
          *           },
+         *           "reachOutDays": 30,
+         *           "lastContactOn": "2026-11-03",
          *           "createdAt": "2026-10-27T09:30:00.000Z",
          *           "updatedAt": "2026-10-27T09:30:00.000Z"
          *         }
@@ -10442,7 +10526,9 @@ export interface components {
          *         "month": 3,
          *         "day": 14,
          *         "year": 1992
-         *       }
+         *       },
+         *       "reachOutDays": 30,
+         *       "lastContactOn": "2026-11-03"
          *     }
          */
         UpdatePersonDto: {
@@ -10450,6 +10536,31 @@ export interface components {
             name: string;
             /** @description Their birthday or anniversary, shown in Highlights each year on its day; null removes it, left out keeps it */
             date?: components["schemas"]["PersonDateInputDto"] | null;
+            /**
+             * @description Remind the writer in Highlights to reach out once this many days have passed since the last contact or the newest mention; null turns the reminder off, left out keeps it
+             * @example 30
+             * @enum {number|null}
+             */
+            reachOutDays?: 14 | 30 | 60 | 90 | 180 | 365 | null;
+            /**
+             * Format: date
+             * @description The last day the writer was in touch with the person (YYYY-MM-DD), not after today anywhere on Earth (`400 PERSON_CONTACT_IN_FUTURE`); null removes it, left out keeps it
+             * @example 2026-11-03
+             */
+            lastContactOn?: string | null;
+        };
+        /**
+         * @example {
+         *       "today": "2026-11-22"
+         *     }
+         */
+        MarkPersonContactedDto: {
+            /**
+             * Format: date
+             * @description The writer’s own day (YYYY-MM-DD), the UTC day or the one before or after it; it becomes the last contact
+             * @example 2026-11-22
+             */
+            today: string;
         };
         /**
          * @example {
@@ -11711,7 +11822,7 @@ export interface components {
          * @example VALIDATION_FAILED
          * @enum {string}
          */
-        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "FEATURE_DISABLED" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_WEAK_PASSWORD" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "AUTH_INVALID_SIGN_UP_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "CONTENT_LOCKED" | "CONTENT_LOCKED_PRIVATE" | "CONTENT_PIN_NOT_SET" | "CONTENT_PIN_INCORRECT" | "CONTENT_PIN_BLOCKED" | "CONTENT_PIN_PROOF_REQUIRED" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "COMPOSER_DRAFT_CONFLICT" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "ACCESS_TOKEN_NOT_FOUND" | "ACCESS_TOKEN_LIMIT_REACHED" | "ACCESS_TOKEN_INVALID" | "ACCESS_TOKEN_SCOPE_MISSING" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "MEMOIR_PHOTO_EMPTY" | "MEMOIR_PHOTO_NOT_IMAGE" | "MEMOIR_PHOTO_IN_USE" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "REVIEW_WEEK_EMPTY" | "REVIEW_REFLECTION_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "SOCIAL_CANNOT_SAVE_OWN_ENTRY" | "SOCIAL_CANNOT_MUTE_SELF" | "SOCIAL_CANNOT_BLOCK_SELF" | "COMMENT_NOT_FOUND" | "COMMENTS_CLOSED" | "COMMENTS_FOLLOWERS_ONLY" | "COMMENT_PIN_HIDDEN" | "FEATURE_REQUEST_NOT_FOUND";
+        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "FEATURE_DISABLED" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_WEAK_PASSWORD" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "AUTH_INVALID_SIGN_UP_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "CONTENT_LOCKED" | "CONTENT_LOCKED_PRIVATE" | "CONTENT_PIN_NOT_SET" | "CONTENT_PIN_INCORRECT" | "CONTENT_PIN_BLOCKED" | "CONTENT_PIN_PROOF_REQUIRED" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "COMPOSER_DRAFT_CONFLICT" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "ACCESS_TOKEN_NOT_FOUND" | "ACCESS_TOKEN_LIMIT_REACHED" | "ACCESS_TOKEN_INVALID" | "ACCESS_TOKEN_SCOPE_MISSING" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "PERSON_CONTACT_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "MEMOIR_PHOTO_EMPTY" | "MEMOIR_PHOTO_NOT_IMAGE" | "MEMOIR_PHOTO_IN_USE" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "REVIEW_WEEK_EMPTY" | "REVIEW_REFLECTION_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "SOCIAL_CANNOT_SAVE_OWN_ENTRY" | "SOCIAL_CANNOT_MUTE_SELF" | "SOCIAL_CANNOT_BLOCK_SELF" | "COMMENT_NOT_FOUND" | "COMMENTS_CLOSED" | "COMMENTS_FOLLOWERS_ONLY" | "COMMENT_PIN_HIDDEN" | "FEATURE_REQUEST_NOT_FOUND";
         /**
          * @example {
          *       "statusCode": 401,
@@ -14169,6 +14280,16 @@ export interface operations {
                      *               "swimming"
                      *             ]
                      *           }
+                     *         }
+                     *       ],
+                     *       "reachOuts": [
+                     *         {
+                     *           "id": 12,
+                     *           "name": "Marie",
+                     *           "reachOutDays": 30,
+                     *           "lastContactOn": "2026-09-02",
+                     *           "lastMentionedOn": "2026-10-01",
+                     *           "daysSince": 52
                      *         }
                      *       ]
                      *     }
@@ -23270,6 +23391,8 @@ export interface operations {
                      *             "day": 14,
                      *             "year": 1992
                      *           },
+                     *           "reachOutDays": 30,
+                     *           "lastContactOn": "2026-11-03",
                      *           "createdAt": "2026-10-27T09:30:00.000Z",
                      *           "updatedAt": "2026-10-27T09:30:00.000Z"
                      *         }
@@ -23345,7 +23468,9 @@ export interface operations {
                  *         "month": 3,
                  *         "day": 14,
                  *         "year": 1992
-                 *       }
+                 *       },
+                 *       "reachOutDays": 30,
+                 *       "lastContactOn": "2026-11-03"
                  *     }
                  */
                 "application/json": components["schemas"]["UpdatePersonDto"];
@@ -23374,6 +23499,8 @@ export interface operations {
                      *         "day": 14,
                      *         "year": 1992
                      *       },
+                     *       "reachOutDays": 30,
+                     *       "lastContactOn": "2026-11-03",
                      *       "createdAt": "2026-10-27T09:30:00.000Z",
                      *       "updatedAt": "2026-10-27T09:30:00.000Z"
                      *     }
@@ -23381,7 +23508,7 @@ export interface operations {
                     "application/json": components["schemas"]["PersonResponseDto"];
                 };
             };
-            /** @description Invalid name, or a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE) */
+            /** @description Invalid name or reminder, a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), or a last contact after today (PERSON_CONTACT_IN_FUTURE) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -23390,7 +23517,94 @@ export interface operations {
                     /**
                      * @example {
                      *       "statusCode": 400,
-                     *       "message": "Invalid name, or a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE)",
+                     *       "message": "Invalid name or reminder, a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), or a last contact after today (PERSON_CONTACT_IN_FUTURE)",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Person not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "Person not found",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    PeopleController_markContacted: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "today": "2026-11-22"
+                 *     }
+                 */
+                "application/json": components["schemas"]["MarkPersonContactedDto"];
+            };
+        };
+        responses: {
+            /** @description Person saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": 12,
+                     *       "name": "Marie",
+                     *       "handles": [
+                     *         "marie",
+                     *         "marie-c"
+                     *       ],
+                     *       "entryCount": 8,
+                     *       "lastMentionedOn": "2026-10-21",
+                     *       "date": {
+                     *         "kind": "birthday",
+                     *         "month": 3,
+                     *         "day": 14,
+                     *         "year": 1992
+                     *       },
+                     *       "reachOutDays": 30,
+                     *       "lastContactOn": "2026-11-03",
+                     *       "createdAt": "2026-10-27T09:30:00.000Z",
+                     *       "updatedAt": "2026-10-27T09:30:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PersonResponseDto"];
+                };
+            };
+            /** @description `today` is not the writer’s current day */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "`today` is not the writer’s current day",
                      *       "error": "Bad Request",
                      *       "code": "VALIDATION_FAILED"
                      *     }
@@ -23460,6 +23674,8 @@ export interface operations {
                      *         "day": 14,
                      *         "year": 1992
                      *       },
+                     *       "reachOutDays": 30,
+                     *       "lastContactOn": "2026-11-03",
                      *       "createdAt": "2026-10-27T09:30:00.000Z",
                      *       "updatedAt": "2026-10-27T09:30:00.000Z"
                      *     }

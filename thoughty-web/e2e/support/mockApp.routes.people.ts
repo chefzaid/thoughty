@@ -3,12 +3,17 @@ import { findMentions } from '../../src/utils/mentions';
 import type { MockAppState, MockEntry } from './mockApp.shared';
 import { fulfillApiError, fulfillJson, type RouteContext } from './mockApp.route-utils';
 import { mockPersonDateRefusal } from './mockApp.person-dates';
+import { mockContactRefusal, mockLastMentionedOn } from './mockApp.reach-outs';
 
 export const MOCK_PEOPLE_LIMIT = 1000;
 
 type PersonResponse = components['schemas']['PersonResponseDto'];
-/** A person as the mock keeps them; their counts are read from the entries' text on each request. */
-export type MockPerson = Omit<PersonResponse, 'entryCount' | 'lastMentionedOn'>;
+/**
+ * A person as the mock keeps them; their counts are read from the entries' text on each request. A spec may
+ * leave out the reach-out reminder and the last contact, which then read as none.
+ */
+export type MockPerson = Omit<PersonResponse, 'entryCount' | 'lastMentionedOn' | 'reachOutDays' | 'lastContactOn'>
+  & Partial<Pick<PersonResponse, 'reachOutDays' | 'lastContactOn'>>;
 
 const mentionedHandles = (content: string) => new Set(findMentions(content).map((mention) => mention.handle));
 
@@ -36,16 +41,22 @@ export function mockMentions(entry: Pick<MockEntry, 'content'>, person: Pick<Moc
 
 function toResponse(state: MockAppState, person: MockPerson): PersonResponse {
   const entries = state.entries.filter((entry) => mockMentions(entry, person));
-  const lastMentionedOn = entries.map((entry) => entry.date).sort().at(-1) ?? null;
-  return { ...person, entryCount: entries.length, lastMentionedOn };
+  return {
+    ...person,
+    reachOutDays: person.reachOutDays ?? null,
+    lastContactOn: person.lastContactOn ?? null,
+    entryCount: entries.length,
+    lastMentionedOn: mockLastMentionedOn(entries),
+  };
 }
 
 const byName = (left: MockPerson, right: MockPerson) => left.name.toLowerCase().localeCompare(right.name.toLowerCase()) || left.id - right.id;
 
 /**
  * `/api/people` as the API answers it: people by name with their counts outside the recycle bin, renaming the
- * name shown and setting their date (refused with the API's codes), merging a duplicate (its handles move, its
- * date too when the person kept has none, saved searches follow) and deleting (saved searches widen).
+ * name shown and setting their date, reminder and last contact (refused with the API's codes), recording a
+ * contact today, merging a duplicate (its handles move, its date and reminder too when the person kept has
+ * none, the later contact stays, saved searches follow) and deleting (saved searches widen).
  */
 export async function handlePeopleRoutes({ route, request, pathname, state }: RouteContext): Promise<boolean> {
   if (pathname === '/api/people' && request.method() === 'GET') {
@@ -53,7 +64,7 @@ export async function handlePeopleRoutes({ route, request, pathname, state }: Ro
     return true;
   }
 
-  const match = /^\/api\/people\/(\d+)(\/merge)?$/.exec(pathname);
+  const match = /^\/api\/people\/(\d+)(\/merge|\/contacted)?$/.exec(pathname);
   if (!match) return false;
   const person = state.people.find((candidate) => candidate.id === Number(match[1]));
   if (!person) {
@@ -61,7 +72,15 @@ export async function handlePeopleRoutes({ route, request, pathname, state }: Ro
     return true;
   }
 
-  if (match[2] && request.method() === 'POST') {
+  if (match[2] === '/contacted' && request.method() === 'POST') {
+    const { today } = request.postDataJSON() as components['schemas']['MarkPersonContactedDto'];
+    person.lastContactOn = today;
+    person.updatedAt = new Date().toISOString();
+    await fulfillJson(route, toResponse(state, person));
+    return true;
+  }
+
+  if (match[2] === '/merge' && request.method() === 'POST') {
     const { duplicateId } = request.postDataJSON() as components['schemas']['MergePersonDto'];
     const duplicate = state.people.find((candidate) => candidate.id === duplicateId);
     if (duplicateId === person.id) {
@@ -74,6 +93,8 @@ export async function handlePeopleRoutes({ route, request, pathname, state }: Ro
     }
     person.handles = [...person.handles, ...duplicate.handles];
     person.date ??= duplicate.date;
+    person.reachOutDays ??= duplicate.reachOutDays ?? null;
+    person.lastContactOn = [person.lastContactOn, duplicate.lastContactOn].filter(Boolean).sort().at(-1) ?? null;
     person.updatedAt = new Date().toISOString();
     state.people = state.people.filter((candidate) => candidate.id !== duplicate.id);
     for (const saved of state.savedSearches) {
@@ -84,14 +105,16 @@ export async function handlePeopleRoutes({ route, request, pathname, state }: Ro
   }
 
   if (!match[2] && request.method() === 'PATCH') {
-    const { name, date } = request.postDataJSON() as components['schemas']['UpdatePersonDto'];
-    const refusal = date ? mockPersonDateRefusal(date) : null;
+    const { name, date, reachOutDays, lastContactOn } = request.postDataJSON() as components['schemas']['UpdatePersonDto'];
+    const refusal = (date ? mockPersonDateRefusal(date) : null) ?? (lastContactOn ? mockContactRefusal(lastContactOn) : null);
     if (refusal) {
       await fulfillApiError(route, 400, refusal.code, refusal.message);
       return true;
     }
     person.name = name.trim();
     if (date !== undefined) person.date = date ? { ...date, year: date.year ?? null } : null;
+    if (reachOutDays !== undefined) person.reachOutDays = reachOutDays;
+    if (lastContactOn !== undefined) person.lastContactOn = lastContactOn;
     person.updatedAt = new Date().toISOString();
     await fulfillJson(route, toResponse(state, person));
     return true;

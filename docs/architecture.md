@@ -255,6 +255,7 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 |  | `PERSON_DATE_INVALID` | This day does not exist in that month |
 |  | `PERSON_DATE_YEAR_INVALID` | Write the year with four digits, from 1000 |
 |  | `PERSON_DATE_IN_FUTURE` | A date with its year cannot be in the future |
+|  | `PERSON_CONTACT_IN_FUTURE` | The last contact cannot be after today |
 | Attachments and audio transcription | `ATTACHMENT_NOT_FOUND` | Attachment not found |
 |  | `ATTACHMENT_FILE_NOT_FOUND` | File not found |
 |  | `ATTACHMENT_FILE_MISSING` | No file provided |

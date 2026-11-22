@@ -7,7 +7,7 @@ import type { Person } from '../../services/api';
 import { getTranslation } from '../../utils/translations';
 
 const person = (id: number, name: string, handles: string[], entryCount: number, lastMentionedOn: string | null = null, date: Person['date'] = null): Person => ({
-  id, name, handles, entryCount, lastMentionedOn, date, createdAt: '', updatedAt: '',
+  id, name, handles, entryCount, lastMentionedOn, date, reachOutDays: null, lastContactOn: null, createdAt: '', updatedAt: '',
 });
 
 const peopleHook = vi.hoisted(() => ({
@@ -119,6 +119,56 @@ describe('PeoplePage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
 
     await waitFor(() => expect(peopleHook.update).toHaveBeenCalledWith(15, { name: 'Paul', date: null }));
+  });
+
+  it('sets a reach-out reminder and the last contact, refusing a contact after today, and shows them on the row', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 10, 22, 10));
+    peopleHook.update
+      .mockResolvedValueOnce({ data: null, error: 'apiError_PERSON_CONTACT_IN_FUTURE' })
+      .mockResolvedValueOnce({ data: { ...marie, reachOutDays: 30, lastContactOn: '2026-11-03' }, error: null });
+    renderPage('light');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Marie' }));
+    const group = screen.getByRole('group', { name: 'Reach out' });
+    expect(group).toHaveAccessibleDescription(/Highlights reminds you to reach out to Marie/);
+    const after = within(group).getByRole('combobox', { name: 'Remind me after' });
+    expect(after).toHaveDisplayValue('Never');
+    fireEvent.change(after, { target: { value: '30' } });
+    const lastContact = within(group).getByLabelText('Last contact (optional)');
+    expect(lastContact).toHaveAttribute('max', '2026-11-22');
+    fireEvent.change(lastContact, { target: { value: '2026-11-23' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('The last contact cannot be after today.');
+    expect(lastContact).toHaveFocus();
+    expect(lastContact).toHaveAttribute('aria-invalid', 'true');
+    expect(peopleHook.update).not.toHaveBeenCalled();
+
+    // The API refuses it too, on its own clock: the message goes to the same field
+    fireEvent.change(lastContact, { target: { value: '2026-11-03' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(peopleHook.update).toHaveBeenCalledWith(12, { name: 'Marie', reachOutDays: 30, lastContactOn: '2026-11-03' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('The last contact cannot be after today.');
+    expect(lastContact).toHaveFocus();
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(screen.queryByRole('group')).not.toBeInTheDocument());
+    expect(screen.getByRole('status')).toHaveTextContent('Saved for Marie.');
+    vi.useRealTimers();
+  });
+
+  it('shows a reminder and a last contact on the row, and turns the reminder off with Never, in French', async () => {
+    peopleHook.state = { ...peopleHook.state, people: [{ ...marie, reachOutDays: 90, lastContactOn: '2026-11-03' }] };
+    peopleHook.update.mockResolvedValueOnce({ data: { ...marie, lastContactOn: '2026-11-03' }, error: null });
+    const fr = (key: string, params?: Record<string, string | number>) => getTranslation('fr', key, params);
+    render(<MemoryRouter><PeoplePage language="fr" t={fr} /></MemoryRouter>);
+
+    expect(screen.getByText('Prendre des nouvelles après 3 mois sans contact · Dernier contact : 3 nov. 2026')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Modifier Marie' }));
+    const group = screen.getByRole('group', { name: 'Garder le contact' });
+    fireEvent.change(within(group).getByRole('combobox', { name: 'Me le rappeler après' }), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+
+    await waitFor(() => expect(peopleHook.update).toHaveBeenCalledWith(12, { name: 'Marie', reachOutDays: null }));
   });
 
   it('finds people by name or handle', () => {

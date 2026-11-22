@@ -84,7 +84,8 @@ export class EntriesQueryService {
 
   /**
    * Highlights on the writer's own day (`query.today`, else the UTC day): a random entry, On This Day,
-   * the time capsules opened in the last week, the reread reminders due and the birthdays and anniversaries.
+   * the time capsules opened in the last week, the reread reminders due, the birthdays and anniversaries and
+   * the people due a reach-out.
    */
   async getHighlights(userId: number, query: GetHighlightsQueryDto, now = new Date()): Promise<EntryHighlightsResponseDto> {
     const { diaryId } = query;
@@ -104,12 +105,13 @@ export class EntriesQueryService {
     }
     hideLockedEntries(randomQb, userId);
 
-    const [randomEntry, onThisDayEntries, openedCapsules, dueReminders, peopleOfTheDay] = await Promise.all([
+    const [randomEntry, onThisDayEntries, openedCapsules, dueReminders, peopleOfTheDay, reachOuts] = await Promise.all([
       randomQb.getOne(),
       this.findOnThisDay(userId, { year, month, day, diaryId }),
       this.timeCapsules.findRecentlyOpened(userId, diaryId, now),
       this.rereadReminders.findDue(userId, diaryId, today),
       this.personDates.findOn(userId, today),
+      this.personDates.findReachOutsDue(userId, today),
     ]);
 
     const onThisDay: Record<number, EntryResponseDto[]> = {};
@@ -133,6 +135,7 @@ export class EntriesQueryService {
         ...person,
         latestEntry: latestEntry ? toEntryResponse(latestEntry) : null,
       })),
+      reachOuts,
     };
   }
 

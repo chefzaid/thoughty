@@ -353,25 +353,30 @@ export class UserDataExportService {
   }
 
   /**
-   * The people the writer mentions, with their handles, their birthday or anniversary and the entries
+   * The people the writer mentions, with their handles, their birthday or anniversary, their reach-out
+   * reminder and last contact, and the entries
    * (recycle bin included) that mention them. The ID is what a saved search's `personId` filter refers to.
    */
   private async collectPeople(userId: number) {
     const rows = (await this.personRepository.query(
       `SELECT p.id, p.name, p.created_at AS "createdAt", p.updated_at AS "updatedAt",
               p.date_kind AS "dateKind", p.date_month AS "dateMonth", p.date_day AS "dateDay", p.date_year AS "dateYear",
+              p.reach_out_days AS "reachOutDays", to_char(p.last_contact_on, 'YYYY-MM-DD') AS "lastContactOn",
               COALESCE((SELECT array_agg(h.handle ORDER BY h.created_at, h.handle) FROM person_handles h WHERE h.person_id = p.id), '{}') AS handles,
               COALESCE((SELECT array_agg(ep.entry_id ORDER BY ep.entry_id) FROM entry_people ep WHERE ep.person_id = p.id), '{}') AS "entryIds"
          FROM people p
         WHERE p.user_id = $1
         ORDER BY p.id`,
       [userId],
-    )) as Array<PersonDateColumns & { id: number; name: string; handles: string[]; entryIds: number[]; createdAt: Date; updatedAt: Date }>;
+    )) as Array<PersonDateColumns & { id: number; name: string; handles: string[]; entryIds: number[]; createdAt: Date; updatedAt: Date }
+      & { reachOutDays: number | string | null; lastContactOn: string | null }>;
     return rows.map((person) => ({
       id: person.id,
       name: person.name,
       handles: person.handles,
       date: toPersonDate(person),
+      reachOutDays: person.reachOutDays === null ? null : Number(person.reachOutDays),
+      lastContactOn: person.lastContactOn,
       entryIds: person.entryIds.map(Number),
       createdAt: person.createdAt,
       updatedAt: person.updatedAt,

@@ -23,7 +23,7 @@ describe('EntriesQueryService', () => {
 
     timeCapsules = { findRecentlyOpened: jest.fn().mockResolvedValue([]) };
     rereadReminders = { findDue: jest.fn().mockResolvedValue([]) };
-    personDates = { findOn: jest.fn().mockResolvedValue([]) };
+    personDates = { findOn: jest.fn().mockResolvedValue([]), findReachOutsDue: jest.fn().mockResolvedValue([]) };
     service = new EntriesQueryService(
       entryRepository as never,
       revisionRepository as never,
@@ -87,6 +87,8 @@ describe('EntriesQueryService', () => {
     // People are the writer's, not a diary's: their dates are found by the day alone
     expect(personDates.findOn).toHaveBeenCalledWith(7, '2024-01-15');
     expect(result.personDates).toEqual([]);
+    expect(personDates.findReachOutsDue).toHaveBeenCalledWith(7, '2024-01-15');
+    expect(result.reachOuts).toEqual([]);
   });
 
   it.each([
@@ -130,6 +132,19 @@ describe('EntriesQueryService', () => {
       { id: 12, name: 'Marie', date, years: 34, entryCount: 2, latestEntry: expect.objectContaining({ id: 21, content: 'Tea with @Marie' }) },
       { id: 13, name: 'Paul', date: { ...date, kind: 'anniversary', year: null }, years: null, entryCount: 0, latestEntry: null },
     ]);
+  });
+
+  it('shows the people due a reach-out on the writer’s day, in every diary', async () => {
+    entryRepository.createQueryBuilder
+      .mockReturnValueOnce(createQueryBuilder({ getOne: jest.fn().mockResolvedValue(null) }))
+      .mockReturnValueOnce(createQueryBuilder({ getRawAndEntities: jest.fn().mockResolvedValue({ raw: [], entities: [] }) }));
+    const due = [{ id: 12, name: 'Marie', reachOutDays: 30, lastContactOn: '2026-09-01', lastMentionedOn: null, daysSince: 82 }];
+    personDates.findReachOutsDue.mockResolvedValue(due);
+
+    const result = await service.getHighlights(7, { today: '2026-11-22', diaryId: 3 });
+
+    expect(personDates.findReachOutsDue).toHaveBeenCalledWith(7, '2026-11-22');
+    expect(result.reachOuts).toEqual(due);
   });
 
   it('shows the entries the writer asked to reread by their own day', async () => {
