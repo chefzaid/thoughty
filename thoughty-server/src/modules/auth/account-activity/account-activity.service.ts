@@ -2,6 +2,7 @@ import { type BeforeApplicationShutdown, Injectable, Logger } from '@nestjs/comm
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, LessThan, MoreThan, Repository } from 'typeorm';
+import { BackgroundTasks } from '@/common/utils/background-tasks.util';
 import { AccountEvent, type AccountEventKind, Setting, type User } from '@/database/entities';
 import { describeEmailFailure, EmailService } from '../services/email.service';
 import { currentClientSoftware, type ClientSoftware } from './client-software';
@@ -43,7 +44,7 @@ function toEventDto(event: AccountEvent): AccountEventDto {
 export class AccountActivityService implements BeforeApplicationShutdown {
   private readonly logger = new Logger(AccountActivityService.name);
   /** The new sign-in emails being sent in the background. */
-  private readonly emailsInFlight = new Set<Promise<void>>();
+  private readonly emails = new BackgroundTasks();
 
   constructor(
     @InjectRepository(AccountEvent)
@@ -92,7 +93,7 @@ export class AccountActivityService implements BeforeApplicationShutdown {
       });
       if (notify) {
         // Sent in the background, so a slow mail server never holds up the sign-in
-        this.sendInBackground(this.sendNewSignInEmail(user, software, event.createdAt));
+        this.emails.run(this.sendNewSignInEmail(user, software, event.createdAt));
       }
     } catch (error) {
       this.logFailure('sign_in', error);
@@ -100,10 +101,8 @@ export class AccountActivityService implements BeforeApplicationShutdown {
   }
 
   /** Resolves once every new sign-in email in flight has been sent or has failed (each failure is logged). */
-  async emailsSettled(): Promise<void> {
-    while (this.emailsInFlight.size > 0) {
-      await Promise.all(this.emailsInFlight);
-    }
+  emailsSettled(): Promise<void> {
+    return this.emails.settled();
   }
 
   /** Lets the emails in flight go out before the database and the process close. */
@@ -171,12 +170,6 @@ export class AccountActivityService implements BeforeApplicationShutdown {
     software: ClientSoftware,
   ): Promise<AccountEvent> {
     return events.save(events.create({ userId, kind, browser: software.browser, system: software.system }));
-  }
-
-  /** Keeps `sending` (which never rejects: it logs its own failure) in flight until it settles. */
-  private sendInBackground(sending: Promise<void>): void {
-    const tracked = sending.finally(() => this.emailsInFlight.delete(tracked));
-    this.emailsInFlight.add(tracked);
   }
 
   private async sendNewSignInEmail(

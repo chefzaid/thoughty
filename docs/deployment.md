@@ -20,6 +20,10 @@ Thoughty runs on the shared K3s platform [`swirl-cloud`](https://github.com/chef
 
 Overlays build on `infra/k8s/base` and `infra/k8s/components`. Render one with `kubectl kustomize <dir>`.
 
+### Shutdown
+
+Kubernetes stops an API pod (rollout, eviction, node drain) with its `preStop` hook, a 5-second `sleep` that keeps it serving while the Service and the ingress stop routing to it, then a `SIGTERM`. Node is PID 1 in the container (the image's exec-form `CMD`, or `exec node` where `infra/k8s/base/server.yaml` and the canary source Vault secrets first), so it receives the signal itself. The API (`thoughty-server/src/graceful-shutdown.ts`) then waits for the emails it is still sending in the background (sign-up links and notices, password reset links, new-browser sign-in emails), closes the HTTP listener once the requests in progress finish, closes the database pool and the Redis client (dropped at once while Redis is unreachable, where a `QUIT` would wait for it), and exits with code 0. `terminationGracePeriodSeconds: 60` bounds the whole stop, `preStop` included; past it Kubernetes kills the container. The worker handles `SIGTERM` the same way in `cloud-sync-worker.ts`, waiting for its current runs.
+
 ## Production Desired State
 
 Argo CD syncs `infra/k8s/overlays/swirl-cloud` from `main` of `swirl/thoughty` into `apps`, with prune and self-heal. Sync order:

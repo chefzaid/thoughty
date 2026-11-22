@@ -46,4 +46,18 @@ describe('EntriesList as a feed', () => {
         fireEvent.click(all);
         expect(onClearSelection).toHaveBeenCalled();
     });
+
+    it('names the checkbox that selects each entry', () => {
+        const onToggleSelect = vi.fn();
+        render(<EntriesList {...createEntriesListProps({
+            bulkMode: true, selectedIds: new Set([mockEntries[0]!.id]), onToggleSelect, onSelectAll: vi.fn(),
+            onClearSelection: vi.fn(), onBulkAction: vi.fn(), onToggleBulkMode: vi.fn(),
+        })} />);
+
+        const boxes = screen.getAllByRole('checkbox', { name: 'bulkSelectEntry' });
+        expect(boxes).toHaveLength(mockEntries.length);
+        expect(boxes[0]).toBeChecked();
+        fireEvent.click(boxes[1]!);
+        expect(onToggleSelect).toHaveBeenCalledWith(mockEntries[1]!.id);
+    });
 });

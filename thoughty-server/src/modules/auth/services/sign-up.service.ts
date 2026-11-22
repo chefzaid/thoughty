@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  type BeforeApplicationShutdown,
   ConflictException,
   Injectable,
   Logger,
@@ -12,6 +13,7 @@ import * as bcrypt from 'bcryptjs';
 import * as crypto from 'node:crypto';
 import { DataSource, MoreThan, Repository } from 'typeorm';
 import { apiError } from '@/common/errors';
+import { BackgroundTasks } from '@/common/utils/background-tasks.util';
 import { SignUpRequest, User } from '@/database/entities';
 import { CompleteSignUpDto, RegisterDto, SignUpStartedResponseDto } from '../dto';
 import { assertHumanAuthAttempt } from './auth-bot-protection';
@@ -54,8 +56,10 @@ function isProduction(): boolean {
  * production it answers `503 EMAIL_DELIVERY_NOT_CONFIGURED` for every address.
  */
 @Injectable()
-export class SignUpService {
+export class SignUpService implements BeforeApplicationShutdown {
   private readonly logger = new Logger(SignUpService.name);
+  /** The sign-up links and notices being sent in the background. */
+  private readonly emails = new BackgroundTasks();
 
   constructor(
     @InjectRepository(SignUpRequest)
@@ -68,6 +72,11 @@ export class SignUpService {
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
   ) {}
+
+  /** Lets the emails in flight go out before the database and the process close. */
+  beforeApplicationShutdown(): Promise<void> {
+    return this.emails.settled();
+  }
 
   async register(dto: RegisterDto): Promise<IssuedSession | SignUpStartedResponseDto> {
     assertHumanAuthAttempt(dto.website);
@@ -167,9 +176,11 @@ export class SignUpService {
 
   /** Logs a failed send without the address or the link. */
   private sendInBackground(label: string, send: () => Promise<void>): void {
-    void send().catch((error: unknown) => {
-      this.logger.warn(`${label} email not sent: ${describeEmailFailure(error)}`);
-    });
+    this.emails.run(
+      send().catch((error: unknown) => {
+        this.logger.warn(`${label} email not sent: ${describeEmailFailure(error)}`);
+      }),
+    );
   }
 
   /**

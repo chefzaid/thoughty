@@ -45,6 +45,7 @@ export type JournalTranslationKey =
   | "bulkAddTags"
   | "bulkMove"
   | "bulkClearSelection"
+  | "bulkSelectEntry"
   | "bulkDeleteTitle"
   | "bulkDeleteMessage_one"
   | "bulkDeleteMessage_other"
@@ -147,6 +148,7 @@ export const journalTranslations: Record<Language, Record<JournalTranslationKey,
     bulkAddTags: "Add tags",
     bulkMove: "Move to diary",
     bulkClearSelection: "Clear",
+    bulkSelectEntry: "Select this entry",
     bulkDeleteTitle: "Delete entries",
     bulkDeleteMessage_one: "Move {count} entry to the recycle bin? You can restore it from there for 30 days.",
     bulkDeleteMessage_other: "Move {count} entries to the recycle bin? You can restore them from there for 30 days.",
@@ -252,6 +254,7 @@ export const journalTranslations: Record<Language, Record<JournalTranslationKey,
     bulkAddTags: "Ajouter des tags",
     bulkMove: "Déplacer vers le journal",
     bulkClearSelection: "Effacer",
+    bulkSelectEntry: "Sélectionner cette entrée",
     bulkDeleteTitle: "Supprimer les entrées",
     bulkDeleteMessage_one: "Placer {count} entrée dans la corbeille ? Vous pourrez l'y restaurer pendant 30 jours.",
     bulkDeleteMessage_other: "Placer {count} entrées dans la corbeille ? Vous pourrez les y restaurer pendant 30 jours.",

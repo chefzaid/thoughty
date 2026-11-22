@@ -3,6 +3,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { configureApp } from './configure-app';
 import { JsonLogger } from './common';
+import { enableGracefulShutdown } from './graceful-shutdown';
 
 async function bootstrap() {
   const logger = new JsonLogger('Bootstrap');
@@ -11,6 +12,7 @@ async function bootstrap() {
     logger,
   });
   const { payloadLimits, trustProxy } = configureApp(app);
+  enableGracefulShutdown(app);
 
   const port = process.env.PORT || 3001;
   await app.listen(port);

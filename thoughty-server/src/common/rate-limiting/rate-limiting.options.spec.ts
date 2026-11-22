@@ -24,7 +24,7 @@ describe('createThrottlerModuleOptions', () => {
   });
 
   it('uses Redis storage when REDIS_URL is configured', async () => {
-    createClient.mockReturnValue({ isOpen: false, connect: jest.fn(), eval: jest.fn(), quit: jest.fn() });
+    createClient.mockReturnValue({ isOpen: false, isReady: false, connect: jest.fn(), eval: jest.fn(), quit: jest.fn(), destroy: jest.fn() });
     const { createThrottlerModuleOptions } = await import('./rate-limiting.options');
 
     const options = createThrottlerModuleOptions({ REDIS_URL: 'redis://redis:6379/0' });
@@ -42,7 +42,7 @@ describe('createThrottlerModuleOptions', () => {
   });
 
   it('builds host-based Redis options when REDIS_HOST is configured', async () => {
-    createClient.mockReturnValue({ isOpen: false, connect: jest.fn(), eval: jest.fn(), quit: jest.fn() });
+    createClient.mockReturnValue({ isOpen: false, isReady: false, connect: jest.fn(), eval: jest.fn(), quit: jest.fn(), destroy: jest.fn() });
     const { createThrottlerModuleOptions } = await import('./rate-limiting.options');
 
     createThrottlerModuleOptions({

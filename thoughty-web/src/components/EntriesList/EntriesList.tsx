@@ -391,6 +391,7 @@ function EntriesList({
                                             type="checkbox"
                                             checked={selectedIds.has(entry.id)}
                                             onChange={() => onToggleSelect(entry.id)}
+                                            aria-label={t('bulkSelectEntry')}
                                             className="w-4 h-4 rounded accent-blue-500 cursor-pointer"
                                         />
                                     </div>

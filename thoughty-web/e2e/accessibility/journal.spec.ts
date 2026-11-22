@@ -1,5 +1,5 @@
 import AxeBuilder from '../support/axe';
-import { expect, test, type Page } from '../support/test';
+import { expect, test, type Locator, type Page } from '../support/test';
 
 import type { MockEntry, MockEntryRevision } from '../support/mockApp.shared';
 import { setupMockApp } from '../support/mockApp';
@@ -44,6 +44,16 @@ async function expectNoAccessibilityViolations(page: Page) {
   }));
 
   expect(violations).toEqual([]);
+}
+
+/** Hovers each button, scanning its text against the hover color once the transition ends. */
+async function expectReadableOnHover(page: Page, buttons: Locator[]) {
+  for (const button of buttons) {
+    await button.hover();
+    const results = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze();
+    const failures = results.violations.flatMap(({ nodes }) => nodes.map((node) => node.failureSummary));
+    expect({ button: await button.textContent(), failures }).toEqual({ button: await button.textContent(), failures: [] });
+  }
 }
 
 test.describe('journal accessibility with entries', () => {
@@ -128,6 +138,42 @@ test.describe('journal accessibility with entries', () => {
 
         await page.locator('#entry-62').getByRole('button', { name: 'Edit' }).click();
         await expect(page.locator('#entry-62').getByRole('button', { name: 'Add a task list (ctrl + shift + c)' })).toBeVisible();
+        await expectNoAccessibilityViolations(page);
+      });
+
+      test(`${mode} selection mode, its bulk actions and their pickers, at rest and hovered`, async ({ page }) => {
+        await setupMockApp(page, { startAuthenticated: true, config: { theme, highContrast }, initialEntries: ENTRIES });
+        await page.goto('/journal');
+        await page.getByRole('button', { name: 'All Diaries' }).click();
+        await page.getByRole('button', { name: 'Select', exact: true }).click();
+        await page.locator('#entry-61 input[type="checkbox"]').check();
+        await expect(page.getByText('1 selected')).toBeVisible();
+        await expectNoAccessibilityViolations(page);
+        const bar = page.getByText('1 selected').locator('..');
+        const button = (name: string) => bar.getByRole('button', { name, exact: true });
+        await expectReadableOnHover(page, [
+          page.getByRole('button', { name: 'Cancel selection' }),
+          ...['Delete', 'Make public', 'Make private', 'Archive', 'Unarchive', 'Make a book', 'Rephrase', 'Add tags',
+            'Move to diary', 'Clear'].map(button),
+        ]);
+
+        await button('Rephrase').click();
+        await expect(button('Grammar/form only')).toBeVisible();
+        await expectNoAccessibilityViolations(page);
+
+        await button('Add tags').click();
+        const tags = bar.getByRole('textbox', { name: 'Select tags...' });
+        await tags.fill('running');
+        await tags.press('Enter');
+        await expect(button('Apply')).toBeEnabled();
+        await expectNoAccessibilityViolations(page);
+        // The suggestions stay open after a pick, over Apply and Cancel, until a click elsewhere
+        await page.getByText('1 selected').click();
+        await expect(bar.getByText('archive', { exact: true })).toBeHidden();
+        await expectReadableOnHover(page, [button('Apply'), button('Cancel')]);
+
+        await button('Move to diary').click();
+        await expect(bar.getByRole('button', { name: /Personal/ })).toBeVisible();
         await expectNoAccessibilityViolations(page);
       });
     }

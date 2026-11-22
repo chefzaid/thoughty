@@ -119,6 +119,23 @@ describe('PasswordService', () => {
       );
     });
 
+    it('lets the reset link in flight go out before shutting down', async () => {
+      userRepository.findOne.mockResolvedValue(mockUser);
+      let finishSending!: () => void;
+      emailService.sendPasswordResetEmail.mockReturnValue(new Promise<void>((resolve) => (finishSending = resolve)));
+      await service.forgotPassword('test@example.com');
+
+      let settled = false;
+      const shutdown = service.beforeApplicationShutdown().then(() => (settled = true));
+      await flush();
+      expect(emailService.sendPasswordResetEmail).toHaveBeenCalledTimes(1);
+      expect(settled).toBe(false);
+
+      finishSending();
+      await shutdown;
+      expect(settled).toBe(true);
+    });
+
     it('answers before the token is stored, like for an unknown address', async () => {
       userRepository.findOne.mockResolvedValue(mockUser);
       userRepository.update.mockReturnValue(new Promise(() => undefined));

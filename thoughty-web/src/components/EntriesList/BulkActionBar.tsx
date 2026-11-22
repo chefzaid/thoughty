@@ -48,12 +48,12 @@ export function BulkActionBar({
     const publicSharing = useFeatureFlag('publicSharing');
     const bookConverter = useFeatureFlag('bookConverter');
     const allBulkButtons = [
-        { action: 'delete' as const, label: t('bulkDelete'), className: 'px-3 py-1.5 text-xs font-medium bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors' },
-        { action: 'visibility' as const, options: { visibility: 'public' as const }, label: t('bulkMakePublic'), className: 'px-3 py-1.5 text-xs font-medium bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors' },
-        { action: 'visibility' as const, options: { visibility: 'private' as const }, label: t('bulkMakePrivate'), className: `px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${isDark ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' : 'bg-gray-400 hover:bg-gray-500 text-white'}` },
-        { action: 'archive' as const, options: { isArchived: true }, label: t('bulkArchive'), className: 'px-3 py-1.5 text-xs font-medium bg-sky-500 hover:bg-sky-600 text-white rounded-lg transition-colors' },
+        { action: 'delete' as const, label: t('bulkDelete'), className: 'px-3 py-1.5 text-xs font-medium bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors' },
+        { action: 'visibility' as const, options: { visibility: 'public' as const }, label: t('bulkMakePublic'), className: 'px-3 py-1.5 text-xs font-medium bg-green-700 hover:bg-green-800 text-white rounded-lg transition-colors' },
+        { action: 'visibility' as const, options: { visibility: 'private' as const }, label: t('bulkMakePrivate'), className: `px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${isDark ? 'bg-gray-600 hover:bg-gray-700 text-gray-200' : 'bg-gray-500 hover:bg-gray-600 text-white'}` },
+        { action: 'archive' as const, options: { isArchived: true }, label: t('bulkArchive'), className: 'px-3 py-1.5 text-xs font-medium bg-sky-700 hover:bg-sky-800 text-white rounded-lg transition-colors' },
         { action: 'archive' as const, options: { isArchived: false }, label: t('bulkUnarchive'), className: `px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-slate-200' : 'bg-slate-500 hover:bg-slate-600 text-white'}` },
-        { action: 'book' as const, label: t('bulkMakeBook'), className: 'px-3 py-1.5 text-xs font-medium bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors' },
+        { action: 'book' as const, label: t('bulkMakeBook'), className: 'px-3 py-1.5 text-xs font-medium bg-amber-700 hover:bg-amber-800 text-white rounded-lg transition-colors' },
     ];
     // Making entries public and making a book are left out while their feature is switched off
     const bulkButtons = allBulkButtons.filter(({ action, options }) =>
@@ -81,7 +81,7 @@ export function BulkActionBar({
                 {aiOn && <div className="relative">
                     <button type="button"
                         onClick={() => { setShowRephrasePicker(!showRephrasePicker); setShowTagPicker(false); setShowMovePicker(false); }}
-                        className="px-3 py-1.5 text-xs font-medium bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors"
+                        className="px-3 py-1.5 text-xs font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
                     >
                         {t('bulkRephrase')}
                     </button>
@@ -106,7 +106,7 @@ export function BulkActionBar({
                 <div className="relative">
                     <button type="button"
                         onClick={() => { setShowTagPicker(!showTagPicker); setShowMovePicker(false); setShowRephrasePicker(false); }}
-                        className="px-3 py-1.5 text-xs font-medium bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors"
+                        className="px-3 py-1.5 text-xs font-medium bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
                     >
                         {t('bulkAddTags')}
                     </button>
@@ -125,7 +125,7 @@ export function BulkActionBar({
                                 <button type="button"
                                     onClick={() => { onBulkAction('tags', { tags: bulkTags }); setShowTagPicker(false); setBulkTags([]); }}
                                     disabled={bulkTags.length === 0}
-                                    className="px-3 py-1 text-xs bg-purple-500 hover:bg-purple-600 disabled:opacity-50 text-white rounded transition-colors"
+                                    className="px-3 py-1 text-xs bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded transition-colors"
                                 >
                                     {t('apply')}
                                 </button>
@@ -143,7 +143,7 @@ export function BulkActionBar({
                     <div className="relative">
                         <button type="button"
                             onClick={() => { setShowMovePicker(!showMovePicker); setShowTagPicker(false); setShowRephrasePicker(false); }}
-                            className="px-3 py-1.5 text-xs font-medium bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                            className="px-3 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                         >
                             {t('bulkMove')}
                         </button>

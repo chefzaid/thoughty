@@ -62,6 +62,9 @@ spec:
           {{- end }}
     spec:
       serviceAccountName: thoughty-server
+      # The preStop pause, then the emails still being sent and the requests in progress
+      # (graceful-shutdown.ts); Kubernetes kills the container once this has passed.
+      terminationGracePeriodSeconds: 60
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
@@ -79,7 +82,13 @@ spec:
             - |
               source /vault/secrets/database &&
               source /vault/secrets/app &&
-              node dist/src/main.js
+              exec node dist/src/main.js
+          lifecycle:
+            # Keeps serving while the Service and the ingress stop routing to this pod,
+            # before the SIGTERM closes the listener.
+            preStop:
+              exec:
+                command: ["sleep", "5"]
           ports:
             - containerPort: 3001
           envFrom:

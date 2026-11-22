@@ -1,11 +1,13 @@
 import {
   BadRequestException,
+  type BeforeApplicationShutdown,
   Injectable,
   Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { apiError } from '@/common/errors';
+import { BackgroundTasks } from '@/common/utils/background-tasks.util';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -29,8 +31,10 @@ function hashResetToken(token: string): string {
  * out everywhere by revoking its refresh tokens.
  */
 @Injectable()
-export class PasswordService {
+export class PasswordService implements BeforeApplicationShutdown {
   private readonly logger = new Logger(PasswordService.name);
+  /** The reset links being stored and sent in the background. */
+  private readonly resetLinks = new BackgroundTasks();
 
   constructor(
     @InjectRepository(User)
@@ -41,6 +45,11 @@ export class PasswordService {
     private readonly emailService: EmailService,
     private readonly activity: AccountActivityService,
   ) {}
+
+  /** Lets the reset links in flight go out before the database and the process close. */
+  beforeApplicationShutdown(): Promise<void> {
+    return this.resetLinks.settled();
+  }
 
   async changePassword(
     userId: number,
@@ -82,13 +91,15 @@ export class PasswordService {
     });
 
     if (user?.authProvider === 'local' && !user.deletedAt) {
-      void this.sendResetLink(user).catch((error: unknown) => {
-        this.logger.warn('Password reset link not sent', {
-          errorName: error instanceof Error ? error.name : 'UnknownError',
-          errorMessage: error instanceof Error ? error.message : 'Unknown error',
-          userId: user.id,
-        });
-      });
+      this.resetLinks.run(
+        this.sendResetLink(user).catch((error: unknown) => {
+          this.logger.warn('Password reset link not sent', {
+            errorName: error instanceof Error ? error.name : 'UnknownError',
+            errorMessage: error instanceof Error ? error.message : 'Unknown error',
+            userId: user.id,
+          });
+        }),
+      );
     }
 
     return { success: true, message: FORGOT_PASSWORD_MESSAGE };

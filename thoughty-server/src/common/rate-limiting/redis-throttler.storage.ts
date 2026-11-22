@@ -8,9 +8,11 @@ type StorageRecord = Awaited<ReturnType<ThrottlerStorage['increment']>>;
 
 export interface RedisThrottlerClient {
   isOpen: boolean;
+  isReady: boolean;
   connect(): Promise<unknown>;
   eval(script: string, options: { keys: string[]; arguments: string[] }): Promise<RedisCommandResult>;
   quit(): Promise<unknown>;
+  destroy(): void;
 }
 
 export interface RedisThrottlerStorageOptions {
@@ -89,8 +91,12 @@ export class RedisThrottlerStorage implements ThrottlerStorage, OnApplicationShu
   async onApplicationShutdown(): Promise<void> {
     this.fallback.onApplicationShutdown();
 
-    if (this.options.client.isOpen) {
-      await this.options.client.quit();
+    const { client } = this.options;
+    if (client.isReady) {
+      await client.quit();
+    } else if (client.isOpen) {
+      // While Redis is unreachable a QUIT waits for a reconnect that may never come
+      client.destroy();
     }
   }
 

@@ -3,12 +3,19 @@ import { RedisThrottlerClient, RedisThrottlerStorage } from './redis-throttler.s
 function createClient(overrides: Partial<RedisThrottlerClient> = {}): RedisThrottlerClient {
   return {
     isOpen: false,
+    isReady: false,
     connect: jest.fn(async function connect(this: RedisThrottlerClient) {
       this.isOpen = true;
+      this.isReady = true;
     }),
     eval: jest.fn(),
     quit: jest.fn(async function quit(this: RedisThrottlerClient) {
       this.isOpen = false;
+      this.isReady = false;
+    }),
+    destroy: jest.fn(function destroy(this: RedisThrottlerClient) {
+      this.isOpen = false;
+      this.isReady = false;
     }),
     ...overrides,
   };
@@ -68,11 +75,32 @@ describe('RedisThrottlerStorage', () => {
   });
 
   it('quits the Redis client during shutdown when connected', async () => {
-    const client = createClient({ isOpen: true });
+    const client = createClient({ isOpen: true, isReady: true });
     const storage = new RedisThrottlerStorage({ client });
 
     await storage.onApplicationShutdown();
 
     expect(client.quit).toHaveBeenCalledTimes(1);
+    expect(client.destroy).not.toHaveBeenCalled();
+  });
+
+  it('drops the Redis client during shutdown while it is reconnecting, since a QUIT would wait for Redis', async () => {
+    const client = createClient({ isOpen: true, isReady: false });
+    const storage = new RedisThrottlerStorage({ client });
+
+    await storage.onApplicationShutdown();
+
+    expect(client.quit).not.toHaveBeenCalled();
+    expect(client.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves a Redis client that never connected alone during shutdown', async () => {
+    const client = createClient();
+    const storage = new RedisThrottlerStorage({ client });
+
+    await storage.onApplicationShutdown();
+
+    expect(client.quit).not.toHaveBeenCalled();
+    expect(client.destroy).not.toHaveBeenCalled();
   });
 });

@@ -211,6 +211,23 @@ describe('SignUpService', () => {
       expect(warn).toHaveBeenCalledWith('Sign-up link email not sent: Error 550');
     });
 
+    it('lets the link in flight go out before shutting down', async () => {
+      let finishSending!: () => void;
+      email.sendSignUpLinkEmail.mockReturnValue(new Promise<void>((resolve) => (finishSending = resolve)));
+      const service = createService();
+      await service.register(DTO);
+
+      let settled = false;
+      const shutdown = service.beforeApplicationShutdown().then(() => (settled = true));
+      await flush();
+      expect(email.sendSignUpLinkEmail).toHaveBeenCalledTimes(1);
+      expect(settled).toBe(false);
+
+      finishSending();
+      await shutdown;
+      expect(settled).toBe(true);
+    });
+
     it('logs a failed notice the same way', async () => {
       const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
       users.findOne.mockResolvedValue({ id: 3, deletedAt: null });
