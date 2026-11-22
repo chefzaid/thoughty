@@ -17,6 +17,7 @@ interface PersonRow extends PersonDateColumns {
   lastMentionedOn: string | null;
   reachOutDays: number | string | null;
   lastContactOn: string | null;
+  notes: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,7 +29,7 @@ interface PersonRow extends PersonDateColumns {
 const personSummarySql = (lockFilter: string) => `
   SELECT p.id, p.name, p.created_at AS "createdAt", p.updated_at AS "updatedAt",
          p.date_kind AS "dateKind", p.date_month AS "dateMonth", p.date_day AS "dateDay", p.date_year AS "dateYear",
-         p.reach_out_days AS "reachOutDays", to_char(p.last_contact_on, 'YYYY-MM-DD') AS "lastContactOn",
+         p.reach_out_days AS "reachOutDays", to_char(p.last_contact_on, 'YYYY-MM-DD') AS "lastContactOn", p.notes,
          (SELECT array_agg(h.handle ORDER BY h.created_at, h.handle) FROM person_handles h WHERE h.person_id = p.id) AS handles,
          COUNT(e.id)::int AS "entryCount",
          to_char(MAX(e.date), 'YYYY-MM-DD') AS "lastMentionedOn"
@@ -41,7 +42,7 @@ const personSummarySql = (lockFilter: string) => `
 
 /**
  * The people the writer mentions. Mentions add them (see `syncEntryMentions`); here they are listed,
- * renamed, given a birthday or an anniversary and a reach-out reminder, marked as contacted, merged and deleted. Text is never rewritten: renaming
+ * renamed, given a birthday or an anniversary, a reach-out reminder and notes, marked as contacted, merged and deleted. Text is never rewritten: renaming
  * changes the name shown, merging moves a duplicate's handles to the person kept, and deleting unlinks
  * their entries and leaves `@handle` in the text.
  */
@@ -57,8 +58,8 @@ export class PeopleService {
   }
 
   /**
-   * Changes the name shown and, for each of them given, their birthday or anniversary, their reach-out reminder
-   * and their last contact (null removes it).
+   * Changes the name shown and, for each of them given, their birthday or anniversary, their reach-out reminder,
+   * their last contact and the writer's notes (null removes it).
    */
   async update(userId: number, id: number, dto: UpdatePersonDto, now = new Date()): Promise<PersonResponseDto> {
     const person = await this.findOwn(userId, id);
@@ -71,6 +72,9 @@ export class PeopleService {
     }
     if (dto.lastContactOn !== undefined) {
       person.lastContactOn = dto.lastContactOn;
+    }
+    if (dto.notes !== undefined) {
+      person.notes = dto.notes;
     }
     if (dto.date !== undefined) {
       const date = dto.date;
@@ -96,7 +100,7 @@ export class PeopleService {
 
   /**
    * Moves a duplicate's handles, entries and (when the person has none) date and reach-out reminder to the person,
-   * keeps the later of their last contacts, then deletes the duplicate.
+   * keeps the later of their last contacts, adds the duplicate's notes after the person's, then deletes the duplicate.
    */
   async merge(userId: number, id: number, dto: MergePersonDto): Promise<PersonResponseDto> {
     const duplicateId = dto.duplicateId;
@@ -119,7 +123,9 @@ export class PeopleService {
       );
       await manager.query(
         `UPDATE people p SET reach_out_days = COALESCE(p.reach_out_days, d.reach_out_days),
-                             last_contact_on = GREATEST(p.last_contact_on, d.last_contact_on)
+                             last_contact_on = GREATEST(p.last_contact_on, d.last_contact_on),
+                             notes = CASE WHEN p.notes IS NULL OR d.notes IS NULL THEN COALESCE(p.notes, d.notes)
+                                          ELSE p.notes || E'\\n\\n' || d.notes END
            FROM people d WHERE p.id = $1 AND d.id = $2`,
         [id, duplicateId],
       );
@@ -180,6 +186,7 @@ export class PeopleService {
       date: toPersonDate(row),
       reachOutDays: row.reachOutDays === null ? null : Number(row.reachOutDays),
       lastContactOn: row.lastContactOn,
+      notes: row.notes,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     }));

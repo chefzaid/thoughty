@@ -59,6 +59,10 @@ export class Person {
   @Column({ name: 'last_contact_on', type: 'date', nullable: true })
   lastContactOn: string | null;
 
+  /** The writer's own notes on the person (how they met, what they like, a gift idea); null when there are none. */
+  @Column({ type: 'text', nullable: true })
+  notes: string | null;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 

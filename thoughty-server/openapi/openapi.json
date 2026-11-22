@@ -14967,6 +14967,7 @@
                       },
                       "reachOutDays": 30,
                       "lastContactOn": "2026-11-03",
+                      "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
                       "createdAt": "2026-10-27T09:30:00.000Z",
                       "updatedAt": "2026-10-27T09:30:00.000Z"
                     }
@@ -15017,7 +15018,8 @@
                   "year": 1992
                 },
                 "reachOutDays": 30,
-                "lastContactOn": "2026-11-03"
+                "lastContactOn": "2026-11-03",
+                "notes": "Met at the climbing gym in 2019. Loves Japanese novels."
               }
             }
           }
@@ -15047,6 +15049,7 @@
                   },
                   "reachOutDays": 30,
                   "lastContactOn": "2026-11-03",
+                  "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
                   "createdAt": "2026-10-27T09:30:00.000Z",
                   "updatedAt": "2026-10-27T09:30:00.000Z"
                 }
@@ -15054,7 +15057,7 @@
             }
           },
           "400": {
-            "description": "Invalid name or reminder, a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), or a last contact after today (PERSON_CONTACT_IN_FUTURE)",
+            "description": "Invalid name, reminder or notes (more than 2,000 characters), a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), or a last contact after today (PERSON_CONTACT_IN_FUTURE)",
             "content": {
               "application/json": {
                 "schema": {
@@ -15062,7 +15065,7 @@
                 },
                 "example": {
                   "statusCode": 400,
-                  "message": "Invalid name or reminder, a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), or a last contact after today (PERSON_CONTACT_IN_FUTURE)",
+                  "message": "Invalid name, reminder or notes (more than 2,000 characters), a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), or a last contact after today (PERSON_CONTACT_IN_FUTURE)",
                   "error": "Bad Request",
                   "code": "VALIDATION_FAILED"
                 }
@@ -15091,7 +15094,7 @@
             "bearer": []
           }
         ],
-        "summary": "Change the name shown for a person, their birthday or anniversary, their reach-out reminder and their last contact; their handles and the entries’ text stay as they are",
+        "summary": "Change the name shown for a person, their birthday or anniversary, their reach-out reminder, their last contact and the writer’s notes on them; their handles and the entries’ text stay as they are",
         "tags": [
           "People"
         ]
@@ -15201,6 +15204,7 @@
                   },
                   "reachOutDays": 30,
                   "lastContactOn": "2026-11-03",
+                  "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
                   "createdAt": "2026-10-27T09:30:00.000Z",
                   "updatedAt": "2026-10-27T09:30:00.000Z"
                 }
@@ -15303,6 +15307,7 @@
                   },
                   "reachOutDays": 30,
                   "lastContactOn": "2026-11-03",
+                  "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
                   "createdAt": "2026-10-27T09:30:00.000Z",
                   "updatedAt": "2026-10-27T09:30:00.000Z"
                 }
@@ -15347,7 +15352,7 @@
             "bearer": []
           }
         ],
-        "summary": "Merge a duplicate into this person: its handles and entries move here, then it is deleted",
+        "summary": "Merge a duplicate into this person: its handles and entries move here, its notes follow theirs, then it is deleted",
         "tags": [
           "People"
         ]
@@ -29654,6 +29659,12 @@
             "example": "2026-11-03",
             "description": "The last contact the writer recorded; null when none is"
           },
+          "notes": {
+            "type": "string",
+            "nullable": true,
+            "example": "Met at the climbing gym in 2019. Loves Japanese novels.",
+            "description": "The writer’s own notes on the person; null when there are none"
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string",
@@ -29674,6 +29685,7 @@
           "date",
           "reachOutDays",
           "lastContactOn",
+          "notes",
           "createdAt",
           "updatedAt"
         ],
@@ -29694,6 +29706,7 @@
           },
           "reachOutDays": 30,
           "lastContactOn": "2026-11-03",
+          "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
           "createdAt": "2026-10-27T09:30:00.000Z",
           "updatedAt": "2026-10-27T09:30:00.000Z"
         }
@@ -29737,6 +29750,7 @@
               },
               "reachOutDays": 30,
               "lastContactOn": "2026-11-03",
+              "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
               "createdAt": "2026-10-27T09:30:00.000Z",
               "updatedAt": "2026-10-27T09:30:00.000Z"
             }
@@ -29828,6 +29842,13 @@
             "nullable": true,
             "example": "2026-11-03",
             "description": "The last day the writer was in touch with the person (YYYY-MM-DD), not after today anywhere on Earth (`400 PERSON_CONTACT_IN_FUTURE`); null removes it, left out keeps it"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 2000,
+            "example": "Met at the climbing gym in 2019. Loves Japanese novels.",
+            "description": "The writer’s own notes on the person, trimmed; null or blank removes them, left out keeps them. Merging two people joins their notes, which may then be longer than a save accepts."
           }
         },
         "required": [
@@ -29842,7 +29863,8 @@
             "year": 1992
           },
           "reachOutDays": 30,
-          "lastContactOn": "2026-11-03"
+          "lastContactOn": "2026-11-03",
+          "notes": "Met at the climbing gym in 2019. Loves Japanese novels."
         }
       },
       "MarkPersonContactedDto": {

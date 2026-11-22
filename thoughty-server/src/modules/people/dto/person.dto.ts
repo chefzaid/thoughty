@@ -9,8 +9,12 @@ import { PERSON_DATE_MIN_YEAR } from '../person-dates';
 import { REACH_OUT_DAYS } from '../person-reach-out';
 
 export const PERSON_NAME_MAX_LENGTH = 80;
+/** The longest notes the writer can save on a person. */
+export const PERSON_NOTES_MAX_LENGTH = 2000;
 
 const trim = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() : value);
+/** Trimmed notes, with blank ones read as none. */
+const trimNotes = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() || null : value);
 
 const KIND_DESCRIPTION = 'What the date marks: a birthday or an anniversary (a wedding, a meeting, a loss)';
 
@@ -48,8 +52,8 @@ export class PersonDateInputDto {
 }
 
 /**
- * The name shown for a person, their date and their reach-out reminder. Their handles, and so the text of
- * entries, stay as they are.
+ * The name shown for a person, their date, their reach-out reminder and the writer's notes on them. Their
+ * handles, and so the text of entries, stay as they are.
  */
 export class UpdatePersonDto {
   @ApiProperty({ example: 'Marie Curie', minLength: 1, maxLength: PERSON_NAME_MAX_LENGTH })
@@ -94,6 +98,21 @@ export class UpdatePersonDto {
   @Matches(LOCAL_DAY_PATTERN)
   @IsDateString({ strict: true })
   lastContactOn?: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    maxLength: PERSON_NOTES_MAX_LENGTH,
+    example: 'Met at the climbing gym in 2019. Loves Japanese novels.',
+    description:
+      'The writer’s own notes on the person, trimmed; null or blank removes them, left out keeps them. Merging two ' +
+      'people joins their notes, which may then be longer than a save accepts.',
+  })
+  @IsOptional()
+  @Transform(trimNotes)
+  @IsString()
+  @MaxLength(PERSON_NOTES_MAX_LENGTH)
+  notes?: string | null;
 }
 
 export class MergePersonDto {
@@ -163,6 +182,14 @@ export class PersonResponseDto {
 
   @ApiProperty({ type: String, nullable: true, format: 'date', example: '2026-11-03', description: 'The last contact the writer recorded; null when none is' })
   lastContactOn!: string | null;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    example: 'Met at the climbing gym in 2019. Loves Japanese novels.',
+    description: 'The writer’s own notes on the person; null when there are none',
+  })
+  notes!: string | null;
 
   @ApiProperty({ example: '2026-10-27T09:30:00.000Z' })
   createdAt!: Date;

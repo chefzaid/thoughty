@@ -1,5 +1,5 @@
 import { invalidPropertiesLikeApi, parseLikeApi } from '@/common/validation/dto-validation.test-helpers';
-import { MergePersonDto, PERSON_NAME_MAX_LENGTH, UpdatePersonDto } from './person.dto';
+import { MergePersonDto, PERSON_NAME_MAX_LENGTH, PERSON_NOTES_MAX_LENGTH, UpdatePersonDto } from './person.dto';
 import { MarkPersonContactedDto } from './person-reach-out.dto';
 
 describe('person DTOs', () => {
@@ -44,6 +44,21 @@ describe('person DTOs', () => {
     }
     for (const lastContactOn of ['2026-02-30', '2026-11-03T10:00:00Z', '26-11-03', 20261103]) {
       await expect(withReachOut({ lastContactOn })).resolves.toEqual(['lastContactOn']);
+    }
+  });
+
+  it('takes optional trimmed notes of at most 2,000 characters, reading blank or null notes as none', async () => {
+    const withNotes = (notes: unknown) => invalidPropertiesLikeApi(UpdatePersonDto, { name: 'Marie', notes });
+
+    await expect(parseLikeApi(UpdatePersonDto, { name: 'Marie', notes: '  Loves Japanese novels.\n ' }))
+      .resolves.toMatchObject({ notes: 'Loves Japanese novels.' });
+    await expect(parseLikeApi(UpdatePersonDto, { name: 'Marie', notes: ' \n ' })).resolves.toMatchObject({ notes: null });
+    await expect(withNotes('n'.repeat(PERSON_NOTES_MAX_LENGTH))).resolves.toEqual([]);
+    await expect(withNotes(` ${'n'.repeat(PERSON_NOTES_MAX_LENGTH)} `)).resolves.toEqual([]);
+    await expect(withNotes(null)).resolves.toEqual([]);
+    await expect(withNotes('n'.repeat(PERSON_NOTES_MAX_LENGTH + 1))).resolves.toEqual(['notes']);
+    for (const notes of [5, true, ['Loves novels'], { text: 'x' }]) {
+      await expect(withNotes(notes)).resolves.toEqual(['notes']);
     }
   });
 

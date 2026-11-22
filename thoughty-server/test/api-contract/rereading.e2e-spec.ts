@@ -213,4 +213,22 @@ describeContract('rereading', (context) => {
     );
     expect((await save({ reachOutDays: null, lastContactOn: null })).body).toMatchObject({ reachOutDays: null, lastContactOn: null });
   });
+
+  it('keeps the writer’s notes on a person, trimmed and at most 2,000 characters, in the list and the data download', async () => {
+    const { alice, bob } = context;
+    await createEntry(context, alice, { text: 'Dinner with @Noor', date: '2025-06-01' });
+    const people = (await call('GET /api/people', { as: alice, status: 200 })).body as { people: { id: number; name: string }[] };
+    const noor = people.people.find((person) => person.name === 'Noor')!.id;
+    const save = (json: Record<string, unknown>, as = alice, status = 200, code?: ApiErrorCode) =>
+      call('PATCH /api/people/{id}', { as, params: { id: noor }, json: { name: 'Noor', ...json }, status, ...(code ? { code } : {}) });
+
+    expect((await save({ notes: '  Loves Japanese novels.\n' })).body).toMatchObject({ id: noor, notes: 'Loves Japanese novels.' });
+    expect((await save({})).body).toMatchObject({ notes: 'Loves Japanese novels.' });
+    await save({ notes: 'n'.repeat(2001) }, alice, 400, 'VALIDATION_FAILED');
+    await save({ notes: 'Mine' }, bob, 404, 'PERSON_NOT_FOUND');
+
+    const download = await call('GET /api/config/download-data', { as: alice, query: { today: todayIso() }, status: 200, contentType: /^application\/json/ });
+    expect((download.body as { people: { id: number }[] }).people).toContainEqual(expect.objectContaining({ id: noor, notes: 'Loves Japanese novels.' }));
+    expect((await save({ notes: '   ' })).body).toMatchObject({ notes: null });
+  });
 });

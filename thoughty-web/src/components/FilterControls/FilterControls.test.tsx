@@ -176,8 +176,8 @@ describe('FilterControls', () => {
   });
 
   const people = [
-    { id: 12, name: 'Marie', handles: ['marie'], entryCount: 3, lastMentionedOn: null, date: null, reachOutDays: null, lastContactOn: null, createdAt: '', updatedAt: '' },
-    { id: 14, name: 'Paul', handles: ['paul'], entryCount: 1, lastMentionedOn: null, date: null, reachOutDays: null, lastContactOn: null, createdAt: '', updatedAt: '' },
+    { id: 12, name: 'Marie', handles: ['marie'], entryCount: 3, lastMentionedOn: null, date: null, reachOutDays: null, lastContactOn: null, notes: null, createdAt: '', updatedAt: '' },
+    { id: 14, name: 'Paul', handles: ['paul'], entryCount: 1, lastMentionedOn: null, date: null, reachOutDays: null, lastContactOn: null, notes: null, createdAt: '', updatedAt: '' },
   ];
 
   it('filters by a person once the writer mentions someone, and opens the People page', () => {

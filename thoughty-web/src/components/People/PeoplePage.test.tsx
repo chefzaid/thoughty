@@ -7,7 +7,7 @@ import type { Person } from '../../services/api';
 import { getTranslation } from '../../utils/translations';
 
 const person = (id: number, name: string, handles: string[], entryCount: number, lastMentionedOn: string | null = null, date: Person['date'] = null): Person => ({
-  id, name, handles, entryCount, lastMentionedOn, date, reachOutDays: null, lastContactOn: null, createdAt: '', updatedAt: '',
+  id, name, handles, entryCount, lastMentionedOn, date, reachOutDays: null, lastContactOn: null, notes: null, createdAt: '', updatedAt: '',
 });
 
 const peopleHook = vi.hoisted(() => ({
@@ -169,6 +169,68 @@ describe('PeoplePage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
 
     await waitFor(() => expect(peopleHook.update).toHaveBeenCalledWith(12, { name: 'Marie', reachOutDays: null }));
+  });
+
+  it('writes notes on a person, saving them trimmed, and shows them on the row blurred like entry text', async () => {
+    peopleHook.update.mockResolvedValueOnce({ data: { ...marie, notes: 'Met at the gym.\nLoves novels.' }, error: null });
+    const { rerender } = render(<MemoryRouter><PeoplePage theme="light" language="en" t={t} /></MemoryRouter>);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Marie' }));
+    const notes = screen.getByRole('textbox', { name: 'Notes' });
+    expect(notes).toHaveAccessibleDescription(/Anything you want to remember about Marie.*0 of 2,000 characters/);
+    expect(notes).toHaveClass('privacy-text');
+    fireEvent.change(notes, { target: { value: '  Met at the gym.\nLoves novels.\n' } });
+    expect(screen.getByText('29 of 2,000 characters')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(peopleHook.update).toHaveBeenCalledWith(12, { name: 'Marie', notes: 'Met at the gym.\nLoves novels.' }));
+    expect(screen.getByRole('status')).toHaveTextContent('Saved for Marie.');
+
+    peopleHook.state = { ...peopleHook.state, people: [{ ...marie, notes: 'Met at the gym.\nLoves novels.' }] };
+    rerender(<MemoryRouter><PeoplePage theme="light" language="en" t={t} /></MemoryRouter>);
+    const shown = screen.getByText((_content, element) => element?.tagName === 'P' && element.textContent === 'Notes: Met at the gym.\nLoves novels.');
+    expect(shown).toHaveClass('privacy-text', 'whitespace-pre-wrap');
+
+    // Unchanged notes are not sent again, and blank ones remove them
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Marie' }));
+    expect(screen.getByRole('textbox', { name: 'Notes' })).toHaveValue('Met at the gym.\nLoves novels.');
+    fireEvent.change(screen.getByRole('textbox', { name: 'Name shown for @marie' }), { target: { value: 'Marie C' } });
+    peopleHook.update.mockResolvedValueOnce({ data: { ...marie, name: 'Marie C' }, error: null });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(peopleHook.update).toHaveBeenLastCalledWith(12, { name: 'Marie C' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Marie' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Notes' }), { target: { value: '  ' } });
+    peopleHook.update.mockResolvedValueOnce({ data: marie, error: null });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(peopleHook.update).toHaveBeenLastCalledWith(12, { name: 'Marie', notes: null }));
+  });
+
+  it('asks to shorten notes a merge made longer than a save accepts once they are changed, in French in the dark theme', async () => {
+    const long = `${'a'.repeat(1990)}\n\nIdée de cadeau.`;
+    peopleHook.state = { ...peopleHook.state, people: [{ ...marie, notes: long }] };
+    const fr = (key: string, params?: Record<string, string | number>) => getTranslation('fr', key, params);
+    render(<MemoryRouter><PeoplePage language="fr" t={fr} /></MemoryRouter>);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Modifier Marie' }));
+    const notes = screen.getByRole('textbox', { name: 'Notes' });
+    expect(notes).toHaveAttribute('maxLength', String(long.length));
+    // French groups thousands with a narrow no-break space, which the matchers read as a plain space
+    const spaced = (text: string) => text.replace(/\s/g, ' ');
+    const max = spaced((2000).toLocaleString('fr'));
+    const length = `${spaced(long.length.toLocaleString('fr'))} sur ${max} caractères`;
+    expect(screen.getByText((_content, element) => element?.tagName === 'P' && spaced(element.textContent ?? '') === length)).toHaveClass('text-red-300');
+    fireEvent.change(notes, { target: { value: long.slice(3) } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    expect(screen.getByRole('alert')).toHaveTextContent(`Les notes ne peuvent pas dépasser ${max} caractères. Raccourcissez-les pour enregistrer.`);
+    expect(notes).toHaveFocus();
+    expect(notes).toHaveAttribute('aria-invalid', 'true');
+    expect(peopleHook.update).not.toHaveBeenCalled();
+
+    // Left as the merge joined them, they do not keep the writer from changing the name
+    fireEvent.change(notes, { target: { value: long } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Nom affiché pour @marie' }), { target: { value: 'Marie C' } });
+    peopleHook.update.mockResolvedValueOnce({ data: { ...marie, name: 'Marie C', notes: long }, error: null });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    await waitFor(() => expect(peopleHook.update).toHaveBeenCalledWith(12, { name: 'Marie C' }));
   });
 
   it('finds people by name or handle', () => {

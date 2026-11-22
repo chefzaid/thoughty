@@ -2547,7 +2547,7 @@ export interface paths {
         delete: operations["PeopleController_delete"];
         options?: never;
         head?: never;
-        /** Change the name shown for a person, their birthday or anniversary, their reach-out reminder and their last contact; their handles and the entries’ text stay as they are */
+        /** Change the name shown for a person, their birthday or anniversary, their reach-out reminder, their last contact and the writer’s notes on them; their handles and the entries’ text stay as they are */
         patch: operations["PeopleController_update"];
         trace?: never;
     };
@@ -2577,7 +2577,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Merge a duplicate into this person: its handles and entries move here, then it is deleted */
+        /** Merge a duplicate into this person: its handles and entries move here, its notes follow theirs, then it is deleted */
         post: operations["PeopleController_merge"];
         delete?: never;
         options?: never;
@@ -10399,6 +10399,7 @@ export interface components {
          *       },
          *       "reachOutDays": 30,
          *       "lastContactOn": "2026-11-03",
+         *       "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
          *       "createdAt": "2026-10-27T09:30:00.000Z",
          *       "updatedAt": "2026-10-27T09:30:00.000Z"
          *     }
@@ -10445,6 +10446,11 @@ export interface components {
              */
             lastContactOn: string | null;
             /**
+             * @description The writer’s own notes on the person; null when there are none
+             * @example Met at the climbing gym in 2019. Loves Japanese novels.
+             */
+            notes: string | null;
+            /**
              * Format: date-time
              * @example 2026-10-27T09:30:00.000Z
              */
@@ -10475,6 +10481,7 @@ export interface components {
          *           },
          *           "reachOutDays": 30,
          *           "lastContactOn": "2026-11-03",
+         *           "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
          *           "createdAt": "2026-10-27T09:30:00.000Z",
          *           "updatedAt": "2026-10-27T09:30:00.000Z"
          *         }
@@ -10528,7 +10535,8 @@ export interface components {
          *         "year": 1992
          *       },
          *       "reachOutDays": 30,
-         *       "lastContactOn": "2026-11-03"
+         *       "lastContactOn": "2026-11-03",
+         *       "notes": "Met at the climbing gym in 2019. Loves Japanese novels."
          *     }
          */
         UpdatePersonDto: {
@@ -10548,6 +10556,11 @@ export interface components {
              * @example 2026-11-03
              */
             lastContactOn?: string | null;
+            /**
+             * @description The writer’s own notes on the person, trimmed; null or blank removes them, left out keeps them. Merging two people joins their notes, which may then be longer than a save accepts.
+             * @example Met at the climbing gym in 2019. Loves Japanese novels.
+             */
+            notes?: string | null;
         };
         /**
          * @example {
@@ -23393,6 +23406,7 @@ export interface operations {
                      *           },
                      *           "reachOutDays": 30,
                      *           "lastContactOn": "2026-11-03",
+                     *           "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
                      *           "createdAt": "2026-10-27T09:30:00.000Z",
                      *           "updatedAt": "2026-10-27T09:30:00.000Z"
                      *         }
@@ -23470,7 +23484,8 @@ export interface operations {
                  *         "year": 1992
                  *       },
                  *       "reachOutDays": 30,
-                 *       "lastContactOn": "2026-11-03"
+                 *       "lastContactOn": "2026-11-03",
+                 *       "notes": "Met at the climbing gym in 2019. Loves Japanese novels."
                  *     }
                  */
                 "application/json": components["schemas"]["UpdatePersonDto"];
@@ -23501,6 +23516,7 @@ export interface operations {
                      *       },
                      *       "reachOutDays": 30,
                      *       "lastContactOn": "2026-11-03",
+                     *       "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
                      *       "createdAt": "2026-10-27T09:30:00.000Z",
                      *       "updatedAt": "2026-10-27T09:30:00.000Z"
                      *     }
@@ -23508,7 +23524,7 @@ export interface operations {
                     "application/json": components["schemas"]["PersonResponseDto"];
                 };
             };
-            /** @description Invalid name or reminder, a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), or a last contact after today (PERSON_CONTACT_IN_FUTURE) */
+            /** @description Invalid name, reminder or notes (more than 2,000 characters), a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), or a last contact after today (PERSON_CONTACT_IN_FUTURE) */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -23517,7 +23533,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "statusCode": 400,
-                     *       "message": "Invalid name or reminder, a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), or a last contact after today (PERSON_CONTACT_IN_FUTURE)",
+                     *       "message": "Invalid name, reminder or notes (more than 2,000 characters), a date that cannot be (PERSON_DATE_INVALID, PERSON_DATE_YEAR_INVALID, PERSON_DATE_IN_FUTURE), or a last contact after today (PERSON_CONTACT_IN_FUTURE)",
                      *       "error": "Bad Request",
                      *       "code": "VALIDATION_FAILED"
                      *     }
@@ -23588,6 +23604,7 @@ export interface operations {
                      *       },
                      *       "reachOutDays": 30,
                      *       "lastContactOn": "2026-11-03",
+                     *       "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
                      *       "createdAt": "2026-10-27T09:30:00.000Z",
                      *       "updatedAt": "2026-10-27T09:30:00.000Z"
                      *     }
@@ -23676,6 +23693,7 @@ export interface operations {
                      *       },
                      *       "reachOutDays": 30,
                      *       "lastContactOn": "2026-11-03",
+                     *       "notes": "Met at the climbing gym in 2019. Loves Japanese novels.",
                      *       "createdAt": "2026-10-27T09:30:00.000Z",
                      *       "updatedAt": "2026-10-27T09:30:00.000Z"
                      *     }

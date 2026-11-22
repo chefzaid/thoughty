@@ -18,20 +18,22 @@ import { writersToday } from '../../utils/entryDate';
 import { mutedTextClass } from '../../utils/tintedText';
 import type { Language } from '../../utils/translations';
 import PersonDateFields from './PersonDateFields';
+import PersonNotesField, { PERSON_NOTES_MAX_LENGTH } from './PersonNotesField';
 import PersonReachOutFields from './PersonReachOutFields';
 
 /** The longest name the server keeps for a person. */
 const MAX_NAME_LENGTH = 80;
 
-/** What the editor saves: the name shown, and the date, reminder and last contact that changed (null removes each). */
+/** What the editor saves: the name shown, and the date, reminder, last contact and notes that changed (null removes each). */
 export interface PersonChanges {
   readonly name: string;
   readonly date?: PersonDateInput | null;
   readonly reachOutDays?: ReachOutDays | null;
   readonly lastContactOn?: string | null;
+  readonly notes?: string | null;
 }
 
-type EditorField = 'name' | 'date' | 'reachOut';
+type EditorField = 'name' | 'date' | 'reachOut' | 'notes';
 
 /** The field a code the API refuses a save with is about: PERSON_DATE_* the date, PERSON_CONTACT_* the last contact. */
 function failedField(failure: string): EditorField {
@@ -53,18 +55,20 @@ interface PersonRowProps {
 
 /**
  * One person on the People page: their name opens their entries; the name shown, their birthday or
- * anniversary and their reach-out reminder can be changed in place.
+ * anniversary, their reach-out reminder and the writer's notes on them can be changed in place.
  */
 export default function PersonRow({ person, canMerge, theme, language, t, onSave, onMerge, onDelete }: PersonRowProps) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(person.name);
   const [dateDraft, setDateDraft] = useState(() => personDateDraft(person.date));
   const [reachOut, setReachOut] = useState(() => reachOutDraft(person));
+  const [notes, setNotes] = useState(person.notes ?? '');
   const [error, setError] = useState<{ field: EditorField; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const kindRef = useRef<HTMLSelectElement>(null);
   const lastContactRef = useRef<HTMLInputElement>(null);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
   const today = writersToday();
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const inputId = useId();
@@ -83,6 +87,7 @@ export default function PersonRow({ person, canMerge, theme, language, t, onSave
     setName(person.name);
     setDateDraft(personDateDraft(person.date));
     setReachOut(reachOutDraft(person));
+    setNotes(person.notes ?? '');
     setEditing(true);
   };
 
@@ -94,7 +99,7 @@ export default function PersonRow({ person, canMerge, theme, language, t, onSave
 
   const fail = (field: EditorField, message: string) => {
     setError({ field, message });
-    ({ name: inputRef, date: kindRef, reachOut: lastContactRef })[field].current?.focus();
+    ({ name: inputRef, date: kindRef, reachOut: lastContactRef, notes: notesRef })[field].current?.focus();
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -114,12 +119,19 @@ export default function PersonRow({ person, canMerge, theme, language, t, onSave
       fail('reachOut', t(readReachOut.error));
       return;
     }
+    const savedNotes = notes.trim() || null;
+    // Notes a merge joined past the limit stay as they are until the writer changes them
+    if (savedNotes !== person.notes && savedNotes && savedNotes.length > PERSON_NOTES_MAX_LENGTH) {
+      fail('notes', t('personNotesTooLong', { max: PERSON_NOTES_MAX_LENGTH.toLocaleString(language) }));
+      return;
+    }
     if (saving) return;
     const changes: PersonChanges = {
       name: trimmed,
       ...(samePersonDate(read.date, person.date) ? {} : { date: read.date }),
       ...(readReachOut.reachOutDays === person.reachOutDays ? {} : { reachOutDays: readReachOut.reachOutDays }),
       ...(readReachOut.lastContactOn === person.lastContactOn ? {} : { lastContactOn: readReachOut.lastContactOn }),
+      ...(savedNotes === person.notes ? {} : { notes: savedNotes }),
     };
     let failure: string | null = null;
     if (trimmed !== person.name || Object.keys(changes).length > 1) {
@@ -188,6 +200,16 @@ export default function PersonRow({ person, canMerge, theme, language, t, onSave
             errorId={error?.field === 'reachOut' ? errorId : undefined}
             lastContactRef={lastContactRef}
           />
+          <PersonNotesField
+            name={name.trim() || person.name}
+            value={notes}
+            onChange={setNotes}
+            isDark={isDark}
+            language={language}
+            t={t}
+            errorId={error?.field === 'notes' ? errorId : undefined}
+            textareaRef={notesRef}
+          />
           {error && <p id={errorId} role="alert" className={`text-sm ${isDark ? 'text-red-300' : 'text-red-700'}`}>{error.message}</p>}
           <div className="flex gap-2 pt-1">
             <button type="submit" disabled={saving} className="h-10 rounded-lg bg-emerald-700 px-4 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-60">
@@ -200,7 +222,7 @@ export default function PersonRow({ person, canMerge, theme, language, t, onSave
         </form>
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <Link to={personJournalPath(person.id)} className="entry-mention-link text-base font-semibold break-words" title={t('personMentionTitle', { name: person.name })}>
               {person.name}
             </Link>
@@ -213,6 +235,12 @@ export default function PersonRow({ person, canMerge, theme, language, t, onSave
               </p>
             )}
             {reachOutLine && <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{reachOutLine}</p>}
+            {person.notes && (
+              <p className={`privacy-text my-1 whitespace-pre-wrap break-words text-sm ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                <span className="sr-only">{t('personNotesLabel')}: </span>
+                {person.notes}
+              </p>
+            )}
             <p className={`text-xs ${muted}`}>{details}</p>
           </div>
           <div className="flex gap-2">

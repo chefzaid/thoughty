@@ -30,7 +30,7 @@ vi.mock('./usePersonBook', () => ({
   },
 }));
 
-const marie: Person = { id: 12, name: 'Marie', handles: ['marie', 'mariec'], entryCount: 3, lastMentionedOn: '2026-10-20', date: null, reachOutDays: null, lastContactOn: null, createdAt: '', updatedAt: '' };
+const marie: Person = { id: 12, name: 'Marie', handles: ['marie', 'mariec'], entryCount: 3, lastMentionedOn: '2026-10-20', date: null, reachOutDays: null, lastContactOn: null, notes: null, createdAt: '', updatedAt: '' };
 
 function Location() {
   return <output data-testid="location">{useLocation().search}</output>;

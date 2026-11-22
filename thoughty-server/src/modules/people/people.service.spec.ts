@@ -8,8 +8,8 @@ import { PeopleService } from './people.service';
 const createdAt = new Date('2026-10-27T09:00:00Z');
 const noDate = { dateKind: null, dateMonth: null, dateDay: null, dateYear: null };
 const noReachOut = { reachOutDays: null, lastContactOn: null };
-const marieRow = { id: 12, name: 'Marie', handles: ['marie'], entryCount: '3', lastMentionedOn: '2026-10-20', ...noDate, ...noReachOut, createdAt, updatedAt: createdAt };
-const marie = { id: 12, name: 'Marie', handles: ['marie'], entryCount: 3, lastMentionedOn: '2026-10-20', date: null, ...noReachOut, createdAt, updatedAt: createdAt };
+const marieRow = { id: 12, name: 'Marie', handles: ['marie'], entryCount: '3', lastMentionedOn: '2026-10-20', ...noDate, ...noReachOut, notes: null, createdAt, updatedAt: createdAt };
+const marie = { id: 12, name: 'Marie', handles: ['marie'], entryCount: 3, lastMentionedOn: '2026-10-20', date: null, ...noReachOut, notes: null, createdAt, updatedAt: createdAt };
 
 describe('PeopleService', () => {
   let repository: Record<string, jest.Mock> & { manager?: unknown };
@@ -107,6 +107,20 @@ describe('PeopleService', () => {
     expect(repository.save).toHaveBeenLastCalledWith(expect.objectContaining(noReachOut));
   });
 
+  it('shows the writer’s notes on a person, sets them when sent, keeps them when left out and removes them with null', async () => {
+    (repository.manager as { query: jest.Mock }).query.mockResolvedValue([{ ...marieRow, notes: 'Loves Japanese novels.' }]);
+    repository.findOne.mockImplementation(async () => ({ id: 12, userId: 7, name: 'Marie', ...noDate, notes: 'Met at the gym.' }));
+
+    expect((await service.list(7)).people[0].notes).toBe('Loves Japanese novels.');
+    expect((repository.manager as { query: jest.Mock }).query.mock.calls[0][0]).toContain('p.notes');
+    await service.update(7, 12, { name: 'Marie' });
+    expect(repository.save).toHaveBeenLastCalledWith(expect.objectContaining({ notes: 'Met at the gym.' }));
+    await service.update(7, 12, { name: 'Marie', notes: 'Loves Japanese novels.' });
+    expect(repository.save).toHaveBeenLastCalledWith(expect.objectContaining({ notes: 'Loves Japanese novels.' }));
+    await service.update(7, 12, { name: 'Marie', notes: null });
+    expect(repository.save).toHaveBeenLastCalledWith(expect.objectContaining({ notes: null }));
+  });
+
   it('refuses a last contact on a day still to come everywhere on Earth, and saves nothing', async () => {
     repository.findOne.mockImplementation(async () => ({ id: 12, userId: 7, name: 'Marie', ...noDate, ...noReachOut }));
 
@@ -136,6 +150,7 @@ describe('PeopleService', () => {
     expect(statements[2]).toEqual([expect.stringContaining('p.date_month IS NULL AND d.date_month IS NOT NULL'), [12, 14]]);
     expect(statements[3]).toEqual([expect.stringContaining('reach_out_days = COALESCE(p.reach_out_days, d.reach_out_days)'), [12, 14]]);
     expect(statements[3][0]).toContain('last_contact_on = GREATEST(p.last_contact_on, d.last_contact_on)');
+    expect(statements[3][0]).toContain("ELSE p.notes || E'\\n\\n' || d.notes END");
     expect(statements[4][0]).toContain('INSERT INTO entry_people (entry_id, person_id) SELECT entry_id, $1 FROM entry_people WHERE person_id = $2 ON CONFLICT DO NOTHING');
     expect(statements[5]).toEqual([expect.stringContaining("jsonb_set(filters, '{personId}', to_jsonb($2::int))"), [7, 12, '14']]);
     expect(manager.getRepository).toHaveBeenCalledWith(Person);

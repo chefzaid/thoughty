@@ -20,7 +20,7 @@ export interface PeoplePageProps {
 
 /**
  * The people the writer mentions with `@name`: how many entries mention each, a link to those
- * entries, and renaming, giving a birthday or an anniversary, merging and deleting. People are the writer's own notes, never accounts.
+ * entries, and renaming, giving a birthday or an anniversary, merging and deleting. People are the writer’s own records, never accounts; each can carry the writer’s notes.
  */
 export default function PeoplePage({ theme = 'dark', language: languageSetting, t }: PeoplePageProps) {
   const { list, people, update, merge, remove } = usePeople();

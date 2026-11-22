@@ -170,6 +170,30 @@ describePostgres('PostgreSQL people', () => {
     expect(await summary()).toEqual([['Marie Curie', ['marie', 'mariec'], 3, '2026-10-03']]);
   });
 
+  it('keeps the writer’s notes on a person and joins both people’s notes when merging, never storing blank ones', async () => {
+    await write('2026-10-01', 'With @Marie, @MarieC, @Paul and @Zoe');
+    const [marie, duplicate, paul, zoe] = await Promise.all(['Marie', 'MarieC', 'Paul', 'Zoe'].map(personNamed));
+    const notesOf = async (name: string) => (await personNamed(name)).notes;
+
+    expect(marie.notes).toBeNull();
+    await people.update(writerId, marie.id, { name: 'Marie', notes: 'Met at the climbing gym.\nLoves novels.' });
+    await people.update(writerId, duplicate.id, { name: 'MarieC', notes: 'Gift idea: a fountain pen.' });
+    await people.update(writerId, zoe.id, { name: 'Zoe', notes: 'Moved to Lyon.' });
+    await people.update(writerId, marie.id, { name: 'Marie' });
+    expect(await notesOf('Marie')).toBe('Met at the climbing gym.\nLoves novels.');
+
+    const merged = await people.merge(writerId, marie.id, { duplicateId: duplicate.id });
+    expect(merged.notes).toBe('Met at the climbing gym.\nLoves novels.\n\nGift idea: a fountain pen.');
+    // The person kept takes the duplicate's notes when they have none, and keeps their own when the duplicate has none
+    expect((await people.merge(writerId, paul.id, { duplicateId: zoe.id })).notes).toBe('Moved to Lyon.');
+    await write('2026-10-02', 'With @Ines');
+    expect((await people.merge(writerId, paul.id, { duplicateId: (await personNamed('Ines')).id })).notes).toBe('Moved to Lyon.');
+
+    await people.update(writerId, paul.id, { name: 'Paul', notes: null });
+    expect(await notesOf('Paul')).toBeNull();
+    await expect(dataSource.query("UPDATE people SET notes = ' ' WHERE id = $1", [paul.id])).rejects.toThrow(/chk_people_notes_not_blank/);
+  });
+
   it('deletes a person, keeping the text and widening saved searches, and a new mention adds them again', async () => {
     const entryId = await write('2026-10-01', 'With @Marie');
     const marie = await personNamed('Marie');
