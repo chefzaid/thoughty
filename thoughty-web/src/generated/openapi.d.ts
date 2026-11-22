@@ -2633,7 +2633,7 @@ export interface paths {
         put?: never;
         /**
          * Import the events of a calendar file (.ics)
-         * @description Up to 5 MB. Events already imported (the same UID) are updated; repeating events are counted and left out.
+         * @description Up to 5 MB. Events already imported (the same UID) are updated. Repeating events keep their rule (daily, weekly, monthly or yearly) and each changed occurrence becomes an event of its own; those repeating within a day, by week number or year day are counted and left out.
          */
         post: operations["CalendarController_import"];
         delete?: never;
@@ -10808,7 +10808,8 @@ export interface components {
          *       "startsAt": "2026-11-22T19:30:00.000Z",
          *       "endsAt": "2026-11-22T22:00:00.000Z",
          *       "startDate": null,
-         *       "endDate": null
+         *       "endDate": null,
+         *       "repeats": false
          *     }
          */
         CalendarEventResponseDto: {
@@ -10847,6 +10848,11 @@ export interface components {
              * @example null
              */
             endDate: string | null;
+            /**
+             * @description Whether the event repeats; the dates and times are then those of its occurrence on the day listed
+             * @example false
+             */
+            repeats: boolean;
         };
         /**
          * @example {
@@ -10859,31 +10865,32 @@ export interface components {
          *           "startsAt": "2026-11-22T19:30:00.000Z",
          *           "endsAt": "2026-11-22T22:00:00.000Z",
          *           "startDate": null,
-         *           "endDate": null
+         *           "endDate": null,
+         *           "repeats": false
          *         }
          *       ]
          *     }
          */
         CalendarDayResponseDto: {
-            /** @description The day’s events, all-day ones first, then by start; at most 50 */
+            /** @description The day’s events, repeating ones by their occurrence that day, all-day ones first, then by start; at most 50 */
             events: components["schemas"]["CalendarEventResponseDto"][];
         };
         /**
          * @example {
          *       "imported": 42,
-         *       "skippedRecurring": 3,
+         *       "skippedRecurring": 1,
          *       "eventCount": 312
          *     }
          */
         CalendarImportResponseDto: {
             /**
-             * @description Events read from the file, added or updated
+             * @description Events read from the file, added or updated, repeating ones and their changed occurrences included
              * @example 42
              */
             imported: number;
             /**
-             * @description Repeating events in the file, which are not imported
-             * @example 3
+             * @description Repeating events whose rule cannot be read (repeating within a day, by week number or year day), which are not imported
+             * @example 1
              */
             skippedRecurring: number;
             /**
@@ -24378,7 +24385,8 @@ export interface operations {
                      *           "startsAt": "2026-11-22T19:30:00.000Z",
                      *           "endsAt": "2026-11-22T22:00:00.000Z",
                      *           "startDate": null,
-                     *           "endDate": null
+                     *           "endDate": null,
+                     *           "repeats": false
                      *         }
                      *       ]
                      *     }
@@ -24433,7 +24441,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "imported": 42,
-                     *       "skippedRecurring": 3,
+                     *       "skippedRecurring": 1,
                      *       "eventCount": 312
                      *     }
                      */

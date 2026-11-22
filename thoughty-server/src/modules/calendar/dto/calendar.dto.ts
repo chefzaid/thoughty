@@ -56,10 +56,13 @@ export class CalendarEventResponseDto {
 
   @ApiProperty({ type: String, nullable: true, format: 'date', example: null, description: 'An all-day event’s last day (included); null for a timed event' })
   endDate!: string | null;
+
+  @ApiProperty({ example: false, description: 'Whether the event repeats; the dates and times are then those of its occurrence on the day listed' })
+  repeats!: boolean;
 }
 
 export class CalendarDayResponseDto {
-  @ApiProperty({ type: [CalendarEventResponseDto], description: `The day’s events, all-day ones first, then by start; at most ${CALENDAR_DAY_EVENT_LIMIT}` })
+  @ApiProperty({ type: [CalendarEventResponseDto], description: `The day’s events, repeating ones by their occurrence that day, all-day ones first, then by start; at most ${CALENDAR_DAY_EVENT_LIMIT}` })
   events!: CalendarEventResponseDto[];
 }
 
@@ -75,10 +78,10 @@ export class CalendarSummaryResponseDto {
 }
 
 export class CalendarImportResponseDto {
-  @ApiProperty({ example: 42, description: 'Events read from the file, added or updated' })
+  @ApiProperty({ example: 42, description: 'Events read from the file, added or updated, repeating ones and their changed occurrences included' })
   imported!: number;
 
-  @ApiProperty({ example: 3, description: 'Repeating events in the file, which are not imported' })
+  @ApiProperty({ example: 1, description: 'Repeating events whose rule cannot be read (repeating within a day, by week number or year day), which are not imported' })
   skippedRecurring!: number;
 
   @ApiProperty({ example: 312, description: 'How many imported events the writer keeps now' })

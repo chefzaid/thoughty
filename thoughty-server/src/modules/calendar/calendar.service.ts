@@ -11,6 +11,7 @@ import {
   CalendarImportResponseDto,
   CalendarSummaryResponseDto,
 } from './dto';
+import { occurrenceOn } from './calendar-occurrences';
 import { parseIcs, type ParsedCalendarEvent } from './ics-parser';
 
 /** Namespace of the advisory lock that serializes one writer's imports, so the limit holds under concurrent requests. */
@@ -19,9 +20,9 @@ const CALENDAR_LOCK_NAMESPACE = 'calendar_events';
 const UPSERT_CHUNK = 500;
 
 /**
- * The events of the calendar files (ICS) the writer imports, shown in the composer on their day. A file
- * imported again updates its events by their `UID`; events of other files stay until the writer removes
- * every imported event.
+ * The events of the calendar files (ICS) the writer imports, shown in the composer on their day, a
+ * repeating event on each day it falls on. A file imported again updates its events by their `UID`;
+ * events of other files stay until the writer removes every imported event.
  */
 @Injectable()
 export class CalendarService {
@@ -40,27 +41,47 @@ export class CalendarService {
 
   /**
    * The events on a day in the writer's zone: all-day events whose days include it, and timed events
-   * that overlap it (one without a length when it starts that day), all-day first, then by start.
+   * that overlap it (one without a length when it starts that day), all-day first, then by start. A
+   * repeating event is listed once, by its first occurrence on the day.
    */
   async eventsOn(userId: number, date: string, timeZone = 'UTC'): Promise<CalendarDayResponseDto> {
-    const events = await this.eventRepository
-      .createQueryBuilder('event')
-      .where('event.user_id = :userId', { userId })
-      .andWhere(
-        `((event.all_day AND event.start_date <= CAST(:date AS date) AND event.end_date >= CAST(:date AS date))
-          OR (NOT event.all_day
-            AND event.starts_at < (CAST(CAST(:date AS date) + 1 AS timestamp) AT TIME ZONE :timeZone)
-            AND (event.ends_at > (CAST(:date AS timestamp) AT TIME ZONE :timeZone)
-              OR event.starts_at >= (CAST(:date AS timestamp) AT TIME ZONE :timeZone))))`,
-        { date, timeZone },
-      )
-      .orderBy('event.all_day', 'DESC')
-      .addOrderBy('event.starts_at', 'ASC', 'NULLS FIRST')
-      .addOrderBy('LOWER(event.summary)', 'ASC')
-      .addOrderBy('event.id', 'ASC')
-      .limit(CALENDAR_DAY_EVENT_LIMIT)
-      .getMany();
-    return { events: events.map(toCalendarEventResponse) };
+    const dayEnd = '(CAST(CAST(:date AS date) + 1 AS timestamp) AT TIME ZONE :timeZone)';
+    const [oneOff, repeating] = await Promise.all([
+      this.eventRepository
+        .createQueryBuilder('event')
+        .where('event.user_id = :userId', { userId })
+        .andWhere('event.recurrence IS NULL')
+        .andWhere(
+          `((event.all_day AND event.start_date <= CAST(:date AS date) AND event.end_date >= CAST(:date AS date))
+            OR (NOT event.all_day
+              AND event.starts_at < ${dayEnd}
+              AND (event.ends_at > (CAST(:date AS timestamp) AT TIME ZONE :timeZone)
+                OR event.starts_at >= (CAST(:date AS timestamp) AT TIME ZONE :timeZone))))`,
+          { date, timeZone },
+        )
+        .orderBy('event.all_day', 'DESC')
+        .addOrderBy('event.starts_at', 'ASC', 'NULLS FIRST')
+        .addOrderBy('LOWER(event.summary)', 'ASC')
+        .addOrderBy('event.id', 'ASC')
+        .limit(CALENDAR_DAY_EVENT_LIMIT)
+        .getMany(),
+      // Repeating events that start by the end of the day; their occurrences are worked out here
+      this.eventRepository
+        .createQueryBuilder('event')
+        .where('event.user_id = :userId', { userId })
+        .andWhere('event.recurrence IS NOT NULL')
+        .andWhere(
+          `((event.all_day AND event.start_date <= CAST(:date AS date)) OR (NOT event.all_day AND event.starts_at < ${dayEnd}))`,
+          { date, timeZone },
+        )
+        .getMany(),
+    ]);
+    const occurrences = repeating.flatMap((event) => {
+      const occurrence = occurrenceOn(event, date, timeZone);
+      return occurrence ? [{ ...toCalendarEventResponse(event), ...occurrence }] : [];
+    });
+    const events = [...oneOff.map(toCalendarEventResponse), ...occurrences].sort(byDayOrder);
+    return { events: events.slice(0, CALENDAR_DAY_EVENT_LIMIT) };
   }
 
   /** Reads a calendar file and adds its events, or updates those already imported; refused past the limit. */
@@ -104,6 +125,7 @@ function toRow(userId: number, event: ParsedCalendarEvent, updatedAt: Date): Par
     endsAt: event.allDay ? null : event.endsAt,
     startDate: event.allDay ? event.startDate : null,
     endDate: event.allDay ? event.endDate : null,
+    recurrence: event.recurrence,
     updatedAt,
   };
 }
@@ -118,5 +140,18 @@ export function toCalendarEventResponse(event: CalendarEvent): CalendarEventResp
     endsAt: event.endsAt,
     startDate: event.startDate,
     endDate: event.endDate,
+    repeats: event.recurrence !== null,
   };
+}
+
+/** All-day events first, then by start, title (case aside) and id, as the day's query orders one-off events. */
+function byDayOrder(left: CalendarEventResponseDto, right: CalendarEventResponseDto): number {
+  if (left.allDay !== right.allDay) return left.allDay ? -1 : 1;
+  const leftStart = left.startsAt?.getTime() ?? 0;
+  const rightStart = right.startsAt?.getTime() ?? 0;
+  if (leftStart !== rightStart) return leftStart - rightStart;
+  const leftSummary = left.summary.toLowerCase();
+  const rightSummary = right.summary.toLowerCase();
+  if (leftSummary !== rightSummary) return leftSummary < rightSummary ? -1 : 1;
+  return left.id - right.id;
 }

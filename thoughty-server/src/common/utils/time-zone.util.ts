@@ -22,19 +22,36 @@ export function isValidTimeZone(timeZone: string): boolean {
   }
 }
 
+/**
+ * One formatter per zone name, kept: building one costs far more than formatting with it. Names are
+ * read case aside (`europe/paris` is valid), so the cache starts over past `MAX_FORMATTERS` names.
+ */
+const formatters = new Map<string, Intl.DateTimeFormat>();
+const MAX_FORMATTERS = 1000;
+
+function formatterFor(timeZone: string): Intl.DateTimeFormat {
+  let formatter = formatters.get(timeZone);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hourCycle: 'h23',
+      weekday: 'short',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+    });
+    if (formatters.size >= MAX_FORMATTERS) formatters.clear();
+    formatters.set(timeZone, formatter);
+  }
+  return formatter;
+}
+
 /** The calendar date, time and weekday the zone's wall clock shows at `date`. */
 export function zonedParts(date: Date, timeZone: string): ZonedParts {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    hourCycle: 'h23',
-    weekday: 'short',
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: 'numeric',
-    second: 'numeric',
-  }).formatToParts(date);
+  const parts = formatterFor(timeZone).formatToParts(date);
   const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? '';
 
   return {

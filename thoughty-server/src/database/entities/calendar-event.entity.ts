@@ -1,9 +1,11 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from 'typeorm';
+import type { EventRecurrence } from '@/modules/calendar/calendar-recurrence';
 import { User } from './user.entity';
 
 /**
  * An event from a calendar file (ICS) the writer imported, shown in the composer on its day. An all-day
- * event keeps its days (`startDate` to `endDate`, both included); a timed one its instants.
+ * event keeps its days (`startDate` to `endDate`, both included); a timed one its instants. A repeating
+ * event keeps its first occurrence there, and how it repeats in `recurrence`.
  */
 @Entity('calendar_events')
 @Unique('uq_calendar_events_user_uid', ['userId', 'uid'])
@@ -41,6 +43,10 @@ export class CalendarEvent {
 
   @Column({ name: 'end_date', type: 'date', nullable: true })
   endDate: string | null;
+
+  /** How the event repeats (its rule, last occurrence, extra and removed ones); null for a one-off event. */
+  @Column({ type: 'jsonb', nullable: true })
+  recurrence: EventRecurrence | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;

@@ -20,6 +20,7 @@ const event = (overrides: Partial<CalendarEvent> = {}): CalendarEvent => ({
   endsAt: '2026-11-22T21:00:00.000Z',
   startDate: null,
   endDate: null,
+  repeats: false,
   ...overrides,
 });
 
@@ -50,6 +51,7 @@ describe('ComposerCalendarEvents', () => {
     expect(items[1]).toHaveTextContent(/7:30\s*–\s*10:00\s*PM/);
     expect(within(items[1]!).getByText('Dinner with Lina')).toHaveClass('privacy-text');
     expect(within(items[1]!).getByText('Le Petit Zinc')).toHaveClass('privacy-text');
+    expect(within(region).queryByRole('img', { name: 'Repeats' })).toBeNull();
     expect(service.eventsOn).toHaveBeenCalledWith('2026-11-22', 'Europe/Paris');
 
     fireEvent.click(within(items[1]!).getByRole('button', { name: 'Write about “Dinner with Lina”' }));
@@ -65,6 +67,20 @@ describe('ComposerCalendarEvents', () => {
     expect(within(region).getByRole('heading')).toHaveClass('text-sky-700');
     fireEvent.click(within(region).getByRole('button', { name: 'Écrire à propos de « Événement sans titre »' }));
     expect(onWriteAbout).toHaveBeenCalledWith('Événement sans titre : comment c’était ?');
+  });
+
+  it('marks a repeating event', async () => {
+    service.eventsOn.mockResolvedValue({ data: { events: [event({ summary: 'Yoga', location: null, repeats: true })] }, error: null });
+    renderEvents();
+    const region = await screen.findByRole('region', { name: 'On your calendar' });
+    expect(within(region).getByRole('img', { name: 'Repeats' })).toHaveAttribute('title', 'Repeats');
+  });
+
+  it('marks a repeating event in French', async () => {
+    service.eventsOn.mockResolvedValue({ data: { events: [event({ summary: 'Yoga', location: null, repeats: true })] }, error: null });
+    renderEvents('fr');
+    const region = await screen.findByRole('region', { name: 'Dans votre agenda' });
+    expect(within(region).getByRole('img', { name: 'Récurrent' })).toBeInTheDocument();
   });
 
   it('shows nothing on a day without events, or when they cannot be loaded', async () => {

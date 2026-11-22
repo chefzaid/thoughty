@@ -13,6 +13,22 @@ describe('time-zone util', () => {
     expect(localDateIn(new Date('2026-10-27T20:00:00Z'), 'Asia/Kolkata')).toBe('2026-10-28');
   });
 
+  it('reads the same wall clock for a zone named case aside, past as many names as its formatters keep', () => {
+    const instant = new Date('2026-10-27T22:00:00Z');
+    // 1,100 spellings of one zone, each letter's case from a bit of the index
+    const spell = (index: number) => {
+      const [region, city] = ['europe', 'paris'].map((word, wordIndex) => [...word]
+        .map((letter, position) => ((index >> (wordIndex * 6 + position)) & 1 ? letter.toUpperCase() : letter))
+        .join(''));
+      return `${region}/${city}`;
+    };
+    const names = Array.from({ length: 1100 }, (_, index) => spell(index));
+    expect(new Set(names).size).toBe(1100);
+    const hours = new Set(names.map((name) => zonedParts(instant, name).hour));
+    expect([...hours]).toEqual([23]);
+    expect(() => zonedParts(instant, 'Mars/Olympus')).toThrow(RangeError);
+  });
+
   it('turns a wall-clock hour into its instant, rolling day overflow into the next month', () => {
     expect(at(2026, 10, 27, 8, 'UTC')).toBe('2026-10-27T08:00:00.000Z');
     expect(at(2026, 10, 32, 8, 'Europe/Paris')).toBe('2026-11-01T07:00:00.000Z');

@@ -31,6 +31,18 @@ const ICS = [
   'DTSTART:20261102T180000Z',
   'RRULE:FREQ=WEEKLY',
   'END:VEVENT',
+  'BEGIN:VEVENT',
+  'UID:birthday@example',
+  'SUMMARY:Lina’s birthday',
+  'DTSTART;VALUE=DATE:19901123',
+  'RRULE:FREQ=YEARLY',
+  'END:VEVENT',
+  'BEGIN:VEVENT',
+  'UID:stretch@example',
+  'SUMMARY:Stretch',
+  'DTSTART:20261102T080000Z',
+  'RRULE:FREQ=HOURLY;INTERVAL=4',
+  'END:VEVENT',
   'END:VCALENDAR',
 ].join('\r\n');
 
@@ -44,6 +56,7 @@ const TRIP: MockCalendarEvent = {
   endsAt: null,
   startDate: '2026-11-21',
   endDate: '2026-11-23',
+  repeats: false,
 };
 
 async function expectNoAxeViolations(page: Page, selector: string) {
@@ -62,7 +75,7 @@ test.describe('Imported calendar', () => {
     await page.clock.setFixedTime(new Date('2026-11-22T08:00:00Z'));
   });
 
-  test('imports a calendar file and lists the composer day’s events, each a question to write about', async ({ page }) => {
+  test('imports a calendar file and lists the composer day’s events, repeating ones included, each a question to write about', async ({ page }) => {
     const { state } = await setupMockApp(page, { startAuthenticated: true });
     await page.goto('/journal');
     await expect(page.getByRole('textbox', { name: 'Date of the entry' })).toHaveValue('2026-11-22');
@@ -73,9 +86,10 @@ test.describe('Imported calendar', () => {
     await expect(panel.getByText('No calendar imported yet.')).toBeVisible();
     await expect(panel.getByRole('button', { name: 'Remove imported events' })).toHaveCount(0);
     await panel.getByLabel('Choose a calendar file (.ics)').setInputFiles({ name: 'calendar.ics', mimeType: 'text/calendar', buffer: Buffer.from(ICS) });
-    await expect(panel.getByRole('status')).toHaveText('Imported 3 events. 1 repeating event was left out.');
-    await expect(panel.getByText('3 imported events, last imported on November 22, 2026.')).toBeVisible();
-    expect(state.calendarEvents.map((event) => event.summary)).toEqual(['Dinner with Lina', 'Market', 'Concert']);
+    await expect(panel.getByText('Repeating events show on each day they fall on.', { exact: false })).toBeVisible();
+    await expect(panel.getByRole('status')).toHaveText('Imported 5 events. 1 repeating event could not be read and was left out.');
+    await expect(panel.getByText('5 imported events, last imported on November 22, 2026.')).toBeVisible();
+    expect(state.calendarEvents.map((event) => event.summary)).toEqual(['Dinner with Lina', 'Market', 'Concert', 'Yoga', 'Lina’s birthday']);
     await expectNoAxeViolations(page, 'section[aria-labelledby="calendar-import-title"]');
 
     await goToView(page, 'Journal');
@@ -95,7 +109,21 @@ test.describe('Imported calendar', () => {
     const date = page.getByRole('textbox', { name: 'Date of the entry' });
     await date.fill('2026-11-23');
     await date.press('Escape');
-    await expect(events.getByRole('listitem')).toHaveText([/^8:00\s*–\s*10:30\s*PM\s*Concert\s*Write about it$/]);
+    // The yearly birthday and the weekly class fall on this Monday, marked as repeating
+    await expect(events.getByRole('listitem')).toHaveText([
+      /^All day\s*Lina’s birthday\s*Write about it$/,
+      /^7:00\s*PM\s*Yoga\s*Write about it$/,
+      /^8:00\s*–\s*10:30\s*PM\s*Concert\s*Write about it$/,
+    ]);
+    await expect(events.getByRole('img', { name: 'Repeats' })).toHaveCount(2);
+    await expect(events.getByRole('listitem').nth(1).getByRole('img', { name: 'Repeats' })).toBeVisible();
+    await expectNoAxeViolations(page, '.composer-calendar-events');
+    await events.getByRole('button', { name: 'Write about “Yoga”' }).click();
+    await expect(writing).toHaveValue('A slow Sunday.\n\nDinner with Lina: how was it?\n\nYoga: how was it?');
+    // A week later, the class again
+    await date.fill('2026-11-30');
+    await date.press('Escape');
+    await expect(events.getByRole('listitem')).toHaveText([/^7:00\s*PM\s*Yoga\s*Write about it$/]);
     await date.fill('2026-11-24');
     await date.press('Escape');
     await expect(events).toHaveCount(0);

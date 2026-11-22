@@ -42,7 +42,7 @@ export class CalendarController {
   @ApiOperation({
     summary: 'Import the events of a calendar file (.ics)',
     description:
-      'Up to 5 MB. Events already imported (the same UID) are updated; repeating events are counted and left out.',
+      'Up to 5 MB. Events already imported (the same UID) are updated. Repeating events keep their rule (daily, weekly, monthly or yearly) and each changed occurrence becomes an event of its own; those repeating within a day, by week number or year day are counted and left out.',
   })
   @ApiConsumes('multipart/form-data')
   @ApiBody({

@@ -20,12 +20,12 @@ describe('parseIcs', () => {
     expect(parsed).toEqual({
       skippedRecurring: 0,
       events: [
-        { uid: 'utc', summary: 'Dentist', location: null, allDay: false, startsAt: new Date('2026-11-22T09:30:00Z'), endsAt: new Date('2026-11-22T10:15:00Z') },
-        { uid: 'zoned', summary: 'Dinner', location: null, allDay: false, startsAt: new Date('2026-07-15T17:30:00Z'), endsAt: new Date('2026-07-15T20:00:00Z') },
+        { uid: 'utc', summary: 'Dentist', location: null, recurrence: null, allDay: false, startsAt: new Date('2026-11-22T09:30:00Z'), endsAt: new Date('2026-11-22T10:15:00Z') },
+        { uid: 'zoned', summary: 'Dinner', location: null, recurrence: null, allDay: false, startsAt: new Date('2026-07-15T17:30:00Z'), endsAt: new Date('2026-07-15T20:00:00Z') },
         // No end: an instant
-        { uid: 'floating', summary: 'Run', location: null, allDay: false, startsAt: new Date('2026-11-22T12:00:00Z'), endsAt: new Date('2026-11-22T12:00:00Z') },
+        { uid: 'floating', summary: 'Run', location: null, recurrence: null, allDay: false, startsAt: new Date('2026-11-22T12:00:00Z'), endsAt: new Date('2026-11-22T12:00:00Z') },
         // Not an IANA name: read in the writer's zone
-        { uid: 'windows', summary: 'Call', location: null, allDay: false, startsAt: new Date('2026-11-22T13:00:00Z'), endsAt: new Date('2026-11-22T14:30:00Z') },
+        { uid: 'windows', summary: 'Call', location: null, recurrence: null, allDay: false, startsAt: new Date('2026-11-22T13:00:00Z'), endsAt: new Date('2026-11-22T14:30:00Z') },
       ],
     });
   });
@@ -59,22 +59,96 @@ describe('parseIcs', () => {
     expect(parsed?.events[1].summary).toHaveLength(200);
   });
 
-  it('counts repeating events and leaves them out, with changed occurrences, cancelled and broken events', () => {
+  it('keeps how repeating events repeat, their changed and cancelled occurrences taken out of the rule', () => {
     const parsed = parseIcs(calendar(
-      ['UID:weekly', 'SUMMARY:Yoga', 'DTSTART:20261102T180000Z', 'RRULE:FREQ=WEEKLY'],
-      ['UID:extra', 'SUMMARY:Extra', 'DTSTART:20261102T180000Z', 'RDATE:20261110T180000Z'],
-      ['UID:weekly', 'SUMMARY:Yoga moved', 'DTSTART:20261110T190000Z', 'RECURRENCE-ID:20261109T180000Z'],
+      [
+        'UID:weekly', 'SUMMARY:Yoga', 'DTSTART;TZID=Europe/Paris:20261102T190000', 'DTEND;TZID=Europe/Paris:20261102T200000',
+        'RRULE:FREQ=WEEKLY;UNTIL=20261231T225959Z', 'EXDATE;TZID=Europe/Paris:20261116T190000,20261123T190000',
+      ],
+      ['UID:weekly', 'SUMMARY:Yoga moved', 'DTSTART;TZID=Europe/Paris:20261110T190000', 'DTEND;TZID=Europe/Paris:20261110T200000', 'RECURRENCE-ID;TZID=Europe/Paris:20261109T190000'],
+      ['UID:weekly', 'STATUS:CANCELLED', 'DTSTART;TZID=Europe/Paris:20261130T190000', 'RECURRENCE-ID;TZID=Europe/Paris:20261130T190000'],
+      [
+        'UID:birthday', 'SUMMARY:Lina’s birthday', 'DTSTART;VALUE=DATE:19900314', 'DTEND;VALUE=DATE:19900315',
+        'RRULE:FREQ=YEARLY;UNTIL=20300314', 'EXDATE;VALUE=DATE:20270314', 'RDATE;VALUE=DATE:20260315',
+      ],
+      ['UID:sundays', 'DTSTART;VALUE=DATE:20261101', 'RRULE:FREQ=WEEKLY;UNTIL=20261201T040000Z', 'EXDATE:20261108T120000Z'],
+      [
+        'UID:extra', 'SUMMARY:Extra', 'DTSTART:20261102T180000Z',
+        'RDATE:20261110T180000Z', 'RDATE;VALUE=PERIOD:20261111T180000Z/PT1H', 'RDATE;VALUE=DATE:20261112',
+      ],
+      ['UID:floating-until', 'DTSTART:20261102T090000', 'RRULE:FREQ=DAILY;UNTIL=20261105'],
+    ), 'America/New_York');
+
+    const weekly = { freq: 'WEEKLY', interval: 1, weekStart: 1 };
+    expect(parsed).toEqual({
+      skippedRecurring: 0,
+      events: [
+        {
+          uid: 'weekly', summary: 'Yoga', location: null, allDay: false,
+          startsAt: new Date('2026-11-02T18:00:00Z'), endsAt: new Date('2026-11-02T19:00:00Z'),
+          recurrence: {
+            rule: weekly,
+            until: '2026-12-31T22:59:59.000Z',
+            rdates: [],
+            // Its own, then the changed and the cancelled occurrences'
+            exdates: ['2026-11-16T18:00:00.000Z', '2026-11-23T18:00:00.000Z', '2026-11-09T18:00:00.000Z', '2026-11-30T18:00:00.000Z'],
+            timeZone: 'Europe/Paris',
+          },
+        },
+        {
+          uid: 'weekly|20261109T190000', summary: 'Yoga moved', location: null, allDay: false,
+          startsAt: new Date('2026-11-10T18:00:00Z'), endsAt: new Date('2026-11-10T19:00:00Z'), recurrence: null,
+        },
+        {
+          uid: 'birthday', summary: 'Lina’s birthday', location: null, allDay: true, startDate: '1990-03-14', endDate: '1990-03-14',
+          recurrence: { rule: { freq: 'YEARLY', interval: 1, weekStart: 1 }, until: '2030-03-14', rdates: ['2026-03-15'], exdates: ['2027-03-14'], timeZone: 'America/New_York' },
+        },
+        {
+          uid: 'sundays', summary: '', location: null, allDay: true, startDate: '2026-11-01', endDate: '2026-11-01',
+          // The day the last instant and the removed one fall on in the writer's zone
+          recurrence: { rule: weekly, until: '2026-11-30', rdates: [], exdates: ['2026-11-08'], timeZone: 'America/New_York' },
+        },
+        {
+          uid: 'extra', summary: 'Extra', location: null, allDay: false,
+          startsAt: new Date('2026-11-02T18:00:00Z'), endsAt: new Date('2026-11-02T18:00:00Z'),
+          // A period and a day are not starts a timed event can take
+          recurrence: { rule: null, until: null, rdates: ['2026-11-10T18:00:00.000Z'], exdates: [], timeZone: 'UTC' },
+        },
+        {
+          uid: 'floating-until', summary: '', location: null, allDay: false,
+          startsAt: new Date('2026-11-02T14:00:00Z'), endsAt: new Date('2026-11-02T14:00:00Z'),
+          // The end of the last day in the writer's zone
+          recurrence: { rule: { freq: 'DAILY', interval: 1, weekStart: 1 }, until: '2026-11-06T04:59:59.999Z', rdates: [], exdates: [], timeZone: 'America/New_York' },
+        },
+      ],
+    });
+  });
+
+  it('counts the repeating events it cannot read and leaves them out, with cancelled and broken events', () => {
+    const manyDays = Array.from({ length: 1001 }, () => '20261103T180000Z').join(',');
+    const parsed = parseIcs(calendar(
+      ['UID:hourly', 'DTSTART:20261102T180000Z', 'RRULE:FREQ=HOURLY'],
+      ['UID:two-rules', 'DTSTART:20261102T180000Z', 'RRULE:FREQ=DAILY', 'RRULE:FREQ=WEEKLY'],
+      ['UID:bad-until', 'DTSTART:20261102T180000Z', 'RRULE:FREQ=DAILY;UNTIL=soon'],
+      ['UID:too-many', 'DTSTART:20261102T180000Z', 'RRULE:FREQ=DAILY', `EXDATE:${manyDays}`],
       ['UID:cancelled', 'SUMMARY:Off', 'STATUS:CANCELLED', 'DTSTART:20261102T180000Z'],
       ['UID:no-start', 'SUMMARY:Someday'],
       ['UID:bad-date', 'DTSTART;VALUE=DATE:20260230'],
       ['UID:bad-time', 'DTSTART:20261122T250000Z'],
       ['UID:garbage', 'DTSTART:tomorrow'],
       ['UID:kept', 'DTSTART:20261122T120000Z'],
+      // A changed occurrence without its repeating event is an event of its own
+      ['UID:lone', 'DTSTART:20261110T190000Z', 'RECURRENCE-ID:20261109T180000Z'],
+      ['SUMMARY:No uid', 'DTSTART:20261110T190000Z', 'RECURRENCE-ID:20261109T180000Z'],
     ), 'UTC');
 
     expect(parsed).toEqual({
-      skippedRecurring: 2,
-      events: [{ uid: 'kept', summary: '', location: null, allDay: false, startsAt: new Date('2026-11-22T12:00:00Z'), endsAt: new Date('2026-11-22T12:00:00Z') }],
+      skippedRecurring: 4,
+      events: [
+        { uid: 'kept', summary: '', location: null, recurrence: null, allDay: false, startsAt: new Date('2026-11-22T12:00:00Z'), endsAt: new Date('2026-11-22T12:00:00Z') },
+        expect.objectContaining({ uid: 'lone|20261109T180000Z', recurrence: null, startsAt: new Date('2026-11-10T19:00:00Z') }),
+        expect.objectContaining({ uid: expect.stringMatching(/^sha256:/), summary: 'No uid', recurrence: null }),
+      ],
     });
   });
 

@@ -47,12 +47,12 @@ describe('CalendarImportPanel', () => {
 
     service.summary.mockResolvedValue(summaryOf(42));
     finish({ data: { imported: 42, skippedRecurring: 3, eventCount: 42 }, error: null });
-    expect(await screen.findByText('Imported 42 events. 3 repeating events were left out.')).toBeInTheDocument();
+    expect(await screen.findByText('Imported 42 events. 3 repeating events could not be read and were left out.')).toBeInTheDocument();
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['calendar'] });
     expect(await screen.findByText('42 imported events, last imported on November 22, 2026.')).toBeInTheDocument();
   });
 
-  it('says why a file was refused, and leaves out the repeating events when there are none', async () => {
+  it('says why a file was refused, and says nothing of unreadable repeating events when there are none', async () => {
     service.importFile
       .mockResolvedValueOnce({ data: null, error: 'apiError_CALENDAR_FILE_INVALID' })
       .mockResolvedValueOnce({ data: { imported: 1, skippedRecurring: 0, eventCount: 1 }, error: null });

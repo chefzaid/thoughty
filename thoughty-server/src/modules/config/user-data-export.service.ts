@@ -353,9 +353,9 @@ export class UserDataExportService {
       accessTokens: accessTokens.map(({ name, tokenHint, scopes, timeZone, expiresAt, lastUsedAt, createdAt }) => ({
         name, hint: tokenHint, scopes, timeZone, expiresAt, lastUsedAt, createdAt,
       })),
-      // The events of the imported calendar files
-      calendarEvents: calendarEvents.map(({ uid, summary, location, allDay, startsAt, endsAt, startDate, endDate, createdAt, updatedAt }) => ({
-        uid, summary, location, allDay, startsAt, endsAt, startDate, endDate, importedAt: createdAt, updatedAt,
+      // The events of the imported calendar files, a repeating one with how it repeats
+      calendarEvents: calendarEvents.map(({ uid, summary, location, allDay, startsAt, endsAt, startDate, endDate, recurrence, createdAt, updatedAt }) => ({
+        uid, summary, location, allDay, startsAt, endsAt, startDate, endDate, recurrence, importedAt: createdAt, updatedAt,
       })),
     };
   }

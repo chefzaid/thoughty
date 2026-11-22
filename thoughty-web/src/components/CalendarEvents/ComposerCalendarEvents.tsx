@@ -27,8 +27,9 @@ function eventTime(event: CalendarEvent, language: Language, t: TranslationFunct
 }
 
 /**
- * The imported calendar's events on the composer's day, each with **Write about it**, which adds a
- * question about the event to the entry. Nothing shows on a day without events.
+ * The imported calendar's events on the composer's day, a repeating one marked and at its time that
+ * day, each with **Write about it**, which adds a question about the event to the entry. Nothing shows
+ * on a day without events.
  */
 export default function ComposerCalendarEvents({ date, onWriteAbout, language, theme, t }: ComposerCalendarEventsProps) {
     const events = useCalendarDay(formatEntryDate(date));
@@ -48,6 +49,14 @@ export default function ComposerCalendarEvents({ date, onWriteAbout, language, t
                         <li key={event.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                             <span className={`tabular-nums ${muted}`}>{eventTime(event, language, t)}</span>
                             <span className="privacy-text font-medium">{summary}</span>
+                            {event.repeats && (
+                                <span
+                                    role="img"
+                                    aria-label={t('calendarRepeats')}
+                                    title={t('calendarRepeats')}
+                                    className={`codicon codicon-sync text-xs ${muted}`}
+                                />
+                            )}
                             {event.location && <span className={`privacy-text ${muted}`}>{event.location}</span>}
                             <button
                                 type="button"

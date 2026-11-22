@@ -59,7 +59,7 @@ describePostgres('PostgreSQL imported calendar events', () => {
   it('updates the events of a file imported again by UID, keeps other files’ events, and sums them up', async () => {
     const first = await service.import(writerId, file(
       ['UID:a', 'SUMMARY:Concert', 'DTSTART:20261122T190000Z'],
-      ['UID:weekly', 'SUMMARY:Yoga', 'DTSTART:20261122T070000Z', 'RRULE:FREQ=WEEKLY'],
+      ['UID:hourly', 'SUMMARY:Stretch', 'DTSTART:20261122T070000Z', 'RRULE:FREQ=HOURLY'],
     ));
     expect(first).toEqual({ imported: 1, skippedRecurring: 1, eventCount: 1 });
     await service.import(writerId, file(['UID:b', 'SUMMARY:Market', 'DTSTART;VALUE=DATE:20261122']));
@@ -75,6 +75,34 @@ describePostgres('PostgreSQL imported calendar events', () => {
     const summary = await service.summary(writerId);
     expect(summary).toEqual({ eventCount: 2, lastImportedAt: expect.any(Date), limit: dto.CALENDAR_EVENT_LIMIT });
     await expect(service.summary(otherId)).resolves.toEqual({ eventCount: 0, lastImportedAt: null, limit: dto.CALENDAR_EVENT_LIMIT });
+  });
+
+  it('lists a repeating event on each day it falls on, with its changed and cancelled occurrences', async () => {
+    const result = await service.import(writerId, file(
+      [
+        'UID:yoga', 'SUMMARY:Yoga', 'DTSTART;TZID=Europe/Paris:20261102T190000', 'DTEND;TZID=Europe/Paris:20261102T200000',
+        'RRULE:FREQ=WEEKLY;COUNT=6', 'EXDATE;TZID=Europe/Paris:20261116T190000',
+      ],
+      ['UID:yoga', 'SUMMARY:Yoga (Tuesday)', 'DTSTART;TZID=Europe/Paris:20261110T190000', 'DTEND;TZID=Europe/Paris:20261110T200000', 'RECURRENCE-ID;TZID=Europe/Paris:20261109T190000'],
+      ['UID:yoga', 'STATUS:CANCELLED', 'DTSTART;TZID=Europe/Paris:20261130T190000', 'RECURRENCE-ID;TZID=Europe/Paris:20261130T190000'],
+      ['UID:birthday', 'SUMMARY:Lina’s birthday', 'DTSTART;VALUE=DATE:19901123', 'RRULE:FREQ=YEARLY'],
+      ['UID:later', 'SUMMARY:Later', 'DTSTART;VALUE=DATE:20270101', 'RRULE:FREQ=DAILY'],
+    ), 'Europe/Paris');
+    expect(result).toEqual({ imported: 4, skippedRecurring: 0, eventCount: 4 });
+
+    const day = async (date: string) => (await service.eventsOn(writerId, date, 'Europe/Paris')).events;
+    await expect(day('2026-11-23')).resolves.toEqual([
+      expect.objectContaining({ summary: 'Lina’s birthday', allDay: true, startDate: '2026-11-23', endDate: '2026-11-23', repeats: true }),
+      expect.objectContaining({ summary: 'Yoga', startsAt: new Date('2026-11-23T18:00:00Z'), endsAt: new Date('2026-11-23T19:00:00Z'), repeats: true }),
+    ]);
+    await expect(day('2026-11-10')).resolves.toEqual([expect.objectContaining({ summary: 'Yoga (Tuesday)', repeats: false })]);
+    await expect(day('2026-11-09')).resolves.toEqual([]);
+    await expect(day('2026-11-16')).resolves.toEqual([]);
+    await expect(day('2026-11-30')).resolves.toEqual([]);
+    // The sixth and last, counting the moved and the removed ones
+    await expect(day('2026-12-07')).resolves.toEqual([expect.objectContaining({ summary: 'Yoga' })]);
+    await expect(day('2026-12-14')).resolves.toEqual([]);
+    await expect(summaries(writerId, '2027-11-23')).resolves.toEqual(['Later', 'Lina’s birthday']);
   });
 
   it('refuses an import past the limit and keeps what was there', async () => {

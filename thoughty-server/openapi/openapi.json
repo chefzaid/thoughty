@@ -15549,7 +15549,8 @@
                       "startsAt": "2026-11-22T19:30:00.000Z",
                       "endsAt": "2026-11-22T22:00:00.000Z",
                       "startDate": null,
-                      "endDate": null
+                      "endDate": null,
+                      "repeats": false
                     }
                   ]
                 }
@@ -15586,7 +15587,7 @@
     },
     "/api/calendar/import": {
       "post": {
-        "description": "Up to 5 MB. Events already imported (the same UID) are updated; repeating events are counted and left out.",
+        "description": "Up to 5 MB. Events already imported (the same UID) are updated. Repeating events keep their rule (daily, weekly, monthly or yearly) and each changed occurrence becomes an event of its own; those repeating within a day, by week number or year day are counted and left out.",
         "operationId": "CalendarController_import",
         "parameters": [
           {
@@ -15630,7 +15631,7 @@
                 },
                 "example": {
                   "imported": 42,
-                  "skippedRecurring": 3,
+                  "skippedRecurring": 1,
                   "eventCount": 312
                 }
               }
@@ -30991,6 +30992,11 @@
             "format": "date",
             "example": null,
             "description": "An all-day event’s last day (included); null for a timed event"
+          },
+          "repeats": {
+            "type": "boolean",
+            "example": false,
+            "description": "Whether the event repeats; the dates and times are then those of its occurrence on the day listed"
           }
         },
         "required": [
@@ -31001,7 +31007,8 @@
           "startsAt",
           "endsAt",
           "startDate",
-          "endDate"
+          "endDate",
+          "repeats"
         ],
         "example": {
           "id": 12,
@@ -31011,14 +31018,15 @@
           "startsAt": "2026-11-22T19:30:00.000Z",
           "endsAt": "2026-11-22T22:00:00.000Z",
           "startDate": null,
-          "endDate": null
+          "endDate": null,
+          "repeats": false
         }
       },
       "CalendarDayResponseDto": {
         "type": "object",
         "properties": {
           "events": {
-            "description": "The day’s events, all-day ones first, then by start; at most 50",
+            "description": "The day’s events, repeating ones by their occurrence that day, all-day ones first, then by start; at most 50",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CalendarEventResponseDto"
@@ -31038,7 +31046,8 @@
               "startsAt": "2026-11-22T19:30:00.000Z",
               "endsAt": "2026-11-22T22:00:00.000Z",
               "startDate": null,
-              "endDate": null
+              "endDate": null,
+              "repeats": false
             }
           ]
         }
@@ -31049,12 +31058,12 @@
           "imported": {
             "type": "number",
             "example": 42,
-            "description": "Events read from the file, added or updated"
+            "description": "Events read from the file, added or updated, repeating ones and their changed occurrences included"
           },
           "skippedRecurring": {
             "type": "number",
-            "example": 3,
-            "description": "Repeating events in the file, which are not imported"
+            "example": 1,
+            "description": "Repeating events whose rule cannot be read (repeating within a day, by week number or year day), which are not imported"
           },
           "eventCount": {
             "type": "number",
@@ -31069,7 +31078,7 @@
         ],
         "example": {
           "imported": 42,
-          "skippedRecurring": 3,
+          "skippedRecurring": 1,
           "eventCount": 312
         }
       },
