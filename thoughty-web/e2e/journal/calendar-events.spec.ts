@@ -93,6 +93,8 @@ test.describe('Imported calendar', () => {
 
   test('imports a calendar file and lists the composer day’s events, repeating ones included, each a question to write about', async ({ page }) => {
     const { state } = await setupMockApp(page, { startAuthenticated: true });
+    // The server stamps the import with the page's fixed clock, not the runner's real one
+    state.calendarNow = '2026-11-22T08:00:00.000Z';
     await page.goto('/journal');
     await expect(page.getByRole('textbox', { name: 'Date of the entry' })).toHaveValue('2026-11-22');
     await expect(page.getByRole('region', { name: 'On your calendar' })).toHaveCount(0);

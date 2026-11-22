@@ -226,6 +226,8 @@ export interface MockAppState {
   calendarEvents: MockCalendarEvent[];
   /** When a calendar was last imported. */
   calendarImportedAt: string;
+  /** The server's clock for a calendar import, so a spec that fixes the page clock stamps the import on that day too; the real clock when unset. */
+  calendarNow?: string;
   onThisDayEmail: MockOptInEmail;
   monthlyRecapEmail: MockOptInEmail;
   writingReminderEmail: MockOptInEmail;

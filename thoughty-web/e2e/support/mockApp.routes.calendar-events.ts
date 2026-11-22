@@ -145,7 +145,7 @@ export async function handleCalendarEventRoutes({ route, request, pathname, sear
       if (existing) Object.assign(existing, event);
       else state.calendarEvents.push({ ...event, id: state.calendarEvents.reduce((max, candidate) => Math.max(max, candidate.id), 0) + 1 });
     }
-    state.calendarImportedAt = new Date().toISOString();
+    state.calendarImportedAt = state.calendarNow ?? new Date().toISOString();
     await fulfillJson(route, { imported: calendar.events.length, skippedRecurring: calendar.skippedRecurring, eventCount: state.calendarEvents.length }, { status: 201 });
     return true;
   }
