@@ -67,7 +67,7 @@ describe('ResetPasswordPage', () => {
     expect(await screen.findByRole('status')).toHaveTextContent('resetPasswordDone');
     expect(logout).not.toHaveBeenCalled();
     expect(screen.queryByLabelText('newPassword')).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'resetPasswordTitle' })).toHaveFocus();
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'resetPasswordTitle' })).toHaveFocus());
     await userEvent.click(screen.getByRole('button', { name: 'signIn' }));
     expect(onSignIn).toHaveBeenCalled();
   });
@@ -148,7 +148,7 @@ describe('ResetPasswordPage', () => {
     await choosePassword(STRONG);
 
     expect(screen.getByRole('alert')).toHaveTextContent('apiError_AUTH_INVALID_RESET_TOKEN');
-    expect(screen.getByRole('heading', { name: 'resetYourPassword' })).toHaveFocus();
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'resetYourPassword' })).toHaveFocus());
     expect(screen.queryByLabelText('newPassword')).not.toBeInTheDocument();
     expect(screen.getByText('resetPasswordNewLinkIntro')).toBeInTheDocument();
 
