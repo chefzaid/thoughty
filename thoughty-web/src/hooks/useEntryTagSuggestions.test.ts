@@ -5,7 +5,7 @@ import { useEntryTagSuggestions } from './useEntryTagSuggestions';
 
 describe('useEntryTagSuggestions', () => {
   it('requests tags and merges them with user tags', async () => {
-    const suggestTags = vi.fn().mockResolvedValue(['belonging', 'self-awareness']);
+    const suggestTags = vi.fn().mockResolvedValue({ data: ['belonging', 'self-awareness'], refusal: null });
     const setTags = vi.fn();
     const setFormError = vi.fn();
     const { result } = renderHook(() => useEntryTagSuggestions(

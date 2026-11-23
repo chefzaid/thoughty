@@ -53,12 +53,16 @@ test.describe('Diary AI mode', () => {
     await expect(page.getByRole('button', { name: 'Rephrase', exact: true })).toBeVisible();
     await expect(page.locator('#entry-101').getByTitle('Discuss with AI')).toBeVisible();
 
-    // Turned off elsewhere while this page still offers Rephrase: the text names its diary, and the API refuses it
+    // Turned off elsewhere while this page still offers Rephrase: the text names its diary, the API refuses it,
+    // the page says why and reloads the diaries, so the AI actions leave that diary
     state.diaries.find((diary) => diary.id === 1)!.aiMode = 'off';
     await composer(page).fill('Launch notes to tidy');
     await page.getByRole('button', { name: 'Rephrase', exact: true }).click();
-    await expect(page.getByText('Unable to fix writing. Check your OpenRouter API key and try again.')).toBeVisible();
+    await expect(page.getByText('AI is off in this diary. Turn it on in Manage Diaries to use AI here.')).toBeVisible();
     await expect(composer(page)).toHaveValue('Launch notes to tidy');
     expect(state.lastAiFixPayload).toEqual({ content: 'Launch notes to tidy', mode: 'grammar', diaryId: 1 });
+    await expect(page.getByRole('button', { name: 'Rephrase', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Auto Tag' })).toHaveCount(0);
+    await expect(page.locator('#entry-101').getByTitle('Discuss with AI')).toHaveCount(0);
   });
 });

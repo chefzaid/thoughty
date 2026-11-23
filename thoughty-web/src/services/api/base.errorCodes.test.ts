@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getTranslation } from '../../utils/translations';
-import { readApiErrorMessage } from './base';
+import { readApiErrorKey, readApiErrorMessage } from './base';
 
 const apiError = (body: object, status = 400) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -45,5 +45,15 @@ describe('readApiErrorMessage with error codes', () => {
 
     expect(getTranslation('fr', key)).toBe(french);
     expect(getTranslation('en', key)).not.toBe(key);
+  });
+});
+
+describe('readApiErrorKey', () => {
+  it('gives the translation key of a known code, and nothing for an unknown code, a message or no body', async () => {
+    await expect(readApiErrorKey(apiError({ statusCode: 403, message: 'AI is off', code: 'DIARY_AI_OFF' }, 403)))
+      .resolves.toBe('apiError_DIARY_AI_OFF');
+    await expect(readApiErrorKey(apiError({ message: 'A brand new failure', code: 'SOMETHING_NEW' }))).resolves.toBeNull();
+    await expect(readApiErrorKey(new Response('Bad gateway', { status: 502 }))).resolves.toBeNull();
+    await expect(readApiErrorKey(null)).resolves.toBeNull();
   });
 });

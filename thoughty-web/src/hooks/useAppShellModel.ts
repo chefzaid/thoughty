@@ -49,6 +49,7 @@ import {
 import type { RephraseMode, SummaryGuidance } from '../services/api/aiService';
 import type { Entry, PublicViewType, ViewType } from '../types';
 import { landingViewFor } from '../utils/landingView';
+import { isDiaryAiOffRefusal } from '../utils/diaryAi';
 
 interface AppShellModel {
   authLoading: boolean;
@@ -131,7 +132,7 @@ export function useAppShellModel(): AppShellModel {
     // and so do the backlinks, which the new entry's links (a reply's, say) add to
     refreshBacklinks();
     void refreshEntryQueries();
-  }, diariesState.diaries);
+  }, diariesState.diaries, fetchDiaries);
 
   // Every view measured from the entries (list, calendar, writing streak, backlinks) reads them again
   const refreshEntryViews = useCallback(() => {
@@ -155,7 +156,7 @@ export function useAppShellModel(): AppShellModel {
     navigate(to, { state });
   }, [currentDiaryId, navigate]);
 
-  const bulkSelectState = useBulkSelect(entriesState.fetchEntries, entriesState.entries, notifier, handleMakeBook, offerDeleteUndo, diariesState.diaries);
+  const bulkSelectState = useBulkSelect(entriesState.fetchEntries, entriesState.entries, notifier, handleMakeBook, offerDeleteUndo, diariesState.diaries, fetchDiaries);
 
   /** Opens the list at the first entry of a year or month among the filters, leaving out the day filter. */
   const { entriesService, listQuery, openListAt, setFilterDateObj, setTargetEntryId } = entriesState;
@@ -266,16 +267,17 @@ export function useAppShellModel(): AppShellModel {
   // Kept the same between renders, so the entry cards that offer it are not drawn again with each batch
   const { handleEdit: editEntry, setEditText } = entryEditState;
   const handleRephrase = useCallback(async (entry: Entry, mode: RephraseMode) => {
-    const rewritten = await aiService.fixWriting(entry.content, mode, entry.diary_id);
+    const { data: rewritten, refusal } = await aiService.fixWriting(entry.content, mode, entry.diary_id);
 
     if (rewritten === null) {
-      notifier.notify(t('rephraseEntryFailed'));
+      notifier.notify(t(refusal ?? 'rephraseEntryFailed'));
+      if (isDiaryAiOffRefusal(refusal)) void fetchDiaries();
       return;
     }
 
     editEntry(entry);
     setEditText(rewritten);
-  }, [aiService, editEntry, notifier, setEditText, t]);
+  }, [aiService, editEntry, fetchDiaries, notifier, setEditText, t]);
 
   const handleSummarize = useCallback(async (entryId: number, guidance: SummaryGuidance) => {
     return aiService.summarizeEntry(entryId, guidance);

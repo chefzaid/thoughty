@@ -1,5 +1,6 @@
 import { useCallback, useState, type Dispatch, type SetStateAction } from 'react';
 import type { createAiService } from '../services/api/aiService';
+import { isDiaryAiOffRefusal } from '../utils/diaryAi';
 
 type AiTagService = Pick<ReturnType<typeof createAiService>, 'suggestTags'>;
 
@@ -12,6 +13,8 @@ export const useEntryTagSuggestions = (
   setFormError: Dispatch<SetStateAction<string>>,
   /** The diary the text is written in, which the server checks for AI off. */
   diaryId?: number,
+  /** Hears that the server refused the diary for AI off, so the diaries are loaded again. */
+  onDiaryAiOff?: () => void,
 ) => {
   const [suggestingTags, setSuggestingTags] = useState(false);
 
@@ -23,11 +26,12 @@ export const useEntryTagSuggestions = (
 
     setFormError('');
     setSuggestingTags(true);
-    const suggestedTags = await aiService.suggestTags(content, tags, maxTags || 5, diaryId);
+    const { data: suggestedTags, refusal } = await aiService.suggestTags(content, tags, maxTags || 5, diaryId);
     setSuggestingTags(false);
 
     if (suggestedTags === null) {
-      setFormError('suggestTagsFailed');
+      setFormError(refusal ?? 'suggestTagsFailed');
+      if (isDiaryAiOffRefusal(refusal)) onDiaryAiOff?.();
       return false;
     }
     if (suggestedTags.length === 0) {
@@ -37,7 +41,7 @@ export const useEntryTagSuggestions = (
 
     setTags((current) => [...new Set([...current, ...suggestedTags])]);
     return true;
-  }, [aiService, content, diaryId, maxTags, setFormError, setTags, tags]);
+  }, [aiService, content, diaryId, maxTags, onDiaryAiOff, setFormError, setTags, tags]);
 
   return {
     suggestingTags,

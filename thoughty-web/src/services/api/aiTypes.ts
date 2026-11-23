@@ -1,4 +1,5 @@
 import type { components } from "../../generated/openapi";
+import type { ApiErrorTranslationKey } from "../../utils/translations.apiErrors";
 
 export const rephraseModes = ["grammar", "polish", "rewrite"] as const;
 
@@ -29,5 +30,12 @@ export interface AiApiResult<T> {
   data: T | null;
   error: string | null;
 }
+
+/**
+ * An AI answer, or why there is none: `refusal` is the translation key of the API's error code
+ * (`apiError_<CODE>`, such as `apiError_DIARY_AI_OFF`) when the app knows it, else null (no answer, a network
+ * failure, an unknown error), for the screen to show its own message.
+ */
+export type AiAnswer<T> = { data: T; refusal: null } | { data: null; refusal: ApiErrorTranslationKey | null };
 
 export type AiAuthFetch = (url: string, options?: RequestInit) => Promise<Response>;

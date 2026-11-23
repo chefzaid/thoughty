@@ -1521,7 +1521,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Transcribe an audio attachment */
+        /**
+         * Transcribe an audio attachment
+         * @description The body is optional: a recording no entry holds yet names the diary it is for (`diaryId`), whose AI mode then applies; an entry’s recording follows its entry’s diary.
+         */
         post: operations["AttachmentsController_transcribe"];
         delete?: never;
         options?: never;
@@ -7908,6 +7911,15 @@ export interface components {
             entry_id?: number | null;
             /** Format: date-time */
             created_at: string;
+        };
+        /**
+         * @example {
+         *       "diaryId": 1
+         *     }
+         */
+        TranscribeAttachmentDto: {
+            /** @description Diary the recording is for, while it belongs to no entry yet (a memoir answer being written); a diary with AI off refuses the request (`403 DIARY_AI_OFF`) */
+            diaryId?: number;
         };
         /**
          * @example {
@@ -18956,7 +18968,16 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                /**
+                 * @example {
+                 *       "diaryId": 1
+                 *     }
+                 */
+                "application/json": components["schemas"]["TranscribeAttachmentDto"];
+            };
+        };
         responses: {
             /** @description Audio attachment transcribed or cached transcript returned */
             201: {
@@ -18974,7 +18995,7 @@ export interface operations {
                     "application/json": components["schemas"]["AudioTranscriptionResponseDto"];
                 };
             };
-            /** @description The attachment’s entry is in a diary with AI off (`DIARY_AI_OFF`) */
+            /** @description The attachment’s entry, or the diary the request names, has AI off (`DIARY_AI_OFF`) */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -18983,9 +19004,26 @@ export interface operations {
                     /**
                      * @example {
                      *       "statusCode": 403,
-                     *       "message": "The attachment’s entry is in a diary with AI off (`DIARY_AI_OFF`)",
+                     *       "message": "The attachment’s entry, or the diary the request names, has AI off (`DIARY_AI_OFF`)",
                      *       "error": "Forbidden",
                      *       "code": "FORBIDDEN"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Attachment not found, or the named diary is not the writer’s (`DIARY_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "Attachment not found, or the named diary is not the writer’s (`DIARY_NOT_FOUND`)",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];

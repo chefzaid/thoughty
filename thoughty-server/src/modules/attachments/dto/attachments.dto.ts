@@ -1,4 +1,4 @@
-import { IsOptional } from 'class-validator';
+import { IsOptional, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Attachment } from '@/database/entities';
 import { AttachmentResponseDto } from '@/modules/entries/dto';
@@ -9,6 +9,19 @@ export class LinkAttachmentDto {
   @IsOptional()
   @StrictInt()
   entryId?: number;
+}
+
+export class TranscribeAttachmentDto {
+  @ApiPropertyOptional({
+    description:
+      'Diary the recording is for, while it belongs to no entry yet (a memoir answer being written); a diary with ' +
+      'AI off refuses the request (`403 DIARY_AI_OFF`)',
+    minimum: 1,
+  })
+  @IsOptional()
+  @StrictInt()
+  @Min(1)
+  diaryId?: number;
 }
 
 export class AudioTranscriptionResponseDto {

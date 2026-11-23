@@ -25,6 +25,7 @@ import {
   ApiBearerAuth,
   ApiConsumes,
   ApiParam,
+  ApiBody,
 } from '@nestjs/swagger';
 import { diskStorage, memoryStorage } from 'multer';
 import { Response } from 'express';
@@ -35,6 +36,7 @@ import { sendAttachmentFile } from './attachment-file-response';
 import { MAX_POSTER_SIZE, MAX_VIDEO_SIZE } from './attachment-media';
 import {
   LinkAttachmentDto,
+  TranscribeAttachmentDto,
   AudioTranscriptionResponseDto,
   AttachmentRecordResponseDto,
   toAttachmentRecordResponse,
@@ -130,19 +132,30 @@ export class AttachmentsController {
 
   @Post(':id/transcribe')
   @RequireFeature('ai')
-  @ApiOperation({ summary: 'Transcribe an audio attachment' })
+  @ApiOperation({
+    summary: 'Transcribe an audio attachment',
+    description:
+      'The body is optional: a recording no entry holds yet names the diary it is for (`diaryId`), whose AI mode ' +
+      'then applies; an entry’s recording follows its entry’s diary.',
+  })
   @ApiParam({ name: 'id', type: Number })
+  @ApiBody({ type: TranscribeAttachmentDto, required: false })
   @ApiResponse({
     status: 201,
     description: 'Audio attachment transcribed or cached transcript returned',
     type: AudioTranscriptionResponseDto,
   })
-  @ApiResponse({ status: 403, description: 'The attachment’s entry is in a diary with AI off (`DIARY_AI_OFF`)' })
+  @ApiResponse({
+    status: 403,
+    description: 'The attachment’s entry, or the diary the request names, has AI off (`DIARY_AI_OFF`)',
+  })
+  @ApiResponse({ status: 404, description: 'Attachment not found, or the named diary is not the writer’s (`DIARY_NOT_FOUND`)' })
   async transcribe(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
+    @Body() dto: TranscribeAttachmentDto,
   ): Promise<AudioTranscriptionResponseDto> {
-    return this.audioTranscriptionService.transcribe(user.userId, id);
+    return this.audioTranscriptionService.transcribe(user.userId, id, dto.diaryId);
   }
 
   @Delete(':id')

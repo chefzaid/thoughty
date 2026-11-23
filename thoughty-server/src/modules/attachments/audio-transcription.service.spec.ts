@@ -18,6 +18,7 @@ describe('AudioTranscriptionService', () => {
   };
   const configService = { getDecryptedConfig: jest.fn() };
   const usageService = { recordResponse: jest.fn() };
+  const diaryGate = { assertTextAiAllowed: jest.fn() };
   let service: AudioTranscriptionService;
 
   beforeEach(() => {
@@ -27,10 +28,12 @@ describe('AudioTranscriptionService', () => {
     attachmentsService.getFileBuffer.mockResolvedValue(Buffer.from('audio'));
     attachmentsService.save.mockImplementation(async (value) => value);
     configService.getDecryptedConfig.mockResolvedValue('sk-or-v1-personal');
+    diaryGate.assertTextAiAllowed.mockResolvedValue(undefined);
     service = new AudioTranscriptionService(
       attachmentsService as never,
       configService as never,
       usageService as never,
+      diaryGate as never,
     );
   });
 
@@ -124,6 +127,28 @@ describe('AudioTranscriptionService', () => {
     jest.spyOn(global, 'fetch').mockResolvedValue({ ok: true, json: jest.fn().mockResolvedValue({ text: 'Hello' }) } as never);
 
     await expect(service.transcribe(7, 4)).resolves.toMatchObject({ transcript: 'Hello', cached: false });
+  });
+
+  it('checks the diary a recording without an entry is for (a memoir answer being written)', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue({ ok: true, json: jest.fn().mockResolvedValue({ text: 'Hello' }) } as never);
+
+    await expect(service.transcribe(7, 4, 3)).resolves.toMatchObject({ transcript: 'Hello' });
+    expect(diaryGate.assertTextAiAllowed).toHaveBeenCalledWith(7, 3);
+  });
+
+  it('refuses a recording for a diary with AI off (403 DIARY_AI_OFF) before reading the audio', async () => {
+    diaryGate.assertTextAiAllowed.mockRejectedValue(new ForbiddenException({ code: 'DIARY_AI_OFF' }));
+
+    await expect(service.transcribe(7, 4, 3)).rejects.toThrow(ForbiddenException);
+    expect(configService.getDecryptedConfig).not.toHaveBeenCalled();
+    expect(attachmentsService.getFileBuffer).not.toHaveBeenCalled();
+  });
+
+  it('transcribes a recording naming no diary as before', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValue({ ok: true, json: jest.fn().mockResolvedValue({ text: 'Hello' }) } as never);
+
+    await expect(service.transcribe(7, 4)).resolves.toMatchObject({ transcript: 'Hello' });
+    expect(diaryGate.assertTextAiAllowed).toHaveBeenCalledWith(7, undefined);
   });
 
   it('requires an OpenRouter credential', async () => {

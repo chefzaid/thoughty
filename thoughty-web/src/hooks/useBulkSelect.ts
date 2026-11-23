@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { Diary, Entry } from '../types';
-import { isDiaryAiOff } from '../utils/diaryAi';
-import type { RephraseMode } from '../services/api/aiService';
+import { isDiaryAiOff, isDiaryAiOffRefusal } from '../utils/diaryAi';
+import type { AiAnswer, RephraseMode } from '../services/api/aiService';
 import { pluralPhrase } from '../utils/pluralPhrase';
 import { useApiServices } from './useApiServices';
 import type { Notifier } from './useAppNotice';
@@ -9,7 +9,8 @@ import type { Notifier } from './useAppNotice';
 type BulkAction = 'delete' | 'visibility' | 'tags' | 'move' | 'archive' | 'rephrase' | 'book';
 type BulkOptions = { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number; isArchived?: boolean; mode?: RephraseMode };
 
-type BulkRephraseOutcome = 'updated' | 'unchanged' | 'failed';
+/** `aiOff`: the server refused the entry's diary for AI off, so the entry stays unchanged. */
+type BulkRephraseOutcome = 'updated' | 'unchanged' | 'aiOff' | 'failed';
 
 const normalizeStoredEntryDate = (entryDate: string): string => (
   entryDate.includes('T') ? (entryDate.split('T')[0] ?? entryDate) : entryDate
@@ -18,16 +19,16 @@ const normalizeStoredEntryDate = (entryDate: string): string => (
 const rephraseSelectedEntry = async (
   entry: Entry,
   mode: RephraseMode,
-  aiFixWriting: (content: string, mode?: RephraseMode, diaryId?: number | null) => Promise<string | null>,
+  aiFixWriting: (content: string, mode?: RephraseMode, diaryId?: number | null) => Promise<AiAnswer<string>>,
   updateEntry: (id: number, data: { text: string; tags: string[]; date: string; visibility: 'public' | 'private'; format: 'plain' | 'markdown' }) => Promise<boolean>,
 ): Promise<BulkRephraseOutcome> => {
   if (!entry.content.trim()) {
     return 'failed';
   }
 
-  const rewritten = await aiFixWriting(entry.content, mode, entry.diary_id);
+  const { data: rewritten, refusal } = await aiFixWriting(entry.content, mode, entry.diary_id);
   if (rewritten === null) {
-    return 'failed';
+    return isDiaryAiOffRefusal(refusal) ? 'aiOff' : 'failed';
   }
 
   if (rewritten === entry.content) {
@@ -66,7 +67,8 @@ const inDayOrder = (ids: number[], entries: Entry[]): number[] => {
  * The journal's bulk selection and its actions. `onMakeBook` receives the selected entries for the book
  * converter (Make a book); without it that action does nothing. `onDeleted` hears which entries went to the
  * recycle bin, oldest day first and in their order within the day. Rephrasing leaves the entries of a diary
- * with AI off (among `diaries`) as they are.
+ * with AI off (among `diaries`) as they are, and so those the server refuses for it, after which
+ * `onDiaryAiOff` reloads the diaries.
  */
 export const useBulkSelect = (
   onComplete: () => void,
@@ -75,6 +77,7 @@ export const useBulkSelect = (
   onMakeBook?: (entryIds: number[]) => void,
   onDeleted?: (entryIds: number[]) => void,
   diaries: readonly Pick<Diary, 'id' | 'aiMode'>[] = [],
+  onDiaryAiOff?: () => void,
 ) => {
   const { entriesService, aiService } = useApiServices();
 
@@ -128,6 +131,8 @@ export const useBulkSelect = (
     // An entry of a diary with AI off is never sent, so it stays unchanged
     let unchangedCount = selectedEntries.length - rephrasable.length;
     let failedCount = 0;
+    // Entries the server refused because their diary was turned off elsewhere stay unchanged too
+    let aiOffCount = 0;
 
     for (const entry of rephrasable) {
       const outcome = await rephraseSelectedEntry(
@@ -139,11 +144,20 @@ export const useBulkSelect = (
 
       if (outcome === 'updated') {
         updatedCount += 1;
-      } else if (outcome === 'unchanged') {
+      } else if (outcome === 'unchanged' || outcome === 'aiOff') {
         unchangedCount += 1;
+        aiOffCount += Number(outcome === 'aiOff');
       } else {
         failedCount += 1;
       }
+    }
+
+    if (aiOffCount > 0) {
+      onDiaryAiOff?.();
+    }
+    if (aiOffCount === rephrasable.length) {
+      notify(t('apiError_DIARY_AI_OFF'));
+      return;
     }
 
     if (updatedCount > 0) {
@@ -167,7 +181,7 @@ export const useBulkSelect = (
     }
 
     notify(t('bulkRephraseError'));
-  }, [aiService, diaries, entries, entriesService, language, notify, onComplete, selectedIds, t]);
+  }, [aiService, diaries, entries, entriesService, language, notify, onComplete, onDiaryAiOff, selectedIds, t]);
 
   const executeBulkAction = useCallback(async (action: Exclude<BulkAction, 'book'>, options?: BulkOptions) => {
     if (action === 'rephrase') {

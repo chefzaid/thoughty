@@ -16,6 +16,7 @@ import {
   handleEdit,
   setEditText,
   fixWriting,
+  fetchDiaries,
   renameTag,
   deleteTag,
   navigateToFirst,
@@ -91,7 +92,7 @@ describe('useAppShellModel', () => {
   });
 
   it('shows a notice and skips edit state updates when rephrasing returns null', async () => {
-    fixWriting.mockResolvedValueOnce(null);
+    fixWriting.mockResolvedValueOnce({ data: null, refusal: null });
     const { result } = renderHook(() => useAppShellModel());
     const routesProps = result.current.authenticatedRoutesProps as MockedRoutesProps;
 
@@ -106,6 +107,25 @@ describe('useAppShellModel', () => {
     });
     expect(handleEdit).not.toHaveBeenCalled();
     expect(setEditText).not.toHaveBeenCalled();
+  });
+
+  it('shows the refusal of a diary turned AI off elsewhere, and reloads the diaries', async () => {
+    fixWriting.mockResolvedValueOnce({ data: null, refusal: 'apiError_DIARY_AI_OFF' });
+    const { result } = renderHook(() => useAppShellModel());
+    const routesProps = result.current.authenticatedRoutesProps as MockedRoutesProps;
+    fetchDiaries.mockClear();
+
+    await act(async () => {
+      await routesProps.handleRephrase?.({ id: 44, content: 'Needs help', diary_id: 5 }, 'rewrite');
+    });
+
+    expect(result.current.authenticatedLayoutProps).toMatchObject({
+      appNotice: { text: 'apiError_DIARY_AI_OFF', toast: expect.objectContaining({ visible: true }) },
+    });
+    expect(fetchDiaries).toHaveBeenCalledTimes(1);
+    expect(handleEdit).not.toHaveBeenCalled();
+    // The composer and the bulk rephrase reload them the same way
+    expect(mocks.useEntryForm).toHaveBeenLastCalledWith(expect.anything(), expect.anything(), expect.any(Function), expect.any(Array), fetchDiaries);
   });
 
   it('says in the notice toast when settings changed on purpose could not be saved', async () => {
@@ -141,7 +161,7 @@ describe('useAppShellModel', () => {
     expect(mocks.useEntryEdit).toHaveBeenCalledWith(expect.anything(), expect.any(Function), notifier, expect.any(Function));
     expect(mocks.buildAuthenticatedRoutesProps).toHaveBeenCalledWith(expect.objectContaining({ handleMoveToDiary: expect.any(Function) }));
     expect(mocks.useDeleteModal).toHaveBeenCalledWith(expect.any(Function), notifier);
-    expect(mocks.useBulkSelect).toHaveBeenCalledWith(expect.any(Function), expect.anything(), notifier, expect.any(Function), offerDeleteUndo, expect.any(Array));
+    expect(mocks.useBulkSelect).toHaveBeenCalledWith(expect.any(Function), expect.anything(), notifier, expect.any(Function), offerDeleteUndo, expect.any(Array), fetchDiaries);
     expect(mocks.useDeleteUndo).toHaveBeenCalledWith(expect.any(Function), notifier);
   });
 

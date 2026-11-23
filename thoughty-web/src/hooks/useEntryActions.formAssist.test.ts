@@ -21,7 +21,7 @@ describe("useEntryActions", () => {
     it("handleSuggestTags merges AI suggestions into the existing tags", async () => {
       const { createAiService } = await import("../services/api");
       vi.mocked(createAiService).mockReturnValue({
-        suggestTags: vi.fn().mockResolvedValue(["focus", "writing"]),
+        suggestTags: vi.fn().mockResolvedValue({ data: ["focus", "writing"], refusal: null }),
         fixWriting: vi.fn(),
         summarizeEntry: vi.fn(),
         getInspiration: vi.fn(),
@@ -64,7 +64,7 @@ describe("useEntryActions", () => {
     it("handleSuggestTags surfaces a configuration error when the AI request fails", async () => {
       const { createAiService } = await import("../services/api");
       vi.mocked(createAiService).mockReturnValue({
-        suggestTags: vi.fn().mockResolvedValue(null),
+        suggestTags: vi.fn().mockResolvedValue({ data: null, refusal: null }),
         fixWriting: vi.fn(),
         summarizeEntry: vi.fn(),
         getInspiration: vi.fn(),
@@ -107,7 +107,7 @@ describe("useEntryActions", () => {
     it("handleSuggestTags validates empty input and empty AI responses", async () => {
       const { createAiService } = await import("../services/api");
       vi.mocked(createAiService).mockReturnValue({
-        suggestTags: vi.fn().mockResolvedValue([]),
+        suggestTags: vi.fn().mockResolvedValue({ data: [], refusal: null }),
         fixWriting: vi.fn(),
         summarizeEntry: vi.fn(),
         getInspiration: vi.fn(),
@@ -155,9 +155,9 @@ describe("useEntryActions", () => {
       const { createAiService } = await import("../services/api");
       const fixWriting = vi
         .fn()
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce("Original draft")
-        .mockResolvedValueOnce("Corrected draft");
+        .mockResolvedValueOnce({ data: null, refusal: null })
+        .mockResolvedValueOnce({ data: "Original draft", refusal: null })
+        .mockResolvedValueOnce({ data: "Corrected draft", refusal: null });
       vi.mocked(createAiService).mockReturnValue({
         suggestTags: vi.fn(),
         fixWriting,
@@ -213,6 +213,58 @@ describe("useEntryActions", () => {
       expect(result.current.newEntryText).toBe("Corrected draft");
       // The composer's diary goes with the text, so the server can refuse a diary with AI off
       expect(fixWriting).toHaveBeenLastCalledWith("Original draft", "grammar", 1);
+    });
+
+    it("shows the server's refusal for a diary turned AI off elsewhere, and reloads the diaries", async () => {
+      const { createAiService } = await import("../services/api");
+      const refused = { data: null, refusal: "apiError_DIARY_AI_OFF" };
+      vi.mocked(createAiService).mockReturnValue({
+        suggestTags: vi.fn().mockResolvedValue(refused),
+        fixWriting: vi.fn().mockResolvedValue(refused),
+      } as unknown as ReturnType<typeof createAiService>);
+      const onDiaryAiOff = vi.fn();
+
+      const { result } = renderHook(() =>
+        useEntryForm({ defaultVisibility: "private" }, 1, mockOnSuccess, [], onDiaryAiOff),
+      );
+      act(() => {
+        result.current.setNewEntryText("A note for the doctor");
+      });
+
+      await act(async () => {
+        await result.current.handleFixWriting();
+      });
+      expect(result.current.formError).toBe("apiError_DIARY_AI_OFF");
+      expect(result.current.newEntryText).toBe("A note for the doctor");
+      expect(onDiaryAiOff).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        await result.current.handleSuggestTags();
+      });
+      expect(result.current.formError).toBe("apiError_DIARY_AI_OFF");
+      expect(onDiaryAiOff).toHaveBeenCalledTimes(2);
+    });
+
+    it("shows another known refusal without reloading the diaries", async () => {
+      const { createAiService } = await import("../services/api");
+      vi.mocked(createAiService).mockReturnValue({
+        suggestTags: vi.fn(),
+        fixWriting: vi.fn().mockResolvedValue({ data: null, refusal: "apiError_AI_KEY_NOT_CONFIGURED" }),
+      } as unknown as ReturnType<typeof createAiService>);
+      const onDiaryAiOff = vi.fn();
+
+      const { result } = renderHook(() =>
+        useEntryForm({ defaultVisibility: "private" }, 1, mockOnSuccess, [], onDiaryAiOff),
+      );
+      act(() => {
+        result.current.setNewEntryText("A note");
+      });
+      await act(async () => {
+        await result.current.handleFixWriting();
+      });
+
+      expect(result.current.formError).toBe("apiError_AI_KEY_NOT_CONFIGURED");
+      expect(onDiaryAiOff).not.toHaveBeenCalled();
     });
 
     it("removes uploaded attachments through the attachments service", async () => {

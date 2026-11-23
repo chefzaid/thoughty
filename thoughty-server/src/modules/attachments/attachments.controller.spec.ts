@@ -129,12 +129,19 @@ describe('AttachmentsController', () => {
         cached: false,
       });
 
-      await expect(controller.transcribe(mockUser as any, 4)).resolves.toEqual({
+      await expect(controller.transcribe(mockUser as any, 4, {})).resolves.toEqual({
         transcript: 'Voice note',
         transcribed_at: transcribedAt,
         cached: false,
       });
-      expect(audioTranscriptionService.transcribe).toHaveBeenCalledWith(1, 4);
+      expect(audioTranscriptionService.transcribe).toHaveBeenCalledWith(1, 4, undefined);
+    });
+
+    it('passes the diary a recording without an entry is for', async () => {
+      audioTranscriptionService.transcribe.mockResolvedValue({ transcript: 'Voice note', transcribed_at: new Date(), cached: false });
+
+      await controller.transcribe(mockUser as any, 4, { diaryId: 3 });
+      expect(audioTranscriptionService.transcribe).toHaveBeenCalledWith(1, 4, 3);
     });
   });
 

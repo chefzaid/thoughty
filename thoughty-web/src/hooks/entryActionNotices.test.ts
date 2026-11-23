@@ -8,6 +8,8 @@ import { useBulkSelect } from './useBulkSelect';
 import { useDeleteModal } from './useDeleteModal';
 import { useEntryEdit } from './useEntryEdit';
 
+const answer = (data: string | null) => ({ data, refusal: null });
+
 const services = vi.hoisted(() => ({
   entriesService: { updateEntry: vi.fn(), deleteEntry: vi.fn(), bulkOperation: vi.fn() },
   attachmentsService: { uploadAttachment: vi.fn(), deleteAttachment: vi.fn() },
@@ -142,12 +144,12 @@ describe.each([
     const entries = [entry(1, 'Same')];
     const { result } = renderHook(() => useBulkSelect(vi.fn(), entries, notifier));
 
-    services.aiService.fixWriting.mockResolvedValueOnce('Same');
+    services.aiService.fixWriting.mockResolvedValueOnce(answer('Same'));
     act(() => result.current.toggleSelect(1));
     await act(() => result.current.executeBulkAction('rephrase'));
     expect(notifier.notify).toHaveBeenLastCalledWith(expected.nothingToChange);
 
-    services.aiService.fixWriting.mockResolvedValueOnce(null);
+    services.aiService.fixWriting.mockResolvedValueOnce(answer(null));
     await act(() => result.current.executeBulkAction('rephrase'));
     expect(notifier.notify).toHaveBeenLastCalledWith(expected.rephraseFailed);
   });
@@ -156,9 +158,9 @@ describe.each([
     const entries = [entry(1, 'One'), entry(2, 'Two'), entry(3, 'Three'), entry(4, '   ')];
     const onComplete = vi.fn();
     services.aiService.fixWriting.mockImplementation(async (content: string) => {
-      if (content === 'One') return 'One, rephrased';
-      if (content === 'Two') return 'Two';
-      return null;
+      if (content === 'One') return answer('One, rephrased');
+      if (content === 'Two') return answer('Two');
+      return answer(null);
     });
     services.entriesService.updateEntry.mockResolvedValue(true);
     const { result } = renderHook(() => useBulkSelect(onComplete, entries, notifier));
@@ -173,7 +175,7 @@ describe.each([
   it('writes a zero count in its plural form', async () => {
     const entries = [entry(1, 'One'), entry(2, 'Two'), entry(3, 'Three')];
     services.aiService.fixWriting.mockImplementation(async (content: string) => (
-      content === 'Three' ? content : `${content}, rephrased`
+      answer(content === 'Three' ? content : `${content}, rephrased`)
     ));
     services.entriesService.updateEntry.mockResolvedValue(true);
     const { result } = renderHook(() => useBulkSelect(vi.fn(), entries, notifier));

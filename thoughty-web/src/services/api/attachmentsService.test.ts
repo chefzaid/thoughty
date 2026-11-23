@@ -182,6 +182,19 @@ describe("createAttachmentsService", () => {
       });
     });
 
+    it("names the diary a recording without an entry is for", async () => {
+      authFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ transcript: "Hi", transcribed_at: "", cached: false }) });
+
+      await service.transcribeAttachment(9, 6);
+      await service.transcribeAttachment(9, null);
+
+      expect(authFetch).toHaveBeenNthCalledWith(1, "/api/attachments/9/transcribe", {
+        method: "POST",
+        body: JSON.stringify({ diaryId: 6 }),
+      });
+      expect(authFetch).toHaveBeenNthCalledWith(2, "/api/attachments/9/transcribe", { method: "POST" });
+    });
+
     it("returns null when transcription fails", async () => {
       authFetch.mockResolvedValue({ ok: false });
 

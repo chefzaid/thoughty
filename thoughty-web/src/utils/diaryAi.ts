@@ -1,4 +1,5 @@
 import type { Diary } from '../types';
+import type { ApiErrorTranslationKey } from './translations.apiErrors';
 
 /** A diary as far as its AI privacy mode goes. */
 type AiModeDiary = Pick<Diary, 'id'> & Partial<Pick<Diary, 'aiMode' | 'isDefault'>>;
@@ -19,4 +20,12 @@ export function composerDiaryId(diaries: readonly AiModeDiary[], currentDiaryId:
 /** Whether the composer writes into a diary with AI off. */
 export function isComposerDiaryAiOff(diaries: readonly AiModeDiary[], currentDiaryId: number | null): boolean {
   return isDiaryAiOff(diaries, composerDiaryId(diaries, currentDiaryId));
+}
+
+/**
+ * Whether the server refused an AI request because its diary has AI off: the diary was turned off on another
+ * device since this page loaded the diaries, which it then reloads so the AI actions leave that diary.
+ */
+export function isDiaryAiOffRefusal(refusal: ApiErrorTranslationKey | null): boolean {
+  return refusal === 'apiError_DIARY_AI_OFF';
 }

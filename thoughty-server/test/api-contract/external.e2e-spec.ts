@@ -313,6 +313,15 @@ describeContract('external', (context) => {
     const notFound = { status: 404, code: 'DIARY_NOT_FOUND' } as const;
     await call('POST /api/ai/fix-writing', { as: alice, json: { ...rephrase, diaryId: bobDiaryId }, ...notFound });
     await call('POST /api/ai/suggest-tags', { as: alice, json: { ...autoTag, diaryId: 0 }, status: 400, code: 'VALIDATION_FAILED' });
+    // A recording no entry holds yet (a memoir answer being written) names the diary it is for
+    const recording = await call('POST /api/attachments/upload', {
+      as: alice,
+      multipart: { files: [{ field: 'file', buffer: Buffer.from('ID3'), filename: 'memory.mp3', contentType: 'audio/mpeg' }] },
+      status: 201,
+    });
+    const transcribe = { as: alice, params: { id: (recording.body as { id: number }).id } };
+    await call('POST /api/attachments/{id}/transcribe', { ...transcribe, json: { diaryId: diary.id }, ...aiOff });
+    await call('POST /api/attachments/{id}/transcribe', { ...transcribe, json: { diaryId: bobDiaryId }, ...notFound });
     // Whole-journal features never read it: retagging cannot reach it, and the duplicate scan leaves it out
     const retag = { mode: 'add', assignments: [{ entryId: privateId, tags: ['ai'] }] };
     await call('POST /api/ai/journal-retag/apply', { as: alice, json: retag, status: 400, code: 'ENTRIES_NOT_FOUND' });
@@ -323,6 +332,7 @@ describeContract('external', (context) => {
     await call('POST /api/ai/summarize', { as: alice, json: { entryId: privateId }, status: 400, code: 'AI_KEY_NOT_CONFIGURED' });
     await call('POST /api/ai/fix-writing', { as: alice, json: rephrase, status: 400, code: 'AI_KEY_NOT_CONFIGURED' });
     await call('POST /api/ai/suggest-tags', { as: alice, json: autoTag, status: 400, code: 'AI_KEY_NOT_CONFIGURED' });
+    await call('POST /api/attachments/{id}/transcribe', { ...transcribe, json: { diaryId: diary.id }, status: 400, code: 'AI_KEY_NOT_CONFIGURED' });
     await call('DELETE /api/diaries/{id}', { as: alice, params: { id: diary.id }, status: 200 });
   });
 });

@@ -353,7 +353,7 @@ describe("useEntryActions", () => {
 
     it("bulk rephrases selected entries and preserves metadata", async () => {
       const updateEntry = vi.fn().mockResolvedValue(true);
-      const fixWriting = vi.fn().mockResolvedValue("Improved first entry");
+      const fixWriting = vi.fn().mockResolvedValue({ data: "Improved first entry", refusal: null });
       await createEntriesServiceMock({ updateEntry });
       await createAiServiceMock({ fixWriting });
 
@@ -393,7 +393,7 @@ describe("useEntryActions", () => {
     });
 
     it("shows a no-op message when selected entries do not need rephrasing", async () => {
-      const fixWriting = vi.fn().mockResolvedValue("Same entry");
+      const fixWriting = vi.fn().mockResolvedValue({ data: "Same entry", refusal: null });
       await createEntriesServiceMock({ updateEntry: vi.fn() });
       await createAiServiceMock({ fixWriting });
 
@@ -426,7 +426,7 @@ describe("useEntryActions", () => {
 
     it("never sends an entry of a diary with AI off to be rephrased, and counts it unchanged", async () => {
       const updateEntry = vi.fn().mockResolvedValue(true);
-      const fixWriting = vi.fn().mockResolvedValue("Improved");
+      const fixWriting = vi.fn().mockResolvedValue({ data: "Improved", refusal: null });
       await createEntriesServiceMock({ updateEntry });
       await createAiServiceMock({ fixWriting });
       const entry = (id: number, diaryId: number) => ({ id, content: `Entry ${id}`, tags: ["focus"], date: "2024-01-15", visibility: "private" as const, diary_id: diaryId });
@@ -450,6 +450,35 @@ describe("useEntryActions", () => {
       });
       expect(fixWriting).not.toHaveBeenCalled();
       expect(mockNotify).toHaveBeenLastCalledWith("No selected entries are available to rephrase.");
+    });
+
+    it("counts an entry the server refuses for AI off as unchanged, and reloads the diaries", async () => {
+      const updateEntry = vi.fn().mockResolvedValue(true);
+      const fixWriting = vi.fn(async (content: string) => (
+        content === "Entry 1" ? { data: "Improved", refusal: null } : { data: null, refusal: "apiError_DIARY_AI_OFF" }
+      ));
+      await createEntriesServiceMock({ updateEntry });
+      await createAiServiceMock({ fixWriting });
+      const entry = (id: number, diaryId: number) => ({ id, content: `Entry ${id}`, tags: [], date: "2024-01-15", visibility: "private" as const, diary_id: diaryId });
+      // Diary 2 was turned off on another device: this page still has it on
+      const diaries = [{ id: 1, aiMode: "on" as const }, { id: 2, aiMode: "on" as const }];
+      const onDiaryAiOff = vi.fn();
+
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete, [entry(1, 1), entry(2, 2)], notifier, undefined, undefined, diaries, onDiaryAiOff));
+      act(() => result.current.selectAll([1, 2]));
+      await act(async () => {
+        await result.current.executeBulkAction("rephrase", { mode: "grammar" });
+      });
+      expect(mockNotify).toHaveBeenCalledWith("Bulk rephrase completed: 1 updated, 1 unchanged, 0 failed.");
+      expect(onDiaryAiOff).toHaveBeenCalledTimes(1);
+
+      // Every entry refused: the refusal itself is the notice
+      act(() => result.current.selectAll([2]));
+      await act(async () => {
+        await result.current.executeBulkAction("rephrase", { mode: "grammar" });
+      });
+      expect(mockNotify).toHaveBeenLastCalledWith("AI is off in this diary. Turn it on in Manage Diaries to use AI here.");
+      expect(onDiaryAiOff).toHaveBeenCalledTimes(2);
     });
   });
 });

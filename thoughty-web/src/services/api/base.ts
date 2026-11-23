@@ -77,6 +77,15 @@ const codeKeyFromPayload = (payload: unknown): ApiErrorTranslationKey | null => 
   return Object.hasOwn(apiErrorsTranslations.en, key) ? (key as ApiErrorTranslationKey) : null;
 };
 
+/** The translation key of a failed request's error `code` (`apiError_<CODE>`), when the app knows that code. */
+export const readApiErrorKey = async (response: Response | undefined | null): Promise<ApiErrorTranslationKey | null> => {
+  if (!response) {
+    return null;
+  }
+  const jsonResponse = typeof response.clone === 'function' ? response.clone() : response;
+  return codeKeyFromPayload(await safeJsonParse<unknown>(jsonResponse));
+};
+
 const isJsonText = (text: string): boolean => {
   try {
     JSON.parse(text);

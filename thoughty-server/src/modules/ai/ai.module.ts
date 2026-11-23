@@ -35,6 +35,6 @@ import { AiDiaryGateService } from './ai-diary-gate.service';
     AiMemoirFollowUpsService,
     AiDiaryGateService,
   ],
-  exports: [AiService, AiBookComposerService, AiPersonalityService, AiUsageService, AiCredentialsService, AiYearMoodService, AiWeeklyReflectionService, AiEntriesChatService, AiMemoirFollowUpsService],
+  exports: [AiService, AiBookComposerService, AiPersonalityService, AiUsageService, AiCredentialsService, AiYearMoodService, AiWeeklyReflectionService, AiEntriesChatService, AiMemoirFollowUpsService, AiDiaryGateService],
 })
 export class AiModule {}

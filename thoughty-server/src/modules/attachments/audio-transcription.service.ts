@@ -3,6 +3,7 @@ import { apiError } from '@/common/errors';
 import { assertEntryAiAllowed } from '@/common/diary-ai';
 import { ConfigService } from '@/modules/config';
 import { AiUsageService } from '@/modules/ai/ai-usage.service';
+import { AiDiaryGateService } from '@/modules/ai/ai-diary-gate.service';
 import { resolveOpenRouterCredential } from '@/modules/ai/openrouter-credential.util';
 import { AttachmentsService } from './attachments.service';
 import type { AudioTranscriptionResponseDto } from './dto';
@@ -35,9 +36,15 @@ export class AudioTranscriptionService {
     private readonly attachmentsService: AttachmentsService,
     private readonly configService: ConfigService,
     private readonly usageService: AiUsageService,
+    private readonly diaryGate: AiDiaryGateService,
   ) {}
 
-  async transcribe(userId: number, attachmentId: number): Promise<AudioTranscriptionResponseDto> {
+  /**
+   * The recording's text, sent to the provider once and kept. The attachment's entry, or `diaryId` for a
+   * recording no entry holds yet (a memoir answer being written), keeps it from the provider when its diary has
+   * AI off; a recording with neither is transcribed as before.
+   */
+  async transcribe(userId: number, attachmentId: number, diaryId?: number): Promise<AudioTranscriptionResponseDto> {
     const attachment = await this.attachmentsService.getOwnedAttachment(userId, attachmentId);
     const format = AUDIO_FORMATS[attachment.mimetype];
     if (!format) {
@@ -55,6 +62,7 @@ export class AudioTranscriptionService {
     if (attachment.entry) {
       assertEntryAiAllowed(attachment.entry);
     }
+    await this.diaryGate.assertTextAiAllowed(userId, diaryId);
     const credential = await resolveOpenRouterCredential(this.configService, userId);
     if (!credential) {
       throw apiError(BadRequestException, 'AI_KEY_NOT_CONFIGURED');

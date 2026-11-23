@@ -40,6 +40,7 @@ test.describe('Guided memoir', () => {
   test('answers by uploading a recording and turning it into text', async ({ page }) => {
     const { state } = await setupMockApp(page, { startAuthenticated: true, memoirProgram: { diaryId: 2 } });
     let uploads = 0;
+    let transcribeBody: unknown = null;
     await page.route('**/api/attachments/**', async (route) => {
       const url = route.request().url();
       if (url.endsWith('/upload')) {
@@ -58,6 +59,7 @@ test.describe('Guided memoir', () => {
         return;
       }
       if (url.endsWith('/41/transcribe')) {
+        transcribeBody = route.request().postDataJSON();
         await fulfillJson(route, { transcript: 'We played marbles until dark.', transcribed_at: '2026-10-19T09:00:00.000Z', cached: false }, { status: 201 });
         return;
       }
@@ -73,6 +75,8 @@ test.describe('Guided memoir', () => {
 
     await form.getByRole('button', { name: 'Turn the recording into text' }).click();
     await expect(form.getByLabel('Your answer')).toHaveValue('We played marbles until dark.');
+    // The recording belongs to no entry yet: it names the memoir diary, whose AI mode the server checks
+    expect(transcribeBody).toEqual({ diaryId: 2 });
     await form.getByRole('button', { name: 'Save answer' }).click();
 
     await expect(page.getByText('Answer saved to your memoir.')).toBeVisible();

@@ -7886,6 +7886,7 @@
     },
     "/api/attachments/{id}/transcribe": {
       "post": {
+        "description": "The body is optional: a recording no entry holds yet names the diary it is for (`diaryId`), whose AI mode then applies; an entry’s recording follows its entry’s diary.",
         "operationId": "AttachmentsController_transcribe",
         "parameters": [
           {
@@ -7897,6 +7898,19 @@
             }
           }
         ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TranscribeAttachmentDto"
+              },
+              "example": {
+                "diaryId": 1
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "Audio attachment transcribed or cached transcript returned",
@@ -7914,7 +7928,7 @@
             }
           },
           "403": {
-            "description": "The attachment’s entry is in a diary with AI off (`DIARY_AI_OFF`)",
+            "description": "The attachment’s entry, or the diary the request names, has AI off (`DIARY_AI_OFF`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -7922,9 +7936,25 @@
                 },
                 "example": {
                   "statusCode": 403,
-                  "message": "The attachment’s entry is in a diary with AI off (`DIARY_AI_OFF`)",
+                  "message": "The attachment’s entry, or the diary the request names, has AI off (`DIARY_AI_OFF`)",
                   "error": "Forbidden",
                   "code": "FORBIDDEN"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Attachment not found, or the named diary is not the writer’s (`DIARY_NOT_FOUND`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Attachment not found, or the named diary is not the writer’s (`DIARY_NOT_FOUND`)",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
                 }
               }
             }
@@ -26655,6 +26685,19 @@
           "transcribed_at": "2026-06-24T10:00:00.000Z",
           "entry_id": 1,
           "created_at": "2026-06-24T10:00:00.000Z"
+        }
+      },
+      "TranscribeAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "diaryId": {
+            "type": "number",
+            "description": "Diary the recording is for, while it belongs to no entry yet (a memoir answer being written); a diary with AI off refuses the request (`403 DIARY_AI_OFF`)",
+            "minimum": 1
+          }
+        },
+        "example": {
+          "diaryId": 1
         }
       },
       "AudioTranscriptionResponseDto": {

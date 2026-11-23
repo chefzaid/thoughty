@@ -1,9 +1,18 @@
 import type { components } from "../../generated/openapi";
-import { safeJsonParse } from "./base";
-import type { AiAuthFetch, RephraseMode, SummaryGuidance } from "./aiTypes";
+import { readApiErrorKey, safeJsonParse } from "./base";
+import type { AiAnswer, AiAuthFetch, RephraseMode, SummaryGuidance } from "./aiTypes";
 
 /** The diary a text is written in, which the server checks for AI off; none is left out of the request. */
 const inDiary = (diaryId: number | null | undefined) => (diaryId == null ? {} : { diaryId });
+
+const answer = <T>(data: T): AiAnswer<T> => ({ data, refusal: null });
+const NO_ANSWER: AiAnswer<never> = { data: null, refusal: null };
+
+/** No answer from a failed request, with the refusal its error code names. */
+const refused = async (response: Response): Promise<AiAnswer<never>> => ({
+  data: null,
+  refusal: await readApiErrorKey(response),
+});
 
 /** AI help while writing and reading one entry: tags, rephrasing, summaries, prompts and chat. */
 export const createAiWritingService = (authFetch: AiAuthFetch) => {
@@ -12,7 +21,7 @@ export const createAiWritingService = (authFetch: AiAuthFetch) => {
     existingTags: string[] = [],
     maxTags = 5,
     diaryId?: number | null,
-  ): Promise<string[] | null> => {
+  ): Promise<AiAnswer<string[]>> => {
     try {
       const response = await authFetch("/api/ai/suggest-tags", {
         method: "POST",
@@ -23,16 +32,19 @@ export const createAiWritingService = (authFetch: AiAuthFetch) => {
           ...inDiary(diaryId),
         }),
       });
-
-      const data = await safeJsonParse<components["schemas"]["SuggestTagsResponseDto"]>(response);
-      if (!response.ok || !data) {
-        return null;
+      if (!response.ok) {
+        return await refused(response);
       }
 
-      return Array.isArray(data.tags) ? data.tags : [];
+      const data = await safeJsonParse<components["schemas"]["SuggestTagsResponseDto"]>(response);
+      if (!data) {
+        return NO_ANSWER;
+      }
+
+      return answer(Array.isArray(data.tags) ? data.tags : []);
     } catch (error) {
       console.error("Error suggesting tags:", error);
-      return null;
+      return NO_ANSWER;
     }
   };
 
@@ -40,22 +52,21 @@ export const createAiWritingService = (authFetch: AiAuthFetch) => {
     content: string,
     mode: RephraseMode = "grammar",
     diaryId?: number | null,
-  ): Promise<string | null> => {
+  ): Promise<AiAnswer<string>> => {
     try {
       const response = await authFetch("/api/ai/fix-writing", {
         method: "POST",
         body: JSON.stringify({ content, mode, ...inDiary(diaryId) }),
       });
-
-      const data = await safeJsonParse<components["schemas"]["FixWritingResponseDto"]>(response);
-      if (!response.ok || !data) {
-        return null;
+      if (!response.ok) {
+        return await refused(response);
       }
 
-      return typeof data.content === "string" ? data.content : null;
+      const data = await safeJsonParse<components["schemas"]["FixWritingResponseDto"]>(response);
+      return typeof data?.content === "string" ? answer(data.content) : NO_ANSWER;
     } catch (error) {
       console.error("Error fixing writing:", error);
-      return null;
+      return NO_ANSWER;
     }
   };
 

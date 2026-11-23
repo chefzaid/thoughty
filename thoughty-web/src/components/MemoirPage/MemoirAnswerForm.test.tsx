@@ -39,10 +39,10 @@ class FakeMediaRecorder {
 const track = { stop: vi.fn() };
 const getUserMedia = vi.fn();
 
-function renderForm() {
+function renderForm(diaryId?: number) {
   const onSubmit = vi.fn().mockResolvedValue(true);
   const onCancel = vi.fn();
-  render(<MemoirAnswerForm questionId="childhood-home" questionText="What was home like?" onSubmit={onSubmit} onCancel={onCancel} t={t} />);
+  render(<MemoirAnswerForm questionId="childhood-home" questionText="What was home like?" onSubmit={onSubmit} onCancel={onCancel} diaryId={diaryId} t={t} />);
   return { onSubmit, onCancel };
 }
 
@@ -150,14 +150,15 @@ describe('MemoirAnswerForm', () => {
   });
 
   it('turns an uploaded recording into editable text, uploading it only once', async () => {
-    const { onSubmit } = renderForm();
+    const { onSubmit } = renderForm(6);
     fireEvent.change(screen.getByLabelText('memoirYourAnswer'), { target: { value: 'First thoughts.' } });
     chooseFile(new File(['voice'], 'story.m4a', { type: 'audio/mp4' }));
     expect(screen.getByText('memoirRecordingReady story.m4a')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'memoirTranscribe' }));
     await waitFor(() => expect(screen.getByLabelText('memoirYourAnswer')).toHaveValue('First thoughts.\n\nWe lived by the harbour.'));
-    expect(attachmentsService.transcribeAttachment).toHaveBeenCalledWith(31);
+    // The memoir diary goes with it, so the server refuses the recording when that diary has AI off
+    expect(attachmentsService.transcribeAttachment).toHaveBeenCalledWith(31, 6);
 
     fireEvent.click(screen.getByRole('button', { name: 'memoirSaveAnswer' }));
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({

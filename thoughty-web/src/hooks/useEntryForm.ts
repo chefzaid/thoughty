@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { Attachment, Config, Diary } from '../types';
 import { getAutoTagLimit } from '../utils/autoTagLimit';
-import { composerDiaryId, isComposerDiaryAiOff } from '../utils/diaryAi';
+import { composerDiaryId, isComposerDiaryAiOff, isDiaryAiOffRefusal } from '../utils/diaryAi';
 import { formatEntryDate } from '../utils/entryDate';
 import { cleanEntryTitle } from '../utils/entryTime';
 import { defaultTimeCapsule, isValidTimeCapsuleDate, type TimeCapsuleDraft } from '../utils/timeCapsule';
@@ -42,6 +42,8 @@ export const useEntryForm = (
   currentDiaryId: number | null,
   onSuccess: () => void,
   diaries: readonly Diary[] = NO_DIARIES,
+  /** Hears that the server refused Rephrase or Auto Tag for AI off in the diary, so the diaries load again. */
+  onDiaryAiOff?: () => void,
 ) => {
   const { entriesService, attachmentsService, aiService } = useApiServices();
 
@@ -74,7 +76,7 @@ export const useEntryForm = (
   const diaryAiOff = isComposerDiaryAiOff(diaries, currentDiaryId);
   const aiDiaryId = composerDiaryId(diaries, currentDiaryId);
   const autoTagLimit = useFeatureFlag('ai') && !diaryAiOff ? getAutoTagLimit(config.autoTagMaxTags) : 0;
-  const tagSuggestions = useEntryTagSuggestions(aiService, newEntryText, tags, setTags, autoTagLimit, setFormError, aiDiaryId);
+  const tagSuggestions = useEntryTagSuggestions(aiService, newEntryText, tags, setTags, autoTagLimit, setFormError, aiDiaryId, onDiaryAiOff);
 
   // The draft follows the writer to their other devices; the date, time, visibility, capsule and files stay here
   const applyDraft = useCallback((fields: ComposerDraftFields) => {
@@ -231,11 +233,12 @@ export const useEntryForm = (
 
     setFormError('');
     setFixingWriting(true);
-    const corrected = await aiService.fixWriting(newEntryText, 'grammar', aiDiaryId);
+    const { data: corrected, refusal } = await aiService.fixWriting(newEntryText, 'grammar', aiDiaryId);
     setFixingWriting(false);
 
     if (corrected === null) {
-      setFormError('fixWritingFailed');
+      setFormError(refusal ?? 'fixWritingFailed');
+      if (isDiaryAiOffRefusal(refusal)) onDiaryAiOff?.();
       return false;
     }
     if (corrected === newEntryText) {
@@ -245,7 +248,7 @@ export const useEntryForm = (
 
     setNewEntryText(corrected);
     return true;
-  }, [aiDiaryId, aiService, newEntryText]);
+  }, [aiDiaryId, aiService, newEntryText, onDiaryAiOff]);
 
   return {
     newEntryText,

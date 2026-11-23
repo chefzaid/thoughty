@@ -25,9 +25,9 @@ export const useDiaries = (isAuthenticated: boolean, suppressDefaultDiarySelecti
 
   const diaries = diariesQuery.data ?? EMPTY_DIARIES;
 
-  const fetchDiaries = useCallback(async () => {
-    return diariesQuery.refetch();
-  }, [diariesQuery]);
+  // The same between renders (the query's refetch is), so the AI actions that reload the diaries keep theirs
+  const { refetch: refetchDiaries } = diariesQuery;
+  const fetchDiaries = useCallback(async () => refetchDiaries(), [refetchDiaries]);
 
   useEffect(() => {
     if (isAuthenticated) {

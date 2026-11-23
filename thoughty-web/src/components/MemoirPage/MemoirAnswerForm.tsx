@@ -36,10 +36,12 @@ interface MemoirAnswerFormProps {
   readonly language?: Language;
   /** False when the memoir diary has AI off: no transcription and no follow-up questions. */
   readonly aiAllowed?: boolean;
+  /** The memoir diary, which a transcription names so the server can refuse it when that diary has AI off. */
+  readonly diaryId?: number | null;
   readonly t: TranslationFunction;
 }
 
-function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras = [], answerDate = '', language = 'en', aiAllowed = true, t }: MemoirAnswerFormProps) {
+function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras = [], answerDate = '', language = 'en', aiAllowed = true, diaryId = null, t }: MemoirAnswerFormProps) {
   const { upload, attachmentsService } = useRecordingUpload();
   const recorder = useVoiceRecorder();
   const [text, setText] = useState('');
@@ -71,7 +73,7 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
     setBusy('transcribing');
     setProblem(null);
     const attachmentId = await uploadRecording();
-    const transcription = attachmentId ? await attachmentsService.transcribeAttachment(attachmentId) : null;
+    const transcription = attachmentId ? await attachmentsService.transcribeAttachment(attachmentId, diaryId) : null;
     setBusy(null);
     if (!attachmentId) {
       setProblem('upload');

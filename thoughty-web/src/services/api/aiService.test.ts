@@ -17,7 +17,7 @@ describe("aiService", () => {
 
     const result = await service.suggestTags("Some draft text", ["journal"], 3);
 
-    expect(result).toEqual(["focus", "writing"]);
+    expect(result).toEqual({ data: ["focus", "writing"], refusal: null });
     expect(mockAuthFetch).toHaveBeenCalledWith("/api/ai/suggest-tags", {
       method: "POST",
       body: JSON.stringify({
@@ -49,7 +49,7 @@ describe("aiService", () => {
     });
   });
 
-  it("returns null when the response is not ok", async () => {
+  it("returns no answer, and no refusal, when the response is not ok without a known code", async () => {
     mockAuthFetch.mockResolvedValue({
       ok: false,
       json: () => Promise.resolve({ error: "Bad request" }),
@@ -57,7 +57,25 @@ describe("aiService", () => {
 
     const result = await service.suggestTags("Some draft text");
 
-    expect(result).toBeNull();
+    expect(result).toEqual({ data: null, refusal: null });
+  });
+
+  it("names the refusal of a diary with AI off, for Auto Tag and Rephrase alike", async () => {
+    const refusedResponse = () => ({
+      ok: false,
+      status: 403,
+      json: () => Promise.resolve({ statusCode: 403, code: "DIARY_AI_OFF", message: "AI is off in this diary" }),
+    });
+    mockAuthFetch.mockResolvedValueOnce(refusedResponse()).mockResolvedValueOnce(refusedResponse());
+
+    await expect(service.suggestTags("Some draft text", [], 5, 4)).resolves.toEqual({
+      data: null,
+      refusal: "apiError_DIARY_AI_OFF",
+    });
+    await expect(service.fixWriting("raw text", "grammar", 4)).resolves.toEqual({
+      data: null,
+      refusal: "apiError_DIARY_AI_OFF",
+    });
   });
 
   it("returns null when the request throws", async () => {
@@ -66,7 +84,7 @@ describe("aiService", () => {
 
     const result = await service.suggestTags("Some draft text");
 
-    expect(result).toBeNull();
+    expect(result).toEqual({ data: null, refusal: null });
     expect(consoleSpy).toHaveBeenCalledWith(
       "Error suggesting tags:",
       expect.any(Error),
@@ -82,7 +100,7 @@ describe("aiService", () => {
 
     const result = await service.suggestTags("Some draft text");
 
-    expect(result).toEqual([]);
+    expect(result).toEqual({ data: [], refusal: null });
   });
 
   it("fixWriting returns fixed content when response is valid", async () => {
@@ -93,7 +111,7 @@ describe("aiService", () => {
 
     const result = await service.fixWriting("raw text", "polish");
 
-    expect(result).toBe("Improved text");
+    expect(result).toEqual({ data: "Improved text", refusal: null });
     expect(mockAuthFetch).toHaveBeenCalledWith("/api/ai/fix-writing", {
       method: "POST",
       body: JSON.stringify({ content: "raw text", mode: "polish" }),
@@ -108,7 +126,7 @@ describe("aiService", () => {
 
     const result = await service.fixWriting("raw text");
 
-    expect(result).toBeNull();
+    expect(result).toEqual({ data: null, refusal: null });
   });
 
   it("summarizeEntry returns a summary and sends optional guidance", async () => {
@@ -187,7 +205,7 @@ describe("aiService", () => {
     mockAuthFetch.mockRejectedValueOnce(new Error("history network"));
     mockAuthFetch.mockRejectedValueOnce(new Error("models network"));
 
-    await expect(service.fixWriting("raw")).resolves.toBeNull();
+    await expect(service.fixWriting("raw")).resolves.toEqual({ data: null, refusal: null });
     await expect(service.summarizeEntry(1)).resolves.toBeNull();
     await expect(service.getInspiration()).resolves.toBeNull();
     await expect(service.semanticSearch("query")).resolves.toBeNull();

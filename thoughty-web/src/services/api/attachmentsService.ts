@@ -105,12 +105,18 @@ export const createAttachmentsService = (
     }
   };
 
+  /**
+   * `diaryId` names the diary a recording no entry holds yet is for (a memoir answer being written), which the
+   * server checks for AI off; an entry's recording follows its entry's diary.
+   */
   const transcribeAttachment = async (
     id: number,
+    diaryId?: number | null,
   ): Promise<AudioTranscription | null> => {
     try {
       const response = await authFetch(`/api/attachments/${id}/transcribe`, {
         method: "POST",
+        ...(diaryId == null ? {} : { body: JSON.stringify({ diaryId }) }),
       });
       return response.ok
         ? ((await response.json()) as AudioTranscription)

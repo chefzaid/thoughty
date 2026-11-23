@@ -131,6 +131,7 @@ function MemoirPage({
       eras={eras}
       answerDate={todayIn(program?.timeZone ?? 'UTC')}
       aiAllowed={!isDiaryAiOff(diaries, program?.diaryId)}
+      diaryId={program?.diaryId}
       language={language}
       t={t}
     />
