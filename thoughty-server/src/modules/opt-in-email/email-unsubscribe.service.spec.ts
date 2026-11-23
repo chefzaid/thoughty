@@ -10,6 +10,7 @@ describe('EmailUnsubscribeService', () => {
   let monthlyRecap: { update: jest.Mock };
   let writingReminder: { update: jest.Mock };
   let diaryReminders: { update: jest.Mock };
+  let yearReview: { update: jest.Mock };
   let service: EmailUnsubscribeService;
 
   beforeEach(() => {
@@ -17,12 +18,14 @@ describe('EmailUnsubscribeService', () => {
     monthlyRecap = { update: jest.fn().mockResolvedValue({ affected: 0 }) };
     writingReminder = { update: jest.fn().mockResolvedValue({ affected: 1 }) };
     diaryReminders = { update: jest.fn().mockResolvedValue({ affected: 2 }) };
+    yearReview = { update: jest.fn().mockResolvedValue({ affected: 1 }) };
     service = new EmailUnsubscribeService(
       onThisDay as never,
       monthlyRecap as never,
       writingReminder as never,
       { get: jest.fn((key: string) => (key === 'UNSUBSCRIBE_SECRET' ? secret : undefined)) } as never,
       diaryReminders as never,
+      yearReview as never,
     );
   });
 
@@ -41,6 +44,11 @@ describe('EmailUnsubscribeService', () => {
     // A writing reminder's link stops the diaries' own reminders too, which send the same link
     expect(diaryReminders.update).toHaveBeenCalledWith({ userId: 3, enabled: true }, { enabled: false });
     expect(monthlyRecap.update).toHaveBeenCalledTimes(1);
+    expect(yearReview.update).not.toHaveBeenCalled();
+
+    await expect(service.unsubscribe(createEmailUnsubscribeToken('year-review', 3, secret))).resolves.toEqual({ success: true, kind: 'year-review' });
+    expect(yearReview.update).toHaveBeenCalledWith({ userId: 3, enabled: true }, { enabled: false });
+    expect(writingReminder.update).toHaveBeenCalledTimes(1);
   });
 
   it('refuses a link signed with another key, or none', async () => {

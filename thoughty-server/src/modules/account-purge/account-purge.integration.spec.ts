@@ -118,6 +118,10 @@ describePostgres('PostgreSQL account purge', () => {
       [userId, diaryId],
     );
     await dataSource.query(
+      `INSERT INTO year_review_emails (user_id, enabled, delivery_hour, time_zone, diary_id, next_send_at) VALUES ($1, TRUE, 9, 'Europe/Paris', $2, NOW())`,
+      [userId, diaryId],
+    );
+    await dataSource.query(
       `INSERT INTO diary_writing_reminders (diary_id, user_id, delivery_hour, time_zone, next_send_at) VALUES ($1, $2, 7, 'Europe/Paris', NOW())`,
       [diaryId, userId],
     );

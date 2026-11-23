@@ -12,30 +12,36 @@ export const MOCK_UNSUBSCRIBE_TOKENS: Record<OptInEmailKind, string> = {
   'on-this-day': '1.Xq0o2Zr4b0bq9m3xg1Vd7QF2s8kPj5tYwHn6cLzA_eE',
   'monthly-recap': 'recap.1.Rm4v0Qp8b3cL7xg1Vd7QF2s8kPj5tYwHn6cLzA_eE',
   'writing-reminder': 'remind.1.Wr7t0Qp8b3cL7xg1Vd7QF2s8kPj5tYwHn6cLzA_eE',
+  'year-review': 'year.1.Yr9v0Qp8b3cL7xg1Vd7QF2s8kPj5tYwHn6cLzA_eE',
 };
 export const MOCK_ON_THIS_DAY_UNSUBSCRIBE_TOKEN = MOCK_UNSUBSCRIBE_TOKENS['on-this-day'];
 
 /** Each email's settings route, the state that holds it, and how its next send comes round. */
-type OptInEmailState = 'onThisDayEmail' | 'monthlyRecapEmail' | 'writingReminderEmail';
-const EMAILS: Record<OptInEmailKind, { path: string; state: OptInEmailState; monthly: boolean }> = {
-  'on-this-day': { path: '/api/on-this-day-email', state: 'onThisDayEmail', monthly: false },
-  'monthly-recap': { path: '/api/monthly-recap-email', state: 'monthlyRecapEmail', monthly: true },
-  'writing-reminder': { path: '/api/writing-reminder-email', state: 'writingReminderEmail', monthly: false },
+type OptInEmailState = 'onThisDayEmail' | 'monthlyRecapEmail' | 'writingReminderEmail' | 'yearReviewEmail';
+/** How often an email comes round: every day, on the 1st of each month, or on January 1. */
+export type SendPeriod = 'day' | 'month' | 'year';
+const EMAILS: Record<OptInEmailKind, { path: string; state: OptInEmailState; period: SendPeriod }> = {
+  'on-this-day': { path: '/api/on-this-day-email', state: 'onThisDayEmail', period: 'day' },
+  'monthly-recap': { path: '/api/monthly-recap-email', state: 'monthlyRecapEmail', period: 'month' },
+  'writing-reminder': { path: '/api/writing-reminder-email', state: 'writingReminderEmail', period: 'day' },
+  'year-review': { path: '/api/year-review-email', state: 'yearReviewEmail', period: 'year' },
 };
 
 const QUARTER_HOUR_MS = 15 * 60 * 1000;
 
 /**
  * The next quarter hour after now at which the zone's clock reads `hour`:00 (on the 1st of a month for
- * the monthly recap), as the API schedules it.
+ * the monthly recap, on January 1 for the year in review), as the API schedules it.
  */
-export function nextSendAt(hour: number, timeZone: string, monthly: boolean): string {
-  const format = new Intl.DateTimeFormat('en-US', { timeZone, hourCycle: 'h23', day: 'numeric', hour: 'numeric', minute: 'numeric' });
+export function nextSendAt(hour: number, timeZone: string, period: SendPeriod): string {
+  const format = new Intl.DateTimeFormat('en-US', { timeZone, hourCycle: 'h23', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' });
+  const dueOn = (value: (type: string) => number) =>
+    period === 'day' || (value('day') === 1 && (period === 'month' || value('month') === 1));
   let candidate = Math.ceil((Date.now() + 1) / QUARTER_HOUR_MS) * QUARTER_HOUR_MS;
-  for (let step = 0; step < 4 * 24 * 32; step++, candidate += QUARTER_HOUR_MS) {
+  for (let step = 0; step < 4 * 24 * 367; step++, candidate += QUARTER_HOUR_MS) {
     const parts = format.formatToParts(new Date(candidate));
     const value = (type: string) => Number(parts.find((part) => part.type === type)?.value);
-    if (value('hour') === hour && value('minute') === 0 && (!monthly || value('day') === 1)) return new Date(candidate).toISOString();
+    if (value('hour') === hour && value('minute') === 0 && dueOn(value)) return new Date(candidate).toISOString();
   }
   return new Date(candidate).toISOString();
 }
@@ -52,8 +58,8 @@ function turnOff(state: MockAppState, kind: OptInEmailKind) {
 }
 
 /**
- * The opt-in emails as the API answers them: `/api/on-this-day-email`, `/api/monthly-recap-email` and
- * `/api/writing-reminder-email` (one setting per writer) and the shared signed unsubscribe link the unsubscribe page posts to.
+ * The opt-in emails as the API answers them: `/api/on-this-day-email`, `/api/monthly-recap-email`,
+ * `/api/writing-reminder-email` and `/api/year-review-email` (one setting per writer) and the shared signed unsubscribe link the unsubscribe page posts to.
  */
 export async function handleOptInEmailRoutes({ route, request, pathname, searchParams, state }: RouteContext): Promise<boolean> {
   if (pathname === '/api/email-unsubscribe' && request.method() === 'POST') {
@@ -88,7 +94,7 @@ export async function handleOptInEmailRoutes({ route, request, pathname, searchP
     state[email.state] = {
       ...state[email.state],
       ...changes,
-      nextSendAt: changes.enabled ? nextSendAt(changes.deliveryHour, changes.timeZone, email.monthly) : null,
+      nextSendAt: changes.enabled ? nextSendAt(changes.deliveryHour, changes.timeZone, email.period) : null,
     };
     if (email.state === 'writingReminderEmail') followTimeZone(state, changes.timeZone);
     await fulfillJson(route, state[email.state]);

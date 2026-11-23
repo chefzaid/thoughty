@@ -140,6 +140,7 @@ The worker runs seven loops, never in API pods:
 | Weekly memoir questions and email | 60s | `Weekly memoir email for user <id> failed` (not retried) |
 | "On this day" emails (at most one per writer and local day, only on days with past entries) | 60s | `On this day email for user <id> failed: <error name> <SMTP reply code>` (not retried that day); `Sent <n> On this day emails` after a run that sent some |
 | Monthly recap emails (on the 1st of each local month, at most one per writer and local month, skipped for a month with no entries and no past memory) | 60s | `Monthly recap email for user <id> failed: <error name> <SMTP reply code>` (not retried that month); `Sent <n> monthly recap emails` after a run that sent some |
+| Year in review emails (on January 1 of each local year, at most one per writer and local year, skipped for a year with no entries) | 60s | `Year in review email for user <id> failed: <error name> <SMTP reply code>` (not retried that year); `Sent <n> year in review emails` after a run that sent some |
 | Writing reminder emails (each local day at the writer's hour, at most one per writer and local day, skipped on a day that already has an entry) | 60s | `Writing reminder email for user <id> failed: <error name> <SMTP reply code>` (not retried that day); `Sent <n> writing reminder emails` after a run that sent some (the diaries' own reminders, rows of `diary_writing_reminders`, run in the same worker right after and are counted in it; their failures log `Diary writing reminder email for user <id> failed: …`) |
 | Time capsules (opened at their local day and hour, emailed once to a verified address; capsules in the recycle bin wait until restored) | 60s | `Time capsule email for user <id> failed: <error name> <SMTP reply code>` (the capsule is open; the email is not retried); `Sent <n> time capsule emails` after a run that sent some |
 | Recycle-bin purge (deleted over 30 days, with files) | hourly | `Failed to empty expired recycle bin entries` |
@@ -156,11 +157,13 @@ select user_id, next_send_at, last_sent_on from on_this_day_emails
 where enabled and next_send_at <= now() limit 20;
 select user_id, next_send_at, last_sent_on from monthly_recap_emails
 where enabled and next_send_at <= now() limit 20;
+select user_id, next_send_at, last_sent_on from year_review_emails
+where enabled and next_send_at <= now() limit 20;
 select tc.id, tc.user_id, tc.open_at from time_capsules tc join entries e on e.id = tc.entry_id
 where tc.opened_at is null and tc.open_at <= now() and e.deleted_at is null limit 20;
 ```
 
-Memoir, "On this day", monthly recap, writing reminder or time capsule rows that stay due mean the worker is down or failing (rows of deleted accounts stay due until the account purge removes them, and are never sent). The opt-in email logs carry only the user ID, never the address or entry text; an SMTP error's message is left out because it can quote the address. A capsule opens within a minute of its time, and the journal list shows it open from the next read on every API replica.
+Memoir, "On this day", monthly recap, year in review, writing reminder or time capsule rows that stay due mean the worker is down or failing (rows of deleted accounts stay due until the account purge removes them, and are never sent). The opt-in email logs carry only the user ID, never the address or entry text; an SMTP error's message is left out because it can quote the address. A capsule opens within a minute of its time, and the journal list shows it open from the next read on every API replica.
 
 ## Email Delivery
 

@@ -346,7 +346,7 @@ describeContract('account', (context) => {
   it('saves the opt-in emails and turns them off from an unsubscribe link', async () => {
     const { alice, bob } = context;
     const secret = getUnsubscribeSecret(context.api.app.get(ConfigService));
-    for (const route of ['/api/on-this-day-email', '/api/monthly-recap-email', '/api/writing-reminder-email'] as const) {
+    for (const route of ['/api/on-this-day-email', '/api/monthly-recap-email', '/api/writing-reminder-email', '/api/year-review-email'] as const) {
       const current = await call(`GET ${route}`, { as: alice, status: 200 });
       const setting = current.body as {
         enabled: boolean;
@@ -435,5 +435,12 @@ describeContract('account', (context) => {
     // The same link stops the diaries' own reminders
     const diaryRemindersAfter = await call('GET /api/writing-reminder-email/diaries', { as: alice, status: 200 });
     expect((diaryRemindersAfter.body as { reminders: unknown[] }).reminders).toEqual([]);
+    const yearReview = await call('POST /api/email-unsubscribe', {
+      query: { token: createEmailUnsubscribeToken('year-review', alice.id, secret) },
+      status: 200,
+    });
+    expect(yearReview.body).toEqual({ success: true, kind: 'year-review' });
+    const yearReviewAfter = await call('GET /api/year-review-email', { as: alice, status: 200 });
+    expect(yearReviewAfter.body).toMatchObject({ enabled: false, nextSendAt: null, deliveryHour: 9 });
   });
 });

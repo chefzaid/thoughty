@@ -31,6 +31,7 @@ import {
   UserBlock,
   PersonalAccessToken,
   WritingReminderEmail,
+  YearReviewEmail,
   CalendarEvent,
 } from '@/database/entities';
 import { ConfigController } from './config.controller';
@@ -72,6 +73,7 @@ import { AuthModule } from '@/modules/auth/auth.module';
       UserBlock,
       PersonalAccessToken,
       WritingReminderEmail,
+      YearReviewEmail,
       CalendarEvent,
     ]),
     TimeCapsulesModule,

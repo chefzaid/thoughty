@@ -27,6 +27,7 @@ describe('UserDataExportService imported calendar events', () => {
       createAccountActivityMock(),
       ...Array.from({ length: 4 }, emptyRepository),
       calendarEvents,
+      emptyRepository(),
     );
 
     const data = await service.downloadData(1);

@@ -9,18 +9,35 @@ const emptyRepository = () => ({
 });
 
 describe('UserDataExportService opt-in email settings', () => {
-  const build = (onThisDayEmail: unknown, monthlyRecapEmail: unknown, writingReminderEmail: unknown, diaryRepository = emptyRepository()) => {
+  const build = (
+    onThisDayEmail: unknown,
+    monthlyRecapEmail: unknown,
+    writingReminderEmail: unknown,
+    diaryRepository = emptyRepository(),
+    yearReviewEmail: unknown = emptyRepository(),
+  ) => {
     // Every repository before the two opt-in email ones, in constructor order; the diaries' is the third.
     const others = Array.from({ length: 16 }, emptyRepository);
     others[2] = diaryRepository;
     const Service = UserDataExportService as unknown as new (...repositories: unknown[]) => UserDataExportService;
     const timeCapsules = { reveal: async (entries: unknown[]) => entries };
-    return new Service(...others, onThisDayEmail, monthlyRecapEmail, emptyRepository(), timeCapsules, emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), createAccountActivityMock(), emptyRepository(), emptyRepository(), writingReminderEmail, emptyRepository(), emptyRepository());
+    return new Service(...others, onThisDayEmail, monthlyRecapEmail, emptyRepository(), timeCapsules, emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), emptyRepository(), createAccountActivityMock(), emptyRepository(), emptyRepository(), writingReminderEmail, emptyRepository(), emptyRepository(), yearReviewEmail);
   };
 
-  it.each(['onThisDayEmail', 'monthlyRecapEmail', 'writingReminderEmail'] as const)('includes the %s setting, and null when it was never saved', async (key) => {
-    const repositories = { onThisDayEmail: emptyRepository(), monthlyRecapEmail: emptyRepository(), writingReminderEmail: emptyRepository() };
-    const service = build(repositories.onThisDayEmail, repositories.monthlyRecapEmail, repositories.writingReminderEmail);
+  it.each(['onThisDayEmail', 'monthlyRecapEmail', 'writingReminderEmail', 'yearReviewEmail'] as const)('includes the %s setting, and null when it was never saved', async (key) => {
+    const repositories = {
+      onThisDayEmail: emptyRepository(),
+      monthlyRecapEmail: emptyRepository(),
+      writingReminderEmail: emptyRepository(),
+      yearReviewEmail: emptyRepository(),
+    };
+    const service = build(
+      repositories.onThisDayEmail,
+      repositories.monthlyRecapEmail,
+      repositories.writingReminderEmail,
+      emptyRepository(),
+      repositories.yearReviewEmail,
+    );
     expect((await service.downloadData(1))[key]).toBeNull();
 
     const createdAt = new Date('2026-10-01T10:00:00Z');

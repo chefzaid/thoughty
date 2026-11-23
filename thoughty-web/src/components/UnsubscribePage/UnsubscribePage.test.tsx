@@ -56,6 +56,14 @@ describe('UnsubscribePage', () => {
     expect(unsubscribeEmail).toHaveBeenCalledWith('remind.3.signed');
   });
 
+  it('says which email went off: the year in review', async () => {
+    unsubscribeEmail.mockResolvedValue({ data: { success: true, kind: 'year-review' }, error: null });
+    renderPage('/unsubscribe?token=year.3.signed');
+
+    expect(await screen.findByText('yearReviewUnsubscribed')).toBeInTheDocument();
+    expect(unsubscribeEmail).toHaveBeenCalledWith('year.3.signed');
+  });
+
   it('shows why it failed and tries again', async () => {
     unsubscribeEmail
       .mockResolvedValueOnce({ data: null, error: 'apiError_EMAIL_UNSUBSCRIBE_INVALID' })

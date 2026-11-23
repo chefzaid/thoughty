@@ -1,4 +1,3 @@
-import { escapeHtml } from '@/common/utils';
 import type { RenderedEmail } from '@/modules/auth/services/email.service';
 import {
   buildEntryCard,
@@ -10,9 +9,17 @@ import {
   renderEmailText,
   renderEntryCardHtml,
 } from '@/modules/opt-in-email/opt-in-email-layout';
+import {
+  emailHeading2Html,
+  linesSectionText,
+  quietSummaryLines,
+  renderLinesSectionHtml,
+  renderLinkParagraphHtml,
+  summaryCountLines,
+  summaryTagAndMoodLines,
+  yearReviewUrl,
+} from '@/modules/opt-in-email/writing-summary-lines';
 import type { MonthlyRecap } from './monthly-recap.service';
-
-type Plural = (count: string, value: number) => string;
 
 interface RecapCopy {
   subject: (month: string) => string;
@@ -21,14 +28,6 @@ interface RecapCopy {
   numbersHeading: string;
   /** The heading in quiet mode, which leaves out every count. */
   quietHeading: string;
-  entries: Plural;
-  words: Plural;
-  writingDays: Plural;
-  topTags: (tags: string) => string;
-  /** `entries` is already counted, as "4 entries". */
-  mood: (average: string, label: string, entries: string) => string;
-  quietMood: (label: string) => string;
-  moodLevels: [string, string, string, string, string];
   memoryHeading: (monthOfYear: string) => string;
   review: (year: number) => string;
   footer: string;
@@ -44,13 +43,6 @@ const COPY: Record<EmailLanguage, RecapCopy> = {
     quiet: (month) => `You didn’t write in ${month}. Here is a memory from an earlier year instead.`,
     numbersHeading: 'Your month in numbers',
     quietHeading: 'Your month',
-    entries: (count, value) => `${count} ${value === 1 ? 'entry' : 'entries'}`,
-    words: (count, value) => `${count} ${value === 1 ? 'word' : 'words'}`,
-    writingDays: (count, value) => `${count} ${value === 1 ? 'day' : 'days'} with writing`,
-    topTags: (tags) => `Top tags: ${tags}`,
-    mood: (average, label, entries) => `Average mood: ${average} out of 5 (${label}), from ${entries} with a mood.`,
-    quietMood: (label) => `Your mood on the whole: ${label}.`,
-    moodLevels: ['Very low', 'Low', 'Okay', 'Good', 'Very good'],
     memoryHeading: (monthOfYear) => `A memory from ${monthOfYear}`,
     review: (year) => `See your ${year} in review`,
     footer:
@@ -63,13 +55,6 @@ const COPY: Record<EmailLanguage, RecapCopy> = {
     quiet: (month) => `Vous n’avez pas écrit en ${month}. Voici plutôt un souvenir d’une année passée.`,
     numbersHeading: 'Votre mois en chiffres',
     quietHeading: 'Votre mois',
-    entries: (count, value) => `${count} ${value < 2 ? 'entrée' : 'entrées'}`,
-    words: (count, value) => `${count} ${value < 2 ? 'mot' : 'mots'}`,
-    writingDays: (count, value) => `${count} ${value < 2 ? 'jour' : 'jours'} d’écriture`,
-    topTags: (tags) => `Tags populaires : ${tags}`,
-    mood: (average, label, entries) => `Humeur moyenne : ${average} sur 5 (${label}), sur ${entries} avec une humeur.`,
-    quietMood: (label) => `Votre humeur dans l’ensemble : ${label}.`,
-    moodLevels: ['Très basse', 'Basse', 'Moyenne', 'Bonne', 'Très bonne'],
     memoryHeading: (monthOfYear) => `Un souvenir ${frenchOf(monthOfYear)}`,
     review: (year) => `Voir votre année ${year}`,
     footer:
@@ -95,40 +80,6 @@ function formatMonth(year: number, month: number, language: EmailLanguage): stri
 
 const capitalize = (text: string) => text.charAt(0).toLocaleUpperCase() + text.slice(1);
 
-const moodLabel = (copy: RecapCopy, average: number) => copy.moodLevels[Math.min(4, Math.max(0, Math.round(average) - 1))];
-
-/** The recap's lines about the month itself: counts, top tags and recorded mood, none for a month without writing. */
-function numberLines(recap: MonthlyRecap, copy: RecapCopy, language: EmailLanguage): string[] {
-  if (recap.entries === 0) {
-    return [];
-  }
-  const count = (value: number) => new Intl.NumberFormat(language).format(value);
-  const lines = [
-    copy.entries(count(recap.entries), recap.entries),
-    copy.words(count(recap.words), recap.words),
-    copy.writingDays(count(recap.writingDays), recap.writingDays),
-  ];
-  if (recap.topTags.length > 0) {
-    lines.push(copy.topTags(recap.topTags.map(({ tag, count: uses }) => `#${tag} (${count(uses)})`).join(', ')));
-  }
-  if (recap.mood) {
-    const average = new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(recap.mood.average);
-    lines.push(copy.mood(average, moodLabel(copy, recap.mood.average), copy.entries(count(recap.mood.entries), recap.mood.entries)));
-  }
-  return lines;
-}
-
-/** In quiet mode, the same month without a number: its top tags by name and the mood in words. */
-function quietLines(recap: MonthlyRecap, copy: RecapCopy): string[] {
-  if (recap.entries === 0) {
-    return [];
-  }
-  return [
-    ...(recap.topTags.length > 0 ? [copy.topTags(recap.topTags.map(({ tag }) => `#${tag}`).join(', '))] : []),
-    ...(recap.mood ? [copy.quietMood(moodLabel(copy, recap.mood.average))] : []),
-  ];
-}
-
 /**
  * The monthly recap: how much the writer wrote in the month just ended (entries, words, writing days, top
  * tags, and the moods they recorded, without AI), one memory of that calendar month from an earlier year
@@ -139,17 +90,15 @@ export function buildMonthlyRecapEmail(input: MonthlyRecapEmailInput): RenderedE
   const { recap, language } = input;
   const copy = COPY[language];
   const month = formatMonth(recap.year, recap.month, language);
-  const lines = input.quietMode ? quietLines(recap, copy) : numberLines(recap, copy, language);
+  const lines = input.quietMode
+    ? quietSummaryLines(recap, language)
+    : [...summaryCountLines(recap, language), ...summaryTagAndMoodLines(recap, language)];
   const linesHeading = input.quietMode ? copy.quietHeading : copy.numbersHeading;
   const memory = recap.memory ? buildEntryCard(recap.memory, language, input.frontendUrl) : null;
   const memoryHeading = recap.memory
     ? copy.memoryHeading(formatMonth(Number(recap.memory.entry.date.slice(0, 4)), recap.month, language))
     : '';
-  const reviewUrl = new URL('/review', input.frontendUrl);
-  reviewUrl.searchParams.set('year', String(recap.year));
-  if (recap.diaryId !== null) {
-    reviewUrl.searchParams.set('diary', String(recap.diaryId));
-  }
+  const reviewUrl = yearReviewUrl(input.frontendUrl, recap.year, recap.diaryId);
   const reviewLabel = copy.review(recap.year);
 
   const frame = {
@@ -159,27 +108,19 @@ export function buildMonthlyRecapEmail(input: MonthlyRecapEmailInput): RenderedE
     unsubscribeLabel: COMMON_EMAIL_COPY[language].unsubscribe,
     unsubscribeUrl: input.unsubscribeUrl,
   };
-  const heading2 = (text: string) => `<h2 style="color: #1a1a1a; font-size: 20px; margin: 0 0 8px;">${escapeHtml(text)}</h2>`;
-  const numbersHtml = lines.length
-    ? `
-      <section style="border-top: 1px solid #ddd; padding: 16px 0;">
-        ${heading2(linesHeading)}
-        <ul style="color: #1a1a1a; font-size: 16px; line-height: 1.6; margin: 0; padding-left: 20px;">${lines.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}</ul>
-      </section>`
-    : '';
+  const numbersHtml = renderLinesSectionHtml(linesHeading, lines);
   const memoryHtml = memory
     ? `
       <section style="border-top: 1px solid #ddd; padding: 16px 0 0;">
-        ${heading2(memoryHeading)}${renderEntryCardHtml(memory, 3)}
+        ${emailHeading2Html(memoryHeading)}${renderEntryCardHtml(memory, 3)}
       </section>`
     : '';
-  const reviewHtml = `
-      <p style="border-top: 1px solid #ddd; font-size: 16px; margin: 0; padding: 16px 0;"><a href="${escapeHtml(reviewUrl.toString())}" style="color: #4338ca; text-decoration: underline;">${escapeHtml(reviewLabel)}</a></p>`;
+  const reviewHtml = renderLinkParagraphHtml(reviewLabel, reviewUrl);
 
   const sections = [
-    ...(lines.length ? [[linesHeading, ...lines.map((line) => `- ${line}`)].join('\n')] : []),
+    ...linesSectionText(linesHeading, lines),
     ...(memory ? [`${memoryHeading}\n\n${entryCardText(memory)}`] : []),
-    `${reviewLabel}: ${reviewUrl.toString()}`,
+    `${reviewLabel}: ${reviewUrl}`,
   ];
 
   const subject = copy.subject(month);

@@ -25,6 +25,7 @@ describe('cloud-sync-worker bootstrap', () => {
     const FakeOnThisDayWorkerService = class {};
     const FakeMonthlyRecapWorkerService = class {};
     const FakeWritingReminderWorkerService = class {};
+    const FakeYearReviewWorkerService = class {};
     const FakeTimeCapsuleWorkerService = class {};
     const FakeRecycleBinWorkerService = class {};
     const FakeAccountPurgeWorkerService = class {};
@@ -51,6 +52,9 @@ describe('cloud-sync-worker bootstrap', () => {
     jest.doMock('./modules/writing-reminder-email/writing-reminder-delivery-worker.service', () => ({
       WritingReminderDeliveryWorkerService: FakeWritingReminderWorkerService,
     }));
+    jest.doMock('./modules/year-review-email/year-review-delivery-worker.service', () => ({
+      YearReviewDeliveryWorkerService: FakeYearReviewWorkerService,
+    }));
     jest.doMock('./modules/time-capsules/time-capsule-delivery-worker.service', () => ({
       TimeCapsuleDeliveryWorkerService: FakeTimeCapsuleWorkerService,
     }));
@@ -74,10 +78,11 @@ describe('cloud-sync-worker bootstrap', () => {
     expect(app.get).toHaveBeenCalledWith(FakeOnThisDayWorkerService);
     expect(app.get).toHaveBeenCalledWith(FakeMonthlyRecapWorkerService);
     expect(app.get).toHaveBeenCalledWith(FakeWritingReminderWorkerService);
+    expect(app.get).toHaveBeenCalledWith(FakeYearReviewWorkerService);
     expect(app.get).toHaveBeenCalledWith(FakeTimeCapsuleWorkerService);
     expect(app.get).toHaveBeenCalledWith(FakeRecycleBinWorkerService);
     expect(app.get).toHaveBeenCalledWith(FakeAccountPurgeWorkerService);
-    expect(start).toHaveBeenCalledTimes(8);
+    expect(start).toHaveBeenCalledTimes(9);
     expect(typeof handlers.SIGINT).toBe('function');
     expect(typeof handlers.SIGTERM).toBe('function');
 
@@ -108,6 +113,9 @@ describe('cloud-sync-worker bootstrap', () => {
     }));
     jest.doMock('./modules/writing-reminder-email/writing-reminder-delivery-worker.service', () => ({
       WritingReminderDeliveryWorkerService: class {},
+    }));
+    jest.doMock('./modules/year-review-email/year-review-delivery-worker.service', () => ({
+      YearReviewDeliveryWorkerService: class {},
     }));
     jest.doMock('./modules/time-capsules/time-capsule-delivery-worker.service', () => ({
       TimeCapsuleDeliveryWorkerService: class {},

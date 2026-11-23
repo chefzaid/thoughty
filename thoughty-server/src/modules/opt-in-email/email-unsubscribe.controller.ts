@@ -18,8 +18,9 @@ export class EmailUnsubscribeController {
   @ApiOperation({
     summary: 'Stop the opt-in email an email’s signed link names, without signing in',
     description:
-      'The token says which email it turns off ("On this day", the monthly recap or the writing reminder). The web ' +
-      'unsubscribe page posts here, and the one-click unsubscribe header of the monthly recap and the writing reminder too (RFC 8058, ' +
+      'The token says which email it turns off ("On this day", the monthly recap, the writing reminder or the year in review). ' +
+      'The web unsubscribe page posts here, and the one-click unsubscribe header of the monthly recap, the writing reminder ' +
+      'and the year in review too (RFC 8058, ' +
       '`List-Unsubscribe=One-Click` in the body). Repeating it changes nothing.',
   })
   @ApiResponse({ status: 200, description: 'The email is off', type: EmailUnsubscribeResultDto })

@@ -18,6 +18,7 @@ import {
   OnThisDayEmail,
   MonthlyRecapEmail,
   WritingReminderEmail,
+  YearReviewEmail,
   type OptInEmailSetting,
   YearReviewMood,
   WeeklyReflection,
@@ -125,6 +126,8 @@ export class UserDataExportService {
     private readonly memoirPhotoAnswerRepository: Repository<MemoirPhotoAnswer>,
     @InjectRepository(CalendarEvent)
     private readonly calendarEventRepository: Repository<CalendarEvent>,
+    @InjectRepository(YearReviewEmail)
+    private readonly yearReviewEmailRepository: Repository<YearReviewEmail>,
   ) {}
 
   /**
@@ -135,7 +138,7 @@ export class UserDataExportService {
     if (!isContentUnlocked(userId) && (await holdsLockedContent(this.entryRepository, userId))) {
       throw apiError(ContentLockedException, 'CONTENT_LOCKED');
     }
-    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people, onThisDayEmail, monthlyRecapEmail, capsules, shareLinks, composerDraft, accountEvents, newBrowserEmail, weeklyReflections, accessTokens, writingReminderEmail, calendarEvents] = await Promise.all([
+    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people, onThisDayEmail, monthlyRecapEmail, capsules, shareLinks, composerDraft, accountEvents, newBrowserEmail, weeklyReflections, accessTokens, writingReminderEmail, calendarEvents, yearReviewEmail] = await Promise.all([
       this.userRepository.findOne({ where: { id: userId } }),
       // With each diary's own writing reminder hour, when it has one
       this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' }, relations: { writingReminder: true } }),
@@ -166,6 +169,7 @@ export class UserDataExportService {
       this.accessTokenRepository.find({ where: { userId }, order: { createdAt: 'ASC', id: 'ASC' } }),
       this.writingReminderEmailRepository.findOne({ where: { userId } }),
       this.calendarEventRepository.find({ where: { userId }, order: { createdAt: 'ASC', id: 'ASC' } }),
+      this.yearReviewEmailRepository.findOne({ where: { userId } }),
     ]);
 
     const safeUser = user
@@ -307,6 +311,7 @@ export class UserDataExportService {
       onThisDayEmail: exportOptInEmail(onThisDayEmail),
       monthlyRecapEmail: exportOptInEmail(monthlyRecapEmail),
       writingReminderEmail: exportOptInEmail(writingReminderEmail),
+      yearReviewEmail: exportOptInEmail(yearReviewEmail),
       // When each time capsule was sealed for and when it opened; a sealed one's text is with its entry
       timeCapsules: capsules.map((capsule) => ({
         entryId: capsule.entryId,

@@ -26,6 +26,7 @@ import { PeopleModule } from './modules/people';
 import { OnThisDayEmailModule } from './modules/on-this-day-email';
 import { MonthlyRecapEmailModule } from './modules/monthly-recap-email';
 import { WritingReminderEmailModule } from './modules/writing-reminder-email';
+import { YearReviewEmailModule } from './modules/year-review-email';
 import { OptInEmailModule } from './modules/opt-in-email';
 import { AccountPurgeModule } from './modules/account-purge';
 import { TimeCapsuleEmailModule } from './modules/time-capsules';
@@ -86,6 +87,7 @@ import {
     OnThisDayEmailModule,
     MonthlyRecapEmailModule,
     WritingReminderEmailModule,
+    YearReviewEmailModule,
     OptInEmailModule,
     AccountPurgeModule,
     TimeCapsuleEmailModule,

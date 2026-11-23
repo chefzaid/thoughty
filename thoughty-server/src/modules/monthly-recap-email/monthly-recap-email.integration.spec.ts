@@ -5,7 +5,7 @@ import {
   POSTGRES_SETUP_TIMEOUT_MS,
   type PostgresTestDatabase,
 } from '@/database/postgres-test-database.test-helpers';
-import { Attachment, Diary, DiaryWritingReminder, Entry, EntryRevision, MonthlyRecapEmail, OnThisDayEmail, Setting, User, WritingReminderEmail, YearReviewMood } from '@/database/entities';
+import { Attachment, Diary, DiaryWritingReminder, Entry, EntryRevision, MonthlyRecapEmail, OnThisDayEmail, Setting, User, WritingReminderEmail, YearReviewMood, YearReviewEmail } from '@/database/entities';
 import type { RenderedEmail } from '@/modules/auth/services/email.service';
 import { ConfigService } from '@/modules/config';
 import { EntriesQueryService } from '@/modules/entries';
@@ -72,6 +72,7 @@ describePostgres('PostgreSQL monthly recap email', () => {
       dataSource.getRepository(WritingReminderEmail),
       nestConfig as never,
       dataSource.getRepository(DiaryWritingReminder),
+      dataSource.getRepository(YearReviewEmail),
     );
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });

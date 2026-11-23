@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createMonthlyRecapEmailService } from './monthlyRecapEmailService';
 import { unsubscribeEmail } from './optInEmailService';
 import { createWritingReminderEmailService } from './writingReminderEmailService';
+import { createYearReviewEmailService } from './yearReviewEmailService';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
@@ -43,6 +44,25 @@ describe('opt-in email services', () => {
     const offline = createWritingReminderEmailService(vi.fn().mockRejectedValue(new Error('offline')));
     await expect(offline.get()).resolves.toEqual({ data: null, error: 'writingReminderEmailLoadFailed' });
     await expect(offline.save(changes)).resolves.toEqual({ data: null, error: 'writingReminderEmailSaveFailed' });
+  });
+
+  it('read and save the year in review setting, with its own failure keys', async () => {
+    const settings = { enabled: true, deliveryHour: 9, timeZone: 'UTC', diaryId: null, nextSendAt: '2027-01-01T09:00:00.000Z', emailAvailable: true };
+    const authFetch = vi.fn().mockImplementation(() => Promise.resolve(json(settings)));
+    const service = createYearReviewEmailService(authFetch);
+    const changes = { enabled: true, deliveryHour: 9, timeZone: 'UTC', diaryId: null };
+
+    await expect(service.get()).resolves.toEqual({ data: settings, error: null });
+    await expect(service.save(changes)).resolves.toEqual({ data: settings, error: null });
+    expect(authFetch.mock.calls.map(([url, options]) => [url, options?.method, options?.body])).toEqual([
+      ['/api/year-review-email', undefined, undefined],
+      ['/api/year-review-email', 'PUT', JSON.stringify(changes)],
+    ]);
+
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const offline = createYearReviewEmailService(vi.fn().mockRejectedValue(new Error('offline')));
+    await expect(offline.get()).resolves.toEqual({ data: null, error: 'yearReviewEmailLoadFailed' });
+    await expect(offline.save(changes)).resolves.toEqual({ data: null, error: 'yearReviewEmailSaveFailed' });
   });
 
   it('unsubscribe with the link’s token, encoded, without signing in, and say which email went off', async () => {

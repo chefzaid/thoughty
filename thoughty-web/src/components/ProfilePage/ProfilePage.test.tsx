@@ -48,6 +48,7 @@ vi.mock('../OnThisDayEmail/OnThisDayEmailSection', () => ({
 }));
 vi.mock('../MonthlyRecapEmail/MonthlyRecapEmailSection', () => ({ default: () => <section data-testid="monthly-recap-email-section" /> }));
 vi.mock('../WritingReminderEmail/WritingReminderEmailSection', () => ({ default: () => <section data-testid="writing-reminder-email-section" /> }));
+vi.mock('../YearReviewEmail/YearReviewEmailSection', () => ({ default: () => <section data-testid="year-review-email-section" /> }));
 vi.mock('./CloudProvidersSection', () => ({
     default: () => <div>cloudProviders</div>,
 }));

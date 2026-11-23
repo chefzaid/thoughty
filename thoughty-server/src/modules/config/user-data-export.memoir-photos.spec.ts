@@ -23,6 +23,7 @@ describe('UserDataExportService memoir photo stories', () => {
       ...Array.from({ length: 3 }, emptyRepository),
       photoAnswers,
       emptyRepository(),
+      emptyRepository(),
     );
 
     const data = await service.downloadData(1);

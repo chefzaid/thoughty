@@ -5,7 +5,7 @@ import {
   POSTGRES_SETUP_TIMEOUT_MS,
   type PostgresTestDatabase,
 } from '@/database/postgres-test-database.test-helpers';
-import { Diary, DiaryWritingReminder, Entry, MonthlyRecapEmail, OnThisDayEmail, Setting, User, WritingReminderEmail } from '@/database/entities';
+import { Diary, DiaryWritingReminder, Entry, MonthlyRecapEmail, OnThisDayEmail, Setting, User, WritingReminderEmail, YearReviewEmail } from '@/database/entities';
 import type { RenderedEmail } from '@/modules/auth/services/email.service';
 import { ConfigService } from '@/modules/config';
 import { createEmailUnsubscribeToken } from '@/modules/opt-in-email/email-unsubscribe-token';
@@ -67,6 +67,7 @@ describePostgres('PostgreSQL writing reminder email', () => {
       dataSource.getRepository(WritingReminderEmail),
       nestConfig as never,
       dataSource.getRepository(DiaryWritingReminder),
+      dataSource.getRepository(YearReviewEmail),
     );
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });

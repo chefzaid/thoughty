@@ -19,6 +19,7 @@ const UNSUBSCRIBED: Record<OptInEmailKind, string> = {
   'on-this-day': 'onThisDayUnsubscribed',
   'monthly-recap': 'monthlyRecapUnsubscribed',
   'writing-reminder': 'writingReminderUnsubscribed',
+  'year-review': 'yearReviewUnsubscribed',
 };
 
 /**

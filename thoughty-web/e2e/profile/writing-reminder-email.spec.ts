@@ -5,11 +5,11 @@ import { MOCK_UNSUBSCRIBE_TOKENS } from '../support/mockApp.routes.opt-in-emails
 test.describe('Writing reminder by email', () => {
   test.use({ timezoneId: 'Europe/Paris' });
 
-  test('sits after the monthly recap, is off until the writer opts in, and saves the hour, zone and diary', async ({ page }) => {
+  test('sits after the year in review email, is off until the writer opts in, and saves the hour, zone and diary', async ({ page }) => {
     const { state } = await setupMockApp(page, { startAuthenticated: true });
     await page.goto('/profile');
 
-    await expect(page.locator('#monthly-recap-email + #writing-reminder-email')).toHaveCount(1);
+    await expect(page.locator('#year-review-email + #writing-reminder-email')).toHaveCount(1);
     const section = page.getByRole('region', { name: 'Writing reminder by email' });
     const toggle = section.getByRole('switch', { name: 'Remind me to write by email' });
     await expect(toggle).toHaveAttribute('aria-checked', 'false');

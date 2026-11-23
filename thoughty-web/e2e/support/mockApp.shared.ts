@@ -146,6 +146,8 @@ export interface SetupMockAppOptions {
   monthlyRecapEmail?: Partial<MockOptInEmail>;
   /** The saved writing reminder email setting; off and never saved by default (its hour then reads 20). */
   writingReminderEmail?: Partial<MockOptInEmail>;
+  /** The saved year in review email setting; off and never saved by default (its hour then reads 9). */
+  yearReviewEmail?: Partial<MockOptInEmail>;
   /** The diaries' own writing reminder hours (Manage Diaries); none by default. */
   diaryWritingReminders?: MockDiaryWritingReminder[];
   /** The people the writer mentions; by default those the initial entries mention. */
@@ -235,6 +237,7 @@ export interface MockAppState {
   onThisDayEmail: MockOptInEmail;
   monthlyRecapEmail: MockOptInEmail;
   writingReminderEmail: MockOptInEmail;
+  yearReviewEmail: MockOptInEmail;
   diaryWritingReminders: MockDiaryWritingReminder[];
   people: MockPerson[];
   memoir: MockMemoirState;
@@ -417,6 +420,7 @@ export function createMockAppState(
     onThisDayEmail: createMockOptInEmail(options.onThisDayEmail),
     monthlyRecapEmail: createMockOptInEmail(options.monthlyRecapEmail),
     writingReminderEmail: createMockOptInEmail({ deliveryHour: 20, ...options.writingReminderEmail }),
+    yearReviewEmail: createMockOptInEmail({ deliveryHour: 9, ...options.yearReviewEmail }),
     diaryWritingReminders: (options.diaryWritingReminders || []).map((reminder) => ({ ...reminder })),
     people: options.people?.map((person) => ({ ...person, handles: [...person.handles] })) ?? mentionedPeople(options.initialEntries || []),
     memoir: createMockMemoirState(options.memoirProgram ?? null),

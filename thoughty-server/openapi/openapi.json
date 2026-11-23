@@ -17279,9 +17279,126 @@
         ]
       }
     },
+    "/api/year-review-email": {
+      "get": {
+        "operationId": "YearReviewEmailController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The setting",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptInEmailSettingsDto"
+                },
+                "example": {
+                  "enabled": true,
+                  "deliveryHour": 8,
+                  "timeZone": "Europe/Paris",
+                  "diaryId": 4,
+                  "nextSendAt": "2026-10-28T07:00:00.000Z",
+                  "emailAvailable": true
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get the year in review email setting (off until turned on)",
+        "tags": [
+          "Year in review email"
+        ]
+      },
+      "put": {
+        "description": "Once on, it arrives on January 1 at that local hour, about the year just ended, when that year has entries.",
+        "operationId": "YearReviewEmailController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOptInEmailDto"
+              },
+              "example": {
+                "enabled": true,
+                "deliveryHour": 8,
+                "timeZone": "Europe/Paris",
+                "diaryId": null
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The saved setting",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptInEmailSettingsDto"
+                },
+                "example": {
+                  "enabled": true,
+                  "deliveryHour": 8,
+                  "timeZone": "Europe/Paris",
+                  "diaryId": 4,
+                  "nextSendAt": "2026-10-28T07:00:00.000Z",
+                  "emailAvailable": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid hour or unknown time zone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Invalid hour or unknown time zone",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The diary does not belong to you",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "The diary does not belong to you",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Turn the year in review email on or off and choose its hour, time zone and diary",
+        "tags": [
+          "Year in review email"
+        ]
+      }
+    },
     "/api/email-unsubscribe": {
       "post": {
-        "description": "The token says which email it turns off (\"On this day\", the monthly recap or the writing reminder). The web unsubscribe page posts here, and the one-click unsubscribe header of the monthly recap and the writing reminder too (RFC 8058, `List-Unsubscribe=One-Click` in the body). Repeating it changes nothing.",
+        "description": "The token says which email it turns off (\"On this day\", the monthly recap, the writing reminder or the year in review). The web unsubscribe page posts here, and the one-click unsubscribe header of the monthly recap, the writing reminder and the year in review too (RFC 8058, `List-Unsubscribe=One-Click` in the body). Repeating it changes nothing.",
         "operationId": "EmailUnsubscribeController_unsubscribe",
         "parameters": [
           {
@@ -32475,7 +32592,8 @@
             "enum": [
               "on-this-day",
               "monthly-recap",
-              "writing-reminder"
+              "writing-reminder",
+              "year-review"
             ],
             "description": "The email the link turned off"
           }

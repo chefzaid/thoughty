@@ -1,21 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { EntriesQueryService, type OnThisDayEntry } from '@/modules/entries';
-import { summarizeRecordedMoods, YearReviewService } from '@/modules/review';
-import { rankTags } from '@/modules/review/year-review-stats';
+import { summarizeWriting, type WritingSummary, YearReviewService } from '@/modules/review';
 import { monthRange, type RecapMonth } from './monthly-recap-schedule';
 
 /** Tags the recap names at most. */
 export const RECAP_TOP_TAGS = 3;
 
 /** One month of writing, as the monthly recap email tells it. */
-export interface MonthlyRecap extends RecapMonth {
+export interface MonthlyRecap extends RecapMonth, WritingSummary {
   diaryId: number | null;
-  entries: number;
-  words: number;
-  writingDays: number;
-  topTags: Array<{ tag: string; count: number }>;
-  /** The moods the writer recorded that month, without AI; null when none was. */
-  mood: { average: number; entries: number } | null;
   /** One entry from the same calendar month in an earlier year. */
   memory: OnThisDayEntry | null;
 }
@@ -41,16 +34,6 @@ export class MonthlyRecapService {
       return null;
     }
 
-    const mood = summarizeRecordedMoods(entries);
-    return {
-      ...month,
-      diaryId,
-      entries: entries.length,
-      words: entries.reduce((sum, entry) => sum + entry.words, 0),
-      writingDays: new Set(entries.map((entry) => entry.date)).size,
-      topTags: rankTags(entries).slice(0, RECAP_TOP_TAGS),
-      mood: mood ? { average: mood.average, entries: mood.entries } : null,
-      memory,
-    };
+    return { ...month, diaryId, ...summarizeWriting(entries, RECAP_TOP_TAGS), memory };
   }
 }

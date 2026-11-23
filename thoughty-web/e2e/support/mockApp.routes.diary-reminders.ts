@@ -11,7 +11,7 @@ const DIARY_REMINDER_PATH = /^\/api\/writing-reminder-email\/diaries\/(\d+)$/;
 /** The diaries' own reminders move to the account reminder's new zone, each at its own hour, as the API moves them. */
 export function followTimeZone(state: MockAppState, timeZone: string) {
   state.diaryWritingReminders = state.diaryWritingReminders.map((reminder) =>
-    reminder.timeZone === timeZone ? reminder : { ...reminder, timeZone, nextSendAt: nextSendAt(reminder.deliveryHour, timeZone, false) },
+    reminder.timeZone === timeZone ? reminder : { ...reminder, timeZone, nextSendAt: nextSendAt(reminder.deliveryHour, timeZone, 'day') },
   );
 }
 
@@ -53,7 +53,7 @@ export async function handleDiaryReminderRoutes({ route, request, pathname, stat
     const timeZone = state.writingReminderEmail.timeZone ?? changes.timeZone;
     state.diaryWritingReminders = [
       ...others,
-      { diaryId, deliveryHour: changes.deliveryHour, timeZone, nextSendAt: nextSendAt(changes.deliveryHour, timeZone, false) },
+      { diaryId, deliveryHour: changes.deliveryHour, timeZone, nextSendAt: nextSendAt(changes.deliveryHour, timeZone, 'day') },
     ];
   }
   await fulfillJson(route, answer(state));
