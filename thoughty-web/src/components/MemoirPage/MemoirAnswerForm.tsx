@@ -10,6 +10,9 @@ import { useRecordingUpload } from './useRecordingUpload';
 import { formatRecordingTime, isVoiceRecordingSupported, useVoiceRecorder } from './useVoiceRecorder';
 import './MemoirAnswerForm.css';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
+import { confirmAiRequest } from '../DiaryAi/aiConsent';
+import { useRequestAiConsent } from '../DiaryAi/aiConsentContext';
+import type { DiaryAiMode } from '../../utils/diaryAi';
 
 const MAX_RECORDING_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_AUDIO = 'audio/mpeg,audio/mp4,audio/x-m4a,audio/aac,audio/ogg,audio/wav,audio/webm';
@@ -34,14 +37,17 @@ interface MemoirAnswerFormProps {
   /** The day the answer will be dated (`YYYY-MM-DD`). */
   readonly answerDate?: string;
   readonly language?: Language;
-  /** False when the memoir diary has AI off: no transcription and no follow-up questions. */
-  readonly aiAllowed?: boolean;
+  /**
+   * The memoir diary's AI mode: with AI off, no transcription and no follow-up questions; asking each time, each
+   * shows the writer what it sends first.
+   */
+  readonly aiMode?: DiaryAiMode;
   /** The memoir diary, which a transcription names so the server can refuse it when that diary has AI off. */
   readonly diaryId?: number | null;
   readonly t: TranslationFunction;
 }
 
-function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras = [], answerDate = '', language = 'en', aiAllowed = true, diaryId = null, t }: MemoirAnswerFormProps) {
+function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras = [], answerDate = '', language = 'en', aiMode = 'on', diaryId = null, t }: MemoirAnswerFormProps) {
   const { upload, attachmentsService } = useRecordingUpload();
   const recorder = useVoiceRecorder();
   const [text, setText] = useState('');
@@ -49,7 +55,8 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
   const [problem, setProblem] = useState<FormProblem>(null);
   const [busy, setBusy] = useState<'transcribing' | 'saving' | null>(null);
   // Transcribing a recording is AI, left out while AI is switched off or off in the memoir diary
-  const aiOn = useFeatureFlag('ai') && aiAllowed;
+  const aiOn = useFeatureFlag('ai') && aiMode !== 'off';
+  const requestConsent = useRequestAiConsent();
   const fileInput = useRef<HTMLInputElement>(null);
   const answerField = useRef<HTMLTextAreaElement>(null);
   const fieldId = `memoir-answer-${questionId}`;
@@ -70,10 +77,21 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
   };
 
   const handleTranscribe = async () => {
+    const recording = recorder.recording;
+    if (!recording) return;
     setBusy('transcribing');
     setProblem(null);
+    // Asked before the upload, so a recording the writer keeps from the AI is not uploaded for it either
+    const consent = await confirmAiRequest(aiMode, requestConsent, {
+      task: 'transcription',
+      recording: { name: recording.file.name, seconds: recording.seconds },
+    });
+    if (!consent.send) {
+      setBusy(null);
+      return;
+    }
     const attachmentId = await uploadRecording();
-    const transcription = attachmentId ? await attachmentsService.transcribeAttachment(attachmentId, diaryId) : null;
+    const transcription = attachmentId ? await attachmentsService.transcribeAttachment(attachmentId, diaryId, consent.aiConsent) : null;
     setBusy(null);
     if (!attachmentId) {
       setProblem('upload');
@@ -137,7 +155,17 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
         onChange={(event) => setText(event.target.value)}
       />
       <p id={`${fieldId}-note`} className="memoir-hint">{t('memoirPrivateNote')}</p>
-      {aiOn && <MemoirFollowUps questionId={questionId} answer={text} onUse={addFollowUp} disabled={busy !== null} t={t} />}
+      {aiOn && (
+        <MemoirFollowUps
+          questionId={questionId}
+          questionText={questionText}
+          answer={text}
+          onUse={addFollowUp}
+          disabled={busy !== null}
+          aiMode={aiMode}
+          t={t}
+        />
+      )}
 
       <div className="memoir-voice">
         {recorder.status === 'recording' ? (

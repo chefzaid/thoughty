@@ -22,6 +22,7 @@ import { entryTextStyle, type EntrySpacing } from '../../types/config';
 import { mutedTextClass } from '../../utils/tintedText';
 import { placedAttachmentIds } from '../../utils/inlineImages';
 import { isImageAttachment } from '../../utils/attachments';
+import type { DiaryAiMode } from '../../utils/diaryAi';
 import {
     extractDate,
     getEntryDiaryBadgeStyle,
@@ -246,14 +247,14 @@ export function EntryBodySection({
     tagMetadata,
     onDeleteRevision,
     onHandleDeleteRevision,
-    aiAllowed,
+    aiMode,
     t,
 }: Readonly<{
     entry: Entry;
     isDark: boolean;
     theme: Config['theme'];
-    /** Whether the AI may read the entry, so its recordings can be transcribed. */
-    aiAllowed: boolean;
+    /** The AI mode of the entry's diary, which its recordings' transcription follows. */
+    aiMode: DiaryAiMode;
     fontColor?: string;
     /** The writer's line and letter spacing for the entry's text. */
     spacing: EntrySpacing;
@@ -338,7 +339,7 @@ export function EntryBodySection({
                     attachments={belowText}
                     theme={theme}
                     t={t}
-                    aiAllowed={aiAllowed}
+                    aiMode={aiMode}
                 />
             )}
             <EntryHistorySection

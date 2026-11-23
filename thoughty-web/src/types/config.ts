@@ -37,6 +37,7 @@ export interface Config {
   openRouterModel?: string;
   openRouterTagModel?: string;
   openRouterWritingModel?: string;
+  openRouterChatModel?: string;
   openRouterSummaryModel?: string;
   openRouterPromptModel?: string;
   autoTagMaxTags?: string | number;

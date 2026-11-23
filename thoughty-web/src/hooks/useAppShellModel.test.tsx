@@ -115,9 +115,9 @@ describe('useAppShellModel', () => {
     ]);
     expect(getChatHistory).toHaveBeenCalledWith(5);
 
-    await expect(layoutProps.handleAiChat(5, 'entry text', [{ role: 'user', content: 'hello' }]))
+    await expect(layoutProps.handleAiChat({ id: 5, content: 'entry text' } as Entry, [{ role: 'user', content: 'hello' }]))
       .resolves.toBe('assistant reply');
-    expect(aiChat).toHaveBeenCalledWith(5, 'entry text', [{ role: 'user', content: 'hello' }]);
+    expect(aiChat).toHaveBeenCalledWith(5, 'entry text', [{ role: 'user', content: 'hello' }], undefined);
 
     await expect(routesProps.handleRenameTag('current', 'renamed')).resolves.toBe(true);
     expect(renameTag).toHaveBeenCalledWith('current', 'renamed');

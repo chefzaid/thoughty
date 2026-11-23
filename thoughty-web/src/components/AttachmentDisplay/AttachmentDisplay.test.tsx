@@ -134,7 +134,7 @@ describe("AttachmentDisplay", () => {
     );
     await user.click(screen.getByRole("button", { name: "transcribeAudio" }));
 
-    expect(transcribeAttachment).toHaveBeenCalledWith(3);
+    expect(transcribeAttachment).toHaveBeenCalledWith(3, null, undefined);
     expect(
       await screen.findByText("A spoken journal thought."),
     ).toBeInTheDocument();

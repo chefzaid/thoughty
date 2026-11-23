@@ -200,6 +200,13 @@ describe('MemoirPage', () => {
     expect(screen.queryByRole('group', { name: 'memoirFollowUpsTitle' })).not.toBeInTheDocument();
   });
 
+  it('offers the follow-up questions in a memoir diary that asks each time', async () => {
+    renderPage({ diaries: [makeDiary({ id: 6, name: 'My memoir', aiMode: 'ask' })] });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'memoirAnswerQuestion' }));
+    expect(screen.getByRole('group', { name: 'memoirFollowUpsTitle' })).toBeInTheDocument();
+  });
+
   it('places an answer in one of the writer’s life eras', async () => {
     attachmentsService.list.mockResolvedValue({
       data: {

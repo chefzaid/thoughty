@@ -188,6 +188,8 @@ export interface MockAppState {
     defaultCommentPolicy?: "everyone" | "followers" | "closed";
     ttsVoiceUri?: string;
     openRouterModel?: string;
+    openRouterChatModel?: string;
+    openRouterPromptModel?: string;
     /** Prompt card ids drawn since their deck was last used up, comma-separated. */
     promptCardsDrawn?: string;
     /** The writer's own entry templates, as the JSON text the setting holds. */

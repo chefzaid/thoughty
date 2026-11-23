@@ -2,19 +2,21 @@ import { useId, useRef } from 'react';
 import { useDialogFocus } from '../../hooks/useDialogFocus';
 import type { Config } from '../../types';
 import type { TranslationFunction } from '../../utils/translations';
-import { aiConsentModel, type AiConsentRequest } from './aiConsent';
+import type { AiConsentModelConfig, AiConsentRequest } from './aiConsent';
+import AiConsentPreview from './AiConsentPreview';
 
 interface AiConsentDialogProps {
   /** The request waiting for the writer's answer; the dialog is closed while there is none. */
   readonly request: AiConsentRequest | null;
-  readonly config: Pick<Config, 'theme' | 'openRouterModel' | 'openRouterTagModel' | 'openRouterWritingModel' | 'openRouterSummaryModel'>;
+  readonly config: Pick<Config, 'theme'> & AiConsentModelConfig;
   readonly onAnswer: (agreed: boolean) => void;
   readonly t: TranslationFunction;
 }
 
 /**
  * Before an AI request from a diary that asks each time: shows exactly the text it sends, what goes with it and
- * where, and sends nothing until the writer confirms. Focus starts on Cancel, and Escape cancels.
+ * where (or the recording a transcription sends), and sends nothing until the writer confirms. Focus starts on
+ * Cancel, and Escape cancels.
  */
 export default function AiConsentDialog({ request, config, onAnswer, t }: AiConsentDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -29,7 +31,6 @@ export default function AiConsentDialog({ request, config, onAnswer, t }: AiCons
 
   const isLight = config.theme === 'light';
   const muted = isLight ? 'text-gray-600' : 'text-gray-400';
-  const model = aiConsentModel(config, request.task);
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center">
@@ -52,28 +53,10 @@ export default function AiConsentDialog({ request, config, onAnswer, t }: AiCons
         }`}
       >
         <h3 id={titleId} className="text-lg font-semibold mb-2">{t('aiConsentTitle')}</h3>
-        <p id={introId} className={`text-sm mb-3 ${muted}`}>{t('aiConsentIntro')}</p>
-        <pre
-          className={`privacy-text whitespace-pre-wrap break-words font-sans text-sm max-h-64 overflow-y-auto p-3 rounded-lg border ${
-            isLight ? 'bg-gray-50 border-gray-200' : 'bg-gray-900 border-gray-700'
-          }`}
-          data-testid="ai-consent-text"
-        >
-          {request.text}
-        </pre>
-        {request.details && request.details.length > 0 && (
-          <dl className="mt-3 text-sm space-y-1">
-            {request.details.map((detail) => (
-              <div key={detail.label} className="flex flex-wrap gap-x-2">
-                <dt className={muted}>{t(detail.label)}</dt>
-                <dd className="privacy-text">{detail.value}</dd>
-              </div>
-            ))}
-          </dl>
-        )}
-        <p className={`text-sm mt-3 ${muted}`}>
-          {model ? t('aiConsentProvider', { model }) : t('aiConsentProviderDefault')}
+        <p id={introId} className={`text-sm mb-3 ${muted}`}>
+          {t(request.task === 'transcription' ? 'aiConsentRecordingIntro' : 'aiConsentIntro')}
         </p>
+        <AiConsentPreview request={request} config={config} isLight={isLight} t={t} />
         <div className="flex justify-end gap-3 mt-5">
           <button
             type="button"

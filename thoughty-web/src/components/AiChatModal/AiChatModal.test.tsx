@@ -143,10 +143,24 @@ describe('AiChatModal', () => {
       await user.type(input, 'What does this entry tell me?{enter}');
       
       expect(defaultProps.onSend).toHaveBeenCalledWith(
-        mockEntry.id,
-        mockEntry.content,
+        mockEntry,
         [{ role: 'user', content: 'What does this entry tell me?' }]
       );
+    });
+
+    it('puts a message the writer did not send back in the field, with no error and no reply', async () => {
+      const user = userEvent.setup();
+      const notSent = vi.fn().mockResolvedValue(undefined);
+      render(<AiChatModal {...defaultProps} onSend={notSent} />);
+
+      const input = await getReadyInput();
+      await user.type(input, 'Hello{enter}');
+
+      await waitFor(() => expect(input.value).toBe('Hello'));
+      expect(input).toHaveFocus();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(screen.queryByText('Hello', { selector: 'span' })).not.toBeInTheDocument();
+      expect(notSent).toHaveBeenCalledOnce();
     });
 
     it('does not send empty messages', async () => {

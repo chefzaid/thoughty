@@ -157,11 +157,10 @@ function OpenEntryViewMode({
     t,
 }: Readonly<EntryViewModeProps>) {
     // The AI actions are left out while AI is switched off, and in a diary with AI off. In one that asks each
-    // time, Rephrase and Summarize show what they would send first; chat and transcription are not offered there
+    // time, each of them (chat messages and transcriptions too) shows what it would send first
     const aiMode = diaryAiMode(diaries, entry.diary_id);
     const aiOn = useFeatureFlag('ai') && aiMode !== 'off';
-    const unaskedAiOn = aiOn && aiMode === 'on';
-    const onDiscuss = unaskedAiOn ? discuss : undefined;
+    const onDiscuss = aiOn ? discuss : undefined;
     const onRephrase = aiOn ? rephrase : undefined;
     const onSummarize = aiOn ? summarize : undefined;
     const publicSharing = useFeatureFlag('publicSharing');
@@ -350,7 +349,7 @@ function OpenEntryViewMode({
                 tagMetadata={tagMetadata}
                 onDeleteRevision={onDeleteRevision}
                 onHandleDeleteRevision={handleDeleteRevision}
-                aiAllowed={unaskedAiOn}
+                aiMode={aiMode}
                 t={t}
             />
             <ShareImageDialog

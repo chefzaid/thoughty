@@ -36,6 +36,51 @@ describe('AiConsentDialog', () => {
     expect(onAnswer).toHaveBeenLastCalledWith(false);
   });
 
+  it('shows an entry chat’s conversation after the entry, each message by who wrote it, and the chat model', () => {
+    render(
+      <AiConsentDialog
+        request={{
+          text: 'A dream about the sea',
+          conversation: [
+            { role: 'user', content: 'Why the sea?' },
+            { role: 'assistant', content: 'It often means change.' },
+            { role: 'user', content: 'What change?' },
+          ],
+          task: 'chat',
+        }}
+        config={{ openRouterChatModel: 'a/chat', openRouterModel: 'a/main' }}
+        onAnswer={vi.fn()}
+        t={tFor('en')}
+      />,
+    );
+
+    const conversation = screen.getByTestId('ai-consent-conversation');
+    expect(screen.getByText('The conversation, your new message last')).toBeInTheDocument();
+    expect(conversation).toHaveClass('privacy-text');
+    expect([...conversation.querySelectorAll('li')].map((item) => item.textContent)).toEqual([
+      'You: Why the sea?',
+      'AI: It often means change.',
+      'You: What change?',
+    ]);
+    expect(screen.getByRole('dialog')).toHaveTextContent('It goes to OpenRouter, for the model a/chat.');
+  });
+
+  it('names a recording, with its length when known, and the speech-to-text model', () => {
+    const { rerender } = render(
+      <AiConsentDialog request={{ task: 'transcription', recording: { name: 'voice.mp3', seconds: 83.4 } }} config={{}} onAnswer={vi.fn()} t={tFor('en')} />,
+    );
+    const dialog = screen.getByRole('dialog', { name: 'Send this to the AI?' });
+    expect(dialog).toHaveAccessibleDescription('This diary asks before each AI request. This recording will be sent to be turned into text:');
+    expect(screen.getByTestId('ai-consent-recording')).toHaveTextContent('voice.mp3 (1:23)');
+    expect(screen.getByTestId('ai-consent-recording')).toHaveClass('privacy-text');
+    expect(dialog).toHaveTextContent('It goes to OpenRouter, for the speech-to-text model Thoughty uses.');
+    expect(screen.queryByTestId('ai-consent-text')).not.toBeInTheDocument();
+
+    rerender(<AiConsentDialog request={{ task: 'transcription', recording: { name: 'souvenir.webm', seconds: null } }} config={{}} onAnswer={vi.fn()} t={tFor('fr')} />);
+    expect(screen.getByTestId('ai-consent-recording')).toHaveTextContent(/^souvenir\.webm$/);
+    expect(screen.getByRole('dialog')).toHaveTextContent('Il part chez OpenRouter, pour le modèle de transcription que Thoughty utilise.');
+  });
+
   it('says so in French when Thoughty’s default model takes it', () => {
     render(<AiConsentDialog request={{ text: 'Un rêve', task: 'writing' }} config={{}} onAnswer={vi.fn()} t={tFor('fr')} />);
 

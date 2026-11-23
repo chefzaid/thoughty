@@ -10,6 +10,7 @@ function setup(requestConsent = vi.fn().mockResolvedValue(true)) {
   const aiService = {
     fixWriting: vi.fn().mockResolvedValue({ data: 'Rewritten', refusal: null }),
     summarizeEntry: vi.fn().mockResolvedValue('A summary'),
+    chat: vi.fn().mockResolvedValue('A reply'),
   };
   const options = {
     aiService,
@@ -74,6 +75,27 @@ describe('useEntryAiActions', () => {
 
     await expect(result.current.handleSummarize(entry(1), {})).resolves.toBe('A summary');
     expect(aiService.summarizeEntry).toHaveBeenLastCalledWith(44, {}, undefined);
+    expect(requestConsent).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows the entry and the whole conversation before each chat message of a diary that asks each time', async () => {
+    const requestConsent = vi.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    const { result, aiService } = setup(requestConsent);
+    const messages = [
+      { role: 'user' as const, content: 'Why the sea?' },
+      { role: 'assistant' as const, content: 'It often means change.' },
+      { role: 'user' as const, content: 'What change?' },
+    ];
+
+    await expect(result.current.handleChat(entry(2), messages)).resolves.toBeUndefined();
+    expect(requestConsent).toHaveBeenCalledWith({ text: 'A dream about the sea', conversation: messages, task: 'chat' });
+    expect(aiService.chat).not.toHaveBeenCalled();
+
+    await expect(result.current.handleChat(entry(2), messages)).resolves.toBe('A reply');
+    expect(aiService.chat).toHaveBeenCalledWith(44, 'A dream about the sea', messages, true);
+
+    await expect(result.current.handleChat(entry(1), messages)).resolves.toBe('A reply');
+    expect(aiService.chat).toHaveBeenLastCalledWith(44, 'A dream about the sea', messages, undefined);
     expect(requestConsent).toHaveBeenCalledTimes(2);
   });
 });

@@ -3,7 +3,7 @@ import {
   sortEntries,
   unique,
 } from './mockApp.shared';
-import { fulfillApiError, fulfillJson, sortStrings, toEntryResponse, type RouteContext } from './mockApp.route-utils';
+import { fulfillJson, refusedForDiary, sortStrings, toEntryResponse, type RouteContext } from './mockApp.route-utils';
 import { isMockSealed, mockOpenedCapsules } from './mockApp.routes.time-capsules';
 import { mockDueRereads } from './mockApp.routes.reread-reminders';
 import { mockPersonDates } from './mockApp.person-dates';
@@ -21,27 +21,6 @@ function getAiFixPrefix(mode?: string): string {
     return 'Polished';
   }
   return 'Corrected';
-}
-
-/**
- * What the API answers an AI request about the text of `diaryId`: `403 DIARY_AI_OFF` for a diary with AI off, and
- * `403 DIARY_AI_CONSENT_REQUIRED` for one that asks each time when the request carries no `aiConsent`.
- */
-async function refusedForDiary(
-  { route, state }: RouteContext,
-  diaryId: number | null | undefined,
-  aiConsent: boolean | undefined,
-): Promise<boolean> {
-  const mode = diaryId == null ? 'on' : state.diaries.find((diary) => diary.id === diaryId)?.aiMode;
-  if (mode === 'off') {
-    await fulfillApiError(route, 403, 'DIARY_AI_OFF', 'AI is off in this diary');
-    return true;
-  }
-  if (mode === 'ask' && aiConsent !== true) {
-    await fulfillApiError(route, 403, 'DIARY_AI_CONSENT_REQUIRED', 'This diary asks before each AI request: confirm what is sent first');
-    return true;
-  }
-  return false;
 }
 
 async function handleStatsAndAiRoutes(context: RouteContext): Promise<boolean> {
@@ -192,7 +171,12 @@ async function handleStatsAndAiRoutes(context: RouteContext): Promise<boolean> {
   }
 
   if (pathname === '/api/ai/chat') {
-    state.lastAiChatPayload = request.postDataJSON();
+    const payload = request.postDataJSON() as { entryId: number; aiConsent?: boolean };
+    state.lastAiChatPayload = payload;
+    const entry = state.entries.find((candidate) => candidate.id === payload.entryId);
+    if (await refusedForDiary(context, entry ? entry.diaryId ?? 1 : null, payload.aiConsent)) {
+      return true;
+    }
     await fulfillJson(route, { reply: 'This entry reflects a thoughtful focus on the day.' });
     return true;
   }

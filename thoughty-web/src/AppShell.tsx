@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom';
 import LoadingSpinner from './components/LoadingSpinner/LoadingSpinner';
 import { DiaryAiContext } from './components/DiaryAi/diaryAiScope';
 import AiConsentDialog from './components/DiaryAi/AiConsentDialog';
+import { AiConsentContext } from './components/DiaryAi/aiConsentContext';
 import NotificationsMenu from './components/Notifications/NotificationsMenu';
 import IntroPage from './components/IntroPage/IntroPage';
 import { useAppShellModel } from './hooks/useAppShellModel';
@@ -138,18 +139,20 @@ function AppShell() {
 
   return renderLazy(
     <DiaryAiContext.Provider value={diaries}>
-      <AuthenticatedAppLayout
-        {...authenticatedLayoutProps}
-        notifications={<NotificationsMenu language={authenticatedLayoutProps.config.language} t={authenticatedLayoutProps.t} />}
-      >
-        <AuthenticatedRoutes {...authenticatedRoutesProps} />
-      </AuthenticatedAppLayout>
-      <AiConsentDialog
-        request={aiConsent.request}
-        config={authenticatedLayoutProps.config}
-        onAnswer={aiConsent.answer}
-        t={authenticatedLayoutProps.t}
-      />
+      <AiConsentContext.Provider value={aiConsent.requestConsent}>
+        <AuthenticatedAppLayout
+          {...authenticatedLayoutProps}
+          notifications={<NotificationsMenu language={authenticatedLayoutProps.config.language} t={authenticatedLayoutProps.t} />}
+        >
+          <AuthenticatedRoutes {...authenticatedRoutesProps} />
+        </AuthenticatedAppLayout>
+        <AiConsentDialog
+          request={aiConsent.request}
+          config={authenticatedLayoutProps.config}
+          onAnswer={aiConsent.answer}
+          t={authenticatedLayoutProps.t}
+        />
+      </AiConsentContext.Provider>
     </DiaryAiContext.Provider>,
   );
 }

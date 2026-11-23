@@ -7,6 +7,12 @@ import type { Attachment } from '../../types';
 import { getTranslation } from '../../utils/translations';
 import { makeDiary } from '../../test/diaryFixture';
 
+vi.mock('../../hooks/useApiServices', () => ({ useApiServices: () => ({ attachmentsService: { transcribeAttachment: vi.fn() } }) }));
+vi.mock('../AttachmentPreview/useAuthenticatedAttachmentUrl', () => ({
+    useAuthenticatedAttachmentUrl: (storedFilename: string) => `blob:${storedFilename}`,
+    useAuthenticatedAttachmentResource: (storedFilename: string) => ({ url: `blob:${storedFilename}`, status: 'ready' }),
+}));
+
 const t = (key: string) => getTranslation('en', key);
 
 describe('an entry in a diary with AI off', () => {
@@ -22,19 +28,21 @@ describe('an entry in a diary with AI off', () => {
         expect(Boolean(screen.queryByTitle('Discuss entry'))).toBe(offered);
     });
 
-    it('offers Rephrase and Summarize in a diary that asks each time, but not chat or transcription', () => {
+    it('offers Rephrase, Summarize, chat and transcription in a diary that asks each time, each asking first', () => {
         const diaries = [makeDiary({ id: 1, name: 'Dreams', aiMode: 'ask' })];
-        render(<EntryViewMode {...createEntryViewModeProps({ diaries, onDiscuss: vi.fn(), onRephrase: vi.fn(), onSummarize: vi.fn() })} />);
+        const entry = { ...createEntryViewModeProps().entry, attachments: [recording] };
+        render(<EntryViewMode {...createEntryViewModeProps({ entry, diaries, onDiscuss: vi.fn(), onRephrase: vi.fn(), onSummarize: vi.fn() })} />);
 
-        expect(screen.queryByTitle('Discuss entry')).not.toBeInTheDocument();
+        expect(screen.getByTitle('Discuss entry')).toBeInTheDocument();
         expect(screen.getByTitle('Rephrase entry')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'transcribeAudio' })).toBeInTheDocument();
     });
 
     it('offers no transcription for a recording, and still shows a transcript already made', () => {
-        const { container } = render(<AudioTranscript attachment={recording} attachmentsService={{} as never} isDark t={t} aiAllowed={false} />);
+        const { container } = render(<AudioTranscript attachment={recording} attachmentsService={{} as never} isDark t={t} aiMode="off" />);
         expect(container).toBeEmptyDOMElement();
 
-        render(<AudioTranscript attachment={{ ...recording, transcript: 'Said before' }} attachmentsService={{} as never} isDark t={t} aiAllowed={false} />);
+        render(<AudioTranscript attachment={{ ...recording, transcript: 'Said before' }} attachmentsService={{} as never} isDark t={t} aiMode="off" />);
         expect(screen.getByText('Said before')).toBeInTheDocument();
     });
 });

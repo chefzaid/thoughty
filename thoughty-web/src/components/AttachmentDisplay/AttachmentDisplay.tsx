@@ -10,6 +10,7 @@ import {
 } from "../../utils/attachments";
 import { useApiServices } from "../../hooks/useApiServices";
 import { mutedTextClass } from "../../utils/tintedText";
+import type { DiaryAiMode } from "../../utils/diaryAi";
 import AudioTranscript from "./AudioTranscript";
 import AttachmentPreviewContent from "../AttachmentPreview/AttachmentPreviewContent";
 import AttachmentPreviewDialog from "../AttachmentPreview/AttachmentPreviewDialog";
@@ -20,8 +21,8 @@ interface AttachmentDisplayProps {
   readonly attachments: Attachment[];
   readonly theme?: "light" | "dark";
   readonly t: (key: string, params?: Record<string, string | number>) => string;
-  /** False in a diary with AI off, where recordings are not transcribed. */
-  readonly aiAllowed?: boolean;
+  /** The AI mode of the entry's diary: with it off recordings are not transcribed, and asking each time asks first. */
+  readonly aiMode?: DiaryAiMode;
 }
 
 interface ActivePreviewAttachment {
@@ -42,7 +43,7 @@ function StoredAttachmentResource({
   return children(url);
 }
 
-function AttachmentDisplay({ attachments, theme, t, aiAllowed = true }: AttachmentDisplayProps) {
+function AttachmentDisplay({ attachments, theme, t, aiMode = "on" }: AttachmentDisplayProps) {
   const [activePreview, setActivePreview] =
     useState<ActivePreviewAttachment | null>(null);
   const { attachmentsService } = useApiServices();
@@ -187,7 +188,8 @@ function AttachmentDisplay({ attachments, theme, t, aiAllowed = true }: Attachme
                       attachmentsService={attachmentsService}
                       isDark={isDark}
                       t={t}
-                      aiAllowed={aiAllowed}
+                      aiMode={aiMode}
+                      sourceUrl={url}
                     />
                   )}
                 </div>

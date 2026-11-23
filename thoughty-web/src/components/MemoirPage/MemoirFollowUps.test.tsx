@@ -11,7 +11,7 @@ const t = (key: string, params?: Record<string, string | number>) => getTranslat
 const answer = 'A narrow house with a fig tree, and my grandmother singing in the kitchen.';
 
 function renderFollowUps(text = answer, onUse = vi.fn()) {
-  const view = render(<MemoirFollowUps questionId="childhood-home" answer={text} onUse={onUse} t={t} />);
+  const view = render(<MemoirFollowUps questionId="childhood-home" questionText="What was home like?" answer={text} onUse={onUse} t={t} />);
   return { ...view, onUse };
 }
 
@@ -121,7 +121,7 @@ describe('MemoirFollowUps', () => {
   });
 
   it('follows the interface language', () => {
-    render(<MemoirFollowUps questionId="childhood-home" answer={answer} onUse={vi.fn()} t={(key, params) => getTranslation('fr', key, params)} />);
+    render(<MemoirFollowUps questionId="childhood-home" questionText="What was home like?" answer={answer} onUse={vi.fn()} t={(key, params) => getTranslation('fr', key, params)} />);
 
     expect(screen.getByRole('group', { name: 'Mode entretien' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Me poser des questions de relance' })).toBeInTheDocument();

@@ -23,6 +23,8 @@ describe('AI consent', () => {
     expect(aiConsentModel({ openRouterWritingModel: ' ', openRouterModel: 'a/main' }, 'writing')).toBe('a/main');
     expect(aiConsentModel({ openRouterTagModel: 'a/tags' }, 'tag')).toBe('a/tags');
     expect(aiConsentModel({ openRouterSummaryModel: 'a/summary' }, 'summary')).toBe('a/summary');
+    expect(aiConsentModel({ openRouterChatModel: 'a/chat' }, 'chat')).toBe('a/chat');
+    expect(aiConsentModel({ openRouterPromptModel: 'a/prompt', openRouterModel: 'a/main' }, 'prompt')).toBe('a/prompt');
     expect(aiConsentModel({}, 'summary')).toBeNull();
   });
 

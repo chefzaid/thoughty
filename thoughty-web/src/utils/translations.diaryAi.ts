@@ -16,6 +16,14 @@ export type DiaryAiTranslationKey =
   | 'aiConsentProvider'
   | 'aiConsentProviderDefault'
   | 'aiConsentTags'
+  | 'aiConsentQuestion'
+  | 'aiConsentAskedBefore'
+  | 'aiConsentConversation'
+  | 'aiConsentYou'
+  | 'aiConsentAssistant'
+  | 'aiConsentRecordingIntro'
+  | 'aiConsentRecordingLength'
+  | 'aiConsentTranscriptionProvider'
   | 'aiConsentSend';
 
 /** The AI privacy mode of a diary, in Manage Diaries, what the journal-wide AI actions say of it, and the consent dialog. */
@@ -36,6 +44,14 @@ export const diaryAiTranslations: Record<Language, Record<DiaryAiTranslationKey,
     aiConsentProvider: 'It goes to OpenRouter, for the model {model}.',
     aiConsentProviderDefault: 'It goes to OpenRouter, for the model Thoughty uses by default.',
     aiConsentTags: 'Tags it already has',
+    aiConsentQuestion: 'The question',
+    aiConsentAskedBefore: 'Questions already offered',
+    aiConsentConversation: 'The conversation, your new message last',
+    aiConsentYou: 'You:',
+    aiConsentAssistant: 'AI:',
+    aiConsentRecordingIntro: 'This diary asks before each AI request. This recording will be sent to be turned into text:',
+    aiConsentRecordingLength: '{name} ({length})',
+    aiConsentTranscriptionProvider: 'It goes to OpenRouter, for the speech-to-text model Thoughty uses.',
     aiConsentSend: 'Send',
   },
   fr: {
@@ -54,6 +70,14 @@ export const diaryAiTranslations: Record<Language, Record<DiaryAiTranslationKey,
     aiConsentProvider: 'Il part chez OpenRouter, pour le modèle {model}.',
     aiConsentProviderDefault: 'Il part chez OpenRouter, pour le modèle que Thoughty utilise par défaut.',
     aiConsentTags: "Tags qu'elle a déjà",
+    aiConsentQuestion: 'La question',
+    aiConsentAskedBefore: 'Questions déjà proposées',
+    aiConsentConversation: 'La conversation, votre nouveau message en dernier',
+    aiConsentYou: 'Vous :',
+    aiConsentAssistant: 'IA :',
+    aiConsentRecordingIntro: "Ce journal demande avant chaque requête d'IA. Cet enregistrement sera envoyé pour être transcrit :",
+    aiConsentRecordingLength: '{name} ({length})',
+    aiConsentTranscriptionProvider: 'Il part chez OpenRouter, pour le modèle de transcription que Thoughty utilise.',
     aiConsentSend: 'Envoyer',
   },
 };

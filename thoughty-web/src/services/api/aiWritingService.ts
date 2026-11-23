@@ -80,11 +80,12 @@ export const createAiWritingService = (authFetch: AiAuthFetch) => {
     entryId: number,
     entryContent: string,
     messages: Array<{ role: "user" | "assistant"; content: string }>,
+    aiConsent?: boolean,
   ): Promise<string | null> => {
     try {
       const response = await authFetch("/api/ai/chat", {
         method: "POST",
-        body: JSON.stringify({ entryId, entryContent, messages }),
+        body: JSON.stringify({ entryId, entryContent, messages, ...withConsent(aiConsent) }),
       });
 
       const data = await safeJsonParse<{ reply?: string }>(response);

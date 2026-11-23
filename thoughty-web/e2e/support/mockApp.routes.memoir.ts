@@ -10,7 +10,7 @@ import {
 } from './mockApp.memoir';
 import { mockDiary } from './mockApp.diaries';
 import { findUnplacedAttachment, placeInlineImages } from './mockApp.routes.attachments';
-import { fulfillApiError, fulfillJson, type RouteContext } from './mockApp.route-utils';
+import { fulfillApiError, fulfillJson, refusedForDiary, type RouteContext } from './mockApp.route-utils';
 import { sortEntries } from './mockApp.shared';
 
 /** The questions of the memoir with its chosen themes, in life order. */
@@ -195,13 +195,15 @@ const MOCK_FOLLOW_UPS = [
 ];
 
 /** Interview mode, refused as `MemoirFollowUpsService` refuses it. */
-async function suggestFollowUps({ route, request, state }: RouteContext): Promise<void> {
-  const payload = request.postDataJSON() as { questionId: string; text: string; asked?: string[] };
+async function suggestFollowUps(context: RouteContext): Promise<void> {
+  const { route, request, state } = context;
+  const payload = request.postDataJSON() as { questionId: string; text: string; asked?: string[]; aiConsent?: boolean };
   state.memoir.lastFollowUpsPayload = payload;
   if (!QUESTIONS.some((question) => question.id === payload.questionId)) {
     return fulfillApiError(route, 404, 'MEMOIR_UNKNOWN_QUESTION', 'Unknown memoir question');
   }
   if (!state.memoir.program) return fulfillApiError(route, 404, 'MEMOIR_NOT_STARTED', 'The guided memoir has not been started');
+  if (await refusedForDiary(context, state.memoir.program.diaryId, payload.aiConsent)) return;
   const words = payload.text.trim().split(/\s+/).filter(Boolean).length;
   const questions = words < 4 ? [] : MOCK_FOLLOW_UPS.filter((question) => !payload.asked?.includes(question)).slice(0, 2);
   await fulfillJson(route, { questions });

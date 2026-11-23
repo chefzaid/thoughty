@@ -1,3 +1,5 @@
+import { useContext } from 'react';
+
 import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
 import AttachmentDisplay from '../AttachmentDisplay/AttachmentDisplay';
 import { formatEntryDay } from '../ShareLinks/shareLinkText';
@@ -6,6 +8,8 @@ import { isImageAttachment } from '../../utils/attachments';
 import { formatTimeOfDay } from '../../utils/entryTime';
 import { placedAttachmentIds } from '../../utils/inlineImages';
 import type { Language } from '../../utils/translations';
+import { diaryAiMode } from '../../utils/diaryAi';
+import { DiaryAiContext } from '../DiaryAi/diaryAiScope';
 
 interface ReaderEntryProps {
   readonly entry: Entry;
@@ -24,6 +28,8 @@ interface ReaderEntryProps {
 export default function ReaderEntry({ entry, headingId, language, theme, t }: ReaderEntryProps) {
   const placed = entry.format === 'markdown' ? placedAttachmentIds(entry.content) : new Set<number>();
   const below = (entry.attachments ?? []).filter((attachment) => !(placed.has(attachment.id) && isImageAttachment(attachment.mimetype)));
+  // A recording is transcribed as its diary's AI mode allows, as on the entry's card
+  const aiMode = diaryAiMode(useContext(DiaryAiContext), entry.diary_id);
 
   return (
     <article className="entry-reader-entry" aria-labelledby={headingId}>
@@ -40,7 +46,7 @@ export default function ReaderEntry({ entry, headingId, language, theme, t }: Re
       <div className={`entry-reader-text privacy-text${entry.format === 'markdown' ? '' : ' whitespace-pre-wrap'}`}>
         <EntryContentRenderer content={entry.content} format={entry.format} attachments={entry.attachments} theme={theme} t={t} />
       </div>
-      {below.length > 0 && <AttachmentDisplay attachments={below} theme={theme} t={t} />}
+      {below.length > 0 && <AttachmentDisplay attachments={below} theme={theme} t={t} aiMode={aiMode} />}
     </article>
   );
 }

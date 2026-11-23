@@ -3,6 +3,9 @@ import { useId, useState } from 'react';
 import { useMemoirService } from '../../hooks/useMemoirService';
 import type { TranslationFunction } from '../../types';
 import AiSparkleIcon from '../AiSparkleIcon/AiSparkleIcon';
+import { confirmAiRequest, consentDetails } from '../DiaryAi/aiConsent';
+import { useRequestAiConsent } from '../DiaryAi/aiConsentContext';
+import type { DiaryAiMode } from '../../utils/diaryAi';
 import './MemoirFollowUps.css';
 
 /** The API takes back at most this many follow-ups already offered, the most recent ones. */
@@ -12,11 +15,15 @@ type FollowUpsStatus = 'idle' | 'asking' | 'none';
 
 interface MemoirFollowUpsProps {
   readonly questionId: string;
+  /** The question in the writer's language, which the AI reads with the answer. */
+  readonly questionText: string;
   /** The answer written so far. */
   readonly answer: string;
   /** Puts a follow-up at the end of the answer for the writer to answer below it. */
   readonly onUse: (question: string) => void;
   readonly disabled?: boolean;
+  /** The memoir diary's AI mode; asking each time, each round shows the writer what it sends first. */
+  readonly aiMode?: DiaryAiMode;
   readonly t: TranslationFunction;
 }
 
@@ -24,8 +31,9 @@ interface MemoirFollowUpsProps {
  * Memoir interview mode: follow-up questions the AI asks about the answer being written, grounded only in its words.
  * Each round asks for questions other than those already offered for this answer; nothing is kept.
  */
-function MemoirFollowUps({ questionId, answer, onUse, disabled = false, t }: MemoirFollowUpsProps) {
+function MemoirFollowUps({ questionId, questionText, answer, onUse, disabled = false, aiMode = 'on', t }: MemoirFollowUpsProps) {
   const service = useMemoirService();
+  const requestConsent = useRequestAiConsent();
   const [questions, setQuestions] = useState<readonly string[]>([]);
   const [asked, setAsked] = useState<readonly string[]>([]);
   const [status, setStatus] = useState<FollowUpsStatus>('idle');
@@ -41,7 +49,25 @@ function MemoirFollowUps({ questionId, answer, onUse, disabled = false, t }: Mem
     setStatus('asking');
     setError(null);
     setAdded(false);
-    const { data, error: failure } = await service.followUps({ questionId, text: answer, asked: asked.slice(-MAX_ASKED) });
+    const sentAsked = asked.slice(-MAX_ASKED);
+    const consent = await confirmAiRequest(aiMode, requestConsent, {
+      text: answer,
+      details: consentDetails([
+        { label: 'aiConsentQuestion', value: questionText },
+        { label: 'aiConsentAskedBefore', value: sentAsked.join('\n') },
+      ]),
+      task: 'prompt',
+    });
+    if (!consent.send) {
+      setStatus('idle');
+      return;
+    }
+    const { data, error: failure } = await service.followUps({
+      questionId,
+      text: answer,
+      asked: sentAsked,
+      ...(consent.aiConsent ? { aiConsent: true } : {}),
+    });
     if (!data) {
       setStatus('idle');
       setError(failure ?? 'memoirFollowUpsError');

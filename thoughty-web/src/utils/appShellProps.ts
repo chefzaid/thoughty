@@ -51,7 +51,7 @@ interface BuildAuthenticatedLayoutPropsParams {
   currentView: ViewType | null;
   deleteModalState: Pick<DeleteModalState, 'cancelDelete' | 'confirmDelete' | 'deleteModalOpen'>;
   entryToast: TransientMessage;
-  handleAiChat: (entryId: number, entryContent: string, messages: { role: 'user' | 'assistant'; content: string }[]) => Promise<string | null>;
+  handleAiChat: (entry: Entry, messages: { role: 'user' | 'assistant'; content: string }[]) => Promise<string | null | undefined>;
   handleLoadAiChatHistory: (entryId: number) => Promise<Array<{ role: 'user' | 'assistant'; content: string }>>;
   isEmailVerified: boolean;
   offline: boolean;

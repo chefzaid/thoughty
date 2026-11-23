@@ -53,7 +53,8 @@ interface AiChatModalProps {
   readonly entry: Entry;
   readonly isOpen: boolean;
   readonly onClose: () => void;
-  readonly onSend: (entryId: number, entryContent: string, messages: ChatMessage[]) => Promise<string | null>;
+  /** Resolves with the reply, null when it failed, or undefined when the writer did not send the message. */
+  readonly onSend: (entry: Entry, messages: ChatMessage[]) => Promise<string | null | undefined>;
   readonly onLoadHistory: (entryId: number) => Promise<ChatMessage[]>;
   readonly theme?: 'light' | 'dark';
   readonly t: Translate;
@@ -142,16 +143,23 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
     setError('');
     setLoading(true);
 
-    const reply = await onSend(entry.id, entry.content, updatedMessages);
+    const reply = await onSend(entry, updatedMessages);
 
     setLoading(false);
 
+    // Not sent (the writer cancelled what a diary that asks each time showed them): the message goes back to the field
+    if (reply === undefined) {
+      setMessages(messages);
+      setInput(text);
+      inputRef.current?.focus();
+      return;
+    }
     if (reply) {
       setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
     } else {
       setError(t('aiChatError'));
     }
-  }, [entry.content, entry.id, input, loading, messages, onSend, t]);
+  }, [entry, input, loading, messages, onSend, t]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {

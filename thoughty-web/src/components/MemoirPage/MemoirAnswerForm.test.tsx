@@ -158,7 +158,7 @@ describe('MemoirAnswerForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'memoirTranscribe' }));
     await waitFor(() => expect(screen.getByLabelText('memoirYourAnswer')).toHaveValue('First thoughts.\n\nWe lived by the harbour.'));
     // The memoir diary goes with it, so the server refuses the recording when that diary has AI off
-    expect(attachmentsService.transcribeAttachment).toHaveBeenCalledWith(31, 6);
+    expect(attachmentsService.transcribeAttachment).toHaveBeenCalledWith(31, 6, undefined);
 
     fireEvent.click(screen.getByRole('button', { name: 'memoirSaveAnswer' }));
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({
@@ -259,7 +259,7 @@ describe('MemoirAnswerForm', () => {
   });
 
   it('offers neither interview mode nor transcription when the memoir diary has AI off', () => {
-    render(<MemoirAnswerForm questionId="childhood-home" questionText="What was home like?" onSubmit={vi.fn()} onCancel={vi.fn()} aiAllowed={false} t={t} />);
+    render(<MemoirAnswerForm questionId="childhood-home" questionText="What was home like?" onSubmit={vi.fn()} onCancel={vi.fn()} aiMode="off" t={t} />);
     chooseFile(new File(['voice'], 'story.m4a', { type: 'audio/mp4' }));
 
     expect(screen.getByText('memoirRecordingReady story.m4a')).toBeInTheDocument();

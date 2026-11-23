@@ -150,3 +150,24 @@ export function toEntryMutationResponse(state: MockAppState, entryId: number): c
   const entry = state.entries.find((candidate) => candidate.id === entryId);
   return entry ? { success: true, entry: toEntryResponse(entry, state) } : { success: true };
 }
+
+/**
+ * What the API answers an AI request about the text of `diaryId`: `403 DIARY_AI_OFF` for a diary with AI off, and
+ * `403 DIARY_AI_CONSENT_REQUIRED` for one that asks each time when the request carries no `aiConsent`.
+ */
+export async function refusedForDiary(
+  { route, state }: RouteContext,
+  diaryId: number | null | undefined,
+  aiConsent: boolean | undefined,
+): Promise<boolean> {
+  const mode = diaryId == null ? 'on' : state.diaries.find((diary) => diary.id === diaryId)?.aiMode;
+  if (mode === 'off') {
+    await fulfillApiError(route, 403, 'DIARY_AI_OFF', 'AI is off in this diary');
+    return true;
+  }
+  if (mode === 'ask' && aiConsent !== true) {
+    await fulfillApiError(route, 403, 'DIARY_AI_CONSENT_REQUIRED', 'This diary asks before each AI request: confirm what is sent first');
+    return true;
+  }
+  return false;
+}

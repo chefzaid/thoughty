@@ -49,7 +49,7 @@ interface AuthenticatedAppLayoutProps {
   readonly chatEntry: Entry | null;
   readonly onCloseChat: () => void;
   readonly onLoadChatHistory: (entryId: number) => Promise<Array<{ role: 'user' | 'assistant'; content: string }>>;
-  readonly onSendChat: (entryId: number, entryContent: string, messages: { role: 'user' | 'assistant'; content: string }[]) => Promise<string | null>;
+  readonly onSendChat: (entry: Entry, messages: { role: 'user' | 'assistant'; content: string }[]) => Promise<string | null | undefined>;
   /** The quick capture box, which the navigation's button and its shortcut open on every page. */
   readonly quickCapture?: QuickCaptureState;
   /** The notifications bell in the navigation, built where the router and the session are at hand. */

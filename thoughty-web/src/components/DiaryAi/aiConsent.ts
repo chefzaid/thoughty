@@ -1,27 +1,49 @@
 import type { Config } from '../../types';
 import type { DiaryAiMode } from '../../utils/diaryAi';
 
-/** The AI tasks that may ask for consent, each with the model setting it is sent to. */
-export type AiConsentTask = 'tag' | 'writing' | 'summary';
+/** The AI tasks about a text that may ask for consent, each with the model setting it is sent to. */
+export type AiConsentTask = 'tag' | 'writing' | 'summary' | 'chat' | 'prompt';
 
 const TASK_MODEL_SETTINGS = {
   tag: 'openRouterTagModel',
   writing: 'openRouterWritingModel',
   summary: 'openRouterSummaryModel',
+  chat: 'openRouterChatModel',
+  prompt: 'openRouterPromptModel',
 } as const satisfies Record<AiConsentTask, keyof Config>;
+
+/** The model settings the consent dialog reads to name where a request goes. */
+export type AiConsentModelConfig = Pick<Config, (typeof TASK_MODEL_SETTINGS)[AiConsentTask] | 'openRouterModel'>;
 
 /** Something else a request sends beside the text, named by its translation key (the summary's as its dialog names them). */
 export interface AiConsentDetail {
-  readonly label: 'aiConsentTags' | 'summaryIncludeDetails' | 'summaryExcludeDetails';
+  readonly label: 'aiConsentTags' | 'aiConsentQuestion' | 'aiConsentAskedBefore' | 'summaryIncludeDetails' | 'summaryExcludeDetails';
   readonly value: string;
 }
 
-/** What one AI request would send: the writer's text, what else goes with it, and the task (for its model). */
-export interface AiConsentRequest {
+/** One message of an entry chat, as it is sent. */
+export interface AiConsentMessage {
+  readonly role: 'user' | 'assistant';
+  readonly content: string;
+}
+
+/** What one AI request about a text would send: the text, what else goes with it, and the task (for its model). */
+export interface AiConsentTextRequest {
   readonly text: string;
   readonly details?: readonly AiConsentDetail[];
+  /** The conversation an entry chat sends after the entry, the new message last. */
+  readonly conversation?: readonly AiConsentMessage[];
   readonly task: AiConsentTask;
 }
+
+/** A recording sent to be transcribed: its file name, and its length in seconds when it is known. */
+export interface AiConsentRecordingRequest {
+  readonly task: 'transcription';
+  readonly recording: { readonly name: string; readonly seconds: number | null };
+}
+
+/** What one AI request would send, as the consent dialog shows it. */
+export type AiConsentRequest = AiConsentTextRequest | AiConsentRecordingRequest;
 
 /** Shows the writer what a request would send; resolves true once they confirm, false when they cancel. */
 export type RequestAiConsent = (request: AiConsentRequest) => Promise<boolean>;
@@ -48,7 +70,7 @@ export async function confirmAiRequest(
 }
 
 /** The model a task's request goes to: its own setting, else the writer's model, else null for Thoughty's default. */
-export function aiConsentModel(config: Pick<Config, (typeof TASK_MODEL_SETTINGS)[AiConsentTask] | 'openRouterModel'>, task: AiConsentTask): string | null {
+export function aiConsentModel(config: AiConsentModelConfig, task: AiConsentTask): string | null {
   return config[TASK_MODEL_SETTINGS[task]]?.trim() || config.openRouterModel?.trim() || null;
 }
 

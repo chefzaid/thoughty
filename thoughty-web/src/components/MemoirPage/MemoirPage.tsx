@@ -130,8 +130,8 @@ function MemoirPage({
       onCancel={() => setActiveQuestionId(null)}
       eras={eras}
       answerDate={todayIn(program?.timeZone ?? 'UTC')}
-      // No follow-ups or transcription in a memoir diary with AI off, nor yet in one that asks each time
-      aiAllowed={diaryAiMode(diaries, program?.diaryId) === 'on'}
+      // No follow-ups or transcription in a memoir diary with AI off; in one that asks each time, each asks first
+      aiMode={diaryAiMode(diaries, program?.diaryId)}
       diaryId={program?.diaryId}
       language={language}
       t={t}

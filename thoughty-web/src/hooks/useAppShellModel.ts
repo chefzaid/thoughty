@@ -50,7 +50,7 @@ import type { Diary, Entry, PublicViewType, ViewType } from '../types';
 import { landingViewFor } from '../utils/landingView';
 import { useEntryAiActions } from './useEntryAiActions';
 import { useAiConsentController } from '../components/DiaryAi/useAiConsentController';
-import type { AiConsentRequest } from '../components/DiaryAi/aiConsent';
+import type { AiConsentRequest, RequestAiConsent } from '../components/DiaryAi/aiConsent';
 
 interface AppShellModel {
   authLoading: boolean;
@@ -77,8 +77,8 @@ interface AppShellModel {
   /** Set while the session goes on but Thoughty could not say whose it is (and no writer here is theirs). */
   sessionUnreachablePageProps: SessionUnreachablePageProps | null;
   diaries: Diary[];
-  /** The consent dialog of a diary that asks before each AI request: the request waiting, and its answer. */
-  aiConsent: { request: AiConsentRequest | null; answer: (agreed: boolean) => void };
+  /** The consent dialog of a diary that asks before each AI request: the request waiting, its answer, and how to open it. */
+  aiConsent: { request: AiConsentRequest | null; answer: (agreed: boolean) => void; requestConsent: RequestAiConsent };
 }
 
 export function useAppShellModel(): AppShellModel {
@@ -272,7 +272,7 @@ export function useAppShellModel(): AppShellModel {
 
   // Kept the same between renders, so the entry cards that offer it are not drawn again with each batch
   const { handleEdit: editEntry, setEditText } = entryEditState;
-  const { handleRephrase, handleSummarize } = useEntryAiActions({
+  const { handleRephrase, handleSummarize, handleChat: handleAiChat } = useEntryAiActions({
     aiService,
     diaries: diariesState.diaries,
     requestConsent: aiConsent.requestConsent,
@@ -295,14 +295,6 @@ export function useAppShellModel(): AppShellModel {
 
   const handleLoadAiChatHistory = useCallback(async (entryId: number) => {
     return aiService.getChatHistory(entryId);
-  }, [aiService]);
-
-  const handleAiChat = useCallback(async (
-    entryId: number,
-    entryContent: string,
-    messages: { role: 'user' | 'assistant'; content: string }[],
-  ) => {
-    return aiService.chat(entryId, entryContent, messages);
   }, [aiService]);
 
   const tagMetadata = useMemo(() => parseTagMetadata(config.tagMetadata), [config.tagMetadata]);
@@ -468,6 +460,6 @@ export function useAppShellModel(): AppShellModel {
     sessionUnreachablePageProps,
     /** The diaries, for the AI actions of pages that read a diary's entries without receiving them. */
     diaries: diariesState.diaries,
-    aiConsent: { request: aiConsent.request, answer: aiConsent.answer },
+    aiConsent,
   };
 }

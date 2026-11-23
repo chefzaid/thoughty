@@ -3,14 +3,23 @@ import type { AttachmentsService } from "../../services/api";
 import type { Attachment } from "../../types";
 import { tintedTextClass } from "../../utils/tintedText";
 import { useFeatureFlag } from "../FeatureFlags/featureFlags";
+import { confirmAiRequest } from "../DiaryAi/aiConsent";
+import { useRequestAiConsent } from "../DiaryAi/aiConsentContext";
+import type { DiaryAiMode } from "../../utils/diaryAi";
+import { readAudioDuration } from "../../utils/audioDuration";
 
 interface AudioTranscriptProps {
   readonly attachment: Attachment;
   readonly attachmentsService: AttachmentsService;
   readonly isDark: boolean;
   readonly t: (key: string) => string;
-  /** False in a diary with AI off, where a recording without a transcript offers none. */
-  readonly aiAllowed?: boolean;
+  /**
+   * The AI mode of the entry's diary: with AI off a recording without a transcript offers none, and a diary that
+   * asks each time shows the writer the recording and where it goes before sending it.
+   */
+  readonly aiMode?: DiaryAiMode;
+  /** The recording's address in the page, to read its length for that preview. */
+  readonly sourceUrl?: string | null;
 }
 
 function AudioTranscript({
@@ -18,9 +27,11 @@ function AudioTranscript({
   attachmentsService,
   isDark,
   t,
-  aiAllowed = true,
+  aiMode = "on",
+  sourceUrl = null,
 }: AudioTranscriptProps) {
-  const aiOn = useFeatureFlag("ai") && aiAllowed;
+  const aiOn = useFeatureFlag("ai") && aiMode !== "off";
+  const requestConsent = useRequestAiConsent();
   const [transcript, setTranscript] = useState(
     attachment.transcript?.trim() ?? "",
   );
@@ -31,7 +42,16 @@ function AudioTranscript({
   const transcribe = async () => {
     setIsLoading(true);
     setHasError(false);
-    const result = await attachmentsService.transcribeAttachment(attachment.id);
+    const seconds = aiMode === "ask" ? await readAudioDuration(sourceUrl) : null;
+    const consent = await confirmAiRequest(aiMode, requestConsent, {
+      task: "transcription",
+      recording: { name: attachment.original_filename, seconds },
+    });
+    if (!consent.send) {
+      setIsLoading(false);
+      return;
+    }
+    const result = await attachmentsService.transcribeAttachment(attachment.id, null, consent.aiConsent);
     setIsLoading(false);
     if (!result) {
       setHasError(true);
