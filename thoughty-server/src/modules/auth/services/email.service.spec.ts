@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
-import { EmailService } from './email.service';
+import { Logger } from '@nestjs/common';
+import { EmailService, parseSmtpPort } from './email.service';
 import * as nodemailer from 'nodemailer';
 
 // Mock nodemailer
@@ -8,6 +9,21 @@ jest.mock('nodemailer', () => ({
     sendMail: jest.fn().mockResolvedValue({ messageId: 'test-id' }),
   }),
 }));
+
+describe('parseSmtpPort', () => {
+  it('accepts a whole port number given as text or as a number', () => {
+    expect(parseSmtpPort('465')).toBe(465);
+    expect(parseSmtpPort(' 587 ')).toBe(587);
+    expect(parseSmtpPort(25)).toBe(25);
+    expect(parseSmtpPort('65535')).toBe(65535);
+  });
+
+  it('refuses anything that is not a port from 1 to 65535', () => {
+    for (const value of [undefined, null, '', '   ', 'smtp', '465abc', '4.65', '-1', '0', '65536', '0x1d1', 465.5, true]) {
+      expect(parseSmtpPort(value)).toBeNull();
+    }
+  });
+});
 
 describe('EmailService', () => {
   let service: EmailService;
@@ -30,7 +46,7 @@ describe('EmailService', () => {
     it('should create transporter when SMTP is configured', () => {
       configService = createConfigService({
         SMTP_HOST: 'smtp.example.com',
-        SMTP_PORT: 587,
+        SMTP_PORT: '587',
         SMTP_USER: 'user@example.com',
         SMTP_PASS: 'password',
       });
@@ -48,10 +64,36 @@ describe('EmailService', () => {
       });
     });
 
+    it('reads the port from the text the environment gives, with implicit TLS on 465 only', () => {
+      for (const [port, secure] of [['465', true], ['587', false], [' 2525 ', false]] as const) {
+        (nodemailer.createTransport as jest.Mock).mockClear();
+        new EmailService(
+          createConfigService({ SMTP_HOST: 'smtp.example.com', SMTP_PORT: port, SMTP_USER: 'u', SMTP_PASS: 'p' }) as ConfigService,
+        );
+        expect(nodemailer.createTransport).toHaveBeenCalledWith(
+          expect.objectContaining({ port: Number(port), secure }),
+        );
+      }
+    });
+
+    it('leaves email off and warns when SMTP_PORT is not a port number', () => {
+      const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+      (nodemailer.createTransport as jest.Mock).mockClear();
+
+      service = new EmailService(
+        createConfigService({ SMTP_HOST: 'smtp.example.com', SMTP_PORT: 'smtps', SMTP_USER: 'u', SMTP_PASS: 'p' }) as ConfigService,
+      );
+
+      expect(service.isConfigured()).toBe(false);
+      expect(nodemailer.createTransport).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('SMTP_PORT'));
+      warn.mockRestore();
+    });
+
     it('should set secure to true for port 465', () => {
       configService = createConfigService({
         SMTP_HOST: 'smtp.example.com',
-        SMTP_PORT: 465,
+        SMTP_PORT: '465',
         SMTP_USER: 'user@example.com',
         SMTP_PASS: 'password',
       });
@@ -83,7 +125,7 @@ describe('EmailService', () => {
     it('should return true when all SMTP settings are present', () => {
       configService = createConfigService({
         SMTP_HOST: 'smtp.example.com',
-        SMTP_PORT: 587,
+        SMTP_PORT: '587',
         SMTP_USER: 'user@example.com',
         SMTP_PASS: 'password',
       });
@@ -95,7 +137,7 @@ describe('EmailService', () => {
 
     it('should return false when SMTP_HOST is missing', () => {
       configService = createConfigService({
-        SMTP_PORT: 587,
+        SMTP_PORT: '587',
         SMTP_USER: 'user@example.com',
         SMTP_PASS: 'password',
       });
@@ -120,7 +162,7 @@ describe('EmailService', () => {
     it('should return false when SMTP_USER is missing', () => {
       configService = createConfigService({
         SMTP_HOST: 'smtp.example.com',
-        SMTP_PORT: 587,
+        SMTP_PORT: '587',
         SMTP_PASS: 'password',
       });
 
@@ -132,7 +174,7 @@ describe('EmailService', () => {
     it('should return false when SMTP_PASS is missing', () => {
       configService = createConfigService({
         SMTP_HOST: 'smtp.example.com',
-        SMTP_PORT: 587,
+        SMTP_PORT: '587',
         SMTP_USER: 'user@example.com',
       });
 
@@ -146,7 +188,7 @@ describe('EmailService', () => {
     beforeEach(() => {
       configService = createConfigService({
         SMTP_HOST: 'smtp.example.com',
-        SMTP_PORT: 587,
+        SMTP_PORT: '587',
         SMTP_USER: 'user@example.com',
         SMTP_PASS: 'password',
         SMTP_FROM: 'noreply@example.com',
@@ -172,7 +214,7 @@ describe('EmailService', () => {
     it('should use SMTP_USER as from address when SMTP_FROM is not set', async () => {
       configService = createConfigService({
         SMTP_HOST: 'smtp.example.com',
-        SMTP_PORT: 587,
+        SMTP_PORT: '587',
         SMTP_USER: 'user@example.com',
         SMTP_PASS: 'password',
       });
@@ -220,7 +262,7 @@ describe('EmailService', () => {
     beforeEach(() => {
       configService = createConfigService({
         SMTP_HOST: 'smtp.example.com',
-        SMTP_PORT: 587,
+        SMTP_PORT: '587',
         SMTP_USER: 'user@example.com',
         SMTP_PASS: 'password',
         SMTP_FROM: 'noreply@example.com',
@@ -273,7 +315,7 @@ describe('EmailService', () => {
     beforeEach(() => {
       configService = createConfigService({
         SMTP_HOST: 'smtp.example.com',
-        SMTP_PORT: 587,
+        SMTP_PORT: '587',
         SMTP_USER: 'user@example.com',
         SMTP_PASS: 'password',
         SMTP_FROM: 'noreply@example.com',
@@ -308,7 +350,7 @@ describe('EmailService', () => {
     beforeEach(() => {
       configService = createConfigService({
         SMTP_HOST: 'smtp.example.com',
-        SMTP_PORT: 587,
+        SMTP_PORT: '587',
         SMTP_USER: 'user@example.com',
         SMTP_PASS: 'password',
         SMTP_FROM: 'noreply@example.com',
@@ -351,7 +393,7 @@ describe('EmailService', () => {
     it('sends the localized question with escaped markup and a plain-text alternative', async () => {
       configService = createConfigService({
         SMTP_HOST: 'smtp.example.com',
-        SMTP_PORT: 587,
+        SMTP_PORT: '587',
         SMTP_USER: 'user@example.com',
         SMTP_PASS: 'password',
         SMTP_FROM: 'noreply@example.com',
@@ -393,7 +435,7 @@ describe('EmailService', () => {
     it('sends the rendered content with its headers from the configured address', async () => {
       configService = createConfigService({
         SMTP_HOST: 'smtp.example.com',
-        SMTP_PORT: 587,
+        SMTP_PORT: '587',
         SMTP_USER: 'user@example.com',
         SMTP_PASS: 'password',
       });

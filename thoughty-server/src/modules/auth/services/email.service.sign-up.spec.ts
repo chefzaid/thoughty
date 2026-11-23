@@ -4,7 +4,7 @@ import { EmailService, describeEmailFailure } from './email.service';
 
 jest.mock('nodemailer', () => ({ createTransport: jest.fn() }));
 
-const SMTP = { SMTP_HOST: 'smtp.example.com', SMTP_PORT: 587, SMTP_USER: 'mailer@example.com', SMTP_PASS: 'pw', SMTP_FROM: 'Thoughty <hello@example.com>' };
+const SMTP = { SMTP_HOST: 'smtp.example.com', SMTP_PORT: '587', SMTP_USER: 'mailer@example.com', SMTP_PASS: 'pw', SMTP_FROM: 'Thoughty <hello@example.com>' };
 
 function createService(config: Record<string, unknown> = SMTP) {
   return new EmailService({ get: jest.fn((key: string) => config[key]) } as unknown as ConfigService);

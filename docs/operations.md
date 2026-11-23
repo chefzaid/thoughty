@@ -174,7 +174,7 @@ Production sends through **Resend**, the provider Swirl Cloud and Odoo already u
 | Key | Value |
 | --- | --- |
 | `SMTP_HOST` | `smtp.resend.com` |
-| `SMTP_PORT` | `587` (STARTTLS; the seeded value). Resend also serves implicit TLS on `465`, but leave it at 587 until TODO.md › Bugs to fix › `SMTP_PORT` read as text is fixed: the API compares the port with the number 465, so `"465"` from the environment would connect without TLS |
+| `SMTP_PORT` | `587` (STARTTLS; the seeded value) or `465` (implicit TLS): Resend serves both and the API supports both. It reads the port as a number and uses implicit TLS on 465 only; a value that is not a port number from 1 to 65535 turns email delivery off, with `SMTP_PORT is not a port number from 1 to 65535: email delivery is off` in the API and worker logs |
 | `SMTP_USER` | `resend` |
 | `SMTP_PASS` | a Resend API key with **Sending access** only, restricted to the sending domain; it is a secret and lives only in Vault, never in a ConfigMap, `infra/onboarding.json` or the repository |
 | `SMTP_FROM` | the sender, e.g. `Thoughty <name@domain>`, on a domain verified in Resend (SPF and DKIM records in its DNS); mail from an unverified domain is refused |

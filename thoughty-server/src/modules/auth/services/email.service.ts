@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { escapeHtml } from '@/common/utils';
@@ -30,16 +30,40 @@ export function describeEmailFailure(error: unknown): string {
   return `${error instanceof Error ? error.name : 'unknown error'}${typeof code === 'number' ? ` ${code}` : ''}`;
 }
 
+/** Implicit TLS (SMTPS); any other port starts in plain text and upgrades with STARTTLS. */
+const SMTPS_PORT = 465;
+
+/**
+ * `SMTP_PORT` as a number. The environment gives text (`"465"`), so it is parsed here once: a whole
+ * number from 1 to 65535, or null for anything else, which leaves email delivery off.
+ */
+export function parseSmtpPort(value: unknown): number | null {
+  const text = typeof value === 'number' ? String(value) : typeof value === 'string' ? value.trim() : '';
+  if (!/^\d{1,5}$/.test(text)) {
+    return null;
+  }
+  const port = Number(text);
+  return port >= 1 && port <= 65535 ? port : null;
+}
+
 @Injectable()
 export class EmailService {
+  private readonly logger = new Logger(EmailService.name);
   private readonly transporter: nodemailer.Transporter | null = null;
+  private readonly port: number | null;
 
   constructor(private readonly configService: ConfigService) {
-    if (this.isConfigured()) {
+    const rawPort: unknown = this.configService.get('SMTP_PORT');
+    const port = parseSmtpPort(rawPort);
+    this.port = port;
+    if (port === null && rawPort !== undefined && rawPort !== '') {
+      this.logger.warn('SMTP_PORT is not a port number from 1 to 65535: email delivery is off');
+    }
+    if (port !== null && this.isConfigured()) {
       this.transporter = nodemailer.createTransport({
         host: this.configService.get<string>('SMTP_HOST'),
-        port: this.configService.get<number>('SMTP_PORT', 587),
-        secure: this.configService.get<number>('SMTP_PORT') === 465,
+        port,
+        secure: port === SMTPS_PORT,
         auth: {
           user: this.configService.get<string>('SMTP_USER'),
           pass: this.configService.get<string>('SMTP_PASS'),
@@ -51,7 +75,7 @@ export class EmailService {
   isConfigured(): boolean {
     return !!(
       this.configService.get('SMTP_HOST') &&
-      this.configService.get('SMTP_PORT') &&
+      this.port !== null &&
       this.configService.get('SMTP_USER') &&
       this.configService.get('SMTP_PASS')
     );
