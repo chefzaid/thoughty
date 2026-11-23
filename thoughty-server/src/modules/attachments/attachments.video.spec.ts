@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test } from '@nestjs/testing';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ReadStream } from 'node:fs';
@@ -208,6 +208,17 @@ describe('video attachments', () => {
   describe('TempUploadCleanupInterceptor', () => {
     const contextFor = (file?: { path?: string }) =>
       ({ switchToHttp: () => ({ getRequest: () => ({ file }) }) }) as never;
+    /**
+     * The interceptor deletes the file in the background once the answer is out, so each check waits
+     * for its effect instead of a fixed delay, which a loaded machine (the whole suite with coverage) can outlast.
+     */
+    const until = async (done: () => Promise<boolean> | boolean) => {
+      const deadline = Date.now() + 2000;
+      while (Date.now() < deadline && !(await done())) {
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+    };
+    const exists = (path: string) => access(path).then(() => true, () => false);
 
     it('deletes the temporary file after an answer or an error, and only warns when it is already gone', async () => {
       const folder = await mkdtemp(join(tmpdir(), 'thoughty-cleanup-spec-'));
@@ -217,13 +228,14 @@ describe('video attachments', () => {
       const warn = jest.spyOn((interceptor as unknown as { logger: { warn: () => void } }).logger, 'warn').mockImplementation();
 
       await lastValueFrom(interceptor.intercept(contextFor({ path }), { handle: () => of('done') }));
-      await new Promise((resolve) => setTimeout(resolve, 20));
-      await expect(rm(path)).rejects.toThrow();
+      await until(async () => !(await exists(path)));
+      expect(await exists(path)).toBe(false);
+      expect(warn).not.toHaveBeenCalled();
 
       await expect(
         lastValueFrom(interceptor.intercept(contextFor({ path }), { handle: () => throwError(() => new Error('refused')) })),
       ).rejects.toThrow('refused');
-      await new Promise((resolve) => setTimeout(resolve, 20));
+      await until(() => warn.mock.calls.length > 0);
       expect(warn).toHaveBeenCalledWith(expect.stringContaining(path));
 
       await lastValueFrom(interceptor.intercept(contextFor({ buffer: Buffer.alloc(1) } as never), { handle: () => of('memory') }));
