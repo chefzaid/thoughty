@@ -44,7 +44,12 @@ export class ConfigController {
       'format have their own endpoints and cannot be set here.',
   })
   @ApiResponse({ status: 200, description: 'Configuration updated', type: SuccessResponseDto })
-  @ApiResponse({ status: 400, description: 'Unknown or reserved setting, or an invalid value' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Unknown or reserved setting (SETTINGS_RESERVED), or an invalid value; `entryTemplates` must be a JSON list of ' +
+      'templates (ENTRY_TEMPLATES_INVALID) whose names are at most 100 characters (ENTRY_TEMPLATE_NAME_TOO_LONG)',
+  })
   async updateConfig(
     @CurrentUser() user: AuthenticatedUser,
     @Body() newConfig: UpdateConfigDto,

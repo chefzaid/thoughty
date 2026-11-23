@@ -79,7 +79,7 @@ kubectl exec deployment/thoughty-server -n thoughty -- sh -c \
 
 ### Renamed Usernames
 
-Migration `1788134400000-case-insensitive-usernames` makes usernames unique ignoring case. Accounts whose usernames differed only in case were renamed, all but one per name, to `<username>-<id>` ([Data model](data-model.md#usernames-and-addresses)); they still sign in by email. List them, with their addresses, to tell them their new name:
+Migration `1788134400000-case-insensitive-usernames` makes usernames unique ignoring case. Accounts whose usernames differed only in case were renamed, all but one per name, to `<username>-<id>` ([Data model](data-model.md#usernames-and-addresses)); they still sign in by email. The app tells them nothing and has no way to change a username (the owner's decision of 2026-11-23): the operator tells each one, by email, from this list of the live renamed accounts with their addresses, after the migration has run in production:
 
 ```sql
 SELECT r.user_id, r.previous_username, r.username, u.email, r.renamed_at
@@ -168,6 +168,18 @@ Memoir, "On this day", monthly recap, year in review, writing reminder or time c
 ## Email Delivery
 
 Production needs working SMTP (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, and `SMTP_FROM`, in Vault `apps/thoughty/app`) for local accounts: sign-up is verify-first and only an emailed link creates the account ([Security](./security.md#authentication-and-sessions)), and password reset, verification resends and email 2FA send mail too. Without it, `POST /api/auth/register` answers `503 EMAIL_DELIVERY_NOT_CONFIGURED` for every address and the sign-up page shows "Email delivery is not set up on this server."; SSO, Google sign-in and existing accounts keep working. Outside production (`NODE_ENV` other than `production`) a server without SMTP signs new accounts in at once instead, for development.
+
+Production sends through **Resend**, the provider Swirl Cloud and Odoo already use, by its SMTP relay with the existing SMTP code (no Resend SDK; Resend's HTTP API is the fallback only if the relay cannot work). The owner sets these in Vault `apps/thoughty/app`; the `thoughty-app` External Secret copies them into the pods' secret within its hour (`refreshInterval: 1h`), and the API and the worker read it at start, so restart both once the secret shows the new values (`kubectl rollout restart deployment/thoughty-server deployment/thoughty-cloud-sync-worker -n apps`). Agents cannot set or deploy them:
+
+| Key | Value |
+| --- | --- |
+| `SMTP_HOST` | `smtp.resend.com` |
+| `SMTP_PORT` | `587` (STARTTLS; the seeded value). Resend also serves implicit TLS on `465`, but leave it at 587 until TODO.md › Bugs to fix › `SMTP_PORT` read as text is fixed: the API compares the port with the number 465, so `"465"` from the environment would connect without TLS |
+| `SMTP_USER` | `resend` |
+| `SMTP_PASS` | a Resend API key with **Sending access** only, restricted to the sending domain; it is a secret and lives only in Vault, never in a ConfigMap, `infra/onboarding.json` or the repository |
+| `SMTP_FROM` | the sender, e.g. `Thoughty <name@domain>`, on a domain verified in Resend (SPF and DKIM records in its DNS); mail from an unverified domain is refused |
+
+To check, register a new local account on production (or ask for a password reset) and look for the email and for the `… email not sent` lines below; Resend's dashboard lists every message it accepted or refused. A new key: create it in Resend, put it in Vault, restart the API and the worker once the secret has it, then revoke the old one.
 
 The API sends sign-up emails in the background, so a mail server that refuses them does not change the answer. A rollout waits for the emails still being sent before the pod stops ([Deployment](./deployment.md#shutdown)). Look for `Sign-up link email not sent: <error name> <SMTP reply code>` and `Sign-up notice email not sent: …` in the API logs; like the opt-in email logs they never carry the address or the link. A writer who gets no email can ask again from the "check your email" step once a minute (at most five emails per address until its request expires after 24 hours). Pending sign-ups are in `sign_up_requests`; a row without a `token_hash` belongs to an address that already has an account:
 

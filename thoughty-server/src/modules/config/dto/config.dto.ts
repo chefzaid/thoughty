@@ -171,7 +171,12 @@ export class UpdateConfigDto {
   @SettingText(500_000, 'Tag colors and descriptions as serialized JSON')
   tagMetadata?: string;
 
-  @SettingText(500_000, 'Custom entry templates as serialized JSON')
+  @SettingText(
+    500_000,
+    'Custom entry templates as a JSON list of `{ id, name, content, tags, visibility, format }`, checked when saved: ' +
+    'a non-blank name of at most 100 characters, an id of 1 to 100 letters, digits, `_` or `-`, `public` or ' +
+    '`private`, `plain` or `markdown`',
+  )
   entryTemplates?: string;
 
   @SettingText(

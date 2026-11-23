@@ -2,6 +2,7 @@ import { useId, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useDialogFocus } from '../../hooks/useDialogFocus';
 import type { TranslationFunction } from '../../types';
+import { MAX_TEMPLATE_NAME_LENGTH } from '../../utils/entryTemplates';
 
 interface TemplateNameDialogProps {
   readonly theme?: 'light' | 'dark';
@@ -17,6 +18,7 @@ interface TemplateNameDialogProps {
 /**
  * Asks for the name of a new entry template in a modal dialog: focus starts in the name field,
  * Tab stays inside, Escape cancels, and an empty name is refused with a message under the field.
+ * The field stops at the server's limit for a name and says so once the name reaches it.
  */
 function TemplateNameDialog({ theme, t, onCancel, onSave }: TemplateNameDialogProps) {
   const [name, setName] = useState('');
@@ -29,9 +31,12 @@ function TemplateNameDialog({ theme, t, onCancel, onSave }: TemplateNameDialogPr
   const descriptionId = useId();
   const inputId = useId();
   const errorId = useId();
+  const limitId = useId();
   const isLight = theme === 'light';
   const trimmedName = name.trim();
   const showError = submitted && trimmedName === '';
+  // Where the field stops (maxLength counts UTF-16 units, so it never lets through more than the server's 100 characters)
+  const atLimit = name.length >= MAX_TEMPLATE_NAME_LENGTH;
   let errorMessage: string | null = null;
   if (showError) {
     errorMessage = t('templateNameRequired');
@@ -103,12 +108,21 @@ function TemplateNameDialog({ theme, t, onCancel, onSave }: TemplateNameDialogPr
             onChange={(event) => setName(event.target.value)}
             required
             aria-invalid={showError}
-            aria-describedby={errorMessage ? errorId : undefined}
+            maxLength={MAX_TEMPLATE_NAME_LENGTH}
+            aria-describedby={[errorMessage ? errorId : '', atLimit ? limitId : ''].filter(Boolean).join(' ') || undefined}
             autoComplete="off"
             className={`w-full border rounded-lg px-3 h-10 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${
               isLight ? 'bg-gray-50 border-gray-300 text-gray-900' : 'bg-gray-900 border-gray-700 text-gray-100'
             } ${showError ? 'border-red-500' : ''}`}
           />
+          {/* Always in the page, so screen readers announce the note when the name reaches the limit */}
+          <p
+            id={limitId}
+            aria-live="polite"
+            className={atLimit ? `mt-2 text-sm ${isLight ? 'text-gray-600' : 'text-gray-400'}` : 'sr-only'}
+          >
+            {atLimit ? t('templateNameAtLimit', { max: MAX_TEMPLATE_NAME_LENGTH }) : ''}
+          </p>
           {errorMessage && (
             <p id={errorId} role="alert" className={`mt-2 text-sm ${isLight ? 'text-red-700' : 'text-red-300'}`}>
               {errorMessage}

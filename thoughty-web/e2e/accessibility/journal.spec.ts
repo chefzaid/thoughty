@@ -1,5 +1,5 @@
 import AxeBuilder, { expectReadableOnHover } from '../support/axe';
-import { expect, test, type Page } from '../support/test';
+import { expect, test, type Locator, type Page } from '../support/test';
 
 import type { MockEntry, MockEntryRevision } from '../support/mockApp.shared';
 import { setupMockApp } from '../support/mockApp';
@@ -169,6 +169,52 @@ test.describe('journal accessibility with entries', () => {
         await button('Move to diary').click();
         await expect(bar.getByRole('button', { name: /Personal/ })).toBeVisible();
         await expectNoAccessibilityViolations(page);
+      });
+    }
+  }
+});
+
+/**
+ * WCAG contrast of an icon's outline (its stroke) on the first opaque background behind it. axe does
+ * not measure graphics (1.4.11 asks 3:1 of them), so the favorite star is measured here.
+ */
+async function outlineContrast(icon: Locator) {
+  return icon.evaluate((node) => {
+    const channels = (color: string) => (color.match(/\d+(\.\d+)?/g) ?? []).map(Number);
+    const luminance = (color: string) => {
+      const [red, green, blue] = channels(color).slice(0, 3).map((value) => {
+        const channel = value / 255;
+        return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    };
+    let background = 'rgb(255, 255, 255)';
+    for (let element: Element | null = node.parentElement; element; element = element.parentElement) {
+      const color = getComputedStyle(element).backgroundColor;
+      const alpha = channels(color)[3];
+      if (color !== 'transparent' && (alpha === undefined || alpha === 1)) {
+        background = color;
+        break;
+      }
+    }
+    const [light, dark] = [luminance(getComputedStyle(node).stroke), luminance(background)].sort((a, b) => b - a);
+    return Math.round(((light + 0.05) / (dark + 0.05)) * 100) / 100;
+  });
+}
+
+test.describe('favorite star', () => {
+  for (const theme of THEMES) {
+    for (const highContrast of [false, true]) {
+      test(`${theme}${highContrast ? ' high contrast' : ''}: the outline reaches 3:1 on the card and the fill stays yellow`, async ({ page }) => {
+        await setupMockApp(page, { startAuthenticated: true, config: { theme, highContrast }, initialEntries: ENTRIES });
+        await page.goto('/journal');
+        await page.getByRole('button', { name: 'All Diaries' }).click();
+
+        const icon = page.locator('#entry-61').getByRole('button', { name: 'Remove from favorites' }).locator('svg');
+        await expect(icon).toBeVisible();
+        expect(await outlineContrast(icon)).toBeGreaterThanOrEqual(3);
+        // Tailwind's yellow-500, the star's look in both themes
+        await expect(icon).toHaveCSS('fill', 'rgb(234, 179, 8)');
       });
     }
   }

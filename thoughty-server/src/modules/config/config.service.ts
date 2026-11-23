@@ -7,6 +7,7 @@ import { plainToInstance } from 'class-transformer';
 import { validateSync } from 'class-validator';
 import { Setting } from '@/database/entities';
 import { UpdateConfigDto, USER_CONFIG_KEYS } from './dto/config.dto';
+import { assertValidEntryTemplates, readableEntryTemplates } from './entry-templates';
 
 export const OPENROUTER_API_KEY_SETTING = 'openRouterApiKey';
 export const SENSITIVE_CONFIG_KEYS = new Set([OPENROUTER_API_KEY_SETTING]);
@@ -74,6 +75,13 @@ export class ConfigService {
       config[setting.key] = setting.value;
     }
 
+    // Templates saved before their names were limited read within the limit, so saving them back passes.
+    if (config.entryTemplates !== undefined) {
+      const readable = readableEntryTemplates(config.entryTemplates);
+      if (readable === undefined) delete config.entryTemplates;
+      else config.entryTemplates = readable;
+    }
+
     // A value stored before preferences were validated falls back to its default, so the web
     // can always send the configuration it was given back unchanged.
     for (const error of validateSync(plainToInstance(UpdateConfigDto, config))) {
@@ -114,6 +122,9 @@ export class ConfigService {
     const reserved = entries.map(([key]) => key).filter((key) => !USER_CONFIG_KEYS.has(key));
     if (reserved.length > 0) {
       throw apiError(BadRequestException, 'SETTINGS_RESERVED', `Settings cannot be changed here: ${reserved.join(', ')}`);
+    }
+    if (newConfig.entryTemplates !== undefined) {
+      assertValidEntryTemplates(newConfig.entryTemplates);
     }
 
     for (const [key, value] of entries) {

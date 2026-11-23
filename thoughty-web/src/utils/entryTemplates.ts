@@ -2,6 +2,9 @@ import type { Config, Diary } from '../types';
 import { getTranslation } from './translations';
 import type { BuiltInTemplatesTranslationKey } from './translations.builtInTemplates';
 
+/** The longest name a custom template may have, in characters; the server refuses a longer one (`ENTRY_TEMPLATE_NAME_TOO_LONG`). */
+export const MAX_TEMPLATE_NAME_LENGTH = 100;
+
 export interface EntryTemplate {
   id: string;
   name: string;

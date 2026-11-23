@@ -85,6 +85,34 @@ describeContract('account', (context) => {
     await call('GET /api/config/feature-flags', { as: alice, status: 200 });
   });
 
+  it('saves entry templates the way the composer does, refusing a name over 100 characters', async () => {
+    const { bob } = context;
+    const template = { id: 'custom-1', name: 'Evening wins', content: 'Three things:', tags: ['gratitude'], visibility: 'private', format: 'plain' };
+    const templates = (list: object[]) => ({ theme: 'dark', entryTemplates: JSON.stringify(list) });
+    await call('POST /api/config', { as: bob, json: templates([template]), status: 200 });
+    await call('POST /api/config', {
+      as: bob,
+      json: templates([template, { ...template, id: 'custom-2', name: 'n'.repeat(101) }]),
+      status: 400,
+      code: 'ENTRY_TEMPLATE_NAME_TOO_LONG',
+    });
+    for (const list of [[{ ...template, name: ' ' }], [{ ...template, visibility: 'friends' }], [{ ...template, id: 'a b' }]]) {
+      await call('POST /api/config', { as: bob, json: templates(list), status: 400, code: 'ENTRY_TEMPLATES_INVALID' });
+    }
+    await call('POST /api/config', { as: bob, json: { entryTemplates: '{}' }, status: 400, code: 'ENTRY_TEMPLATES_INVALID' });
+    expect(JSON.parse(String((await call('GET /api/config', { as: bob, status: 200 })).body.entryTemplates))).toEqual([template]);
+
+    // A name stored before the limit reads as its first 100 characters, so the settings save back as given
+    const long = { ...template, name: 'L'.repeat(150) };
+    await context.api.dataSource.query(
+      "UPDATE settings SET value = $1 WHERE user_id = $2 AND key = 'entryTemplates'",
+      [JSON.stringify([long]), bob.id],
+    );
+    const read = await call('GET /api/config', { as: bob, status: 200 });
+    expect(JSON.parse(String(read.body.entryTemplates))).toEqual([{ ...long, name: 'L'.repeat(100) }]);
+    await call('POST /api/config', { as: bob, json: read.body, status: 200 });
+  });
+
   it('downloads all of the writer’s data as a JSON file', async () => {
     const { alice } = context;
     await createEntry(context, alice, { text: 'Data download entry', tags: ['export'] });

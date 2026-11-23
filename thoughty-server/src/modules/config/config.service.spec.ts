@@ -159,6 +159,18 @@ describe('ConfigService', () => {
       expect(result.name).toBe('Kept');
     });
 
+    it('reads templates saved before names were limited within the limit, and leaves out a value that is no list', async () => {
+      const template = { id: 'custom-1', name: 'n'.repeat(140), content: 'Text', tags: [], visibility: 'private', format: 'plain' };
+      settingRepository.find.mockResolvedValue([{ key: 'entryTemplates', value: JSON.stringify([template]) }]);
+
+      const result = await service.getConfig(1);
+
+      expect(JSON.parse(result.entryTemplates)).toEqual([{ ...template, name: 'n'.repeat(100) }]);
+
+      settingRepository.find.mockResolvedValue([{ key: 'entryTemplates', value: 'not json' }]);
+      expect((await service.getConfig(1)).entryTemplates).toBeUndefined();
+    });
+
     it('never exposes encrypted credentials in general configuration', async () => {
       settingRepository.find.mockResolvedValue([
         { key: 'theme', value: 'light' },
@@ -227,6 +239,22 @@ describe('ConfigService', () => {
         expect(settingRepository.upsert).not.toHaveBeenCalled();
       },
     );
+
+    it('checks entry templates before saving anything', async () => {
+      const name = 'n'.repeat(101);
+      const raw = JSON.stringify([{ id: 'custom-1', name, content: 'Text', tags: [], visibility: 'private', format: 'plain' }]);
+
+      await expect(service.updateConfig(1, { theme: 'light', entryTemplates: raw })).rejects.toMatchObject({
+        response: expect.objectContaining({ statusCode: 400, code: 'ENTRY_TEMPLATE_NAME_TOO_LONG' }),
+      });
+      await expect(service.updateConfig(1, { entryTemplates: '[{"name":"x"}]' })).rejects.toMatchObject({
+        response: expect.objectContaining({ code: 'ENTRY_TEMPLATES_INVALID' }),
+      });
+      expect(settingRepository.upsert).not.toHaveBeenCalled();
+
+      await service.updateConfig(1, { entryTemplates: raw.replace(name, 'Evening wins') });
+      expect(settingRepository.upsert).toHaveBeenCalledTimes(1);
+    });
 
     it('skips preferences left undefined', async () => {
       await service.updateConfig(1, { theme: 'light', name: undefined });

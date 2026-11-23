@@ -58,6 +58,32 @@ describe('TemplateNameDialog', () => {
     expect(input).toHaveAttribute('aria-invalid', 'false');
   });
 
+  it('stops the name at 100 characters and says so once it gets there', async () => {
+    const user = userEvent.setup();
+    const { onSave } = renderDialog();
+    const input = screen.getByLabelText('Template name');
+    expect(input).toHaveAttribute('maxLength', '100');
+    expect(input).not.toHaveAccessibleDescription();
+
+    await user.type(input, 'a'.repeat(99));
+    expect(screen.queryByText('A template name can be up to 100 characters.')).not.toBeInTheDocument();
+    await user.type(input, 'bc');
+
+    expect(input).toHaveValue(`${'a'.repeat(99)}b`);
+    expect(input).toHaveAccessibleDescription('A template name can be up to 100 characters.');
+    await user.keyboard('{Enter}');
+    expect(onSave).toHaveBeenCalledWith(`${'a'.repeat(99)}b`);
+  });
+
+  it('says so in French', async () => {
+    const user = userEvent.setup();
+    renderDialog({ t: translate('fr'), theme: 'light' });
+
+    await user.type(screen.getByLabelText('Nom du modèle'), 'n'.repeat(100));
+
+    expect(screen.getByText("Le nom d'un modèle peut compter jusqu'à 100 caractères.")).toHaveClass('text-gray-600');
+  });
+
   it('shows that it is saving and ignores a second submit meanwhile', async () => {
     let finish: (saved: boolean) => void = () => undefined;
     const onSave = vi.fn(() => new Promise<boolean>((resolve) => { finish = resolve; }));

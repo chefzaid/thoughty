@@ -47,6 +47,27 @@ test.describe('Entry templates', () => {
     expect(state.entries).toHaveLength(entryCount);
   });
 
+  test('stops a pasted name at 100 characters, says so, and saves it', async ({ page }) => {
+    const { state } = await setupMockApp(page, { startAuthenticated: true });
+    await page.goto('/journal');
+
+    const form = page.locator('form').first();
+    await form.locator('textarea').fill('Notes for the long road:');
+    await form.getByRole('button', { name: 'Save template' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Save as a template' });
+    const name = dialog.getByRole('textbox', { name: 'Template name' });
+    const longName = `${'Road trip '.repeat(10)}and back`;
+
+    await name.click();
+    await page.keyboard.insertText(longName);
+    await expect(name).toHaveValue(longName.slice(0, 100));
+    await expect(dialog.getByText('A template name can be up to 100 characters.')).toBeVisible();
+    await page.keyboard.press('Enter');
+
+    await expect(dialog).toHaveCount(0);
+    await expect.poll(() => savedTemplates(state.config).map(({ name: saved }) => saved)).toEqual([longName.slice(0, 100).trim()]);
+  });
+
   test('asks for the name in French', async ({ page }) => {
     await setupMockApp(page, { startAuthenticated: true, config: { language: 'fr' } });
     await page.goto('/journal');

@@ -5,6 +5,7 @@ export type EntryTemplatesTranslationKey =
   | 'templateNameDialogDescription'
   | 'templateNameLabel'
   | 'templateNameRequired'
+  | 'templateNameAtLimit'
   | 'templateSaveFailed'
   | 'templateSaving'
   | 'diaryDefaultTemplate'
@@ -20,6 +21,7 @@ export const entryTemplatesTranslations: Record<Language, Record<EntryTemplatesT
     templateNameDialogDescription: 'The template keeps the text, tags, visibility and format of your draft.',
     templateNameLabel: 'Template name',
     templateNameRequired: 'Enter a name for the template.',
+    templateNameAtLimit: 'A template name can be up to {max} characters.',
     templateSaveFailed: 'The template could not be saved. Try again.',
     templateSaving: 'Saving...',
     diaryDefaultTemplate: 'Default template',
@@ -34,6 +36,7 @@ export const entryTemplatesTranslations: Record<Language, Record<EntryTemplatesT
     templateNameDialogDescription: 'Le modèle reprend le texte, les tags, la visibilité et le format de votre brouillon.',
     templateNameLabel: 'Nom du modèle',
     templateNameRequired: 'Saisissez un nom pour le modèle.',
+    templateNameAtLimit: "Le nom d'un modèle peut compter jusqu'à {max} caractères.",
     templateSaveFailed: "Le modèle n'a pas pu être enregistré. Réessayez.",
     templateSaving: 'Enregistrement...',
     diaryDefaultTemplate: 'Modèle par défaut',

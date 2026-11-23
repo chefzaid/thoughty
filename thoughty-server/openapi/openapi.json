@@ -5051,7 +5051,7 @@
             }
           },
           "400": {
-            "description": "Unknown or reserved setting, or an invalid value",
+            "description": "Unknown or reserved setting (SETTINGS_RESERVED), or an invalid value; `entryTemplates` must be a JSON list of templates (ENTRY_TEMPLATES_INVALID) whose names are at most 100 characters (ENTRY_TEMPLATE_NAME_TOO_LONG)",
             "content": {
               "application/json": {
                 "schema": {
@@ -5059,7 +5059,7 @@
                 },
                 "example": {
                   "statusCode": 400,
-                  "message": "Unknown or reserved setting, or an invalid value",
+                  "message": "Unknown or reserved setting (SETTINGS_RESERVED), or an invalid value; `entryTemplates` must be a JSON list of templates (ENTRY_TEMPLATES_INVALID) whose names are at most 100 characters (ENTRY_TEMPLATE_NAME_TOO_LONG)",
                   "error": "Bad Request",
                   "code": "VALIDATION_FAILED"
                 }
@@ -22753,7 +22753,7 @@
           "entryTemplates": {
             "type": "string",
             "maxLength": 500000,
-            "description": "Custom entry templates as serialized JSON"
+            "description": "Custom entry templates as a JSON list of `{ id, name, content, tags, visibility, format }`, checked when saved: a non-blank name of at most 100 characters, an id of 1 to 100 letters, digits, `_` or `-`, `public` or `private`, `plain` or `markdown`"
           },
           "promptCardsDrawn": {
             "type": "string",
@@ -23194,7 +23194,7 @@
           "entryTemplates": {
             "type": "string",
             "maxLength": 500000,
-            "description": "Custom entry templates as serialized JSON"
+            "description": "Custom entry templates as a JSON list of `{ id, name, content, tags, visibility, format }`, checked when saved: a non-blank name of at most 100 characters, an id of 1 to 100 letters, digits, `_` or `-`, `public` or `private`, `plain` or `markdown`"
           },
           "promptCardsDrawn": {
             "type": "string",
@@ -34242,6 +34242,8 @@
           "DIARY_AI_OFF",
           "DIARY_AI_CONSENT_REQUIRED",
           "SETTINGS_RESERVED",
+          "ENTRY_TEMPLATES_INVALID",
+          "ENTRY_TEMPLATE_NAME_TOO_LONG",
           "SAVED_SEARCH_NOT_FOUND",
           "SAVED_SEARCH_NAME_TAKEN",
           "SAVED_SEARCH_LIMIT_REACHED",

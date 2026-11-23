@@ -100,6 +100,9 @@ export const API_ERROR_MESSAGES = {
   // 403: an AI request about an entry or the text of a diary that asks before each AI request, sent without `aiConsent`.
   DIARY_AI_CONSENT_REQUIRED: 'This diary asks before each AI request: confirm what is sent first',
   SETTINGS_RESERVED: 'Settings cannot be changed here',
+  // 400: `POST /api/config` with an `entryTemplates` setting that is not a JSON list of templates.
+  ENTRY_TEMPLATES_INVALID: 'Custom entry templates must be a JSON list of templates',
+  ENTRY_TEMPLATE_NAME_TOO_LONG: 'A template name can be up to 100 characters',
 
   // Saved searches.
   SAVED_SEARCH_NOT_FOUND: 'Saved search not found',
