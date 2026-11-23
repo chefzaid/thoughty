@@ -106,6 +106,19 @@ describe('AiService entry summaries', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('summarizes an entry of a diary that asks each time only with the writer’s consent', async () => {
+    entryRepository.findOne.mockResolvedValueOnce({ id: 10, userId: 1, content: 'Private', diaryAiAsk: true });
+    await expect(service.summarizeEntry(1, { entryId: 10 })).rejects.toMatchObject({
+      status: 403,
+      response: { code: 'DIARY_AI_CONSENT_REQUIRED' },
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    entryRepository.findOne.mockResolvedValueOnce({ id: 10, userId: 1, content: 'Private', diaryAiAsk: true });
+    await expect(service.summarizeEntry(1, { entryId: 10, aiConsent: true })).resolves.toEqual({ summary: expect.any(String) });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('rejects summary requests when OpenRouter is not configured', async () => {
     service = await createService('');
 

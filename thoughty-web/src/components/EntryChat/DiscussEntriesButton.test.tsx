@@ -154,6 +154,6 @@ describe('DiscussEntriesButton', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Discuss' }));
     ask('What comes back?');
 
-    expect(await screen.findByText('Read 2 entries. Diaries with AI off are left out.')).toBeInTheDocument();
+    expect(await screen.findByText('Read 2 entries. Diaries with AI off or set to ask each time are left out.')).toBeInTheDocument();
   });
 });

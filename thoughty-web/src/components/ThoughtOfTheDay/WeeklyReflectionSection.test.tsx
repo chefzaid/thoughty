@@ -168,7 +168,7 @@ describe('WeeklyReflectionSection', () => {
         const { unmount } = renderSection();
 
         const region = await screen.findByRole('region', { name: 'Your week' });
-        expect(within(region).getByText(/locked entries are never sent\. .* Diaries with AI off are left out\.$/)).toBeInTheDocument();
+        expect(within(region).getByText(/locked entries are never sent\. .* Diaries with AI off or set to ask each time are left out\.$/)).toBeInTheDocument();
         unmount();
 
         renderSection({ diaryId: 3 });

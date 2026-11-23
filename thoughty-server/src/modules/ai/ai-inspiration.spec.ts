@@ -74,7 +74,7 @@ describe('AiService inspiration', () => {
 
     expect(result).toEqual({ question: 'What does protecting your focus cost you at work?' });
     expect(entryRepository.find).toHaveBeenCalledWith({
-      where: { userId: 1, ...LOCKED_OUT_WHERE, diaryAiOff: false, diaryId: 4 },
+      where: { userId: 1, ...LOCKED_OUT_WHERE, diaryAiOff: false, diaryAiAsk: false, diaryId: 4 },
       select: { tags: true },
       order: { date: 'DESC', index: 'DESC' },
       take: 200,
@@ -109,13 +109,13 @@ describe('AiService inspiration', () => {
 
     expect(entryRepository.find).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { userId: 7, ...LOCKED_OUT_WHERE, diaryAiOff: false },
+        where: { userId: 7, ...LOCKED_OUT_WHERE, diaryAiOff: false, diaryAiAsk: false },
       }),
     );
 
     // An unlocked request reads the tags of locked entries too, never those of a diary with AI off
     await asUnlocked(7, () => service.generateInspiration(7, {}));
-    expect(entryRepository.find).toHaveBeenLastCalledWith(expect.objectContaining({ where: { userId: 7, diaryAiOff: false } }));
+    expect(entryRepository.find).toHaveBeenLastCalledWith(expect.objectContaining({ where: { userId: 7, diaryAiOff: false, diaryAiAsk: false } }));
   });
 
   it('requires tagged entries before contacting OpenRouter', async () => {

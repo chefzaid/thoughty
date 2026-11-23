@@ -6,7 +6,7 @@ import type { Language } from '../../utils/translations';
 import { countPhrase } from './yearReviewFormat';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import FeatureOffNote from '../FeatureFlags/FeatureOffNote';
-import type { DiaryAiScope } from '../../utils/diaryAi';
+import { ALL_DIARIES_AI_ON, type DiaryAiScope } from '../../utils/diaryAi';
 import './YearReviewMood.css';
 
 const WIDTH = 720;
@@ -130,7 +130,7 @@ function MoodReadAction({ aiAvailable, aiOn, diaryAi, hasMood, reading, onRead, 
     return <p className="review-note review-print-hidden">{t(aiOn ? 'reviewMoodUnavailable' : 'featureOffAi')}</p>;
   }
   if (diaryAi.aiOff) {
-    return <FeatureOffNote message="diaryAiOffNotice" theme={theme} className="review-print-hidden" t={t} />;
+    return <FeatureOffNote message={diaryAi.notice} theme={theme} className="review-print-hidden" t={t} />;
   }
   return (
     <>
@@ -151,7 +151,7 @@ function MoodReadAction({ aiAvailable, aiOn, diaryAi, hasMood, reading, onRead, 
  * otherwise AI reads it from a sample of entries, only when the writer asks.
  */
 function YearReviewMood({
-  mood, recordedMood = null, aiAvailable, diaryAi = { aiOff: false, aiOffLeftOut: false }, reading, failed, onRead, language, theme, t,
+  mood, recordedMood = null, aiAvailable, diaryAi = ALL_DIARIES_AI_ON, reading, failed, onRead, language, theme, t,
 }: YearReviewMoodProps) {
   const aiOn = useFeatureFlag('ai');
   if (recordedMood) {

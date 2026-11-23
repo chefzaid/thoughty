@@ -64,6 +64,13 @@ describe('AiService', () => {
       expect(fetchMock).not.toHaveBeenCalled();
     });
 
+    it('refuses an entry of a diary that asks each time without the writer’s consent, without calling the model', async () => {
+      entryRepository.findOne.mockResolvedValueOnce({ id: 10, userId: 1, diaryAiAsk: true });
+
+      await expect(service.chat(1, chatDto)).rejects.toMatchObject({ response: { code: 'DIARY_AI_CONSENT_REQUIRED' } });
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it('returns the AI reply', async () => {
       fetchMock.mockResolvedValue({
         ok: true,

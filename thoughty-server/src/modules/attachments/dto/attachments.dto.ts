@@ -3,6 +3,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Attachment } from '@/database/entities';
 import { AttachmentResponseDto } from '@/modules/entries/dto';
 import { StrictInt } from '@/common/validation';
+import { AiConsentProperty } from '@/common/diary-ai';
 
 export class LinkAttachmentDto {
   @ApiPropertyOptional({ description: 'Entry ID to link attachment to' })
@@ -15,13 +16,17 @@ export class TranscribeAttachmentDto {
   @ApiPropertyOptional({
     description:
       'Diary the recording is for, while it belongs to no entry yet (a memoir answer being written); a diary with ' +
-      'AI off refuses the request (`403 DIARY_AI_OFF`)',
+      'AI off refuses the request (`403 DIARY_AI_OFF`), and one that asks before each AI request refuses it without ' +
+      '`aiConsent` (`403 DIARY_AI_CONSENT_REQUIRED`)',
     minimum: 1,
   })
   @IsOptional()
   @StrictInt()
   @Min(1)
   diaryId?: number;
+
+  @AiConsentProperty()
+  aiConsent?: boolean;
 }
 
 export class AudioTranscriptionResponseDto {

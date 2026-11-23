@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsArray, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { StrictInt } from '@/common/validation';
+import { AiConsentProperty } from '@/common/diary-ai';
 
 export class SuggestTagsDto {
   @ApiProperty({ description: 'Entry content to analyze for tag suggestions' })
@@ -25,13 +26,18 @@ export class SuggestTagsDto {
   maxTags?: number;
 
   @ApiPropertyOptional({
-    description: 'Diary the text is written in; a diary with AI off refuses the request (`403 DIARY_AI_OFF`)',
+    description:
+      'Diary the text is written in; a diary with AI off refuses the request (`403 DIARY_AI_OFF`), and one that ' +
+      'asks before each AI request refuses it without `aiConsent` (`403 DIARY_AI_CONSENT_REQUIRED`)',
     minimum: 1,
   })
   @IsOptional()
   @StrictInt()
   @Min(1)
   diaryId?: number;
+
+  @AiConsentProperty()
+  aiConsent?: boolean;
 }
 
 export class SuggestTagsResponseDto {

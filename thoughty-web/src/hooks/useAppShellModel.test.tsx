@@ -24,6 +24,7 @@ import {
   navigateToFirst,
 } from './useAppShellModel.test-helpers';
 import type { MockedLayoutProps, MockedRoutesProps } from './useAppShellModel.test-helpers';
+import type { Entry } from '../types';
 
 vi.mock('react-router-dom', async () => ({
   ...(await vi.importActual<typeof import('react-router-dom')>('react-router-dom')),
@@ -141,18 +142,18 @@ describe('useAppShellModel', () => {
       await routesProps.handleRephrase?.({ id: 33, content: 'Discuss me' }, 'polish');
     });
 
-    expect(fixWriting).toHaveBeenCalledWith('Discuss me', 'polish', undefined);
+    expect(fixWriting).toHaveBeenCalledWith('Discuss me', 'polish', undefined, undefined);
     expect(handleEdit).toHaveBeenCalledWith({ id: 33, content: 'Discuss me' });
     expect(setEditText).toHaveBeenCalledWith('Polished text');
 
-    await expect(routesProps.handleSummarize?.(33, {
+    await expect(routesProps.handleSummarize?.({ id: 33, content: 'Discuss me' } as Entry, {
       includeDetails: 'decision',
       excludeDetails: 'names',
     })).resolves.toBe('Entry summary');
     expect(summarizeEntry).toHaveBeenCalledWith(33, {
       includeDetails: 'decision',
       excludeDetails: 'names',
-    });
+    }, undefined);
 
     await expect(routesProps.handleGetInspiration?.()).resolves.toBe('Fresh question?');
     expect(getInspiration).toHaveBeenCalledWith(9);

@@ -340,7 +340,7 @@ describe('EntryViewMode', () => {
         await user.click(screen.getByRole('button', { name: 'Generate summary' }));
 
         expect(await screen.findByText('Short summary')).toBeInTheDocument();
-        expect(onSummarize).toHaveBeenCalledWith(1, {
+        expect(onSummarize).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }), {
             includeDetails: undefined,
             excludeDetails: undefined,
         });

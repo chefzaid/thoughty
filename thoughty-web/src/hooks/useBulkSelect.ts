@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { Diary, Entry } from '../types';
-import { isDiaryAiOff, isDiaryAiOffRefusal } from '../utils/diaryAi';
+import { diaryAiMode, isDiaryAiModeRefusal } from '../utils/diaryAi';
 import type { AiAnswer, RephraseMode } from '../services/api/aiService';
 import { pluralPhrase } from '../utils/pluralPhrase';
 import { useApiServices } from './useApiServices';
@@ -28,7 +28,7 @@ const rephraseSelectedEntry = async (
 
   const { data: rewritten, refusal } = await aiFixWriting(entry.content, mode, entry.diary_id);
   if (rewritten === null) {
-    return isDiaryAiOffRefusal(refusal) ? 'aiOff' : 'failed';
+    return isDiaryAiModeRefusal(refusal) ? 'aiOff' : 'failed';
   }
 
   if (rewritten === entry.content) {
@@ -120,7 +120,8 @@ export const useBulkSelect = (
     const selectedEntries = ids
       .map((id) => entries.find((entry) => entry.id === id))
       .filter((entry): entry is Entry => Boolean(entry));
-    const rephrasable = selectedEntries.filter((entry) => !isDiaryAiOff(diaries, entry.diary_id));
+    // Many entries at once have no single text to show, so an entry of a diary that asks each time is left out too
+    const rephrasable = selectedEntries.filter((entry) => diaryAiMode(diaries, entry.diary_id) === 'on');
 
     if (rephrasable.length === 0) {
       notify(t('bulkRephraseNoEntries'));
@@ -128,10 +129,10 @@ export const useBulkSelect = (
     }
 
     let updatedCount = 0;
-    // An entry of a diary with AI off is never sent, so it stays unchanged
+    // An entry of a diary with AI off or set to ask is never sent, so it stays unchanged
     let unchangedCount = selectedEntries.length - rephrasable.length;
     let failedCount = 0;
-    // Entries the server refused because their diary was turned off elsewhere stay unchanged too
+    // Entries the server refused because their diary's AI mode was changed elsewhere stay unchanged too
     let aiOffCount = 0;
 
     for (const entry of rephrasable) {

@@ -289,9 +289,17 @@ describe('appShellProps', () => {
     });
 
     const off = createRoutesParams();
-    const { entryForm } = buildAuthenticatedRoutesProps({ ...off, entryFormState: { ...off.entryFormState, diaryAiOff: true } }).journalRouteProps;
+    const { entryForm } = buildAuthenticatedRoutesProps({ ...off, entryFormState: { ...off.entryFormState, diaryAiMode: 'off' } }).journalRouteProps;
     expect(entryForm.onSuggestTags).toBeUndefined();
     expect(entryForm.onFixWriting).toBeUndefined();
+    expect(entryForm.onGetInspiration).toBeUndefined();
+  });
+
+  it('keeps Auto Tag and Rephrase in a composer whose diary asks each time, but not Get Inspired', () => {
+    const ask = createRoutesParams();
+    const { entryForm } = buildAuthenticatedRoutesProps({ ...ask, entryFormState: { ...ask.entryFormState, diaryAiMode: 'ask' } }).journalRouteProps;
+    expect(entryForm.onSuggestTags).toBe(ask.entryFormState.handleSuggestTags);
+    expect(entryForm.onFixWriting).toBe(ask.entryFormState.handleFixWriting);
     expect(entryForm.onGetInspiration).toBeUndefined();
   });
 });

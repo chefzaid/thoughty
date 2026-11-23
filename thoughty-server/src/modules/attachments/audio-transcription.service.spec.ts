@@ -122,6 +122,15 @@ describe('AudioTranscriptionService', () => {
     expect(attachmentsService.getFileBuffer).not.toHaveBeenCalled();
   });
 
+  it('transcribes an entry’s audio in a diary that asks each time only with the writer’s consent', async () => {
+    attachmentsService.getOwnedAttachment.mockResolvedValue({ ...attachment, entry: { id: 2, diaryAiAsk: true } });
+    jest.spyOn(global, 'fetch').mockResolvedValue({ ok: true, json: jest.fn().mockResolvedValue({ text: 'Hello' }) } as never);
+
+    await expectApiError(service.transcribe(7, 4), ForbiddenException, 'DIARY_AI_CONSENT_REQUIRED');
+    expect(attachmentsService.getFileBuffer).not.toHaveBeenCalled();
+    await expect(service.transcribe(7, 4, undefined, true)).resolves.toMatchObject({ transcript: 'Hello' });
+  });
+
   it('transcribes an entry’s audio in a diary with AI on', async () => {
     attachmentsService.getOwnedAttachment.mockResolvedValue({ ...attachment, entry: { id: 2, diaryAiOff: false } });
     jest.spyOn(global, 'fetch').mockResolvedValue({ ok: true, json: jest.fn().mockResolvedValue({ text: 'Hello' }) } as never);
@@ -132,8 +141,8 @@ describe('AudioTranscriptionService', () => {
   it('checks the diary a recording without an entry is for (a memoir answer being written)', async () => {
     jest.spyOn(global, 'fetch').mockResolvedValue({ ok: true, json: jest.fn().mockResolvedValue({ text: 'Hello' }) } as never);
 
-    await expect(service.transcribe(7, 4, 3)).resolves.toMatchObject({ transcript: 'Hello' });
-    expect(diaryGate.assertTextAiAllowed).toHaveBeenCalledWith(7, 3);
+    await expect(service.transcribe(7, 4, 3, true)).resolves.toMatchObject({ transcript: 'Hello' });
+    expect(diaryGate.assertTextAiAllowed).toHaveBeenCalledWith(7, 3, true);
   });
 
   it('refuses a recording for a diary with AI off (403 DIARY_AI_OFF) before reading the audio', async () => {
@@ -148,7 +157,7 @@ describe('AudioTranscriptionService', () => {
     jest.spyOn(global, 'fetch').mockResolvedValue({ ok: true, json: jest.fn().mockResolvedValue({ text: 'Hello' }) } as never);
 
     await expect(service.transcribe(7, 4)).resolves.toMatchObject({ transcript: 'Hello' });
-    expect(diaryGate.assertTextAiAllowed).toHaveBeenCalledWith(7, undefined);
+    expect(diaryGate.assertTextAiAllowed).toHaveBeenCalledWith(7, undefined, undefined);
   });
 
   it('requires an OpenRouter credential', async () => {

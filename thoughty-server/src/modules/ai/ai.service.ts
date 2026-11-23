@@ -243,7 +243,7 @@ export class AiService {
 
   async summarizeEntry(userId: number, dto: SummarizeEntryDto): Promise<{ summary: string }> {
     const entry = await this.assertEntryOwnership(userId, dto.entryId);
-    assertEntryAiAllowed(entry);
+    assertEntryAiAllowed(entry, dto.aiConsent);
     if (!entry.content.trim()) {
       throw apiError(BadRequestException, 'AI_CONTENT_REQUIRED');
     }
@@ -295,7 +295,7 @@ export class AiService {
   }
 
   async chat(userId: number, dto: ChatDto): Promise<{ reply: string }> {
-    assertEntryAiAllowed(await this.assertEntryOwnership(userId, dto.entryId));
+    assertEntryAiAllowed(await this.assertEntryOwnership(userId, dto.entryId), dto.aiConsent);
 
     if (!dto.entryContent.trim()) {
       throw apiError(BadRequestException, 'AI_CONTENT_REQUIRED');

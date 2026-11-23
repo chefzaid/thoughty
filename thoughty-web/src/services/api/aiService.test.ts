@@ -49,6 +49,21 @@ describe("aiService", () => {
     });
   });
 
+  it("sends the writer's consent for a diary that asks each time, and leaves it out otherwise", async () => {
+    mockAuthFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ tags: [], content: "Fixed", summary: "Short" }) });
+
+    await service.suggestTags("Text", ["a"], 3, 4, true);
+    await service.fixWriting("Text", "polish", 4, true);
+    await service.summarizeEntry(12, {}, true);
+    await service.fixWriting("Text", "polish", 4, false);
+
+    const bodies = mockAuthFetch.mock.calls.map(([, init]) => JSON.parse(String((init as RequestInit).body)));
+    expect(bodies[0]).toEqual({ content: "Text", existingTags: ["a"], maxTags: 3, diaryId: 4, aiConsent: true });
+    expect(bodies[1]).toEqual({ content: "Text", mode: "polish", diaryId: 4, aiConsent: true });
+    expect(bodies[2]).toEqual({ entryId: 12, aiConsent: true });
+    expect(bodies[3]).toEqual({ content: "Text", mode: "polish", diaryId: 4 });
+  });
+
   it("returns no answer, and no refusal, when the response is not ok without a known code", async () => {
     mockAuthFetch.mockResolvedValue({
       ok: false,

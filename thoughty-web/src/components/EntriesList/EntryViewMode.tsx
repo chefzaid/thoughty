@@ -11,7 +11,7 @@ import { extractDate } from './EntriesList.utils';
 import { formatEntryDay } from '../ShareLinks/shareLinkText';
 import { IconActionButton } from './EntryActionPrimitives';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
-import { isDiaryAiOff } from '../../utils/diaryAi';
+import { diaryAiMode } from '../../utils/diaryAi';
 import EntryRephraseButton from './EntryRephraseButton';
 import EntrySecondaryActionsMenu from './EntrySecondaryActionsMenu';
 import EntrySummaryDialog from './EntrySummaryDialog';
@@ -67,7 +67,8 @@ interface EntryViewModeProps {
     onDeleteRevision?: (entryId: number, revisionId: number) => Promise<boolean>;
     onDiscuss?: (entry: Entry) => void;
     onRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
-    onSummarize?: (entryId: number, guidance: SummaryGuidance) => Promise<string | null>;
+    /** Resolves with the summary, null when it failed, or undefined when the writer did not send the request. */
+    onSummarize?: (entry: Entry, guidance: SummaryGuidance) => Promise<string | null | undefined>;
     /** Copies an entry's text, tags and format into the new entry form. */
     onUseAsStartingPoint?: (entry: Entry) => void;
     /** Opens the new entry form on a reply: a short quote of the entry and a link to it. */
@@ -155,9 +156,12 @@ function OpenEntryViewMode({
     tagMetadata,
     t,
 }: Readonly<EntryViewModeProps>) {
-    // The AI actions are left out while AI is switched off, and in a diary with AI off
-    const aiOn = useFeatureFlag('ai') && !isDiaryAiOff(diaries, entry.diary_id);
-    const onDiscuss = aiOn ? discuss : undefined;
+    // The AI actions are left out while AI is switched off, and in a diary with AI off. In one that asks each
+    // time, Rephrase and Summarize show what they would send first; chat and transcription are not offered there
+    const aiMode = diaryAiMode(diaries, entry.diary_id);
+    const aiOn = useFeatureFlag('ai') && aiMode !== 'off';
+    const unaskedAiOn = aiOn && aiMode === 'on';
+    const onDiscuss = unaskedAiOn ? discuss : undefined;
     const onRephrase = aiOn ? rephrase : undefined;
     const onSummarize = aiOn ? summarize : undefined;
     const publicSharing = useFeatureFlag('publicSharing');
@@ -346,7 +350,7 @@ function OpenEntryViewMode({
                 tagMetadata={tagMetadata}
                 onDeleteRevision={onDeleteRevision}
                 onHandleDeleteRevision={handleDeleteRevision}
-                aiAllowed={aiOn}
+                aiAllowed={unaskedAiOn}
                 t={t}
             />
             <ShareImageDialog
@@ -399,7 +403,7 @@ function OpenEntryViewMode({
                     isOpen={summaryOpen}
                     isDark={isDark}
                     onClose={() => setSummaryOpen(false)}
-                    onSummarize={onSummarize}
+                    onSummarize={(_entryId, guidance) => onSummarize(entry, guidance)}
                     t={t}
                 />
             )}

@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { ArrayMaxSize, IsArray, IsOptional, IsString, Matches, MaxLength, MinLength } from 'class-validator';
 import { MAX_MEMOIR_FOLLOW_UP_LENGTH, MAX_MEMOIR_FOLLOW_UPS } from '@/modules/ai/memoir-follow-ups';
+import { AiConsentProperty } from '@/common/diary-ai';
 import { MEMOIR_ANSWER_MAX_LENGTH } from './memoir.dto';
 
 /** Follow-ups offered for one answer are sent back, so a new round asks other ones. */
@@ -40,6 +41,9 @@ export class MemoirFollowUpsDto {
   @IsString({ each: true })
   @MaxLength(MAX_MEMOIR_FOLLOW_UP_LENGTH, { each: true })
   asked?: string[];
+
+  @AiConsentProperty()
+  aiConsent?: boolean;
 }
 
 export class MemoirFollowUpsResponseDto {

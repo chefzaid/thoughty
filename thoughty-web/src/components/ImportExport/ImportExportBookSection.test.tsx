@@ -140,6 +140,20 @@ describe('ImportExport book section', () => {
         expect(screen.queryByLabelText('bookWeavingMode')).not.toBeInTheDocument();
     });
 
+    it('starts a book of all diaries plain while some keep AI out, and lets the writer turn the AI prose on', async () => {
+        render(
+            <DiaryAiContext.Provider value={[{ id: 1, aiMode: 'on' }, { id: 2, aiMode: 'ask' }]}>
+                <ImportExport theme="dark" t={mockT} diaryId={null} diaryName="All" />
+            </DiaryAiContext.Provider>,
+        );
+
+        const narrative = (await screen.findByText('bookNarrative')).closest('label')!.querySelector('input')!;
+        expect(narrative).not.toBeChecked();
+        expect(screen.getByLabelText('bookWeavingMode')).toBeDisabled();
+        fireEvent.click(narrative);
+        expect(narrative).toBeChecked();
+    });
+
     it('creates and downloads an immutable book version', async () => {
         (globalThis.fetch as Mock)
             .mockResolvedValueOnce({ ok: true, json: async () => mockBookVersion })

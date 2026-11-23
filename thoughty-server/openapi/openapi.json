@@ -5427,7 +5427,8 @@
                   "reflection"
                 ],
                 "maxTags": 5,
-                "diaryId": 1
+                "diaryId": 1,
+                "aiConsent": true
               }
             }
           }
@@ -5449,7 +5450,7 @@
             }
           },
           "403": {
-            "description": "The named diary has AI off (`DIARY_AI_OFF`)",
+            "description": "The named diary has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -5457,7 +5458,7 @@
                 },
                 "example": {
                   "statusCode": 403,
-                  "message": "The named diary has AI off (`DIARY_AI_OFF`)",
+                  "message": "The named diary has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)",
                   "error": "Forbidden",
                   "code": "FORBIDDEN"
                 }
@@ -5522,7 +5523,8 @@
               "example": {
                 "content": "Today I wrote a thoughtful journal entry about focus and calm.",
                 "mode": "grammar",
-                "diaryId": 1
+                "diaryId": 1,
+                "aiConsent": true
               }
             }
           }
@@ -5542,7 +5544,7 @@
             }
           },
           "403": {
-            "description": "The named diary has AI off (`DIARY_AI_OFF`)",
+            "description": "The named diary has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -5550,7 +5552,7 @@
                 },
                 "example": {
                   "statusCode": 403,
-                  "message": "The named diary has AI off (`DIARY_AI_OFF`)",
+                  "message": "The named diary has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)",
                   "error": "Forbidden",
                   "code": "FORBIDDEN"
                 }
@@ -5615,7 +5617,8 @@
               "example": {
                 "entryId": 1,
                 "includeDetails": "example",
-                "excludeDetails": "example"
+                "excludeDetails": "example",
+                "aiConsent": true
               }
             }
           }
@@ -5635,7 +5638,7 @@
             }
           },
           "403": {
-            "description": "The entry’s diary has AI off (`DIARY_AI_OFF`)",
+            "description": "The entry’s diary has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -5643,7 +5646,7 @@
                 },
                 "example": {
                   "statusCode": 403,
-                  "message": "The entry’s diary has AI off (`DIARY_AI_OFF`)",
+                  "message": "The entry’s diary has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)",
                   "error": "Forbidden",
                   "code": "FORBIDDEN"
                 }
@@ -6035,7 +6038,8 @@
                     "role": "user",
                     "content": "Today I wrote a thoughtful journal entry about focus and calm."
                   }
-                ]
+                ],
+                "aiConsent": true
               }
             }
           }
@@ -6055,7 +6059,7 @@
             }
           },
           "403": {
-            "description": "The entry’s diary has AI off (`DIARY_AI_OFF`)",
+            "description": "The entry’s diary has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -6063,7 +6067,7 @@
                 },
                 "example": {
                   "statusCode": 403,
-                  "message": "The entry’s diary has AI off (`DIARY_AI_OFF`)",
+                  "message": "The entry’s diary has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)",
                   "error": "Forbidden",
                   "code": "FORBIDDEN"
                 }
@@ -7906,7 +7910,8 @@
                 "$ref": "#/components/schemas/TranscribeAttachmentDto"
               },
               "example": {
-                "diaryId": 1
+                "diaryId": 1,
+                "aiConsent": true
               }
             }
           }
@@ -7928,7 +7933,7 @@
             }
           },
           "403": {
-            "description": "The attachment’s entry, or the diary the request names, has AI off (`DIARY_AI_OFF`)",
+            "description": "The attachment’s entry, or the diary the request names, has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -7936,7 +7941,7 @@
                 },
                 "example": {
                   "statusCode": 403,
-                  "message": "The attachment’s entry, or the diary the request names, has AI off (`DIARY_AI_OFF`)",
+                  "message": "The attachment’s entry, or the diary the request names, has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)",
                   "error": "Forbidden",
                   "code": "FORBIDDEN"
                 }
@@ -14805,7 +14810,8 @@
                 "text": "A narrow house with a fig tree in the yard and my grandmother singing in the kitchen.",
                 "asked": [
                   "What song did your grandmother sing in the kitchen?"
-                ]
+                ],
+                "aiConsent": true
               }
             }
           }
@@ -14844,7 +14850,7 @@
             }
           },
           "403": {
-            "description": "The memoir diary has AI off (`DIARY_AI_OFF`)",
+            "description": "The memoir diary has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -14852,7 +14858,7 @@
                 },
                 "example": {
                   "statusCode": 403,
-                  "message": "The memoir diary has AI off (`DIARY_AI_OFF`)",
+                  "message": "The memoir diary has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)",
                   "error": "Forbidden",
                   "code": "FORBIDDEN"
                 }
@@ -23379,8 +23385,12 @@
           },
           "diaryId": {
             "type": "number",
-            "description": "Diary the text is written in; a diary with AI off refuses the request (`403 DIARY_AI_OFF`)",
+            "description": "Diary the text is written in; a diary with AI off refuses the request (`403 DIARY_AI_OFF`), and one that asks before each AI request refuses it without `aiConsent` (`403 DIARY_AI_CONSENT_REQUIRED`)",
             "minimum": 1
+          },
+          "aiConsent": {
+            "type": "boolean",
+            "description": "The writer saw what this request sends and agreed to it. A diary that asks before each AI request refuses the request without it (`403 DIARY_AI_CONSENT_REQUIRED`); other diaries ignore it."
           }
         },
         "required": [
@@ -23392,7 +23402,8 @@
             "reflection"
           ],
           "maxTags": 5,
-          "diaryId": 1
+          "diaryId": 1,
+          "aiConsent": true
         }
       },
       "SuggestTagsResponseDto": {
@@ -23434,8 +23445,12 @@
           },
           "diaryId": {
             "type": "number",
-            "description": "Diary the text is written in; a diary with AI off refuses the request (`403 DIARY_AI_OFF`)",
+            "description": "Diary the text is written in; a diary with AI off refuses the request (`403 DIARY_AI_OFF`), and one that asks before each AI request refuses it without `aiConsent` (`403 DIARY_AI_CONSENT_REQUIRED`)",
             "minimum": 1
+          },
+          "aiConsent": {
+            "type": "boolean",
+            "description": "The writer saw what this request sends and agreed to it. A diary that asks before each AI request refuses the request without it (`403 DIARY_AI_CONSENT_REQUIRED`); other diaries ignore it."
           }
         },
         "required": [
@@ -23444,7 +23459,8 @@
         "example": {
           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
           "mode": "grammar",
-          "diaryId": 1
+          "diaryId": 1,
+          "aiConsent": true
         }
       },
       "FixWritingResponseDto": {
@@ -23479,6 +23495,10 @@
             "type": "string",
             "description": "Details or topics the summary should omit",
             "maxLength": 500
+          },
+          "aiConsent": {
+            "type": "boolean",
+            "description": "The writer saw what this request sends and agreed to it. A diary that asks before each AI request refuses the request without it (`403 DIARY_AI_CONSENT_REQUIRED`); other diaries ignore it."
           }
         },
         "required": [
@@ -23487,7 +23507,8 @@
         "example": {
           "entryId": 1,
           "includeDetails": "example",
-          "excludeDetails": "example"
+          "excludeDetails": "example",
+          "aiConsent": true
         }
       },
       "EntrySummaryResponseDto": {
@@ -23966,6 +23987,10 @@
             "items": {
               "$ref": "#/components/schemas/ChatMessageDto"
             }
+          },
+          "aiConsent": {
+            "type": "boolean",
+            "description": "The writer saw what this request sends and agreed to it. A diary that asks before each AI request refuses the request without it (`403 DIARY_AI_CONSENT_REQUIRED`); other diaries ignore it."
           }
         },
         "required": [
@@ -23981,7 +24006,8 @@
               "role": "user",
               "content": "Today I wrote a thoughtful journal entry about focus and calm."
             }
-          ]
+          ],
+          "aiConsent": true
         }
       },
       "ChatResponseDto": {
@@ -24116,10 +24142,11 @@
             "type": "string",
             "enum": [
               "on",
-              "off"
+              "off",
+              "ask"
             ],
             "example": "on",
-            "description": "Whether the AI features may read the diary’s entries; with `off` none reads them"
+            "description": "Whether the AI features may read the diary’s entries; with `off` none reads them, with `ask` only a request the writer agreed to"
           },
           "createdAt": {
             "format": "date-time",
@@ -24190,10 +24217,11 @@
             "type": "string",
             "enum": [
               "on",
-              "off"
+              "off",
+              "ask"
             ],
             "example": "off",
-            "description": "Whether the AI features may read the diary’s entries (`on`, the default) or none of them (`off`); left out keeps it on update"
+            "description": "Whether the AI features may read the diary’s entries (`on`, the default), none of them (`off`), or one entry or text at a time with the writer’s consent (`ask`, left out of the journal-wide features); left out keeps it on update"
           },
           "name": {
             "type": "string",
@@ -24263,10 +24291,11 @@
             "type": "string",
             "enum": [
               "on",
-              "off"
+              "off",
+              "ask"
             ],
             "example": "off",
-            "description": "Whether the AI features may read the diary’s entries (`on`, the default) or none of them (`off`); left out keeps it on update"
+            "description": "Whether the AI features may read the diary’s entries (`on`, the default), none of them (`off`), or one entry or text at a time with the writer’s consent (`ask`, left out of the journal-wide features); left out keeps it on update"
           },
           "name": {
             "type": "string",
@@ -26692,12 +26721,17 @@
         "properties": {
           "diaryId": {
             "type": "number",
-            "description": "Diary the recording is for, while it belongs to no entry yet (a memoir answer being written); a diary with AI off refuses the request (`403 DIARY_AI_OFF`)",
+            "description": "Diary the recording is for, while it belongs to no entry yet (a memoir answer being written); a diary with AI off refuses the request (`403 DIARY_AI_OFF`), and one that asks before each AI request refuses it without `aiConsent` (`403 DIARY_AI_CONSENT_REQUIRED`)",
             "minimum": 1
+          },
+          "aiConsent": {
+            "type": "boolean",
+            "description": "The writer saw what this request sends and agreed to it. A diary that asks before each AI request refuses the request without it (`403 DIARY_AI_CONSENT_REQUIRED`); other diaries ignore it."
           }
         },
         "example": {
-          "diaryId": 1
+          "diaryId": 1,
+          "aiConsent": true
         }
       },
       "AudioTranscriptionResponseDto": {
@@ -30188,6 +30222,10 @@
             "items": {
               "type": "string"
             }
+          },
+          "aiConsent": {
+            "type": "boolean",
+            "description": "The writer saw what this request sends and agreed to it. A diary that asks before each AI request refuses the request without it (`403 DIARY_AI_CONSENT_REQUIRED`); other diaries ignore it."
           }
         },
         "required": [
@@ -30199,7 +30237,8 @@
           "text": "A narrow house with a fig tree in the yard and my grandmother singing in the kitchen.",
           "asked": [
             "What song did your grandmother sing in the kitchen?"
-          ]
+          ],
+          "aiConsent": true
         }
       },
       "MemoirFollowUpsResponseDto": {
@@ -34083,6 +34122,7 @@
           "DIARY_NAME_TAKEN",
           "DIARY_DEFAULT_NOT_DELETABLE",
           "DIARY_AI_OFF",
+          "DIARY_AI_CONSENT_REQUIRED",
           "SETTINGS_RESERVED",
           "SAVED_SEARCH_NOT_FOUND",
           "SAVED_SEARCH_NAME_TAKEN",

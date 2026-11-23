@@ -22,6 +22,14 @@ describe('an entry in a diary with AI off', () => {
         expect(Boolean(screen.queryByTitle('Discuss entry'))).toBe(offered);
     });
 
+    it('offers Rephrase and Summarize in a diary that asks each time, but not chat or transcription', () => {
+        const diaries = [makeDiary({ id: 1, name: 'Dreams', aiMode: 'ask' })];
+        render(<EntryViewMode {...createEntryViewModeProps({ diaries, onDiscuss: vi.fn(), onRephrase: vi.fn(), onSummarize: vi.fn() })} />);
+
+        expect(screen.queryByTitle('Discuss entry')).not.toBeInTheDocument();
+        expect(screen.getByTitle('Rephrase entry')).toBeInTheDocument();
+    });
+
     it('offers no transcription for a recording, and still shows a transcript already made', () => {
         const { container } = render(<AudioTranscript attachment={recording} attachmentsService={{} as never} isDark t={t} aiAllowed={false} />);
         expect(container).toBeEmptyDOMElement();

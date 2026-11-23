@@ -134,14 +134,17 @@ describe('AttachmentsController', () => {
         transcribed_at: transcribedAt,
         cached: false,
       });
-      expect(audioTranscriptionService.transcribe).toHaveBeenCalledWith(1, 4, undefined);
+      expect(audioTranscriptionService.transcribe).toHaveBeenCalledWith(1, 4, undefined, undefined);
     });
 
     it('passes the diary a recording without an entry is for', async () => {
       audioTranscriptionService.transcribe.mockResolvedValue({ transcript: 'Voice note', transcribed_at: new Date(), cached: false });
 
       await controller.transcribe(mockUser as any, 4, { diaryId: 3 });
-      expect(audioTranscriptionService.transcribe).toHaveBeenCalledWith(1, 4, 3);
+      expect(audioTranscriptionService.transcribe).toHaveBeenCalledWith(1, 4, 3, undefined);
+
+      await controller.transcribe(mockUser as any, 4, { diaryId: 3, aiConsent: true });
+      expect(audioTranscriptionService.transcribe).toHaveBeenLastCalledWith(1, 4, 3, true);
     });
   });
 

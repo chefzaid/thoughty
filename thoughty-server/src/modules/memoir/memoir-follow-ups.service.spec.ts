@@ -46,4 +46,14 @@ describe('MemoirFollowUpsService', () => {
     await expectApiError(service.suggest(4, { questionId: 'childhood-home', text: 'x' }), ForbiddenException, 'DIARY_AI_OFF');
     expect(aiFollowUps.suggest).not.toHaveBeenCalled();
   });
+
+  it('asks the AI for a memoir diary that asks each time only with the writer’s consent', async () => {
+    programRepository.findOne.mockResolvedValue({ userId: 4, diary: { id: 9, aiMode: 'ask' } });
+    configService.getConfig.mockResolvedValue({});
+    await expectApiError(service.suggest(4, { questionId: 'childhood-home', text: 'x' }), ForbiddenException, 'DIARY_AI_CONSENT_REQUIRED');
+    expect(aiFollowUps.suggest).not.toHaveBeenCalled();
+
+    await service.suggest(4, { questionId: 'childhood-home', text: 'x', aiConsent: true });
+    expect(aiFollowUps.suggest).toHaveBeenCalledTimes(1);
+  });
 });

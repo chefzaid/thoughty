@@ -23,7 +23,7 @@ interface WeeklyReflectionSectionProps {
 export default function WeeklyReflectionSection({ diaryId, language, theme, t }: WeeklyReflectionSectionProps) {
     const titleId = useId();
     const aiOn = useFeatureFlag('ai');
-    const { aiOff, aiOffLeftOut } = useDiaryAiScope(diaryId);
+    const { aiOff, aiOffLeftOut, notice } = useDiaryAiScope(diaryId);
     const { week, reading, error, reflect } = useWeeklyReflection(diaryId, aiOn);
 
     if (!aiOn || !week?.aiAvailable) {
@@ -43,7 +43,7 @@ export default function WeeklyReflectionSection({ diaryId, language, theme, t }:
         return (
             <section className="highlight-section weekly-reflection" aria-labelledby={titleId}>
                 {title}
-                <FeatureOffNote message="diaryAiOffNotice" theme={theme} t={t} />
+                <FeatureOffNote message={notice} theme={theme} t={t} />
             </section>
         );
     }

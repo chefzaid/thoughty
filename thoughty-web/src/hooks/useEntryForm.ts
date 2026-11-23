@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { Attachment, Config, Diary } from '../types';
 import { getAutoTagLimit } from '../utils/autoTagLimit';
-import { composerDiaryId, isComposerDiaryAiOff, isDiaryAiOffRefusal } from '../utils/diaryAi';
+import { composerDiaryId, diaryAiMode, isDiaryAiModeRefusal } from '../utils/diaryAi';
+import { confirmAiRequest, type AiRequestDiary, type RequestAiConsent } from '../components/DiaryAi/aiConsent';
 import { formatEntryDate } from '../utils/entryDate';
 import { cleanEntryTitle } from '../utils/entryTime';
 import { defaultTimeCapsule, isValidTimeCapsuleDate, type TimeCapsuleDraft } from '../utils/timeCapsule';
@@ -42,8 +43,10 @@ export const useEntryForm = (
   currentDiaryId: number | null,
   onSuccess: () => void,
   diaries: readonly Diary[] = NO_DIARIES,
-  /** Hears that the server refused Rephrase or Auto Tag for AI off in the diary, so the diaries load again. */
+  /** Hears that the server refused Rephrase or Auto Tag for the diary's AI mode, so the diaries load again. */
   onDiaryAiOff?: () => void,
+  /** Shows what Rephrase or Auto Tag would send from a diary that asks each time, and resolves with the answer. */
+  requestAiConsent?: RequestAiConsent,
 ) => {
   const { entriesService, attachmentsService, aiService } = useApiServices();
 
@@ -72,11 +75,16 @@ export const useEntryForm = (
   const saving = useRef(false);
   const latestText = useRef(newEntryText);
   latestText.current = newEntryText;
-  // With AI switched off, or off in the composer's diary, nothing adds tags, so an entry needs one of its own
-  const diaryAiOff = isComposerDiaryAiOff(diaries, currentDiaryId);
+  // With AI switched off, or not on in the composer's diary (saving is no request the writer saw), nothing adds
+  // tags, so an entry needs one of its own
   const aiDiaryId = composerDiaryId(diaries, currentDiaryId);
-  const autoTagLimit = useFeatureFlag('ai') && !diaryAiOff ? getAutoTagLimit(config.autoTagMaxTags) : 0;
-  const tagSuggestions = useEntryTagSuggestions(aiService, newEntryText, tags, setTags, autoTagLimit, setFormError, aiDiaryId, onDiaryAiOff);
+  const composerAiMode = diaryAiMode(diaries, aiDiaryId);
+  const autoTagLimit = useFeatureFlag('ai') && composerAiMode === 'on' ? getAutoTagLimit(config.autoTagMaxTags) : 0;
+  const aiDiary = useMemo<AiRequestDiary>(
+    () => ({ diaryId: aiDiaryId, mode: composerAiMode, requestConsent: requestAiConsent, onModeRefused: onDiaryAiOff }),
+    [aiDiaryId, composerAiMode, onDiaryAiOff, requestAiConsent],
+  );
+  const tagSuggestions = useEntryTagSuggestions(aiService, newEntryText, tags, setTags, autoTagLimit, setFormError, aiDiary);
 
   // The draft follows the writer to their other devices; the date, time, visibility, capsule and files stay here
   const applyDraft = useCallback((fields: ComposerDraftFields) => {
@@ -232,13 +240,16 @@ export const useEntryForm = (
     }
 
     setFormError('');
+    const consent = await confirmAiRequest(composerAiMode, requestAiConsent, { text: newEntryText, task: 'writing' });
+    if (!consent.send) return false;
+
     setFixingWriting(true);
-    const { data: corrected, refusal } = await aiService.fixWriting(newEntryText, 'grammar', aiDiaryId);
+    const { data: corrected, refusal } = await aiService.fixWriting(newEntryText, 'grammar', aiDiaryId, consent.aiConsent);
     setFixingWriting(false);
 
     if (corrected === null) {
       setFormError(refusal ?? 'fixWritingFailed');
-      if (isDiaryAiOffRefusal(refusal)) onDiaryAiOff?.();
+      if (isDiaryAiModeRefusal(refusal)) onDiaryAiOff?.();
       return false;
     }
     if (corrected === newEntryText) {
@@ -248,7 +259,7 @@ export const useEntryForm = (
 
     setNewEntryText(corrected);
     return true;
-  }, [aiDiaryId, aiService, newEntryText, onDiaryAiOff]);
+  }, [aiDiaryId, aiService, composerAiMode, newEntryText, onDiaryAiOff, requestAiConsent]);
 
   return {
     newEntryText,
@@ -284,8 +295,8 @@ export const useEntryForm = (
     removePendingFile,
     removeUploadedAttachment,
     draft,
-    /** Whether the composer writes into a diary with AI off, where it offers no AI action. */
-    diaryAiOff,
+    /** The AI mode of the diary the composer writes into: no AI action with AI off, each one asks first with `ask`. */
+    diaryAiMode: composerAiMode,
     /** The name of the diary template the composer holds untouched, which another start replaces without asking. */
     diaryTemplateName: untouchedTemplate ? templateFill.name : null,
   };

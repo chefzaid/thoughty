@@ -5,7 +5,7 @@ import {
   type PostgresTestDatabase,
 } from './postgres-test-database.test-helpers';
 
-describePostgres('DiaryAiMode1790035200000 on PostgreSQL', () => {
+describePostgres('DiaryAiMode1790035200000 and DiaryAiAskMode1790121600000 on PostgreSQL', () => {
   let database: PostgresTestDatabase;
   let writer = 0;
   let open = 0;
@@ -19,6 +19,12 @@ describePostgres('DiaryAiMode1790035200000 on PostgreSQL', () => {
 
   const aiOff = async (entryId: number): Promise<boolean> =>
     (await database.dataSource.query('SELECT diary_ai_off FROM entries WHERE id = $1', [entryId]))[0].diary_ai_off;
+
+  /** The entry's copy of its diary's mode, as [off, ask]. */
+  const aiFlags = async (entryId: number): Promise<[boolean, boolean]> => {
+    const [row] = await database.dataSource.query('SELECT diary_ai_off, diary_ai_ask FROM entries WHERE id = $1', [entryId]);
+    return [row.diary_ai_off, row.diary_ai_ask];
+  };
 
   beforeAll(async () => {
     database = await createPostgresTestDatabase();
@@ -65,5 +71,25 @@ describePostgres('DiaryAiMode1790035200000 on PostgreSQL', () => {
 
     await database.dataSource.query(`UPDATE diaries SET ai_mode = 'on' WHERE id = $1`, [diary]);
     expect([await aiOff(first), await aiOff(second)]).toEqual([false, false]);
+  });
+
+  it('copies a diary that asks each time to its entries, follows moves and mode changes, and cannot be written by hand', async () => {
+    const asking = await insert(`INSERT INTO diaries (user_id, name, ai_mode) VALUES ($1, $2, 'ask')`, [writer, 'Dreams']);
+    const entryId = await entryIn(asking);
+    expect(await aiFlags(entryId)).toEqual([false, true]);
+
+    await database.dataSource.query('UPDATE entries SET diary_ai_ask = false WHERE id = $1', [entryId]);
+    expect(await aiFlags(entryId)).toEqual([false, true]);
+
+    await database.dataSource.query('UPDATE entries SET diary_id = $2 WHERE id = $1', [entryId, closed]);
+    expect(await aiFlags(entryId)).toEqual([true, false]);
+    await database.dataSource.query('UPDATE entries SET diary_id = $2 WHERE id = $1', [entryId, asking]);
+
+    await database.dataSource.query(`UPDATE diaries SET ai_mode = 'off' WHERE id = $1`, [asking]);
+    expect(await aiFlags(entryId)).toEqual([true, false]);
+    await database.dataSource.query(`UPDATE diaries SET ai_mode = 'ask' WHERE id = $1`, [asking]);
+    expect(await aiFlags(entryId)).toEqual([false, true]);
+    await database.dataSource.query(`UPDATE diaries SET ai_mode = 'on' WHERE id = $1`, [asking]);
+    expect(await aiFlags(entryId)).toEqual([false, false]);
   });
 });

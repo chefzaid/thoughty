@@ -43,13 +43,19 @@ export function useImportExportBook({
     t,
 }: UseImportExportBookProps) {
     const [chosenOptions, setOptions] = useState<BookOptions>(() => initialBookOptions(initialStart, t));
-    // While AI is switched off, or the book is of a diary with AI off, it is plain: no AI narrative and no AI
-    // chapter framing (a saved search or picked entries from such a diary are refused by the server)
-    const diaryAiOff = useDiaryAiScope(diaryId).aiOff && chosenOptions.source === 'journal';
-    const aiOn = useFeatureFlag('ai') && !diaryAiOff;
+    // Whether the writer chose the AI prose or chapter introductions themselves
+    const [aiOptionsChosen, setAiOptionsChosen] = useState(false);
+    // While AI is switched off, or the book is of a diary with AI off or set to ask, it is plain: no AI narrative
+    // and no AI chapter framing (a saved search or picked entries from such a diary are refused by the server)
+    const diaryAi = useDiaryAiScope(diaryId);
+    const journalBook = chosenOptions.source === 'journal';
+    const aiOn = useFeatureFlag('ai') && !(diaryAi.aiOff && journalBook);
+    // A book of all diaries while some leave AI out starts plain too, since the server refuses AI weaving of their
+    // entries; the writer may still turn the AI options on, for a book that holds none of them
+    const plainByDefault = diaryAi.aiOffLeftOut && journalBook && !aiOptionsChosen;
     const options = useMemo(
-        () => (aiOn ? chosenOptions : { ...chosenOptions, narrative: false, chapterFraming: false }),
-        [aiOn, chosenOptions],
+        () => (aiOn && !plainByDefault ? chosenOptions : { ...chosenOptions, narrative: false, chapterFraming: false }),
+        [aiOn, chosenOptions, plainByDefault],
     );
     const sourceData = useBookSourceData({ authFetch, options });
     const sourceReady = isBookSourceReady(options);
@@ -131,7 +137,13 @@ export function useImportExportBook({
     }
 
     function changeOption<K extends keyof BookOptions>(key: K, value: BookOptions[K]): void {
-        setOptions((current) => ({ ...current, [key]: value }));
+        if (key === 'narrative' || key === 'chapterFraming') {
+            // The option not touched keeps what the writer sees, plain or not
+            setAiOptionsChosen(true);
+            setOptions((current) => ({ ...current, narrative: options.narrative, chapterFraming: options.chapterFraming, [key]: value }));
+        } else {
+            setOptions((current) => ({ ...current, [key]: value }));
+        }
         // An outline of other entries would mislead
         if (SOURCE_OPTION_KEYS.has(key)) setPreview(null);
     }

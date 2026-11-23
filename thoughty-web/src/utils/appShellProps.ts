@@ -74,11 +74,12 @@ export interface BuildAuthenticatedRoutesPropsParams {
   downloadUserData: AuthenticatedRoutesProps['profileRouteProps']['onDownloadData'];
   entriesState: Pick<EntriesState, 'activeTargetId' | 'allTags' | 'availableMonths' | 'availableYears' | 'backlinksVersion' | 'deleteRevision' | 'entries' | 'fetchEntries' | 'fetchEntryBacklinks' | 'fetchEntryHistory' | 'filterArchiveStatus' | 'filterDateObj' | 'filterEraId' | 'filterFavorites' | 'filterMood' | 'filterPersonId' | 'filterTags' | 'filterVisibility' | 'feed' | 'groupedEntries' | 'listQuery' | 'loading' | 'rankedResults' | 'reorderEntries' | 'runSemanticSearch' | 'search' | 'searchMode' | 'searchSort' | 'semanticSearchResult' | 'semanticSearchStatus' | 'setEntryTask' | 'setFilterArchiveStatus' | 'setFilterDateObj' | 'setFilterEraId' | 'setFilterFavorites' | 'setFilterMood' | 'setFilterPersonId' | 'setFilterTags' | 'setFilterVisibility' | 'setSearch' | 'setSearchMode' | 'setSearchSort' | 'sourceEntry' | 'targetEntryId' | 'toggleArchived' | 'toggleFavorite' | 'togglePinned' | 'toggleVisibility' | 'unsealEntry'>;
   entryEditState: Pick<EntryEditState, 'addEditPendingFile' | 'editDate' | 'editDiaryId' | 'editExistingAttachments' | 'editFeelings' | 'editFormat' | 'editMood' | 'editPendingFiles' | 'editTags' | 'editText' | 'editTimeOfDay' | 'editTitle' | 'editVisibility' | 'editingEntry' | 'handleCancelEdit' | 'handleEdit' | 'handleSaveEdit' | 'removeEditAttachment' | 'removeEditPendingFile' | 'setEditDate' | 'setEditDiaryId' | 'setEditFeelings' | 'setEditFormat' | 'setEditMood' | 'setEditTags' | 'setEditText' | 'setEditTimeOfDay' | 'setEditTitle' | 'setEditVisibility'>;
-  entryFormState: Pick<EntryFormState, 'addPendingFile' | 'diaryAiOff' | 'diaryTemplateName' | 'draft' | 'feelings' | 'fixingWriting' | 'formError' | 'format' | 'handleFixWriting' | 'handleSubmit' | 'handleSuggestTags' | 'mood' | 'newEntryText' | 'pendingFiles' | 'removePendingFile' | 'removeUploadedAttachment' | 'savedEntry' | 'selectedDate' | 'setFeelings' | 'setFormat' | 'setMood' | 'setNewEntryText' | 'setSelectedDate' | 'setTags' | 'setTimeCapsule' | 'setTimeOfDay' | 'setTitle' | 'setVisibility' | 'suggestingTags' | 'tags' | 'timeCapsule' | 'timeOfDay' | 'title' | 'uploadedAttachments' | 'visibility'>;
+  entryFormState: Pick<EntryFormState, 'addPendingFile' | 'diaryAiMode' | 'diaryTemplateName' | 'draft' | 'feelings' | 'fixingWriting' | 'formError' | 'format' | 'handleFixWriting' | 'handleSubmit' | 'handleSuggestTags' | 'mood' | 'newEntryText' | 'pendingFiles' | 'removePendingFile' | 'removeUploadedAttachment' | 'savedEntry' | 'selectedDate' | 'setFeelings' | 'setFormat' | 'setMood' | 'setNewEntryText' | 'setSelectedDate' | 'setTags' | 'setTimeCapsule' | 'setTimeOfDay' | 'setTitle' | 'setVisibility' | 'suggestingTags' | 'tags' | 'timeCapsule' | 'timeOfDay' | 'title' | 'uploadedAttachments' | 'visibility'>;
   entryNavigationState: Pick<EntryNavigationState, 'handleBackToSource' | 'handleNavigateToEntry' | 'handleOpenEntryInList' | 'handleShareEntry'>;
   handleDiscuss: (entry: Entry) => void;
   handleRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
-  handleSummarize?: (entryId: number, guidance: SummaryGuidance) => Promise<string | null>;
+  /** Resolves with the summary, null when it failed, undefined when the writer did not send the request. */
+  handleSummarize?: (entry: Entry, guidance: SummaryGuidance) => Promise<string | null | undefined>;
   /** Moves one entry to another diary; resolves `false` when it could not. */
   handleMoveToDiary?: (entry: Entry, diaryId: number, closeAsker?: () => void) => Promise<boolean>;
   handleGetInspiration?: () => Promise<string | null>;
@@ -398,11 +399,12 @@ export function buildAuthenticatedRoutesProps({
         tagMetadata,
         formError: entryFormState.formError,
         suggestingTags: entryFormState.suggestingTags,
-        // A diary with AI off offers no AI action in the composer
-        onSuggestTags: entryFormState.diaryAiOff ? undefined : entryFormState.handleSuggestTags,
+        // A diary with AI off offers no AI action in the composer; one that asks each time asks before Auto Tag and
+        // Rephrase, and offers no Get Inspired, which reads the tags of many entries
+        onSuggestTags: entryFormState.diaryAiMode === 'off' ? undefined : entryFormState.handleSuggestTags,
         fixingWriting: entryFormState.fixingWriting,
-        onFixWriting: entryFormState.diaryAiOff ? undefined : entryFormState.handleFixWriting,
-        onGetInspiration: entryFormState.diaryAiOff ? undefined : handleGetInspiration,
+        onFixWriting: entryFormState.diaryAiMode === 'off' ? undefined : entryFormState.handleFixWriting,
+        onGetInspiration: entryFormState.diaryAiMode === 'on' ? handleGetInspiration : undefined,
         promptCardsDrawn: config.promptCardsDrawn,
         // A card drawn before the settings arrive would be drawn from an empty deck history and saved over it
         promptCardsReady: configLoaded,

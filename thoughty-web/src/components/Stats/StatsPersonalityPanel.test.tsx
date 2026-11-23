@@ -144,7 +144,7 @@ describe('StatsPersonalityPanel', () => {
     });
 
     it('offers no analysis for a diary with AI off and says why', () => {
-        render(<StatsPersonalityPanel themeClass="light" diaryId={4} diaryAi={{ aiOff: true, aiOffLeftOut: false }} t={t} />);
+        render(<StatsPersonalityPanel themeClass="light" diaryId={4} diaryAi={{ aiOff: true, notice: 'diaryAiOffNotice', aiOffLeftOut: false }} t={t} />);
 
         expect(screen.getByRole('note')).toHaveTextContent('diaryAiOffNotice');
         expect(screen.queryByRole('button', { name: 'Analyze' })).not.toBeInTheDocument();
@@ -153,7 +153,7 @@ describe('StatsPersonalityPanel', () => {
     });
 
     it('says an analysis of all diaries leaves those with AI off out', () => {
-        render(<StatsPersonalityPanel themeClass="dark" diaryId={null} diaryAi={{ aiOff: false, aiOffLeftOut: true }} t={t} />);
+        render(<StatsPersonalityPanel themeClass="dark" diaryId={null} diaryAi={{ aiOff: false, notice: 'diaryAiOffNotice', aiOffLeftOut: true }} t={t} />);
 
         expect(screen.getByRole('button', { name: 'Analyze' })).toBeInTheDocument();
         expect(screen.getByText('diaryAiOffLeftOut')).toBeInTheDocument();

@@ -9,7 +9,8 @@ interface EntrySummaryDialogProps {
     isOpen: boolean;
     isDark: boolean;
     onClose: () => void;
-    onSummarize: (entryId: number, guidance: SummaryGuidance) => Promise<string | null>;
+    /** Resolves with the summary, null when it failed, or undefined when the writer did not send the request. */
+    onSummarize: (entryId: number, guidance: SummaryGuidance) => Promise<string | null | undefined>;
     t: TranslationFn;
 }
 
@@ -63,7 +64,7 @@ export default function EntrySummaryDialog({
         setError('');
         setCopied(false);
 
-        let result: string | null = null;
+        let result: string | null | undefined = null;
         try {
             result = await onSummarize(entryId, {
                 includeDetails: includeDetails.trim() || undefined,
@@ -78,6 +79,10 @@ export default function EntrySummaryDialog({
         }
 
         setLoading(false);
+        // Not sent (the writer cancelled what a diary that asks each time showed them): nothing failed
+        if (result === undefined) {
+            return;
+        }
         if (result === null) {
             setError(t('summaryError'));
             return;

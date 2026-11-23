@@ -46,10 +46,11 @@ import {
   type VerifyEmailPageProps,
   type SessionUnreachablePageProps,
 } from '../utils/appShellProps';
-import type { RephraseMode, SummaryGuidance } from '../services/api/aiService';
 import type { Diary, Entry, PublicViewType, ViewType } from '../types';
 import { landingViewFor } from '../utils/landingView';
-import { isDiaryAiOffRefusal } from '../utils/diaryAi';
+import { useEntryAiActions } from './useEntryAiActions';
+import { useAiConsentController } from '../components/DiaryAi/useAiConsentController';
+import type { AiConsentRequest } from '../components/DiaryAi/aiConsent';
 
 interface AppShellModel {
   authLoading: boolean;
@@ -76,6 +77,8 @@ interface AppShellModel {
   /** Set while the session goes on but Thoughty could not say whose it is (and no writer here is theirs). */
   sessionUnreachablePageProps: SessionUnreachablePageProps | null;
   diaries: Diary[];
+  /** The consent dialog of a diary that asks before each AI request: the request waiting, and its answer. */
+  aiConsent: { request: AiConsentRequest | null; answer: (agreed: boolean) => void };
 }
 
 export function useAppShellModel(): AppShellModel {
@@ -114,6 +117,7 @@ export function useAppShellModel(): AppShellModel {
 
   const diariesState = useDiaries(isAuthenticated, routeEntryId !== undefined || routeDiaryId !== undefined);
   const { currentDiaryId, setCurrentDiaryId, fetchDiaries, diarySelectionReady } = diariesState;
+  const aiConsent = useAiConsentController();
 
   // Says that an entry to open (a link, a cross-reference, the entry being read) could not be found
   const entryToast = useTransientMessage();
@@ -134,7 +138,7 @@ export function useAppShellModel(): AppShellModel {
     // and so do the backlinks, which the new entry's links (a reply's, say) add to
     refreshBacklinks();
     void refreshEntryQueries();
-  }, diariesState.diaries, fetchDiaries);
+  }, diariesState.diaries, fetchDiaries, aiConsent.requestConsent);
 
   // Every view measured from the entries (list, calendar, writing streak, backlinks) reads them again
   const refreshEntryViews = useCallback(() => {
@@ -268,22 +272,18 @@ export function useAppShellModel(): AppShellModel {
 
   // Kept the same between renders, so the entry cards that offer it are not drawn again with each batch
   const { handleEdit: editEntry, setEditText } = entryEditState;
-  const handleRephrase = useCallback(async (entry: Entry, mode: RephraseMode) => {
-    const { data: rewritten, refusal } = await aiService.fixWriting(entry.content, mode, entry.diary_id);
-
-    if (rewritten === null) {
-      notifier.notify(t(refusal ?? 'rephraseEntryFailed'));
-      if (isDiaryAiOffRefusal(refusal)) void fetchDiaries();
-      return;
-    }
-
-    editEntry(entry);
-    setEditText(rewritten);
-  }, [aiService, editEntry, fetchDiaries, notifier, setEditText, t]);
-
-  const handleSummarize = useCallback(async (entryId: number, guidance: SummaryGuidance) => {
-    return aiService.summarizeEntry(entryId, guidance);
-  }, [aiService]);
+  const { handleRephrase, handleSummarize } = useEntryAiActions({
+    aiService,
+    diaries: diariesState.diaries,
+    requestConsent: aiConsent.requestConsent,
+    editWith: useCallback((entry: Entry, text: string) => {
+      editEntry(entry);
+      setEditText(text);
+    }, [editEntry, setEditText]),
+    notify: notifier.notify,
+    reloadDiaries: useCallback(() => void fetchDiaries(), [fetchDiaries]),
+    t,
+  });
 
   const handleGetInspiration = useCallback(async () => {
     return aiService.getInspiration(currentDiaryId ?? undefined);
@@ -468,5 +468,6 @@ export function useAppShellModel(): AppShellModel {
     sessionUnreachablePageProps,
     /** The diaries, for the AI actions of pages that read a diary's entries without receiving them. */
     diaries: diariesState.diaries,
+    aiConsent: { request: aiConsent.request, answer: aiConsent.answer },
   };
 }

@@ -6,7 +6,7 @@ import { goToView } from '../support/navigation';
 
 const TODAY = '2026-11-21';
 const AI_OFF_NOTE = 'AI is off for this diary: no AI feature reads its entries.';
-const LEFT_OUT = 'Diaries with AI off are left out.';
+const LEFT_OUT = 'Diaries with AI off or set to ask each time are left out.';
 const diaries = [
   mockDiary({ id: 1, name: 'Work', icon: '💼', isDefault: true }),
   mockDiary({ id: 2, name: 'Health', icon: '🩺', aiMode: 'off' }),

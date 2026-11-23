@@ -14,7 +14,7 @@ import MemoirQuestionCard, { type MemoirWeekAction } from './MemoirQuestionCard'
 import MemoirSettings from './MemoirSettings';
 import MemoirSimpleModeCard from './MemoirSimpleModeCard';
 import { resolveLanguage } from '../../utils/language';
-import { isDiaryAiOff } from '../../utils/diaryAi';
+import { diaryAiMode } from '../../utils/diaryAi';
 import { formatMemoirDay, localize, todayIn } from './memoirFormat';
 import { findQuestion, firstReturnDay } from './memoirQuestions';
 import { useMemoir } from './useMemoir';
@@ -130,7 +130,8 @@ function MemoirPage({
       onCancel={() => setActiveQuestionId(null)}
       eras={eras}
       answerDate={todayIn(program?.timeZone ?? 'UTC')}
-      aiAllowed={!isDiaryAiOff(diaries, program?.diaryId)}
+      // No follow-ups or transcription in a memoir diary with AI off, nor yet in one that asks each time
+      aiAllowed={diaryAiMode(diaries, program?.diaryId) === 'on'}
       diaryId={program?.diaryId}
       language={language}
       t={t}

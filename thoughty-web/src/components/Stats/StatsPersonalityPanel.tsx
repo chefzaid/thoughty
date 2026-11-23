@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import type { components } from '../../generated/openapi';
-import type { DiaryAiScope } from '../../utils/diaryAi';
+import { ALL_DIARIES_AI_ON, type DiaryAiScope } from '../../utils/diaryAi';
 import FeatureOffNote from '../FeatureFlags/FeatureOffNote';
 import './StatsPersonalityPanel.css';
 
@@ -23,7 +23,7 @@ interface StatsPersonalityPanelProps {
 export default function StatsPersonalityPanel({
     themeClass,
     diaryId,
-    diaryAi = { aiOff: false, aiOffLeftOut: false },
+    diaryAi = ALL_DIARIES_AI_ON,
     t,
 }: Readonly<StatsPersonalityPanelProps>) {
     const { authFetch } = useAuth();
@@ -141,7 +141,7 @@ export default function StatsPersonalityPanel({
             </div>
 
             {diaryAi.aiOff ? (
-                <FeatureOffNote message="diaryAiOffNotice" theme={themeClass} t={t} />
+                <FeatureOffNote message={diaryAi.notice} theme={themeClass} t={t} />
             ) : (
                 <>
                     {error && (

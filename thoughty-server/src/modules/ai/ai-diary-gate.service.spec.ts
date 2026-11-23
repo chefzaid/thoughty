@@ -32,6 +32,14 @@ describe('AiDiaryGateService', () => {
     await expectApiError(gate.assertTextAiAllowed(1, 4), ForbiddenException, 'DIARY_AI_OFF');
   });
 
+  it('lets text of a diary that asks each time through only with the writer’s consent (403 DIARY_AI_CONSENT_REQUIRED)', async () => {
+    const { gate } = setup({ id: 4, aiMode: 'ask' });
+
+    await expect(gate.assertTextAiAllowed(1, 4, true)).resolves.toBeUndefined();
+    await expectApiError(gate.assertTextAiAllowed(1, 4), ForbiddenException, 'DIARY_AI_CONSENT_REQUIRED');
+    await expectApiError(gate.assertTextAiAllowed(1, 4, false), ForbiddenException, 'DIARY_AI_CONSENT_REQUIRED');
+  });
+
   it('refuses a diary the writer does not own with 404 DIARY_NOT_FOUND', async () => {
     const { gate } = setup(null);
 

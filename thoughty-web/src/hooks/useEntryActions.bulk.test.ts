@@ -424,27 +424,27 @@ describe("useEntryActions", () => {
       );
     });
 
-    it("never sends an entry of a diary with AI off to be rephrased, and counts it unchanged", async () => {
+    it("never sends an entry of a diary with AI off or set to ask (no single text to show) to be rephrased, and counts it unchanged", async () => {
       const updateEntry = vi.fn().mockResolvedValue(true);
       const fixWriting = vi.fn().mockResolvedValue({ data: "Improved", refusal: null });
       await createEntriesServiceMock({ updateEntry });
       await createAiServiceMock({ fixWriting });
       const entry = (id: number, diaryId: number) => ({ id, content: `Entry ${id}`, tags: ["focus"], date: "2024-01-15", visibility: "private" as const, diary_id: diaryId });
-      const diaries = [{ id: 1, aiMode: "on" as const }, { id: 2, aiMode: "off" as const }];
+      const diaries = [{ id: 1, aiMode: "on" as const }, { id: 2, aiMode: "off" as const }, { id: 3, aiMode: "ask" as const }];
 
-      const { result } = renderHook(() => useBulkSelect(mockOnComplete, [entry(1, 1), entry(2, 2)], notifier, undefined, undefined, diaries));
-      act(() => result.current.selectAll([1, 2]));
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete, [entry(1, 1), entry(2, 2), entry(3, 3)], notifier, undefined, undefined, diaries));
+      act(() => result.current.selectAll([1, 2, 3]));
       await act(async () => {
         await result.current.executeBulkAction("rephrase", { mode: "grammar" });
       });
 
       expect(fixWriting).toHaveBeenCalledTimes(1);
       expect(fixWriting).toHaveBeenCalledWith("Entry 1", "grammar", 1);
-      expect(mockNotify).toHaveBeenCalledWith("Bulk rephrase completed: 1 updated, 1 unchanged, 0 failed.");
+      expect(mockNotify).toHaveBeenCalledWith("Bulk rephrase completed: 1 updated, 2 unchanged, 0 failed.");
 
       // Only entries of diaries with AI off: nothing to rephrase
       fixWriting.mockClear();
-      act(() => result.current.selectAll([2]));
+      act(() => result.current.selectAll([2, 3]));
       await act(async () => {
         await result.current.executeBulkAction("rephrase", { mode: "grammar" });
       });

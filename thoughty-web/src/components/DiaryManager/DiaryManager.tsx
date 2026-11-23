@@ -423,6 +423,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                                     <span className="diary-goal-summary">{describeDiaryTemplate(diary.defaultTemplateId, entryTemplates, t)}</span>
                                                 )}
                                                 {diary.aiMode === 'off' && <span className="diary-goal-summary">{t('diaryAiOffSummary')}</span>}
+                                                {diary.aiMode === 'ask' && <span className="diary-goal-summary">{t('diaryAiAskSummary')}</span>}
                                                 {reminderSummary(diary.id) && (
                                                     <span className="diary-goal-summary">{reminderSummary(diary.id)}</span>
                                                 )}

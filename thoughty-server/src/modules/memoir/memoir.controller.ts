@@ -112,7 +112,10 @@ export class MemoirController {
   })
   @ApiResponse({ status: 200, description: 'The follow-up questions, empty when the answer gives nothing to build on yet', type: MemoirFollowUpsResponseDto })
   @ApiResponse({ status: 400, description: 'The answer is empty, or AI is not available (`AI_KEY_NOT_CONFIGURED`)' })
-  @ApiResponse({ status: 403, description: 'The memoir diary has AI off (`DIARY_AI_OFF`)' })
+  @ApiResponse({
+    status: 403,
+    description: 'The memoir diary has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)',
+  })
   @ApiResponse({ status: 404, description: 'Unknown question, or memoir not started' })
   @ApiResponse({ status: 502, description: 'The AI provider failed (`AI_PROVIDER_FAILED`)' })
   followUps(

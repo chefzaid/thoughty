@@ -45,7 +45,7 @@ export interface BookFile {
 interface SourcedBook {
   book: Book;
   source: BookVersionSource;
-  /** Whether a chapter holds an entry of a diary with AI off, which no AI narrative or framing may read. */
+  /** Whether a chapter holds an entry of a diary with AI off or set to ask, which no AI narrative or framing may read. */
   holdsAiOffEntries: boolean;
 }
 
@@ -121,7 +121,8 @@ export class BooksService {
       today: query.today,
       language,
     });
-    const aiOffIds = new Set(entries.filter((entry) => entry.diaryAiOff).map((entry) => entry.id));
+    // A diary that asks before each AI request is left out of AI weaving as well: a whole book has no single text to show
+    const aiOffIds = new Set(entries.filter((entry) => entry.diaryAiOff || entry.diaryAiAsk).map((entry) => entry.id));
     const holdsAiOffEntries = book.chapters.some((chapter) => chapter.entries.some((entry) => aiOffIds.has(entry.id ?? 0)));
     return { book: { ...book, dedication, epigraph, closingPage: query.closingPage === true }, source, holdsAiOffEntries };
   }

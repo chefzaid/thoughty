@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Diary } from '@/database/entities';
 import { sanitizeString } from '@/common/utils';
 import { AiService } from '@/modules/ai';
@@ -17,7 +17,7 @@ export class EntryTaggingService {
     private readonly diaryRepository: Repository<Diary>,
   ) {}
 
-  /** The tags an entry saves with: those given, then the AI's up to the writer's limit, unless its diary (`diaryId`) has AI off. */
+  /** The tags an entry saves with: those given, then the AI's up to the writer's limit, unless its diary (`diaryId`) has AI off or asks before each AI request (saving is not a request the writer saw). */
   async resolveSavedTags(userId: number, text: string, rawTags: string[], diaryId?: number | null): Promise<string[]> {
     const sanitizedTags = [...new Set(rawTags
       .map((tag: string) => sanitizeString(tag.trim()).substring(0, 50))
@@ -33,7 +33,7 @@ export class EntryTaggingService {
     if (!(await this.featureFlags.isEnabled('ai'))) {
       return sanitizedTags;
     }
-    if (diaryId && (await this.diaryRepository.exists({ where: { id: diaryId, userId, aiMode: 'off' } }))) {
+    if (diaryId && (await this.diaryRepository.exists({ where: { id: diaryId, userId, aiMode: In(['off', 'ask']) } }))) {
       return sanitizedTags;
     }
 

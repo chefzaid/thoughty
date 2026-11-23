@@ -4,7 +4,7 @@ import type { FeatureFlagsTranslationKey } from '../../utils/translations.featur
 import './FeatureOffNote.css';
 
 interface FeatureOffNoteProps {
-  /** What the note says, such as `featureOffAi`, or `diaryAiOffNotice` where the diary shown has AI off. */
+  /** What the note says, such as `featureOffAi`, or `diaryAiOffNotice` (`diaryAiAskNotice`) where the diary shown has AI off (asks each time). */
   readonly message: FeatureFlagsTranslationKey | DiaryAiTranslationKey;
   readonly theme?: 'light' | 'dark';
   readonly className?: string;

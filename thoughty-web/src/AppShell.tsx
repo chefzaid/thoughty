@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 
 import LoadingSpinner from './components/LoadingSpinner/LoadingSpinner';
 import { DiaryAiContext } from './components/DiaryAi/diaryAiScope';
+import AiConsentDialog from './components/DiaryAi/AiConsentDialog';
 import NotificationsMenu from './components/Notifications/NotificationsMenu';
 import IntroPage from './components/IntroPage/IntroPage';
 import { useAppShellModel } from './hooks/useAppShellModel';
@@ -61,6 +62,7 @@ function AppShell() {
     introPageProps,
     sessionUnreachablePageProps,
     diaries,
+    aiConsent,
   } = useAppShellModel();
 
   if (authLoading) {
@@ -142,6 +144,12 @@ function AppShell() {
       >
         <AuthenticatedRoutes {...authenticatedRoutesProps} />
       </AuthenticatedAppLayout>
+      <AiConsentDialog
+        request={aiConsent.request}
+        config={authenticatedLayoutProps.config}
+        onAnswer={aiConsent.answer}
+        t={authenticatedLayoutProps.t}
+      />
     </DiaryAiContext.Provider>,
   );
 }

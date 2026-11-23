@@ -123,13 +123,16 @@ export class AiController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Suggest tags for journal content using OpenRouter' })
   @ApiResponse({ status: 200, description: 'Suggested tags returned successfully', type: SuggestTagsResponseDto })
-  @ApiResponse({ status: 403, description: 'The named diary has AI off (`DIARY_AI_OFF`)' })
+  @ApiResponse({
+    status: 403,
+    description: 'The named diary has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)',
+  })
   @ApiResponse({ status: 404, description: 'The named diary is not the writer’s (`DIARY_NOT_FOUND`)' })
   async suggestTags(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: SuggestTagsDto,
   ): Promise<SuggestTagsResponseDto> {
-    await this.aiDiaryGate.assertTextAiAllowed(user.userId, dto.diaryId);
+    await this.aiDiaryGate.assertTextAiAllowed(user.userId, dto.diaryId, dto.aiConsent);
     return this.aiService.suggestTags(user.userId, dto);
   }
 
@@ -138,13 +141,16 @@ export class AiController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Fix grammar, spelling, and style in journal content using OpenRouter' })
   @ApiResponse({ status: 200, description: 'Corrected content returned successfully', type: FixWritingResponseDto })
-  @ApiResponse({ status: 403, description: 'The named diary has AI off (`DIARY_AI_OFF`)' })
+  @ApiResponse({
+    status: 403,
+    description: 'The named diary has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)',
+  })
   @ApiResponse({ status: 404, description: 'The named diary is not the writer’s (`DIARY_NOT_FOUND`)' })
   async fixWriting(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: FixWritingDto,
   ): Promise<FixWritingResponseDto> {
-    await this.aiDiaryGate.assertTextAiAllowed(user.userId, dto.diaryId);
+    await this.aiDiaryGate.assertTextAiAllowed(user.userId, dto.diaryId, dto.aiConsent);
     return this.aiService.fixWriting(user.userId, dto);
   }
 
@@ -157,7 +163,10 @@ export class AiController {
     description: 'Entry summary returned successfully',
     type: EntrySummaryResponseDto,
   })
-  @ApiResponse({ status: 403, description: 'The entry’s diary has AI off (`DIARY_AI_OFF`)' })
+  @ApiResponse({
+    status: 403,
+    description: 'The entry’s diary has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)',
+  })
   async summarizeEntry(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: SummarizeEntryDto,
@@ -251,7 +260,10 @@ export class AiController {
     description: 'AI reply returned successfully',
     type: ChatResponseDto,
   })
-  @ApiResponse({ status: 403, description: 'The entry’s diary has AI off (`DIARY_AI_OFF`)' })
+  @ApiResponse({
+    status: 403,
+    description: 'The entry’s diary has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)',
+  })
   async chat(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ChatDto,

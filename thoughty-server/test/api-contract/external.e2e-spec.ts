@@ -335,4 +335,45 @@ describeContract('external', (context) => {
     await call('POST /api/attachments/{id}/transcribe', { ...transcribe, json: { diaryId: diary.id }, status: 400, code: 'AI_KEY_NOT_CONFIGURED' });
     await call('DELETE /api/diaries/{id}', { as: alice, params: { id: diary.id }, status: 200 });
   });
+
+  it('sends nothing from a diary that asks each time without the writer’s consent, and leaves it out of the whole journal', async () => {
+    const { alice } = context;
+    const created = await call('POST /api/diaries', { as: alice, json: { name: 'Dreams', icon: '🌙', visibility: 'private', aiMode: 'ask' }, status: 201 });
+    const diary = created.body as { id: number; aiMode: string };
+    expect(diary.aiMode).toBe('ask');
+
+    const entryId = await createEntry(context, alice, { text: 'A dream about the sea', tags: ['dreams'], diaryId: diary.id });
+    const unasked = { status: 403, code: 'DIARY_AI_CONSENT_REQUIRED' } as const;
+    // With consent the request passes the diary's check and goes on to the provider, which this writer has no key for
+    const agreed = { status: 400, code: 'AI_KEY_NOT_CONFIGURED' } as const;
+    const messages = [{ role: 'user', content: 'Why?' }];
+    const requests = [
+      ['POST /api/ai/summarize', { entryId }],
+      ['POST /api/ai/chat', { entryId, entryContent: 'A dream', messages }],
+      ['POST /api/ai/fix-writing', { content: 'A dream about the sea', mode: 'grammar', diaryId: diary.id }],
+      ['POST /api/ai/suggest-tags', { content: 'A dream about the sea', diaryId: diary.id }],
+    ] as const;
+    for (const [operation, json] of requests) {
+      await call(operation, { as: alice, json, ...unasked });
+      await call(operation, { as: alice, json: { ...json, aiConsent: false }, ...unasked });
+      await call(operation, { as: alice, json: { ...json, aiConsent: true }, ...agreed });
+    }
+    await call('POST /api/ai/summarize', { as: alice, json: { entryId, aiConsent: 'yes' }, status: 400, code: 'VALIDATION_FAILED' });
+
+    const recording = await call('POST /api/attachments/upload', {
+      as: alice,
+      multipart: { files: [{ field: 'file', buffer: Buffer.from('ID3'), filename: 'dream.mp3', contentType: 'audio/mpeg' }] },
+      status: 201,
+    });
+    const transcribe = { as: alice, params: { id: (recording.body as { id: number }).id } };
+    await call('POST /api/attachments/{id}/transcribe', { ...transcribe, json: { diaryId: diary.id }, ...unasked });
+    await call('POST /api/attachments/{id}/transcribe', { ...transcribe, json: { diaryId: diary.id, aiConsent: true }, ...agreed });
+
+    // No single text to show: the whole-journal features leave it out, as they do a diary with AI off
+    const scan = await call('POST /api/ai/duplicates', { as: alice, json: { diaryId: diary.id }, status: 200 });
+    expect(scan.body).toMatchObject({ analyzedEntries: 0, totalEntries: 0 });
+    const retag = { mode: 'add', assignments: [{ entryId, tags: ['ai'] }] };
+    await call('POST /api/ai/journal-retag/apply', { as: alice, json: retag, status: 400, code: 'ENTRIES_NOT_FOUND' });
+    await call('DELETE /api/diaries/{id}', { as: alice, params: { id: diary.id }, status: 200 });
+  });
 });

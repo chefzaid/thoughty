@@ -8,6 +8,7 @@ import { makeDiary } from '../../test/diaryFixture';
 const diaries = [
     makeDiary({ id: 1, name: 'Personal', isDefault: true }),
     makeDiary({ id: 2, name: 'Health', aiMode: 'off' }),
+    makeDiary({ id: 3, name: 'Dreams', aiMode: 'ask' }),
 ];
 
 const renderManager = (language: Language = 'en') => {
@@ -38,6 +39,22 @@ describe('DiaryManager AI mode', () => {
 
         expect(within(card('Health')).getByText(summary)).toBeInTheDocument();
         expect(within(card('Personal')).queryByText(summary)).not.toBeInTheDocument();
+    });
+
+    it.each([
+        ['en', 'AI asks first: each request shows what it sends', 'Ask each time'],
+        ['fr', "L'IA demande d'abord : chaque requête montre ce qu'elle envoie", 'Demander à chaque fois'],
+    ] as const)('says in %s which diaries ask before each AI request, and offers that mode', async (language, summary, option) => {
+        const user = userEvent.setup();
+        const props = renderManager(language);
+
+        expect(within(card('Dreams')).getByText(summary)).toBeInTheDocument();
+        expect(within(card('Health')).queryByText(summary)).not.toBeInTheDocument();
+
+        await user.type(screen.getByPlaceholderText(language === 'en' ? 'Diary Name' : 'Nom du journal'), 'Night');
+        await user.selectOptions(screen.getByLabelText(language === 'en' ? 'AI' : 'IA'), option);
+        await user.click(screen.getByRole('button', { name: language === 'en' ? 'Create Diary' : 'Créer un journal' }));
+        expect(props.onCreateDiary).toHaveBeenCalledWith(expect.objectContaining({ name: 'Night', aiMode: 'ask' }));
     });
 
     it('creates a diary with AI off, then resets the field to on', async () => {

@@ -147,7 +147,9 @@ export class AttachmentsController {
   })
   @ApiResponse({
     status: 403,
-    description: 'The attachment’s entry, or the diary the request names, has AI off (`DIARY_AI_OFF`)',
+    description:
+      'The attachment’s entry, or the diary the request names, has AI off (`DIARY_AI_OFF`), or asks each time and ' +
+      '`aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)',
   })
   @ApiResponse({ status: 404, description: 'Attachment not found, or the named diary is not the writer’s (`DIARY_NOT_FOUND`)' })
   async transcribe(
@@ -155,7 +157,7 @@ export class AttachmentsController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: TranscribeAttachmentDto,
   ): Promise<AudioTranscriptionResponseDto> {
-    return this.audioTranscriptionService.transcribe(user.userId, id, dto.diaryId);
+    return this.audioTranscriptionService.transcribe(user.userId, id, dto.diaryId, dto.aiConsent);
   }
 
   @Delete(':id')

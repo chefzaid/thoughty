@@ -1,3 +1,4 @@
+import { In } from 'typeorm';
 import { featureFlagsWith } from '@/common/feature-flags/feature-flags.test-helpers';
 import { EntryTaggingService } from './entry-tagging.service';
 
@@ -35,12 +36,12 @@ describe('EntryTaggingService', () => {
     expect(result).toEqual(['work', 'ai']);
   });
 
-  it('saves the given tags without asking AI in a diary with AI off, and asks in one with AI on', async () => {
+  it('saves the given tags without asking AI in a diary with AI off or set to ask, and asks in one with AI on', async () => {
     configService.getConfig.mockResolvedValue({ autoTagMaxTags: '3' });
     diaryRepository.exists.mockResolvedValue(true);
 
     await expect(service.resolveSavedTags(5, 'Hello world', ['work'], 8)).resolves.toEqual(['work']);
-    expect(diaryRepository.exists).toHaveBeenCalledWith({ where: { id: 8, userId: 5, aiMode: 'off' } });
+    expect(diaryRepository.exists).toHaveBeenCalledWith({ where: { id: 8, userId: 5, aiMode: In(['off', 'ask']) } });
     expect(aiService.autoTagEntry).not.toHaveBeenCalled();
 
     diaryRepository.exists.mockResolvedValue(false);

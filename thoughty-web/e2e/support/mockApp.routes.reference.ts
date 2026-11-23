@@ -23,12 +23,29 @@ function getAiFixPrefix(mode?: string): string {
   return 'Corrected';
 }
 
-/** Text sent from a diary with AI off is refused, as the API refuses it (`403 DIARY_AI_OFF`). */
-function isAiOffDiary(diaries: RouteContext['state']['diaries'], diaryId: number | undefined): boolean {
-  return diaryId != null && diaries.some((diary) => diary.id === diaryId && diary.aiMode === 'off');
+/**
+ * What the API answers an AI request about the text of `diaryId`: `403 DIARY_AI_OFF` for a diary with AI off, and
+ * `403 DIARY_AI_CONSENT_REQUIRED` for one that asks each time when the request carries no `aiConsent`.
+ */
+async function refusedForDiary(
+  { route, state }: RouteContext,
+  diaryId: number | null | undefined,
+  aiConsent: boolean | undefined,
+): Promise<boolean> {
+  const mode = diaryId == null ? 'on' : state.diaries.find((diary) => diary.id === diaryId)?.aiMode;
+  if (mode === 'off') {
+    await fulfillApiError(route, 403, 'DIARY_AI_OFF', 'AI is off in this diary');
+    return true;
+  }
+  if (mode === 'ask' && aiConsent !== true) {
+    await fulfillApiError(route, 403, 'DIARY_AI_CONSENT_REQUIRED', 'This diary asks before each AI request: confirm what is sent first');
+    return true;
+  }
+  return false;
 }
 
-async function handleStatsAndAiRoutes({ route, request, pathname, searchParams, state }: RouteContext): Promise<boolean> {
+async function handleStatsAndAiRoutes(context: RouteContext): Promise<boolean> {
+  const { route, request, pathname, searchParams, state } = context;
   if (pathname === '/api/stats') {
     const diaryId = searchParams.get('diaryId');
     const filteredEntries = diaryId
@@ -82,10 +99,9 @@ async function handleStatsAndAiRoutes({ route, request, pathname, searchParams, 
   }
 
   if (pathname === '/api/ai/suggest-tags') {
-    const payload = request.postDataJSON() as { diaryId?: number };
+    const payload = request.postDataJSON() as { diaryId?: number; aiConsent?: boolean };
     state.lastAiSuggestionPayload = payload;
-    if (isAiOffDiary(state.diaries, payload.diaryId)) {
-      await fulfillApiError(route, 403, 'DIARY_AI_OFF', 'AI is off in this diary');
+    if (await refusedForDiary(context, payload.diaryId, payload.aiConsent)) {
       return true;
     }
     await fulfillJson(route, { tags: ['focus', 'writing', 'self-awareness'] });
@@ -93,10 +109,9 @@ async function handleStatsAndAiRoutes({ route, request, pathname, searchParams, 
   }
 
   if (pathname === '/api/ai/fix-writing') {
-    const payload = request.postDataJSON() as { content: string; mode?: string; diaryId?: number };
+    const payload = request.postDataJSON() as { content: string; mode?: string; diaryId?: number; aiConsent?: boolean };
     state.lastAiFixPayload = payload;
-    if (isAiOffDiary(state.diaries, payload.diaryId)) {
-      await fulfillApiError(route, 403, 'DIARY_AI_OFF', 'AI is off in this diary');
+    if (await refusedForDiary(context, payload.diaryId, payload.aiConsent)) {
       return true;
     }
     await fulfillJson(route, { content: `${getAiFixPrefix(payload.mode)}: ${payload.content}` });
@@ -104,7 +119,12 @@ async function handleStatsAndAiRoutes({ route, request, pathname, searchParams, 
   }
 
   if (pathname === '/api/ai/summarize') {
-    state.lastAiSummaryPayload = request.postDataJSON();
+    const payload = request.postDataJSON() as { entryId: number; aiConsent?: boolean };
+    state.lastAiSummaryPayload = payload;
+    const entry = state.entries.find((candidate) => candidate.id === payload.entryId);
+    if (await refusedForDiary(context, entry ? entry.diaryId ?? 1 : null, payload.aiConsent)) {
+      return true;
+    }
     await fulfillJson(route, {
       summary: 'A focused reflection led to a clear decision while leaving names private.',
     });

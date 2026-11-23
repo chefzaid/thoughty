@@ -148,6 +148,13 @@ export class Entry {
   @Column({ name: 'diary_ai_off', type: 'boolean', default: false, insert: false, update: false })
   diaryAiOff: boolean;
 
+  /**
+   * Whether the entry's diary asks before each AI request (`Diary.aiMode` `ask`), kept in step by the same
+   * triggers. An AI action on the entry alone needs the writer's consent; no journal-wide AI feature reads it.
+   */
+  @Column({ name: 'diary_ai_ask', type: 'boolean', default: false, insert: false, update: false })
+  diaryAiAsk: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

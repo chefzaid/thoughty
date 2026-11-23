@@ -101,7 +101,7 @@ describe('useAppShellModel', () => {
     });
 
     // The entry's diary goes with its text, so the server can refuse a diary with AI off
-    expect(fixWriting).toHaveBeenCalledWith('Needs help', 'rewrite', 5);
+    expect(fixWriting).toHaveBeenCalledWith('Needs help', 'rewrite', 5, undefined);
     expect(result.current.authenticatedLayoutProps).toMatchObject({
       appNotice: { text: 'rephraseEntryFailed', toast: expect.objectContaining({ visible: true }) },
     });
@@ -125,7 +125,9 @@ describe('useAppShellModel', () => {
     expect(fetchDiaries).toHaveBeenCalledTimes(1);
     expect(handleEdit).not.toHaveBeenCalled();
     // The composer and the bulk rephrase reload them the same way
-    expect(mocks.useEntryForm).toHaveBeenLastCalledWith(expect.anything(), expect.anything(), expect.any(Function), expect.any(Array), fetchDiaries);
+    expect(mocks.useEntryForm).toHaveBeenLastCalledWith(
+      expect.anything(), expect.anything(), expect.any(Function), expect.any(Array), fetchDiaries, expect.any(Function),
+    );
   });
 
   it('says in the notice toast when settings changed on purpose could not be saved', async () => {

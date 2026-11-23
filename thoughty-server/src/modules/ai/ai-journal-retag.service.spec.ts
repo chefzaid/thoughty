@@ -63,7 +63,7 @@ describe('AiJournalRetagService', () => {
     });
     expect(repository.findAndCount).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { userId: 7, ...LOCKED_OUT_WHERE, diaryAiOff: false },
+        where: { userId: 7, ...LOCKED_OUT_WHERE, diaryAiOff: false, diaryAiAsk: false },
         take: 300,
       }),
     );

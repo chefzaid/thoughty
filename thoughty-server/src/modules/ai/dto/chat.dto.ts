@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { ArrayMaxSize, IsArray, IsIn, IsString, MaxLength, Min, ValidateNested } from 'class-validator';
 import { StrictInt } from '@/common/validation';
+import { AiConsentProperty } from '@/common/diary-ai';
 
 export class ChatMessageDto {
   @ApiProperty({ description: 'Role of the message sender', enum: ['user', 'assistant'] })
@@ -32,6 +33,9 @@ export class ChatDto {
   @ValidateNested({ each: true })
   @Type(() => ChatMessageDto)
   messages!: ChatMessageDto[];
+
+  @AiConsentProperty()
+  aiConsent?: boolean;
 }
 
 export class ChatHistoryResponseDto {

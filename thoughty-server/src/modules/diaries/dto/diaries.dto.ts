@@ -48,7 +48,9 @@ class DiaryGoalFieldsDto {
   @ApiPropertyOptional({
     enum: DIARY_AI_MODES,
     example: 'off',
-    description: 'Whether the AI features may read the diary’s entries (`on`, the default) or none of them (`off`); left out keeps it on update',
+    description:
+      'Whether the AI features may read the diary’s entries (`on`, the default), none of them (`off`), or one entry or ' +
+      'text at a time with the writer’s consent (`ask`, left out of the journal-wide features); left out keeps it on update',
   })
   // Left out keeps the mode; null is refused, as a diary always has one
   @ValidateIf((_dto, value) => value !== undefined)
@@ -141,7 +143,7 @@ export class DiaryResponseDto {
   @ApiProperty({ description: 'Whether the diary is locked behind the writer’s PIN, with every entry in it', example: false })
   isLocked: boolean;
 
-  @ApiProperty({ enum: DIARY_AI_MODES, example: 'on', description: 'Whether the AI features may read the diary’s entries; with `off` none reads them' })
+  @ApiProperty({ enum: DIARY_AI_MODES, example: 'on', description: 'Whether the AI features may read the diary’s entries; with `off` none reads them, with `ask` only a request the writer agreed to' })
   aiMode: DiaryAiMode;
 
   @ApiProperty()

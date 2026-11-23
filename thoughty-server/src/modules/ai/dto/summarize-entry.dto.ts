@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, MaxLength, Min } from 'class-validator';
 import { StrictInt } from '@/common/validation';
+import { AiConsentProperty } from '@/common/diary-ai';
 
 export class SummarizeEntryDto {
   @ApiProperty({ description: 'ID of the journal entry to summarize', minimum: 1 })
@@ -25,6 +26,9 @@ export class SummarizeEntryDto {
   @IsString()
   @MaxLength(500)
   excludeDetails?: string;
+
+  @AiConsentProperty()
+  aiConsent?: boolean;
 }
 
 export class EntrySummaryResponseDto {

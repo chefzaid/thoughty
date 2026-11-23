@@ -330,8 +330,8 @@ describe('BooksService', () => {
       expect(aiService.composeChapterFraming).not.toHaveBeenCalled();
     });
 
-    it('should refuse AI narrative and framing for a book holding an entry of a diary with AI off, not a plain book', async () => {
-      mockQueryBuilder.getMany.mockResolvedValue([mockEntries[0], { ...mockEntries[2], id: 3, diaryAiOff: true }]);
+    it.each([{ diaryAiOff: true }, { diaryAiAsk: true }])('should refuse AI narrative and framing for a book holding an entry of a diary with AI off or set to ask (%j), not a plain book', async (mode) => {
+      mockQueryBuilder.getMany.mockResolvedValue([mockEntries[0], { ...mockEntries[2], id: 3, ...mode }]);
       await expect(service.export(1, { format: 'md' })).rejects.toMatchObject({ status: 400, response: { code: 'BOOK_AI_DIARY_OFF' } });
       await expect(service.export(1, { narrative: false, chapterFraming: true })).rejects.toMatchObject({ response: { code: 'BOOK_AI_DIARY_OFF' } });
       expect(aiService.composeBookChapter).not.toHaveBeenCalled();

@@ -5,6 +5,9 @@ import type { AiAnswer, AiAuthFetch, RephraseMode, SummaryGuidance } from "./aiT
 /** The diary a text is written in, which the server checks for AI off; none is left out of the request. */
 const inDiary = (diaryId: number | null | undefined) => (diaryId == null ? {} : { diaryId });
 
+/** The writer's consent, which a diary that asks before each AI request needs; left out otherwise. */
+const withConsent = (aiConsent: boolean | undefined) => (aiConsent ? { aiConsent: true } : {});
+
 const answer = <T>(data: T): AiAnswer<T> => ({ data, refusal: null });
 const NO_ANSWER: AiAnswer<never> = { data: null, refusal: null };
 
@@ -21,6 +24,7 @@ export const createAiWritingService = (authFetch: AiAuthFetch) => {
     existingTags: string[] = [],
     maxTags = 5,
     diaryId?: number | null,
+    aiConsent?: boolean,
   ): Promise<AiAnswer<string[]>> => {
     try {
       const response = await authFetch("/api/ai/suggest-tags", {
@@ -30,6 +34,7 @@ export const createAiWritingService = (authFetch: AiAuthFetch) => {
           existingTags,
           maxTags,
           ...inDiary(diaryId),
+          ...withConsent(aiConsent),
         }),
       });
       if (!response.ok) {
@@ -52,11 +57,12 @@ export const createAiWritingService = (authFetch: AiAuthFetch) => {
     content: string,
     mode: RephraseMode = "grammar",
     diaryId?: number | null,
+    aiConsent?: boolean,
   ): Promise<AiAnswer<string>> => {
     try {
       const response = await authFetch("/api/ai/fix-writing", {
         method: "POST",
-        body: JSON.stringify({ content, mode, ...inDiary(diaryId) }),
+        body: JSON.stringify({ content, mode, ...inDiary(diaryId), ...withConsent(aiConsent) }),
       });
       if (!response.ok) {
         return await refused(response);
@@ -96,11 +102,12 @@ export const createAiWritingService = (authFetch: AiAuthFetch) => {
   const summarizeEntry = async (
     entryId: number,
     guidance: SummaryGuidance = {},
+    aiConsent?: boolean,
   ): Promise<string | null> => {
     try {
       const response = await authFetch("/api/ai/summarize", {
         method: "POST",
-        body: JSON.stringify({ entryId, ...guidance }),
+        body: JSON.stringify({ entryId, ...guidance, ...withConsent(aiConsent) }),
       });
 
       const data = await safeJsonParse<{ summary?: string }>(response);

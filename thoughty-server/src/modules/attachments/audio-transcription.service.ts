@@ -42,9 +42,14 @@ export class AudioTranscriptionService {
   /**
    * The recording's text, sent to the provider once and kept. The attachment's entry, or `diaryId` for a
    * recording no entry holds yet (a memoir answer being written), keeps it from the provider when its diary has
-   * AI off; a recording with neither is transcribed as before.
+   * AI off, or asks each time and `consent` is not given; a recording with neither is transcribed as before.
    */
-  async transcribe(userId: number, attachmentId: number, diaryId?: number): Promise<AudioTranscriptionResponseDto> {
+  async transcribe(
+    userId: number,
+    attachmentId: number,
+    diaryId?: number,
+    consent?: boolean,
+  ): Promise<AudioTranscriptionResponseDto> {
     const attachment = await this.attachmentsService.getOwnedAttachment(userId, attachmentId);
     const format = AUDIO_FORMATS[attachment.mimetype];
     if (!format) {
@@ -60,9 +65,9 @@ export class AudioTranscriptionService {
     }
 
     if (attachment.entry) {
-      assertEntryAiAllowed(attachment.entry);
+      assertEntryAiAllowed(attachment.entry, consent);
     }
-    await this.diaryGate.assertTextAiAllowed(userId, diaryId);
+    await this.diaryGate.assertTextAiAllowed(userId, diaryId, consent);
     const credential = await resolveOpenRouterCredential(this.configService, userId);
     if (!credential) {
       throw apiError(BadRequestException, 'AI_KEY_NOT_CONFIGURED');

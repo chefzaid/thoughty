@@ -31,8 +31,8 @@ export class MemoirFollowUpsService {
     if (!program) {
       throw apiError(NotFoundException, 'MEMOIR_NOT_STARTED');
     }
-    // The answer is going to the memoir diary, which may keep AI out
-    assertDiaryAiAllowed(program.diary);
+    // The answer is going to the memoir diary, which may keep AI out or ask first
+    assertDiaryAiAllowed(program.diary, dto.aiConsent);
 
     const language = resolveMemoirLanguage((await this.configService.getConfig(userId)).language);
     const questions = await this.aiFollowUps.suggest(userId, {

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -64,6 +64,16 @@ describe('EntrySummaryDialog', () => {
         await user.click(screen.getByRole('button', { name: 'Regenerate' }));
         expect(await screen.findByText('A revised decision summary.')).toBeInTheDocument();
         expect(onSummarize).toHaveBeenCalledTimes(2);
+    });
+
+    it('shows no failure when the writer did not send the request', async () => {
+        const onSummarize = vi.fn().mockResolvedValueOnce(undefined);
+        const user = userEvent.setup();
+        render(<EntrySummaryDialog entryId={12} isOpen isDark={false} onClose={onClose} onSummarize={onSummarize} t={t} />);
+
+        await user.click(screen.getByRole('button', { name: 'Generate summary' }));
+        await waitFor(() => expect(screen.getByRole('button', { name: 'Generate summary' })).toBeEnabled());
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
 
     it('shows failures and closes on Escape', async () => {

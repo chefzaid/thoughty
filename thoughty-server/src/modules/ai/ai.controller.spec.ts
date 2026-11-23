@@ -95,14 +95,16 @@ describe('AiController', () => {
 
     await expect(controller.fixWriting(user, { content: 'fix me', diaryId: 4 })).resolves.toEqual({ content: 'Fixed' });
     await expect(controller.suggestTags(user, { content: 'tag me' })).resolves.toEqual({ tags: ['health'] });
-    expect(aiDiaryGate.assertTextAiAllowed).toHaveBeenNthCalledWith(1, 3, 4);
-    expect(aiDiaryGate.assertTextAiAllowed).toHaveBeenNthCalledWith(2, 3, undefined);
+    await controller.fixWriting(user, { content: 'fix me', diaryId: 5, aiConsent: true });
+    expect(aiDiaryGate.assertTextAiAllowed).toHaveBeenNthCalledWith(1, 3, 4, undefined);
+    expect(aiDiaryGate.assertTextAiAllowed).toHaveBeenNthCalledWith(2, 3, undefined, undefined);
+    expect(aiDiaryGate.assertTextAiAllowed).toHaveBeenNthCalledWith(3, 3, 5, true);
 
     const refusal = new Error('DIARY_AI_OFF');
     aiDiaryGate.assertTextAiAllowed.mockRejectedValue(refusal);
     await expect(controller.fixWriting(user, { content: 'fix me', diaryId: 4 })).rejects.toBe(refusal);
     await expect(controller.suggestTags(user, { content: 'tag me', diaryId: 4 })).rejects.toBe(refusal);
-    expect(aiService.fixWriting).toHaveBeenCalledTimes(1);
+    expect(aiService.fixWriting).toHaveBeenCalledTimes(2);
     expect(aiService.suggestTags).toHaveBeenCalledTimes(1);
   });
 

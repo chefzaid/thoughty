@@ -59,7 +59,7 @@ describe('StatsInsights', () => {
     });
 
     it('says the diary shown has AI off in place of both readings', () => {
-        render(<StatsInsights themeClass="light" toneMoodAnalysis={null} subjectAnalysis={null} diaryAi={{ aiOff: true, aiOffLeftOut: false }} t={t} />);
+        render(<StatsInsights themeClass="light" toneMoodAnalysis={null} subjectAnalysis={null} diaryAi={{ aiOff: true, notice: 'diaryAiOffNotice', aiOffLeftOut: false }} t={t} />);
 
         const notes = screen.getAllByRole('note');
         expect(notes).toHaveLength(2);
@@ -75,7 +75,7 @@ describe('StatsInsights', () => {
                 themeClass="dark"
                 toneMoodAnalysis={null}
                 subjectAnalysis={{ subjectBreakdown: { family: 2 }, analyzedEntries: 2, summary: '' }}
-                diaryAi={{ aiOff: false, aiOffLeftOut: true }}
+                diaryAi={{ aiOff: false, notice: 'diaryAiOffNotice', aiOffLeftOut: true }}
                 t={t}
             />,
         );

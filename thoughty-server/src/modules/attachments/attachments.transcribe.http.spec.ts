@@ -28,13 +28,24 @@ describe('AttachmentsController transcribe over HTTP', () => {
   it('transcribes without a body, as before the diary could be named', async () => {
     await request(app.getHttpServer()).post('/api/attachments/4/transcribe').expect(201);
 
-    expect(audioTranscriptionService.transcribe).toHaveBeenCalledWith(HTTP_SPEC_USER.userId, 4, undefined);
+    expect(audioTranscriptionService.transcribe).toHaveBeenCalledWith(HTTP_SPEC_USER.userId, 4, undefined, undefined);
   });
 
   it('passes the diary the recording is for', async () => {
     await request(app.getHttpServer()).post('/api/attachments/4/transcribe').send({ diaryId: 3 }).expect(201);
 
-    expect(audioTranscriptionService.transcribe).toHaveBeenCalledWith(HTTP_SPEC_USER.userId, 4, 3);
+    expect(audioTranscriptionService.transcribe).toHaveBeenCalledWith(HTTP_SPEC_USER.userId, 4, 3, undefined);
+  });
+
+  it('passes the writer’s consent for a diary that asks each time', async () => {
+    await request(app.getHttpServer()).post('/api/attachments/4/transcribe').send({ diaryId: 3, aiConsent: true }).expect(201);
+
+    expect(audioTranscriptionService.transcribe).toHaveBeenCalledWith(HTTP_SPEC_USER.userId, 4, 3, true);
+  });
+
+  it.each(['yes', 2, 'true!'])('refuses aiConsent %j', async (aiConsent) => {
+    await request(app.getHttpServer()).post('/api/attachments/4/transcribe').send({ aiConsent }).expect(400);
+    expect(audioTranscriptionService.transcribe).not.toHaveBeenCalled();
   });
 
   it.each(['', 'abc', 1.5, 0, true])('refuses diaryId %j', async (diaryId) => {

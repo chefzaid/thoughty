@@ -35,6 +35,8 @@ export interface Config {
   /** The first-run welcome page was answered or skipped; false for a new account, which then lands on it. */
   onboardingDone?: boolean;
   openRouterModel?: string;
+  openRouterTagModel?: string;
+  openRouterWritingModel?: string;
   openRouterSummaryModel?: string;
   openRouterPromptModel?: string;
   autoTagMaxTags?: string | number;
