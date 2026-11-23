@@ -279,6 +279,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                             value={newDiaryName}
                             onChange={(e) => setNewDiaryName(e.target.value)}
                             placeholder={t('diaryName')}
+                            aria-label={t('diaryName')}
                             className="diary-name-input"
                         />
                         <DiaryColorField
@@ -346,6 +347,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                                 type="text"
                                                 value={editName}
                                                 onChange={(e) => setEditName(e.target.value)}
+                                                aria-label={t('diaryName')}
                                                 className="diary-name-input"
                                             />
                                             <DiaryColorField

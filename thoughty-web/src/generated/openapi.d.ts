@@ -5804,7 +5804,8 @@ export interface components {
          *       "existingTags": [
          *         "reflection"
          *       ],
-         *       "maxTags": 5
+         *       "maxTags": 5,
+         *       "diaryId": 1
          *     }
          */
         SuggestTagsDto: {
@@ -5817,6 +5818,8 @@ export interface components {
              * @default 5
              */
             maxTags: number;
+            /** @description Diary the text is written in; a diary with AI off refuses the request (`403 DIARY_AI_OFF`) */
+            diaryId?: number;
         };
         /**
          * @example {
@@ -5832,7 +5835,8 @@ export interface components {
         /**
          * @example {
          *       "content": "Today I wrote a thoughtful journal entry about focus and calm.",
-         *       "mode": "grammar"
+         *       "mode": "grammar",
+         *       "diaryId": 1
          *     }
          */
         FixWritingDto: {
@@ -5844,6 +5848,8 @@ export interface components {
              * @enum {string}
              */
             mode: "grammar" | "polish" | "rewrite";
+            /** @description Diary the text is written in; a diary with AI off refuses the request (`403 DIARY_AI_OFF`) */
+            diaryId?: number;
         };
         /**
          * @example {
@@ -16844,7 +16850,8 @@ export interface operations {
                  *       "existingTags": [
                  *         "reflection"
                  *       ],
-                 *       "maxTags": 5
+                 *       "maxTags": 5,
+                 *       "diaryId": 1
                  *     }
                  */
                 "application/json": components["schemas"]["SuggestTagsDto"];
@@ -16865,6 +16872,40 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["SuggestTagsResponseDto"];
+                };
+            };
+            /** @description The named diary has AI off (`DIARY_AI_OFF`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 403,
+                     *       "message": "The named diary has AI off (`DIARY_AI_OFF`)",
+                     *       "error": "Forbidden",
+                     *       "code": "FORBIDDEN"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The named diary is not the writer’s (`DIARY_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "The named diary is not the writer’s (`DIARY_NOT_FOUND`)",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description FEATURE_DISABLED: the `ai` feature is turned off on this server */
@@ -16898,7 +16939,8 @@ export interface operations {
                 /**
                  * @example {
                  *       "content": "Today I wrote a thoughtful journal entry about focus and calm.",
-                 *       "mode": "grammar"
+                 *       "mode": "grammar",
+                 *       "diaryId": 1
                  *     }
                  */
                 "application/json": components["schemas"]["FixWritingDto"];
@@ -16917,6 +16959,40 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["FixWritingResponseDto"];
+                };
+            };
+            /** @description The named diary has AI off (`DIARY_AI_OFF`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 403,
+                     *       "message": "The named diary has AI off (`DIARY_AI_OFF`)",
+                     *       "error": "Forbidden",
+                     *       "code": "FORBIDDEN"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The named diary is not the writer’s (`DIARY_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "The named diary is not the writer’s (`DIARY_NOT_FOUND`)",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description FEATURE_DISABLED: the `ai` feature is turned off on this server */

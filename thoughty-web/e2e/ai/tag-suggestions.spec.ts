@@ -24,6 +24,8 @@ test.describe('AI tag suggestions', () => {
       content: 'I spent the morning writing a reflective note about focus and slowing down.',
       existingTags: [],
       maxTags: 5,
+      // The composer's diary (the default one, all diaries being shown), which the API checks for AI off
+      diaryId: 1,
     });
   });
 });

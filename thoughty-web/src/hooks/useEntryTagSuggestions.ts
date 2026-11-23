@@ -10,6 +10,8 @@ export const useEntryTagSuggestions = (
   setTags: Dispatch<SetStateAction<string[]>>,
   maxTags: number,
   setFormError: Dispatch<SetStateAction<string>>,
+  /** The diary the text is written in, which the server checks for AI off. */
+  diaryId?: number,
 ) => {
   const [suggestingTags, setSuggestingTags] = useState(false);
 
@@ -21,7 +23,7 @@ export const useEntryTagSuggestions = (
 
     setFormError('');
     setSuggestingTags(true);
-    const suggestedTags = await aiService.suggestTags(content, tags, maxTags || 5);
+    const suggestedTags = await aiService.suggestTags(content, tags, maxTags || 5, diaryId);
     setSuggestingTags(false);
 
     if (suggestedTags === null) {
@@ -35,7 +37,7 @@ export const useEntryTagSuggestions = (
 
     setTags((current) => [...new Set([...current, ...suggestedTags])]);
     return true;
-  }, [aiService, content, maxTags, setFormError, setTags, tags]);
+  }, [aiService, content, diaryId, maxTags, setFormError, setTags, tags]);
 
   return {
     suggestingTags,

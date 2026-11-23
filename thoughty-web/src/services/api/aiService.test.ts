@@ -28,6 +28,27 @@ describe("aiService", () => {
     });
   });
 
+  it("names the diary of the text when there is one", async () => {
+    mockAuthFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ tags: [], content: "Fixed" }) });
+
+    await service.suggestTags("Some draft text", [], 5, 4);
+    await service.fixWriting("raw text", "grammar", 4);
+    await service.fixWriting("raw text", "grammar", null);
+
+    expect(mockAuthFetch).toHaveBeenNthCalledWith(1, "/api/ai/suggest-tags", {
+      method: "POST",
+      body: JSON.stringify({ content: "Some draft text", existingTags: [], maxTags: 5, diaryId: 4 }),
+    });
+    expect(mockAuthFetch).toHaveBeenNthCalledWith(2, "/api/ai/fix-writing", {
+      method: "POST",
+      body: JSON.stringify({ content: "raw text", mode: "grammar", diaryId: 4 }),
+    });
+    expect(mockAuthFetch).toHaveBeenNthCalledWith(3, "/api/ai/fix-writing", {
+      method: "POST",
+      body: JSON.stringify({ content: "raw text", mode: "grammar" }),
+    });
+  });
+
   it("returns null when the response is not ok", async () => {
     mockAuthFetch.mockResolvedValue({
       ok: false,

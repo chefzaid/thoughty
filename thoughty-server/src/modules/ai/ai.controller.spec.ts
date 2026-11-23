@@ -5,11 +5,13 @@ import { AiDuplicateService } from './ai-duplicate.service';
 import { AiSemanticSearchService } from './ai-semantic-search.service';
 import { AiCredentialsService } from './ai-credentials.service';
 import { AiJournalRetagService } from './ai-journal-retag.service';
+import { AiDiaryGateService } from './ai-diary-gate.service';
 
 describe('AiController', () => {
   let controller: AiController;
   let aiService: {
     suggestTags: jest.Mock;
+    fixWriting: jest.Mock;
     summarizeEntry: jest.Mock;
     generateInspiration: jest.Mock;
     chat: jest.Mock;
@@ -28,10 +30,12 @@ describe('AiController', () => {
     createPlan: jest.Mock;
     applyPlan: jest.Mock;
   };
+  let aiDiaryGate: { assertTextAiAllowed: jest.Mock };
 
   beforeEach(async () => {
     aiService = {
       suggestTags: jest.fn(),
+      fixWriting: jest.fn(),
       summarizeEntry: jest.fn(),
       generateInspiration: jest.fn(),
       chat: jest.fn(),
@@ -50,6 +54,7 @@ describe('AiController', () => {
       createPlan: jest.fn(),
       applyPlan: jest.fn(),
     };
+    aiDiaryGate = { assertTextAiAllowed: jest.fn().mockResolvedValue(undefined) };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AiController],
@@ -59,6 +64,7 @@ describe('AiController', () => {
         { provide: AiSemanticSearchService, useValue: aiSemanticSearchService },
         { provide: AiCredentialsService, useValue: aiCredentialsService },
         { provide: AiJournalRetagService, useValue: aiJournalRetagService },
+        { provide: AiDiaryGateService, useValue: aiDiaryGate },
       ],
     }).compile();
 
@@ -80,6 +86,24 @@ describe('AiController', () => {
       maxTags: 5,
     });
     expect(result).toEqual({ tags: ['focus', 'work'] });
+  });
+
+  it('checks the diary a text is written in before rephrasing it or suggesting its tags', async () => {
+    const user = { userId: 3, email: 'test@example.com' } as any;
+    aiService.fixWriting.mockResolvedValue({ content: 'Fixed' });
+    aiService.suggestTags.mockResolvedValue({ tags: ['health'] });
+
+    await expect(controller.fixWriting(user, { content: 'fix me', diaryId: 4 })).resolves.toEqual({ content: 'Fixed' });
+    await expect(controller.suggestTags(user, { content: 'tag me' })).resolves.toEqual({ tags: ['health'] });
+    expect(aiDiaryGate.assertTextAiAllowed).toHaveBeenNthCalledWith(1, 3, 4);
+    expect(aiDiaryGate.assertTextAiAllowed).toHaveBeenNthCalledWith(2, 3, undefined);
+
+    const refusal = new Error('DIARY_AI_OFF');
+    aiDiaryGate.assertTextAiAllowed.mockRejectedValue(refusal);
+    await expect(controller.fixWriting(user, { content: 'fix me', diaryId: 4 })).rejects.toBe(refusal);
+    await expect(controller.suggestTags(user, { content: 'tag me', diaryId: 4 })).rejects.toBe(refusal);
+    expect(aiService.fixWriting).toHaveBeenCalledTimes(1);
+    expect(aiService.suggestTags).toHaveBeenCalledTimes(1);
   });
 
   it('previews and applies journal retag plans for the current user', async () => {

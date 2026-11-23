@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { Attachment, Config, Diary } from '../types';
 import { getAutoTagLimit } from '../utils/autoTagLimit';
-import { isComposerDiaryAiOff } from '../utils/diaryAi';
+import { composerDiaryId, isComposerDiaryAiOff } from '../utils/diaryAi';
 import { formatEntryDate } from '../utils/entryDate';
 import { cleanEntryTitle } from '../utils/entryTime';
 import { defaultTimeCapsule, isValidTimeCapsuleDate, type TimeCapsuleDraft } from '../utils/timeCapsule';
@@ -72,8 +72,9 @@ export const useEntryForm = (
   latestText.current = newEntryText;
   // With AI switched off, or off in the composer's diary, nothing adds tags, so an entry needs one of its own
   const diaryAiOff = isComposerDiaryAiOff(diaries, currentDiaryId);
+  const aiDiaryId = composerDiaryId(diaries, currentDiaryId);
   const autoTagLimit = useFeatureFlag('ai') && !diaryAiOff ? getAutoTagLimit(config.autoTagMaxTags) : 0;
-  const tagSuggestions = useEntryTagSuggestions(aiService, newEntryText, tags, setTags, autoTagLimit, setFormError);
+  const tagSuggestions = useEntryTagSuggestions(aiService, newEntryText, tags, setTags, autoTagLimit, setFormError, aiDiaryId);
 
   // The draft follows the writer to their other devices; the date, time, visibility, capsule and files stay here
   const applyDraft = useCallback((fields: ComposerDraftFields) => {
@@ -230,7 +231,7 @@ export const useEntryForm = (
 
     setFormError('');
     setFixingWriting(true);
-    const corrected = await aiService.fixWriting(newEntryText);
+    const corrected = await aiService.fixWriting(newEntryText, 'grammar', aiDiaryId);
     setFixingWriting(false);
 
     if (corrected === null) {
@@ -244,7 +245,7 @@ export const useEntryForm = (
 
     setNewEntryText(corrected);
     return true;
-  }, [aiService, newEntryText]);
+  }, [aiDiaryId, aiService, newEntryText]);
 
   return {
     newEntryText,

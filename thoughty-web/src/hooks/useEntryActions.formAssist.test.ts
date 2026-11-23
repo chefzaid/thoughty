@@ -211,6 +211,8 @@ describe("useEntryActions", () => {
         await result.current.handleFixWriting();
       });
       expect(result.current.newEntryText).toBe("Corrected draft");
+      // The composer's diary goes with the text, so the server can refuse a diary with AI off
+      expect(fixWriting).toHaveBeenLastCalledWith("Original draft", "grammar", 1);
     });
 
     it("removes uploaded attachments through the attachments service", async () => {

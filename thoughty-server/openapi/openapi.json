@@ -5426,7 +5426,8 @@
                 "existingTags": [
                   "reflection"
                 ],
-                "maxTags": 5
+                "maxTags": 5,
+                "diaryId": 1
               }
             }
           }
@@ -5443,6 +5444,38 @@
                   "tags": [
                     "reflection"
                   ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The named diary has AI off (`DIARY_AI_OFF`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "The named diary has AI off (`DIARY_AI_OFF`)",
+                  "error": "Forbidden",
+                  "code": "FORBIDDEN"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The named diary is not the writer’s (`DIARY_NOT_FOUND`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "The named diary is not the writer’s (`DIARY_NOT_FOUND`)",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
                 }
               }
             }
@@ -5488,7 +5521,8 @@
               },
               "example": {
                 "content": "Today I wrote a thoughtful journal entry about focus and calm.",
-                "mode": "grammar"
+                "mode": "grammar",
+                "diaryId": 1
               }
             }
           }
@@ -5503,6 +5537,38 @@
                 },
                 "example": {
                   "content": "Today I wrote a thoughtful journal entry about focus and calm."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The named diary has AI off (`DIARY_AI_OFF`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "The named diary has AI off (`DIARY_AI_OFF`)",
+                  "error": "Forbidden",
+                  "code": "FORBIDDEN"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The named diary is not the writer’s (`DIARY_NOT_FOUND`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "The named diary is not the writer’s (`DIARY_NOT_FOUND`)",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
                 }
               }
             }
@@ -23280,6 +23346,11 @@
             "type": "number",
             "description": "Maximum number of tags to return",
             "default": 5
+          },
+          "diaryId": {
+            "type": "number",
+            "description": "Diary the text is written in; a diary with AI off refuses the request (`403 DIARY_AI_OFF`)",
+            "minimum": 1
           }
         },
         "required": [
@@ -23290,7 +23361,8 @@
           "existingTags": [
             "reflection"
           ],
-          "maxTags": 5
+          "maxTags": 5,
+          "diaryId": 1
         }
       },
       "SuggestTagsResponseDto": {
@@ -23329,6 +23401,11 @@
               "rewrite"
             ],
             "default": "grammar"
+          },
+          "diaryId": {
+            "type": "number",
+            "description": "Diary the text is written in; a diary with AI off refuses the request (`403 DIARY_AI_OFF`)",
+            "minimum": 1
           }
         },
         "required": [
@@ -23336,7 +23413,8 @@
         ],
         "example": {
           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
-          "mode": "grammar"
+          "mode": "grammar",
+          "diaryId": 1
         }
       },
       "FixWritingResponseDto": {

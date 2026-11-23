@@ -15,6 +15,7 @@ describe('useEntryTagSuggestions', () => {
       setTags,
       3,
       setFormError,
+      7,
     ));
 
     await act(async () => {
@@ -25,6 +26,7 @@ describe('useEntryTagSuggestions', () => {
       'I felt more at home after an honest conversation.',
       ['personal'],
       3,
+      7,
     );
     const mergeTags = setTags.mock.calls[0]?.[0] as (current: string[]) => string[];
     expect(mergeTags(['personal'])).toEqual(['personal', 'belonging', 'self-awareness']);

@@ -266,7 +266,7 @@ export function useAppShellModel(): AppShellModel {
   // Kept the same between renders, so the entry cards that offer it are not drawn again with each batch
   const { handleEdit: editEntry, setEditText } = entryEditState;
   const handleRephrase = useCallback(async (entry: Entry, mode: RephraseMode) => {
-    const rewritten = await aiService.fixWriting(entry.content, mode);
+    const rewritten = await aiService.fixWriting(entry.content, mode, entry.diary_id);
 
     if (rewritten === null) {
       notifier.notify(t('rephraseEntryFailed'));

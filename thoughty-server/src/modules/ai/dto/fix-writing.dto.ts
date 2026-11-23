@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { StrictInt } from '@/common/validation';
 
 export const fixWritingModes = ['grammar', 'polish', 'rewrite'] as const;
 
@@ -20,6 +21,15 @@ export class FixWritingDto {
   @IsString()
   @IsIn(fixWritingModes)
   mode?: FixWritingMode;
+
+  @ApiPropertyOptional({
+    description: 'Diary the text is written in; a diary with AI off refuses the request (`403 DIARY_AI_OFF`)',
+    minimum: 1,
+  })
+  @IsOptional()
+  @StrictInt()
+  @Min(1)
+  diaryId?: number;
 }
 
 export class FixWritingResponseDto {

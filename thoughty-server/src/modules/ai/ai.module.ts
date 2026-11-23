@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AiChatHistory, AiUsageEvent, Entry } from '@/database/entities';
+import { AiChatHistory, AiUsageEvent, Diary, Entry } from '@/database/entities';
 import { UserConfigModule } from '@/modules/config';
 import { AiController } from './ai.controller';
 import { AiBookComposerService } from './ai-book-composer.service';
@@ -15,9 +15,10 @@ import { AiYearMoodService } from './ai-year-mood.service';
 import { AiWeeklyReflectionService } from './ai-weekly-reflection.service';
 import { AiEntriesChatService } from './ai-entries-chat.service';
 import { AiMemoirFollowUpsService } from './ai-memoir-follow-ups.service';
+import { AiDiaryGateService } from './ai-diary-gate.service';
 
 @Module({
-  imports: [UserConfigModule, TypeOrmModule.forFeature([Entry, AiChatHistory, AiUsageEvent])],
+  imports: [UserConfigModule, TypeOrmModule.forFeature([Entry, Diary, AiChatHistory, AiUsageEvent])],
   controllers: [AiController],
   providers: [
     AiService,
@@ -32,6 +33,7 @@ import { AiMemoirFollowUpsService } from './ai-memoir-follow-ups.service';
     AiWeeklyReflectionService,
     AiEntriesChatService,
     AiMemoirFollowUpsService,
+    AiDiaryGateService,
   ],
   exports: [AiService, AiBookComposerService, AiPersonalityService, AiUsageService, AiCredentialsService, AiYearMoodService, AiWeeklyReflectionService, AiEntriesChatService, AiMemoirFollowUpsService],
 })

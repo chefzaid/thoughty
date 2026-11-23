@@ -26,6 +26,7 @@ test.describe('AI writing assistance and entry chat', () => {
     await expect.poll(() => state.lastAiFixPayload).toMatchObject({
       content: 'this draft need polish',
       mode: 'grammar',
+      diaryId: 1,
     });
 
     await page.locator('#entry-101').getByTitle('Discuss with AI').click();

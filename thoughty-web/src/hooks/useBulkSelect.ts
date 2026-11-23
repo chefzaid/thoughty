@@ -18,14 +18,14 @@ const normalizeStoredEntryDate = (entryDate: string): string => (
 const rephraseSelectedEntry = async (
   entry: Entry,
   mode: RephraseMode,
-  aiFixWriting: (content: string, mode?: RephraseMode) => Promise<string | null>,
+  aiFixWriting: (content: string, mode?: RephraseMode, diaryId?: number | null) => Promise<string | null>,
   updateEntry: (id: number, data: { text: string; tags: string[]; date: string; visibility: 'public' | 'private'; format: 'plain' | 'markdown' }) => Promise<boolean>,
 ): Promise<BulkRephraseOutcome> => {
   if (!entry.content.trim()) {
     return 'failed';
   }
 
-  const rewritten = await aiFixWriting(entry.content, mode);
+  const rewritten = await aiFixWriting(entry.content, mode, entry.diary_id);
   if (rewritten === null) {
     return 'failed';
   }

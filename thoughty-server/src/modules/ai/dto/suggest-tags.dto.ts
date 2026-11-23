@@ -23,6 +23,15 @@ export class SuggestTagsDto {
   @Min(1)
   @Max(10)
   maxTags?: number;
+
+  @ApiPropertyOptional({
+    description: 'Diary the text is written in; a diary with AI off refuses the request (`403 DIARY_AI_OFF`)',
+    minimum: 1,
+  })
+  @IsOptional()
+  @StrictInt()
+  @Min(1)
+  diaryId?: number;
 }
 
 export class SuggestTagsResponseDto {

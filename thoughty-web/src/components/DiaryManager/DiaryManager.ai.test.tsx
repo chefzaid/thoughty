@@ -54,6 +54,19 @@ describe('DiaryManager AI mode', () => {
         expect(screen.getByLabelText('AI')).toHaveValue('on');
     });
 
+    it.each([
+        ['en', 'Diary Name'],
+        ['fr', 'Nom du journal'],
+    ] as const)('names the edit form’s name field in %s, as the new diary form does', async (language, name) => {
+        const user = userEvent.setup();
+        renderManager(language);
+
+        expect(screen.getByRole('textbox', { name })).toHaveValue('');
+        await user.click(within(card('Health')).getByTitle(getTranslation(language, 'edit')));
+        const editor = document.querySelector('.diary-card.editing') as HTMLElement;
+        expect(within(editor).getByRole('textbox', { name })).toHaveValue('Health');
+    });
+
     it('keeps a diary’s mode when editing it, and turns AI back on', async () => {
         const user = userEvent.setup();
         const props = renderManager();

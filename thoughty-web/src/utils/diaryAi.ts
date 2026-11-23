@@ -11,7 +11,12 @@ export function isDiaryAiOff(diaries: readonly AiModeDiary[], diaryId: number | 
   return diaryId != null && diaries.some((diary) => diary.id === diaryId && diary.aiMode === 'off');
 }
 
-/** Whether the composer writes into a diary with AI off: the chosen one, or the default one for all diaries. */
+/** The diary the composer writes into: the chosen one, or the default one for all diaries. */
+export function composerDiaryId(diaries: readonly AiModeDiary[], currentDiaryId: number | null): number | undefined {
+  return currentDiaryId ?? diaries.find((diary) => diary.isDefault)?.id;
+}
+
+/** Whether the composer writes into a diary with AI off. */
 export function isComposerDiaryAiOff(diaries: readonly AiModeDiary[], currentDiaryId: number | null): boolean {
-  return isDiaryAiOff(diaries, currentDiaryId ?? diaries.find((diary) => diary.isDefault)?.id);
+  return isDiaryAiOff(diaries, composerDiaryId(diaries, currentDiaryId));
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isComposerDiaryAiOff, isDiaryAiOff } from './diaryAi';
+import { composerDiaryId, isComposerDiaryAiOff, isDiaryAiOff } from './diaryAi';
 
 const diaries = [
   { id: 1, aiMode: 'on' as const, isDefault: true },
@@ -22,5 +22,8 @@ describe('diary AI mode', () => {
     expect(isComposerDiaryAiOff(diaries, null)).toBe(false);
     expect(isComposerDiaryAiOff([{ id: 2, aiMode: 'off', isDefault: true }], null)).toBe(true);
     expect(isComposerDiaryAiOff([], null)).toBe(false);
+    expect(composerDiaryId(diaries, 2)).toBe(2);
+    expect(composerDiaryId(diaries, null)).toBe(1);
+    expect(composerDiaryId([], null)).toBeUndefined();
   });
 });

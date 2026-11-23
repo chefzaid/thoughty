@@ -379,7 +379,7 @@ describe("useEntryActions", () => {
         await result.current.requestBulkAction("rephrase", { mode: "polish" });
       });
 
-      expect(fixWriting).toHaveBeenCalledWith("First entry", "polish");
+      expect(fixWriting).toHaveBeenCalledWith("First entry", "polish", undefined);
       expect(updateEntry).toHaveBeenCalledWith(1, {
         text: "Improved first entry",
         tags: ["focus"],
@@ -439,7 +439,7 @@ describe("useEntryActions", () => {
       });
 
       expect(fixWriting).toHaveBeenCalledTimes(1);
-      expect(fixWriting).toHaveBeenCalledWith("Entry 1", "grammar");
+      expect(fixWriting).toHaveBeenCalledWith("Entry 1", "grammar", 1);
       expect(mockNotify).toHaveBeenCalledWith("Bulk rephrase completed: 1 updated, 1 unchanged, 0 failed.");
 
       // Only entries of diaries with AI off: nothing to rephrase

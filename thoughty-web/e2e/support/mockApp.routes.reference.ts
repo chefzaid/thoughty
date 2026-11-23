@@ -3,7 +3,7 @@ import {
   sortEntries,
   unique,
 } from './mockApp.shared';
-import { fulfillJson, sortStrings, toEntryResponse, type RouteContext } from './mockApp.route-utils';
+import { fulfillApiError, fulfillJson, sortStrings, toEntryResponse, type RouteContext } from './mockApp.route-utils';
 import { isMockSealed, mockOpenedCapsules } from './mockApp.routes.time-capsules';
 import { mockDueRereads } from './mockApp.routes.reread-reminders';
 import { mockPersonDates } from './mockApp.person-dates';
@@ -21,6 +21,11 @@ function getAiFixPrefix(mode?: string): string {
     return 'Polished';
   }
   return 'Corrected';
+}
+
+/** Text sent from a diary with AI off is refused, as the API refuses it (`403 DIARY_AI_OFF`). */
+function isAiOffDiary(diaries: RouteContext['state']['diaries'], diaryId: number | undefined): boolean {
+  return diaryId != null && diaries.some((diary) => diary.id === diaryId && diary.aiMode === 'off');
 }
 
 async function handleStatsAndAiRoutes({ route, request, pathname, searchParams, state }: RouteContext): Promise<boolean> {
@@ -77,14 +82,23 @@ async function handleStatsAndAiRoutes({ route, request, pathname, searchParams, 
   }
 
   if (pathname === '/api/ai/suggest-tags') {
-    state.lastAiSuggestionPayload = request.postDataJSON();
+    const payload = request.postDataJSON() as { diaryId?: number };
+    state.lastAiSuggestionPayload = payload;
+    if (isAiOffDiary(state.diaries, payload.diaryId)) {
+      await fulfillApiError(route, 403, 'DIARY_AI_OFF', 'AI is off in this diary');
+      return true;
+    }
     await fulfillJson(route, { tags: ['focus', 'writing', 'self-awareness'] });
     return true;
   }
 
   if (pathname === '/api/ai/fix-writing') {
-    const payload = request.postDataJSON() as { content: string; mode?: string };
+    const payload = request.postDataJSON() as { content: string; mode?: string; diaryId?: number };
     state.lastAiFixPayload = payload;
+    if (isAiOffDiary(state.diaries, payload.diaryId)) {
+      await fulfillApiError(route, 403, 'DIARY_AI_OFF', 'AI is off in this diary');
+      return true;
+    }
     await fulfillJson(route, { content: `${getAiFixPrefix(payload.mode)}: ${payload.content}` });
     return true;
   }

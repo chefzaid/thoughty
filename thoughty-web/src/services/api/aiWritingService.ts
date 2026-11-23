@@ -2,12 +2,16 @@ import type { components } from "../../generated/openapi";
 import { safeJsonParse } from "./base";
 import type { AiAuthFetch, RephraseMode, SummaryGuidance } from "./aiTypes";
 
+/** The diary a text is written in, which the server checks for AI off; none is left out of the request. */
+const inDiary = (diaryId: number | null | undefined) => (diaryId == null ? {} : { diaryId });
+
 /** AI help while writing and reading one entry: tags, rephrasing, summaries, prompts and chat. */
 export const createAiWritingService = (authFetch: AiAuthFetch) => {
   const suggestTags = async (
     content: string,
     existingTags: string[] = [],
     maxTags = 5,
+    diaryId?: number | null,
   ): Promise<string[] | null> => {
     try {
       const response = await authFetch("/api/ai/suggest-tags", {
@@ -16,6 +20,7 @@ export const createAiWritingService = (authFetch: AiAuthFetch) => {
           content,
           existingTags,
           maxTags,
+          ...inDiary(diaryId),
         }),
       });
 
@@ -34,11 +39,12 @@ export const createAiWritingService = (authFetch: AiAuthFetch) => {
   const fixWriting = async (
     content: string,
     mode: RephraseMode = "grammar",
+    diaryId?: number | null,
   ): Promise<string | null> => {
     try {
       const response = await authFetch("/api/ai/fix-writing", {
         method: "POST",
-        body: JSON.stringify({ content, mode }),
+        body: JSON.stringify({ content, mode, ...inDiary(diaryId) }),
       });
 
       const data = await safeJsonParse<components["schemas"]["FixWritingResponseDto"]>(response);

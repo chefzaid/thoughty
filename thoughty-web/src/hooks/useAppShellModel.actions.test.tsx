@@ -96,10 +96,11 @@ describe('useAppShellModel', () => {
     const routesProps = result.current.authenticatedRoutesProps as MockedRoutesProps;
 
     await act(async () => {
-      await routesProps.handleRephrase?.({ id: 44, content: 'Needs help' }, 'rewrite');
+      await routesProps.handleRephrase?.({ id: 44, content: 'Needs help', diary_id: 5 }, 'rewrite');
     });
 
-    expect(fixWriting).toHaveBeenCalledWith('Needs help', 'rewrite');
+    // The entry's diary goes with its text, so the server can refuse a diary with AI off
+    expect(fixWriting).toHaveBeenCalledWith('Needs help', 'rewrite', 5);
     expect(result.current.authenticatedLayoutProps).toMatchObject({
       appNotice: { text: 'rephraseEntryFailed', toast: expect.objectContaining({ visible: true }) },
     });

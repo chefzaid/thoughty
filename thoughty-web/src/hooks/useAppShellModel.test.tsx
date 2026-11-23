@@ -141,7 +141,7 @@ describe('useAppShellModel', () => {
       await routesProps.handleRephrase?.({ id: 33, content: 'Discuss me' }, 'polish');
     });
 
-    expect(fixWriting).toHaveBeenCalledWith('Discuss me', 'polish');
+    expect(fixWriting).toHaveBeenCalledWith('Discuss me', 'polish', undefined);
     expect(handleEdit).toHaveBeenCalledWith({ id: 33, content: 'Discuss me' });
     expect(setEditText).toHaveBeenCalledWith('Polished text');
 

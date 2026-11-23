@@ -304,6 +304,15 @@ describeContract('external', (context) => {
     await call('POST /api/ai/summarize', { as: alice, json: { entryId: privateId }, ...aiOff });
     const messages = [{ role: 'user', content: 'Why?' }];
     await call('POST /api/ai/chat', { as: alice, json: { entryId: privateId, entryContent: 'A visit', messages }, ...aiOff });
+    // Text sent from that diary is refused too; a diary that is not the writer's is not found
+    const rephrase = { content: 'A visit to the clinic', mode: 'grammar', diaryId: diary.id };
+    const autoTag = { content: 'A visit to the clinic', diaryId: diary.id };
+    await call('POST /api/ai/fix-writing', { as: alice, json: rephrase, ...aiOff });
+    await call('POST /api/ai/suggest-tags', { as: alice, json: autoTag, ...aiOff });
+    const bobDiaryId = await defaultDiaryId(context, context.bob);
+    const notFound = { status: 404, code: 'DIARY_NOT_FOUND' } as const;
+    await call('POST /api/ai/fix-writing', { as: alice, json: { ...rephrase, diaryId: bobDiaryId }, ...notFound });
+    await call('POST /api/ai/suggest-tags', { as: alice, json: { ...autoTag, diaryId: 0 }, status: 400, code: 'VALIDATION_FAILED' });
     // Whole-journal features never read it: retagging cannot reach it, and the duplicate scan leaves it out
     const retag = { mode: 'add', assignments: [{ entryId: privateId, tags: ['ai'] }] };
     await call('POST /api/ai/journal-retag/apply', { as: alice, json: retag, status: 400, code: 'ENTRIES_NOT_FOUND' });
@@ -312,6 +321,8 @@ describeContract('external', (context) => {
 
     await call('PUT /api/diaries/{id}', { as: alice, params: { id: diary.id }, json: { ...form, aiMode: 'on' }, status: 200 });
     await call('POST /api/ai/summarize', { as: alice, json: { entryId: privateId }, status: 400, code: 'AI_KEY_NOT_CONFIGURED' });
+    await call('POST /api/ai/fix-writing', { as: alice, json: rephrase, status: 400, code: 'AI_KEY_NOT_CONFIGURED' });
+    await call('POST /api/ai/suggest-tags', { as: alice, json: autoTag, status: 400, code: 'AI_KEY_NOT_CONFIGURED' });
     await call('DELETE /api/diaries/{id}', { as: alice, params: { id: diary.id }, status: 200 });
   });
 });

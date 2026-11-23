@@ -35,6 +35,7 @@ import {
   SaveOpenRouterCredentialDto,
 } from './dto/openrouter-credentials.dto';
 import { AiJournalRetagService } from './ai-journal-retag.service';
+import { AiDiaryGateService } from './ai-diary-gate.service';
 import {
   ApplyJournalRetagDto,
   ApplyJournalRetagResponseDto,
@@ -53,6 +54,7 @@ export class AiController {
     private readonly aiSemanticSearchService: AiSemanticSearchService,
     private readonly aiCredentialsService: AiCredentialsService,
     private readonly aiJournalRetagService: AiJournalRetagService,
+    private readonly aiDiaryGate: AiDiaryGateService,
   ) {}
 
   @Get('models')
@@ -121,10 +123,13 @@ export class AiController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Suggest tags for journal content using OpenRouter' })
   @ApiResponse({ status: 200, description: 'Suggested tags returned successfully', type: SuggestTagsResponseDto })
+  @ApiResponse({ status: 403, description: 'The named diary has AI off (`DIARY_AI_OFF`)' })
+  @ApiResponse({ status: 404, description: 'The named diary is not the writer’s (`DIARY_NOT_FOUND`)' })
   async suggestTags(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: SuggestTagsDto,
   ): Promise<SuggestTagsResponseDto> {
+    await this.aiDiaryGate.assertTextAiAllowed(user.userId, dto.diaryId);
     return this.aiService.suggestTags(user.userId, dto);
   }
 
@@ -133,10 +138,13 @@ export class AiController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Fix grammar, spelling, and style in journal content using OpenRouter' })
   @ApiResponse({ status: 200, description: 'Corrected content returned successfully', type: FixWritingResponseDto })
+  @ApiResponse({ status: 403, description: 'The named diary has AI off (`DIARY_AI_OFF`)' })
+  @ApiResponse({ status: 404, description: 'The named diary is not the writer’s (`DIARY_NOT_FOUND`)' })
   async fixWriting(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: FixWritingDto,
   ): Promise<FixWritingResponseDto> {
+    await this.aiDiaryGate.assertTextAiAllowed(user.userId, dto.diaryId);
     return this.aiService.fixWriting(user.userId, dto);
   }
 
