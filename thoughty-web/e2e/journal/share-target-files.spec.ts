@@ -1,6 +1,7 @@
 import { expect, test, type Page, type Route } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
 import { MOCK_PNG } from '../support/mockApp.routes.attachments';
+import { buildMockBookPdf } from '../support/mockBookPdf';
 import { cachedRequests, installServiceWorker } from '../support/serviceWorker';
 
 const TODAY = '2026-11-01';
@@ -13,7 +14,12 @@ interface SharedFile {
 }
 
 const beachPhoto: SharedFile = { name: 'beach.png', mimeType: 'image/png', buffer: MOCK_PNG };
-const ticket: SharedFile = { name: 'ticket.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 ticket') };
+// A PDF the browser can show: the viewer of one it cannot show takes the focus as it loads (see pdf-preview-focus.spec.ts)
+const ticket: SharedFile = {
+  name: 'ticket.pdf',
+  mimeType: 'application/pdf',
+  buffer: buildMockBookPdf({ title: 'Ferry ticket', author: 'Harbor Lines', includeToc: false, chapters: [{ title: 'Outbound', paragraphs: ['Departs at 08:15 from pier 3.'] }] }),
+};
 
 const composerText = (page: Page) => page.locator('form').first().locator('textarea').first();
 const composerForm = (page: Page) => page.locator('form').first();
@@ -92,8 +98,11 @@ test.describe('Share photos and files to Thoughty', () => {
     await expect.poll(() => state.entries.at(-1)?.attachments?.map((attachment) => attachment.original_filename)).toEqual(['beach.png', 'ticket.pdf']);
     expect(state.entries.at(-1)).toMatchObject({ date: TODAY, title: 'Low tide', content: 'Shells everywhere', visibility: 'private' });
 
-    // A photo shared alone joins the draft being written, without replacing it
+    // Writing on as the entry is saved: the save empties the composer of the entry, not of what came after
     await composerText(page).fill('Evening walk');
+    await expect(page.locator('[id^="entry-"]').getByText('Shells everywhere')).toBeVisible();
+    await expect(composerText(page)).toHaveValue('Evening walk');
+    // A photo shared alone joins the draft being written, without replacing it
     await expect(page.getByText('Draft saved')).toBeVisible();
     await shareToApp(page, {}, [beachPhoto]);
     await expect(composerText(page)).toHaveValue('Evening walk');

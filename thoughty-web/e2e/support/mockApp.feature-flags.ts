@@ -1,34 +1,28 @@
+import { requiredFeature } from './mockApp.contract';
 import { fulfillApiError, fulfillJson, type RouteContext } from './mockApp.route-utils';
 
-export type MockFeatureFlag = 'ai' | 'bookConverter' | 'cloudSync' | 'publicSharing';
+/** The runtime feature flags the API has (`FeatureFlag` in thoughty-server's `feature-flags.service.ts`). */
+export const MOCK_FEATURE_FLAGS = ['ai', 'bookConverter', 'cloudSync', 'publicSharing'] as const;
+export type MockFeatureFlag = typeof MOCK_FEATURE_FLAGS[number];
 /** The runtime feature flags the mock API answers; a flag left out is on, as the API documents. */
 export type MockFeatureFlags = Partial<Record<MockFeatureFlag, boolean>>;
 
-interface FeatureRule {
+const isMockFeatureFlag = (flag: string | null): flag is MockFeatureFlag => MOCK_FEATURE_FLAGS.includes(flag as MockFeatureFlag);
+
+interface BodyRule {
   readonly flag: MockFeatureFlag;
   readonly pattern: RegExp;
-  readonly methods?: readonly string[];
-  /** For a route refused only for some bodies, such as an entry made public. */
-  readonly body?: (payload: Record<string, unknown>) => boolean;
+  readonly methods: readonly string[];
+  readonly body: (payload: Record<string, unknown>) => boolean;
 }
 
 const makesPublic = (payload: Record<string, unknown>) => payload.visibility === 'public';
 
-/** The routes the real API refuses with 503 FEATURE_DISABLED while a flag is off (`@RequireFeature`). */
-const FEATURE_RULES: readonly FeatureRule[] = [
-  { flag: 'ai', pattern: /^\/api\/ai\/(?!credentials$)/ },
-  { flag: 'ai', pattern: /^\/api\/ai\/credentials$/, methods: ['PUT'] },
-  { flag: 'ai', pattern: /^\/api\/attachments\/\d+\/transcribe$/ },
-  { flag: 'ai', pattern: /^\/api\/review\/mood$/ },
-  { flag: 'ai', pattern: /^\/api\/stats\/personality-analysis$/ },
-  { flag: 'ai', pattern: /^\/api\/memoir\/follow-ups$/ },
-  { flag: 'bookConverter', pattern: /^\/api\/books(\/|$)/ },
-  { flag: 'cloudSync', pattern: /^\/api\/cloud-sync\/(?!disconnect$)/ },
-  { flag: 'publicSharing', pattern: /^\/api\/entries\/feed$/ },
-  { flag: 'publicSharing', pattern: /^\/api\/entries\/\d+\/(comments|like)/ },
-  { flag: 'publicSharing', pattern: /^\/api\/(follows|leaderboard)(\/|$)/ },
-  { flag: 'publicSharing', pattern: /^\/api\/shared\// },
-  { flag: 'publicSharing', pattern: /^\/api\/share-links$/, methods: ['POST'] },
+/**
+ * Routes the API refuses for some bodies only, which its services check rather than `@RequireFeature`. The
+ * routes `@RequireFeature` closes come from the contract (`requiredFeature`), so none can be left out here.
+ */
+const BODY_RULES: readonly BodyRule[] = [
   // Nothing becomes public while sharing is off
   { flag: 'publicSharing', pattern: /^\/api\/entries(\/bulk|\/\d+\/visibility)?$/, methods: ['POST', 'PATCH'], body: makesPublic },
 ];
@@ -46,19 +40,18 @@ function jsonBody(context: RouteContext): Record<string, unknown> {
 export async function handleFeatureFlagRoutes(context: RouteContext): Promise<boolean> {
   const { route, request, pathname, state } = context;
   if (pathname === '/api/config/feature-flags') {
-    await fulfillJson(route, { ai: true, bookConverter: true, cloudSync: true, publicSharing: true, ...state.featureFlags });
+    await fulfillJson(route, { ...Object.fromEntries(MOCK_FEATURE_FLAGS.map((flag) => [flag, true])), ...state.featureFlags });
     return true;
   }
 
   const method = request.method();
-  const refused = FEATURE_RULES.find((rule) =>
-    state.featureFlags[rule.flag] === false
-    && rule.pattern.test(pathname)
-    && (!rule.methods || rule.methods.includes(method))
-    && (!rule.body || rule.body(jsonBody(context))));
-  if (!refused) return false;
+  const gated = requiredFeature(method, pathname);
+  const flag = isMockFeatureFlag(gated)
+    ? gated
+    : BODY_RULES.find((rule) => rule.pattern.test(pathname) && rule.methods.includes(method) && rule.body(jsonBody(context)))?.flag;
+  if (!flag || state.featureFlags[flag] !== false) return false;
 
   state.featureDisabledRequests.push(`${method} ${pathname}`);
-  await fulfillApiError(route, 503, 'FEATURE_DISABLED', `The ${refused.flag} feature is turned off for now`);
+  await fulfillApiError(route, 503, 'FEATURE_DISABLED', `The ${flag} feature is turned off for now`);
   return true;
 }

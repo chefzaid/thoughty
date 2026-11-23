@@ -141,8 +141,9 @@ export function useComposerDraftSync(
     // The session ended meanwhile: the server keeps what it got, and this browser keeps nothing
     if (!mounted.current) return;
     if (started !== epoch.current) {
-      // Published or cleared meanwhile: a draft this save left behind goes too
+      // Published or cleared meanwhile: a draft this save left behind goes too, and what was written since is saved anew
       if (outcome.status === 'ok' && outcome.data) void drafts.discard(outcome.data.revision);
+      timer.current = setTimeout(() => void sync(), DRAFT_SAVE_DELAY_MS);
       return;
     }
     if (outcome.status === 'ok') {
@@ -298,7 +299,9 @@ export function useComposerDraftSync(
     forgetDraft();
     // A newer draft saved on another device meanwhile is kept for later
     if (published !== null) void latest.current.service.discard(published);
-  }, [forgetDraft]);
+    // What the writer wrote while the entry was being saved stays in the composer: it becomes the next draft
+    timer.current = setTimeout(() => void sync(), DRAFT_SAVE_DELAY_MS);
+  }, [forgetDraft, sync]);
 
   return { status, ready, offer, takeSavedDraft, keepThisDraft, discardSavedDraft, clearThisDraft, flush, onPublished };
 }

@@ -8,6 +8,7 @@ import {
   isTextAttachment,
   hasInlineAttachmentPreview,
 } from '../../utils/attachments';
+import { useFrameFocusReturn } from './useFrameFocusReturn';
 
 type AttachmentPreviewVariant = 'compact' | 'detail' | 'modal';
 
@@ -88,6 +89,21 @@ function VideoPreview({ name, sourceUrl, posterUrl, variant, autoPlay, t }: Read
   );
 }
 
+/** A PDF or text file in a frame; an inline PDF gives back the focus its viewer takes as it loads. */
+function FramePreview({ name, mimetype, sourceUrl, variant }: Readonly<{ name: string; mimetype: string; sourceUrl: string; variant: AttachmentPreviewVariant }>) {
+  const focusReturn = useFrameFocusReturn(isPdfAttachment(mimetype) && variant !== 'modal');
+  return (
+    <iframe
+      ref={focusReturn.ref}
+      src={sourceUrl}
+      title={name}
+      className={getIframeClassName(variant)}
+      loading="lazy"
+      onLoad={focusReturn.onLoad}
+    />
+  );
+}
+
 function AttachmentPreviewContent({
   name,
   mimetype,
@@ -126,14 +142,7 @@ function AttachmentPreviewContent({
   }
 
   if (isPdfAttachment(mimetype) || isTextAttachment(mimetype)) {
-    return (
-      <iframe
-        src={sourceUrl}
-        title={name}
-        className={getIframeClassName(variant)}
-        loading="lazy"
-      />
-    );
+    return <FramePreview name={name} mimetype={mimetype} sourceUrl={sourceUrl} variant={variant} />;
   }
 
   return <AttachmentFileIcon />;

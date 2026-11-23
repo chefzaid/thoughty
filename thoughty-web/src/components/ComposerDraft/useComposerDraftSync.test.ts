@@ -222,6 +222,41 @@ describe('useComposerDraftSync', () => {
     expect(result.current.draft.status).toBe('idle');
   });
 
+  it('saves as a new draft what the writer wrote while the entry was being published', async () => {
+    service.save.mockResolvedValueOnce(ok(saved('Hello', 1))).mockResolvedValueOnce(ok(saved('Evening walk', 4)));
+    const { result } = renderDraft();
+    await settle();
+    await type(result, 'Hello');
+    await wait(DRAFT_SAVE_DELAY_MS);
+
+    // Typed after Save: the composer keeps it once the entry is saved
+    await type(result, 'Evening walk');
+    act(() => result.current.draft.onPublished());
+    expect(service.discard).toHaveBeenCalledWith(1);
+    await wait(DRAFT_SAVE_DELAY_MS + DRAFT_MIN_SAVE_INTERVAL_MS);
+    expect(service.save).toHaveBeenLastCalledWith(fields('Evening walk'), null);
+    expect(result.current.draft.status).toBe('saved');
+    expect(readLocalComposerDraft(7)).toEqual({ fields: fields('Evening walk'), baseRevision: 4, synced: true });
+  });
+
+  it('saves anew text a save still on its way carried when the entry was published', async () => {
+    let finishSave: (outcome: DraftOutcome<ComposerDraft>) => void = () => undefined;
+    service.save.mockImplementationOnce(() => new Promise((resolve) => { finishSave = resolve; }))
+      .mockResolvedValueOnce(ok(saved('Evening walk', 3)));
+    const { result } = renderDraft();
+    await settle();
+    await type(result, 'Evening walk');
+    await wait(DRAFT_SAVE_DELAY_MS);
+
+    act(() => result.current.draft.onPublished());
+    await act(async () => { finishSave(ok(saved('Evening walk', 2))); });
+    await settle();
+    expect(service.discard).toHaveBeenCalledWith(2);
+    await wait(DRAFT_SAVE_DELAY_MS + DRAFT_MIN_SAVE_INTERVAL_MS);
+    expect(service.save).toHaveBeenLastCalledWith(fields('Evening walk'), null);
+    expect(result.current.draft.status).toBe('saved');
+  });
+
   it('asks before the page closes on text the server does not have yet', async () => {
     service.save.mockResolvedValue(ok(saved('Hello', 1)));
     const { result } = renderDraft();

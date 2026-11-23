@@ -1,48 +1,11 @@
-import { readdirSync } from 'node:fs';
-import { join } from 'node:path';
 import { RequestMethod } from '@nestjs/common';
-import { HTTP_CODE_METADATA, METHOD_METADATA, PATH_METADATA } from '@nestjs/common/constants';
+import { HTTP_CODE_METADATA, METHOD_METADATA } from '@nestjs/common/constants';
 import { IS_PUBLIC_KEY } from './common/decorators/public.decorator';
+import { listHandlers, type RouteHandler } from './route-handlers.test-helpers';
 
 /** Where `@ApiResponse` and `@ApiBearerAuth` keep their metadata (`DECORATORS` in @nestjs/swagger). */
 const API_RESPONSE_METADATA = 'swagger/apiResponse';
 const API_SECURITY_METADATA = 'swagger/apiSecurity';
-
-function listControllerFiles(dir: string): string[] {
-  return readdirSync(dir, { withFileTypes: true }).flatMap((item) => {
-    const path = join(dir, item.name);
-    if (item.isDirectory()) return listControllerFiles(path);
-    return item.name.endsWith('.controller.ts') ? [path] : [];
-  });
-}
-
-type Handler = (...args: unknown[]) => unknown;
-
-interface RouteHandler {
-  name: string;
-  handler: Handler;
-  controller: object;
-}
-
-/** Each route handler of the API's controllers, as `Controller.method`. */
-function listHandlers(): RouteHandler[] {
-  return listControllerFiles(__dirname).flatMap((file) =>
-    Object.values(jest.requireActual<Record<string, unknown>>(file))
-      .filter(
-        (value): value is { name: string; prototype: Record<string, Handler> } =>
-          typeof value === 'function' && Reflect.getMetadata(PATH_METADATA, value) !== undefined,
-      )
-      .flatMap((controller) =>
-        Object.getOwnPropertyNames(controller.prototype)
-          .map((method) => ({
-            name: `${controller.name}.${method}`,
-            handler: controller.prototype[method]!,
-            controller,
-          }))
-          .filter(({ handler }) => Reflect.getMetadata(METHOD_METADATA, handler) !== undefined),
-      ),
-  );
-}
 
 /** Whether the global JWT guard lets a handler through without a token (`@Public()` on it or its controller). */
 function isPublic({ handler, controller }: RouteHandler): boolean {

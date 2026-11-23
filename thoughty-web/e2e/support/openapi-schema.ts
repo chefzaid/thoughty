@@ -34,7 +34,7 @@ export interface ContractMediaType {
 export interface ContractOperation {
   parameters?: ContractParameter[];
   requestBody?: { content?: Record<string, ContractMediaType> };
-  responses?: Record<string, { content?: Record<string, ContractMediaType> }>;
+  responses?: Record<string, { description?: string; content?: Record<string, ContractMediaType> }>;
   security?: unknown[];
 }
 

@@ -5,6 +5,7 @@ import {
   resolveSchemaRef,
   validateAgainstSchema,
   type ContractDocument,
+  type ContractOperation,
   type ContractSchema,
 } from './openapi-schema';
 
@@ -20,7 +21,14 @@ interface Operation {
   /** The documented type of each query parameter, such as `boolean` for `narrative`. */
   queryTypes: Record<string, string | undefined>;
   responses: Record<string, ContractSchema | undefined>;
+  /** The runtime feature flag the API checks before the operation (`@RequireFeature`), if any. */
+  requiredFeature?: string;
 }
+
+/** How `@RequireFeature(flag)` documents its 503 (`require-feature.decorator.ts` in thoughty-server). */
+const REQUIRED_FEATURE = /^FEATURE_DISABLED: the `(\w+)` feature is turned off/;
+const featureOf = (operation: ContractOperation): string | undefined =>
+  REQUIRED_FEATURE.exec(operation.responses?.['503']?.description ?? '')?.[1];
 
 const OPENAPI_PATH = resolve(dirname(fileURLToPath(import.meta.url)), '../../../thoughty-server/openapi/openapi.json');
 
@@ -50,6 +58,7 @@ function loadOperations(): Operation[] {
           response.content?.['application/json']?.schema,
         ]),
       ),
+      requiredFeature: featureOf(operation),
     })),
   );
   return operationsCache;
@@ -71,6 +80,21 @@ function findOperation(method: string, pathname: string): Operation | undefined 
   return loadOperations()
     .filter((candidate) => candidate.method === method && candidate.pattern.test(pathname))
     .sort((left, right) => right.literalSegments - left.literalSegments)[0];
+}
+
+/** The runtime feature flag the API checks before answering this request (`@RequireFeature`), or null. */
+export function requiredFeature(method: string, pathname: string): string | null {
+  return findOperation(method, pathname)?.requiredFeature ?? null;
+}
+
+/** Every operation the API refuses while a feature flag is off, with that flag. */
+export function featureGatedOperations(): { flag: string; method: string; path: string }[] {
+  return Object.entries(loadDocument().paths).flatMap(([path, methods]) =>
+    Object.entries(methods).flatMap(([method, operation]) => {
+      const flag = featureOf(operation);
+      return flag ? [{ flag, method: method.toUpperCase(), path }] : [];
+    }),
+  );
 }
 
 /**
