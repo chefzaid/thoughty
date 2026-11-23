@@ -1,10 +1,13 @@
 import { Body, Controller, Delete, Get, HttpCode, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthenticatedUser, CurrentUser } from '@/common';
+import { RequireFeature } from '@/common/feature-flags';
 import {
   AnswerMemoirPhotoDto,
   AnswerMemoirQuestionDto,
   MemoirAnswerResultDto,
+  MemoirFollowUpsDto,
+  MemoirFollowUpsResponseDto,
   MemoirLeftDto,
   MemoirOverviewDto,
   MemoirPhotoAnswerResultDto,
@@ -12,6 +15,7 @@ import {
   UpdateMemoirDto,
 } from './dto';
 import { MemoirAnswersService } from './memoir-answers.service';
+import { MemoirFollowUpsService } from './memoir-follow-ups.service';
 import { MemoirPhotoAnswersService } from './memoir-photo-answers.service';
 import { MemoirService } from './memoir.service';
 
@@ -23,6 +27,7 @@ export class MemoirController {
     private readonly memoirService: MemoirService,
     private readonly memoirAnswersService: MemoirAnswersService,
     private readonly memoirPhotoAnswersService: MemoirPhotoAnswersService,
+    private readonly memoirFollowUpsService: MemoirFollowUpsService,
   ) {}
 
   @Get()
@@ -93,6 +98,27 @@ export class MemoirController {
     @Body() dto: AnswerMemoirQuestionDto,
   ): Promise<MemoirAnswerResultDto> {
     return this.memoirAnswersService.answer(user.userId, dto);
+  }
+
+  @Post('follow-ups')
+  @RequireFeature('ai')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Interview mode: AI follow-up questions that deepen an answer being written',
+    description:
+      'Up to three open questions, each about a person, place, moment, object or feeling the answer names, grounded ' +
+      'strictly in its words (nothing it does not say is assumed), in the language of the answer and none of `asked`. ' +
+      'The question and the answer are sent to the AI provider with the prompt model; nothing is kept.',
+  })
+  @ApiResponse({ status: 200, description: 'The follow-up questions, empty when the answer gives nothing to build on yet', type: MemoirFollowUpsResponseDto })
+  @ApiResponse({ status: 400, description: 'The answer is empty, or AI is not available (`AI_KEY_NOT_CONFIGURED`)' })
+  @ApiResponse({ status: 404, description: 'Unknown question, or memoir not started' })
+  @ApiResponse({ status: 502, description: 'The AI provider failed (`AI_PROVIDER_FAILED`)' })
+  followUps(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: MemoirFollowUpsDto,
+  ): Promise<MemoirFollowUpsResponseDto> {
+    return this.memoirFollowUpsService.suggest(user.userId, dto);
   }
 
   @Post('photo-answers')

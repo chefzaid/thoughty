@@ -14638,6 +14638,121 @@
         ]
       }
     },
+    "/api/memoir/follow-ups": {
+      "post": {
+        "description": "Up to three open questions, each about a person, place, moment, object or feeling the answer names, grounded strictly in its words (nothing it does not say is assumed), in the language of the answer and none of `asked`. The question and the answer are sent to the AI provider with the prompt model; nothing is kept.",
+        "operationId": "MemoirController_followUps",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemoirFollowUpsDto"
+              },
+              "example": {
+                "questionId": "childhood-home",
+                "text": "A narrow house with a fig tree in the yard and my grandmother singing in the kitchen.",
+                "asked": [
+                  "What song did your grandmother sing in the kitchen?"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The follow-up questions, empty when the answer gives nothing to build on yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoirFollowUpsResponseDto"
+                },
+                "example": {
+                  "questions": [
+                    "What song did your grandmother sing in the kitchen?",
+                    "What could you see from under the fig tree?"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The answer is empty, or AI is not available (`AI_KEY_NOT_CONFIGURED`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "The answer is empty, or AI is not available (`AI_KEY_NOT_CONFIGURED`)",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown question, or memoir not started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Unknown question, or memoir not started",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The AI provider failed (`AI_PROVIDER_FAILED`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 502,
+                  "message": "The AI provider failed (`AI_PROVIDER_FAILED`)",
+                  "error": "Bad Gateway",
+                  "code": "BAD_GATEWAY"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Interview mode: AI follow-up questions that deepen an answer being written",
+        "tags": [
+          "Memoir"
+        ]
+      }
+    },
     "/api/memoir/photo-answers": {
       "post": {
         "description": "The entry opens with the question, places the photo (captioned) before the story, so a book prints it next to the answer, and is tagged with the chosen life chapter (Photos without one) and life era.",
@@ -29823,6 +29938,71 @@
         "example": {
           "questionId": "childhood-home",
           "entryId": 812
+        }
+      },
+      "MemoirFollowUpsDto": {
+        "type": "object",
+        "properties": {
+          "questionId": {
+            "type": "string",
+            "example": "childhood-home",
+            "maxLength": 64
+          },
+          "text": {
+            "type": "string",
+            "example": "A narrow house with a fig tree in the yard and my grandmother singing in the kitchen.",
+            "minLength": 1,
+            "maxLength": 45000,
+            "description": "The answer written so far; may not be empty"
+          },
+          "asked": {
+            "maxItems": 12,
+            "example": [
+              "What song did your grandmother sing in the kitchen?"
+            ],
+            "description": "Follow-ups already offered for this answer, so none is asked again",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "questionId",
+          "text"
+        ],
+        "example": {
+          "questionId": "childhood-home",
+          "text": "A narrow house with a fig tree in the yard and my grandmother singing in the kitchen.",
+          "asked": [
+            "What song did your grandmother sing in the kitchen?"
+          ]
+        }
+      },
+      "MemoirFollowUpsResponseDto": {
+        "type": "object",
+        "properties": {
+          "questions": {
+            "maxItems": 3,
+            "example": [
+              "What song did your grandmother sing in the kitchen?",
+              "What could you see from under the fig tree?"
+            ],
+            "description": "Up to three follow-up questions grounded in the answer; empty when it gives nothing to build on yet",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "questions"
+        ],
+        "example": {
+          "questions": [
+            "What song did your grandmother sing in the kitchen?",
+            "What could you see from under the fig tree?"
+          ]
         }
       },
       "AnswerMemoirPhotoDto": {

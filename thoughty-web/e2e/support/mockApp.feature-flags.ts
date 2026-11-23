@@ -21,6 +21,7 @@ const FEATURE_RULES: readonly FeatureRule[] = [
   { flag: 'ai', pattern: /^\/api\/attachments\/\d+\/transcribe$/ },
   { flag: 'ai', pattern: /^\/api\/review\/mood$/ },
   { flag: 'ai', pattern: /^\/api\/stats\/personality-analysis$/ },
+  { flag: 'ai', pattern: /^\/api\/memoir\/follow-ups$/ },
   { flag: 'bookConverter', pattern: /^\/api\/books(\/|$)/ },
   { flag: 'cloudSync', pattern: /^\/api\/cloud-sync\/(?!disconnect$)/ },
   { flag: 'publicSharing', pattern: /^\/api\/entries\/feed$/ },

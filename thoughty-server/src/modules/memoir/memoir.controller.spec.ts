@@ -12,7 +12,8 @@ describe('MemoirController', () => {
   };
   const answersService = { answer: jest.fn().mockResolvedValue({ questionId: 'childhood-home', entryId: 9 }) };
   const photoAnswersService = { answer: jest.fn().mockResolvedValue({ entryId: 12 }) };
-  const controller = new MemoirController(memoirService as never, answersService as never, photoAnswersService as never);
+  const followUpsService = { suggest: jest.fn().mockResolvedValue({ questions: ['Who planted the fig tree?'] }) };
+  const controller = new MemoirController(memoirService as never, answersService as never, photoAnswersService as never, followUpsService as never);
 
   it('scopes every memoir action to the authenticated writer', async () => {
     const start = { diaryName: 'My memoir', emailEnabled: true, deliveryWeekday: 0, timeZone: 'UTC' };
@@ -26,6 +27,7 @@ describe('MemoirController', () => {
     await expect(controller.snooze(user)).resolves.toEqual({ program: { currentQuestionId: 'childhood-adult' } });
     await expect(controller.answer(user, answer)).resolves.toEqual({ questionId: 'childhood-home', entryId: 9 });
     await expect(controller.answerPhoto(user, photoAnswer)).resolves.toEqual({ entryId: 12 });
+    await expect(controller.followUps(user, answer)).resolves.toEqual({ questions: ['Who planted the fig tree?'] });
     await expect(controller.leave(user)).resolves.toEqual({ success: true });
 
     expect(memoirService.getOverview).toHaveBeenCalledWith(4);
@@ -35,6 +37,7 @@ describe('MemoirController', () => {
     expect(memoirService.snooze).toHaveBeenCalledWith(4);
     expect(answersService.answer).toHaveBeenCalledWith(4, answer);
     expect(photoAnswersService.answer).toHaveBeenCalledWith(4, photoAnswer);
+    expect(followUpsService.suggest).toHaveBeenCalledWith(4, answer);
     expect(memoirService.leave).toHaveBeenCalledWith(4);
   });
 });

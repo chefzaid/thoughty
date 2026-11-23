@@ -3,9 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import MemoirAnswerForm from './MemoirAnswerForm';
 import { getTranslation } from '../../utils/translations';
+import { withFeatureFlags } from '../../test/featureFlags';
 
 const attachmentsService = { uploadAttachment: vi.fn(), transcribeAttachment: vi.fn() };
 vi.mock('../../hooks/useAuthenticatedService', () => ({ useAuthenticatedService: () => attachmentsService }));
+const memoirService = { followUps: vi.fn() };
+vi.mock('../../hooks/useMemoirService', () => ({ useMemoirService: () => memoirService }));
 
 const t = (key: string, params?: Record<string, string | number>) =>
   params ? `${key} ${Object.values(params).join(' ')}` : key;
@@ -223,5 +226,34 @@ describe('MemoirAnswerForm', () => {
     const captions = document.querySelector('audio track');
     expect(captions).toHaveAttribute('srclang', language);
     expect(captions).toHaveAttribute('label', label);
+  });
+
+  it('puts a follow-up question at the end of the answer, with the caret below it', async () => {
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { callback(0); return 0; });
+    memoirService.followUps.mockResolvedValue({ data: { questions: ['What song did she sing?'] }, error: null });
+    const { onSubmit } = renderForm();
+    const field = screen.getByLabelText('memoirYourAnswer') as HTMLTextAreaElement;
+    fireEvent.change(field, { target: { value: 'My grandmother sang in the kitchen.  ' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'memoirFollowUpsAsk' }));
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'memoirFollowUpsUseLabel What song did she sing?' }));
+
+    const expected = 'My grandmother sang in the kitchen.\n\n**What song did she sing?**\n\n';
+    expect(field).toHaveValue(expected);
+    expect(field).toHaveFocus();
+    expect(field.selectionStart).toBe(expected.length);
+    fireEvent.click(screen.getByRole('button', { name: 'memoirSaveAnswer' }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ questionId: 'childhood-home', text: expected.trim() }));
+  });
+
+  it('leaves interview mode out while AI is switched off', () => {
+    render(<MemoirAnswerForm questionId="childhood-home" questionText="What was home like?" onSubmit={vi.fn()} onCancel={vi.fn()} t={t} />, {
+      wrapper: withFeatureFlags({ ai: false }),
+    });
+
+    expect(screen.queryByRole('group', { name: 'memoirFollowUpsTitle' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'memoirSaveAnswer' })).toBeInTheDocument();
   });
 });

@@ -17,6 +17,8 @@ export type MemoirAnswerRef = components['schemas']['MemoirAnswerRefDto'];
 export type AnswerMemoirPhotoRequest = components['schemas']['AnswerMemoirPhotoDto'];
 export type MemoirPhotoAnswerResult = components['schemas']['MemoirPhotoAnswerResultDto'];
 export type MemoirLeft = components['schemas']['MemoirLeftDto'];
+export type MemoirFollowUpsRequest = components['schemas']['MemoirFollowUpsDto'];
+export type MemoirFollowUps = components['schemas']['MemoirFollowUpsResponseDto'];
 export type MemoirQuestionBank = components['schemas']['MemoirQuestionBankDto'];
 export type MemoirBankChapter = components['schemas']['MemoirBankChapterDto'];
 
@@ -71,6 +73,14 @@ export const createMemoirService = (authFetch: (url: string, options?: RequestIn
     return requestJson(
       authFetch('/api/memoir/photo-answers', { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(request) }),
       'memoirPhotoSaveError',
+    );
+  },
+
+  /** Interview mode: AI follow-up questions grounded in the answer being written, none of those already offered. */
+  followUps(request: MemoirFollowUpsRequest): Promise<ServiceResult<MemoirFollowUps>> {
+    return requestJson(
+      authFetch('/api/memoir/follow-ups', { method: 'POST', headers: JSON_HEADERS, body: JSON.stringify(request) }),
+      'memoirFollowUpsError',
     );
   },
 });

@@ -8,6 +8,8 @@ export * from './ai-weekly-reflection.service';
 export * from './weekly-reflection';
 export * from './ai-entries-chat.service';
 export * from './entries-chat';
+export * from './ai-memoir-follow-ups.service';
+export * from './memoir-follow-ups';
 export * from './ai-duplicate.service';
 export * from './ai-semantic-search.service';
 export * from './ai-credentials.service';

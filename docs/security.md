@@ -166,10 +166,11 @@ AI is optional and uses OpenRouter. A user's personal key, when set, replaces th
 | Book weaving | on by default in book export (strict or creative): the date and full text of each chapter's entries, in parts of about 20,000 characters. No images. |
 | Book chapter framing | when chosen: each chapter's dates and text, cut to 20,000 characters, for the introduction and summary |
 | Audio transcription | the one selected audio attachment, up to 5 MB |
+| Memoir interview mode | on request: the memoir question and the answer being written (whole up to 12,000 characters, else its first 4,000 and last 8,000), and the follow-ups already offered for it, at most 12. Nothing is stored. |
 
 - Every prompt treats journal text as untrusted data: it is wrapped in tagged blocks (`ai/untrusted-content.ts`, which escapes a closing tag inside the text) and the system prompt tells the model to ignore instructions inside them. New prompts must use the same helper.
 - The entry chat's system prompt, and that of **Discuss these entries** (`ai/entries-chat.ts`), carry `COMPANION_SAFETY_INSTRUCTIONS` (`ai/companion-safety.ts`): the companion never acts as a therapist, and on signs of suicide, self-harm or danger it stops analyzing and sends the writer to a crisis line, emergency services or someone they trust, without giving phone numbers (the web app lists vetted ones itself). The web app's crisis check (`utils/crisisSignals.ts`) runs in the browser only and sends nothing.
-- Mood readings with clinical labels are discarded, and so is a weekly reflection whose summary or question uses one (a theme that does is dropped). Applying a tag plan does not call the provider again.
+- Mood readings with clinical labels are discarded, and so is a weekly reflection whose summary or question uses one (a theme that does is dropped), as is a memoir follow-up question that does. Applying a tag plan does not call the provider again.
 - Usage rows store metadata only (model, tokens, cost, time), never prompts or completions.
 
 ## Container Images

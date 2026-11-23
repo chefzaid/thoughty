@@ -14,6 +14,7 @@ import { AiJournalRetagService } from './ai-journal-retag.service';
 import { AiYearMoodService } from './ai-year-mood.service';
 import { AiWeeklyReflectionService } from './ai-weekly-reflection.service';
 import { AiEntriesChatService } from './ai-entries-chat.service';
+import { AiMemoirFollowUpsService } from './ai-memoir-follow-ups.service';
 
 @Module({
   imports: [UserConfigModule, TypeOrmModule.forFeature([Entry, AiChatHistory, AiUsageEvent])],
@@ -30,7 +31,8 @@ import { AiEntriesChatService } from './ai-entries-chat.service';
     AiYearMoodService,
     AiWeeklyReflectionService,
     AiEntriesChatService,
+    AiMemoirFollowUpsService,
   ],
-  exports: [AiService, AiBookComposerService, AiPersonalityService, AiUsageService, AiCredentialsService, AiYearMoodService, AiWeeklyReflectionService, AiEntriesChatService],
+  exports: [AiService, AiBookComposerService, AiPersonalityService, AiUsageService, AiCredentialsService, AiYearMoodService, AiWeeklyReflectionService, AiEntriesChatService, AiMemoirFollowUpsService],
 })
 export class AiModule {}

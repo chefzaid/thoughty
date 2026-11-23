@@ -150,6 +150,17 @@ describeContract('external', (context) => {
       status: 404,
       code: 'DIARY_NOT_FOUND',
     });
+    // Interview mode asks about a known question of a started memoir before the AI is asked
+    const followUp = { questionId: 'childhood-home', text: 'A narrow house with a fig tree.' };
+    await call('POST /api/memoir/follow-ups', { as: bob, json: followUp, status: 404, code: 'MEMOIR_NOT_STARTED' });
+    await call('POST /api/memoir', {
+      as: bob,
+      json: { diaryName: 'My memoir', emailEnabled: false, deliveryWeekday: 1, timeZone: 'Europe/Paris' },
+      status: 201,
+    });
+    await call('POST /api/memoir/follow-ups', { as: bob, json: { ...followUp, questionId: 'moon-landing' }, status: 404, code: 'MEMOIR_UNKNOWN_QUESTION' });
+    await call('POST /api/memoir/follow-ups', { as: bob, json: { ...followUp, text: '   ' }, status: 400, code: 'VALIDATION_FAILED' });
+    await call('POST /api/memoir/follow-ups', { as: bob, json: { ...followUp, asked: ['What did the fig tree smell like?'] }, ...noKey });
     // Without a key nothing was sent to OpenRouter
     expect(context.api.blockedRequests).toEqual([]);
   });

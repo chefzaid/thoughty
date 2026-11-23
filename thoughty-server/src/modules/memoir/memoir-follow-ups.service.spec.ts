@@ -1,0 +1,43 @@
+import { NotFoundException } from '@nestjs/common';
+import { expectApiError } from '@/common/errors/api-error.test-helpers';
+import { MemoirFollowUpsService } from './memoir-follow-ups.service';
+
+describe('MemoirFollowUpsService', () => {
+  const programRepository = { exists: jest.fn() };
+  const configService = { getConfig: jest.fn() };
+  const aiFollowUps = { suggest: jest.fn() };
+  const service = new MemoirFollowUpsService(programRepository as never, configService as never, aiFollowUps as never);
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    programRepository.exists.mockResolvedValue(true);
+    configService.getConfig.mockResolvedValue({ language: 'fr' });
+    aiFollowUps.suggest.mockResolvedValue(['Que chantait votre grand-mère ?']);
+  });
+
+  it('asks about the question in the writer’s language, with the follow-ups already offered', async () => {
+    await expect(service.suggest(4, { questionId: 'childhood-home', text: 'Un figuier.', asked: ['Qui l’a planté ?'] }))
+      .resolves.toEqual({ questions: ['Que chantait votre grand-mère ?'] });
+
+    expect(programRepository.exists).toHaveBeenCalledWith({ where: { userId: 4 } });
+    expect(aiFollowUps.suggest).toHaveBeenCalledWith(4, {
+      question: expect.stringMatching(/maison/),
+      answer: 'Un figuier.',
+      asked: ['Qui l’a planté ?'],
+    });
+  });
+
+  it('asks nothing already offered when none was, and in English by default', async () => {
+    configService.getConfig.mockResolvedValue({});
+    await service.suggest(4, { questionId: 'childhood-home', text: 'A fig tree.' });
+
+    expect(aiFollowUps.suggest).toHaveBeenCalledWith(4, expect.objectContaining({ question: expect.stringMatching(/home/), asked: [] }));
+  });
+
+  it('refuses an unknown question, or a memoir not started, before asking the AI', async () => {
+    await expectApiError(service.suggest(4, { questionId: 'moon-landing', text: 'x' }), NotFoundException, 'MEMOIR_UNKNOWN_QUESTION');
+    programRepository.exists.mockResolvedValue(false);
+    await expectApiError(service.suggest(4, { questionId: 'childhood-home', text: 'x' }), NotFoundException, 'MEMOIR_NOT_STARTED');
+    expect(aiFollowUps.suggest).not.toHaveBeenCalled();
+  });
+});

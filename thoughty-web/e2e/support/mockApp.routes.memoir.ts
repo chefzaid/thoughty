@@ -178,7 +178,33 @@ export async function handleMemoirRoutes(context: RouteContext): Promise<boolean
     return true;
   }
 
+  if (pathname === '/api/memoir/follow-ups' && method === 'POST') {
+    await suggestFollowUps(context);
+    return true;
+  }
+
   return false;
+}
+
+/** Follow-ups the mock AI asks, in order: never one already offered, none for an answer of a few words. */
+const MOCK_FOLLOW_UPS = [
+  'Who else was there with you?',
+  'What did it sound and smell like?',
+  'What happened next?',
+  'What does it mean to you now?',
+];
+
+/** Interview mode, refused as `MemoirFollowUpsService` refuses it. */
+async function suggestFollowUps({ route, request, state }: RouteContext): Promise<void> {
+  const payload = request.postDataJSON() as { questionId: string; text: string; asked?: string[] };
+  state.memoir.lastFollowUpsPayload = payload;
+  if (!QUESTIONS.some((question) => question.id === payload.questionId)) {
+    return fulfillApiError(route, 404, 'MEMOIR_UNKNOWN_QUESTION', 'Unknown memoir question');
+  }
+  if (!state.memoir.program) return fulfillApiError(route, 404, 'MEMOIR_NOT_STARTED', 'The guided memoir has not been started');
+  const words = payload.text.trim().split(/\s+/).filter(Boolean).length;
+  const questions = words < 4 ? [] : MOCK_FOLLOW_UPS.filter((question) => !payload.asked?.includes(question)).slice(0, 2);
+  await fulfillJson(route, { questions });
 }
 
 const PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];

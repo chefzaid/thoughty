@@ -2426,6 +2426,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/memoir/follow-ups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Interview mode: AI follow-up questions that deepen an answer being written
+         * @description Up to three open questions, each about a person, place, moment, object or feeling the answer names, grounded strictly in its words (nothing it does not say is assumed), in the language of the answer and none of `asked`. The question and the answer are sent to the AI provider with the prompt model; nothing is kept.
+         */
+        post: operations["MemoirController_followUps"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/memoir/photo-answers": {
         parameters: {
             query?: never;
@@ -10028,6 +10048,49 @@ export interface components {
             questionId: string;
             /** @example 812 */
             entryId: number;
+        };
+        /**
+         * @example {
+         *       "questionId": "childhood-home",
+         *       "text": "A narrow house with a fig tree in the yard and my grandmother singing in the kitchen.",
+         *       "asked": [
+         *         "What song did your grandmother sing in the kitchen?"
+         *       ]
+         *     }
+         */
+        MemoirFollowUpsDto: {
+            /** @example childhood-home */
+            questionId: string;
+            /**
+             * @description The answer written so far; may not be empty
+             * @example A narrow house with a fig tree in the yard and my grandmother singing in the kitchen.
+             */
+            text: string;
+            /**
+             * @description Follow-ups already offered for this answer, so none is asked again
+             * @example [
+             *       "What song did your grandmother sing in the kitchen?"
+             *     ]
+             */
+            asked?: string[];
+        };
+        /**
+         * @example {
+         *       "questions": [
+         *         "What song did your grandmother sing in the kitchen?",
+         *         "What could you see from under the fig tree?"
+         *       ]
+         *     }
+         */
+        MemoirFollowUpsResponseDto: {
+            /**
+             * @description Up to three follow-up questions grounded in the answer; empty when it gives nothing to build on yet
+             * @example [
+             *       "What song did your grandmother sing in the kitchen?",
+             *       "What could you see from under the fig tree?"
+             *     ]
+             */
+            questions: string[];
         };
         /**
          * @example {
@@ -23653,6 +23716,115 @@ export interface operations {
                      *       "message": "The question already has an answer, or the memoir has no diary",
                      *       "error": "Conflict",
                      *       "code": "CONFLICT"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    MemoirController_followUps: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "questionId": "childhood-home",
+                 *       "text": "A narrow house with a fig tree in the yard and my grandmother singing in the kitchen.",
+                 *       "asked": [
+                 *         "What song did your grandmother sing in the kitchen?"
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["MemoirFollowUpsDto"];
+            };
+        };
+        responses: {
+            /** @description The follow-up questions, empty when the answer gives nothing to build on yet */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "questions": [
+                     *         "What song did your grandmother sing in the kitchen?",
+                     *         "What could you see from under the fig tree?"
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MemoirFollowUpsResponseDto"];
+                };
+            };
+            /** @description The answer is empty, or AI is not available (`AI_KEY_NOT_CONFIGURED`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "The answer is empty, or AI is not available (`AI_KEY_NOT_CONFIGURED`)",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Unknown question, or memoir not started */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "Unknown question, or memoir not started",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The AI provider failed (`AI_PROVIDER_FAILED`) */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 502,
+                     *       "message": "The AI provider failed (`AI_PROVIDER_FAILED`)",
+                     *       "error": "Bad Gateway",
+                     *       "code": "BAD_GATEWAY"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `ai` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];

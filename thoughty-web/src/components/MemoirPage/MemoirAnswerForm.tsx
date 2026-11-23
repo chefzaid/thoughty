@@ -5,6 +5,7 @@ import type { TranslationFunction } from '../../types';
 import { EMPTY_CAPTIONS_TRACK_URL } from '../../utils/attachments';
 import type { Language } from '../../utils/translations';
 import MemoirEraField from './MemoirEraField';
+import MemoirFollowUps from './MemoirFollowUps';
 import { useRecordingUpload } from './useRecordingUpload';
 import { formatRecordingTime, isVoiceRecordingSupported, useVoiceRecorder } from './useVoiceRecorder';
 import './MemoirAnswerForm.css';
@@ -46,6 +47,7 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
   // Transcribing a recording is AI, left out while AI is switched off
   const aiOn = useFeatureFlag('ai');
   const fileInput = useRef<HTMLInputElement>(null);
+  const answerField = useRef<HTMLTextAreaElement>(null);
   const fieldId = `memoir-answer-${questionId}`;
   const recordingAvailable = isVoiceRecordingSupported() && recorder.status !== 'unavailable';
 
@@ -80,6 +82,17 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
     setText((current) => (current.trim() ? `${current.trim()}\n\n${transcription.transcript}` : transcription.transcript));
   };
 
+  // A follow-up goes at the end of the answer, in bold, with the caret below it to answer it
+  const addFollowUp = (question: string) => {
+    const next = `${text.trimEnd()}\n\n**${question}**\n\n`;
+    setText(next);
+    requestAnimationFrame(() => {
+      const field = answerField.current;
+      field?.focus();
+      field?.setSelectionRange(next.length, next.length);
+    });
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (busy || recorder.status === 'recording') return;
@@ -109,6 +122,7 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
     <form className="memoir-answer-form" aria-label={questionText} onSubmit={(event) => void handleSubmit(event)}>
       <label htmlFor={fieldId} className="memoir-answer-label">{t('memoirYourAnswer')}</label>
       <textarea
+        ref={answerField}
         id={fieldId}
         className="privacy-text"
         value={text}
@@ -119,6 +133,7 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
         onChange={(event) => setText(event.target.value)}
       />
       <p id={`${fieldId}-note`} className="memoir-hint">{t('memoirPrivateNote')}</p>
+      {aiOn && <MemoirFollowUps questionId={questionId} answer={text} onUse={addFollowUp} disabled={busy !== null} t={t} />}
 
       <div className="memoir-voice">
         {recorder.status === 'recording' ? (

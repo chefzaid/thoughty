@@ -80,4 +80,22 @@ describe('memoirService', () => {
       body: JSON.stringify(request),
     });
   });
+
+  it('asks for follow-up questions with the answer and those already offered, and reads a refusal by its code', async () => {
+    const authFetch = vi.fn()
+      .mockResolvedValueOnce(ok({ questions: ['Who planted the fig tree?'] }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ statusCode: 400, code: 'AI_KEY_NOT_CONFIGURED', message: 'No key' }), { status: 400 }))
+      .mockResolvedValueOnce(new Response('', { status: 502 }));
+    const service = createMemoirService(authFetch);
+    const request = { questionId: 'childhood-home', text: 'A fig tree.', asked: ['What did it smell like?'] };
+
+    await expect(service.followUps(request)).resolves.toEqual({ data: { questions: ['Who planted the fig tree?'] }, error: null });
+    await expect(service.followUps(request)).resolves.toEqual({ data: null, error: 'apiError_AI_KEY_NOT_CONFIGURED' });
+    await expect(service.followUps(request)).resolves.toEqual({ data: null, error: 'memoirFollowUpsError' });
+    expect(authFetch).toHaveBeenCalledWith('/api/memoir/follow-ups', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+  });
 });
