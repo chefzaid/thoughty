@@ -98,6 +98,7 @@ export function useAppShellModel(): AppShellModel {
   const {
     config,
     configLoaded,
+    configRead,
     profileStats,
     fetchConfig,
     fetchProfileStats,
@@ -384,6 +385,8 @@ export function useAppShellModel(): AppShellModel {
   const authenticatedRoutesProps = buildAuthenticatedRoutesProps({
     bulkSelectState,
     config,
+    configLoaded,
+    configRead,
     deleteModalState,
     diariesState,
     downloadUserData,

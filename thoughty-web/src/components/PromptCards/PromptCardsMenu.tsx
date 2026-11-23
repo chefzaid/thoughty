@@ -15,6 +15,8 @@ interface PromptCardsMenuProps {
     readonly drawn?: string;
     /** Saves the cards drawn, so none repeats on another device or after a reload. */
     readonly onDrawnChange: (drawn: string) => void;
+    /** True while the cards drawn are not known yet, so no card is drawn against an empty history. */
+    readonly disabled?: boolean;
     /** Puts the question in the entry, the way the AI's questions are. */
     readonly onSelect: (question: string) => void;
     readonly theme?: 'light' | 'dark';
@@ -27,7 +29,7 @@ const ALL_THEMES = 'all';
  * **Draw a card** in the composer: a hand-written question from a deck by theme, or from all of them,
  * that needs no AI. No card comes back until every card of its deck has been drawn.
  */
-export default function PromptCardsMenu({ language, drawn, onDrawnChange, onSelect, theme, t }: PromptCardsMenuProps) {
+export default function PromptCardsMenu({ language, drawn, onDrawnChange, disabled = false, onSelect, theme, t }: PromptCardsMenuProps) {
     const [open, setOpen] = useState(false);
     const [deckTheme, setDeckTheme] = useState<PromptCardTheme | null>(null);
     const [draw, setDraw] = useState<PromptCardDraw | null>(null);
@@ -83,6 +85,7 @@ export default function PromptCardsMenu({ language, drawn, onDrawnChange, onSele
                     ref={buttonRef}
                     type="button"
                     onClick={handleToggle}
+                    disabled={disabled}
                     className={aiActionButtonClass('violet', theme)}
                     title={t('promptCardsDescription')}
                     aria-expanded={open}

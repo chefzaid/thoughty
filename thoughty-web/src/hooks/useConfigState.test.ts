@@ -29,10 +29,12 @@ describe('useConfig', () => {
     const { result } = renderHook(() => useConfig(true));
 
     expect(result.current.configLoaded).toBe(false);
+    expect(result.current.configRead).toBe(false);
     await waitFor(() => {
       expect(result.current.configLoaded).toBe(true);
     });
     expect(result.current.config.maxPinnedEntries).toBe(5);
+    expect(result.current.configRead).toBe(true);
   });
 
   it('counts a failed config request as loaded so lookups fall back to the default page size', async () => {
@@ -45,6 +47,7 @@ describe('useConfig', () => {
       expect(result.current.configLoaded).toBe(true);
     });
     expect(result.current.config).toEqual({});
+    expect(result.current.configRead).toBe(false);
   });
 
   it('is not loaded while signed out', () => {

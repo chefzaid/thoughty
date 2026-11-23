@@ -59,9 +59,22 @@ describe('appShellProps', () => {
     const { entryForm } = buildAuthenticatedRoutesProps(createRoutesParams({ updateConfig, saveConfig, config })).journalRouteProps;
 
     expect(entryForm.promptCardsDrawn).toBe('people-2');
+    expect(entryForm.promptCardsReady).toBe(true);
     entryForm.onPromptCardsDrawnChange?.('people-2,places-5');
     expect(updateConfig).toHaveBeenCalledWith({ ...config, promptCardsDrawn: 'people-2,places-5' });
     expect(saveConfig).not.toHaveBeenCalled();
+  });
+
+  it('keeps Draw a card waiting for the settings and never saves a draw over cards it could not read', () => {
+    const updateConfig = vi.fn().mockResolvedValue(true);
+    const pending = buildAuthenticatedRoutesProps(createRoutesParams({ updateConfig, configLoaded: false, configRead: false }));
+    expect(pending.journalRouteProps.entryForm.promptCardsReady).toBe(false);
+
+    // Offline, or after a failed read, cards are drawn but not saved over the history kept on the server
+    const unread = buildAuthenticatedRoutesProps(createRoutesParams({ updateConfig, configLoaded: true, configRead: false }));
+    expect(unread.journalRouteProps.entryForm.promptCardsReady).toBe(true);
+    unread.journalRouteProps.entryForm.onPromptCardsDrawnChange?.('places-5');
+    expect(updateConfig).not.toHaveBeenCalled();
   });
 
   it('gives the feed the reading-aloud settings', () => {

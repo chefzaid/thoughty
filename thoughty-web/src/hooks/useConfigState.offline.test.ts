@@ -45,6 +45,8 @@ describe('useConfig › a journal opened offline', () => {
     expect(result.current.configLoaded).toBe(true);
     expect(result.current.config).toEqual({ language: 'fr', theme: 'light' });
     await waitFor(() => expect(mocks.fetchConfig).toHaveBeenCalled());
+    // Only the look is known: a setting built on its stored value is not saved over it
+    expect(result.current.configRead).toBe(false);
     expect(result.current.config).toEqual({ language: 'fr', theme: 'light' });
     expect(result.current.t('offlineNotice')).toBe('Vous êtes hors ligne');
     expect(document.body.classList.contains('light-mode')).toBe(true);

@@ -3,6 +3,8 @@ import { expect, test } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
 
 const places = (count: number) => Array.from({ length: count }, (_, index) => `places-${index + 1}`);
+const otherThemes = ['gratitude', 'decisions', 'people', 'smallJoys']
+  .flatMap((theme) => Array.from({ length: 12 }, (_, index) => `${theme}-${index + 1}`));
 
 test.describe('Prompt cards', () => {
   test('draws a card from the keyboard, with no AI at all, and writes about it in the entry', async ({ page }) => {
@@ -45,30 +47,56 @@ test.describe('Prompt cards', () => {
   });
 
   test('repeats no card until its deck is used up, across a reload, and says when it shuffles', async ({ page }) => {
+    // Every card but the twelfth place has been drawn, so the draw from all themes can only be that one
     const { state } = await setupMockApp(page, {
       startAuthenticated: true,
-      config: { promptCardsDrawn: places(11).join(',') },
+      config: { promptCardsDrawn: [...otherThemes, ...places(11)].join(',') },
     });
     await page.goto('/journal?diary=1');
 
     await page.getByRole('button', { name: 'Draw a card' }).click();
     const deck = page.getByRole('dialog', { name: 'Prompt cards' });
-    await deck.getByRole('combobox', { name: 'Theme' }).selectOption({ label: 'Places' });
-    // Only the twelfth place is left
     const card = deck.getByRole('figure', { name: 'Places card' });
     await expect(card).toContainText('Where would you like to live in ten years');
     await expect(deck.getByText('0 cards left before the deck is shuffled')).toBeVisible();
-    await expect.poll(() => state.config.promptCardsDrawn?.split(',').filter((id) => id.startsWith('places-')).length).toBe(12);
+    await expect.poll(() => state.config.promptCardsDrawn?.split(',')).toHaveLength(60);
 
     await page.reload();
     await page.getByRole('button', { name: 'Draw a card' }).click();
-    await deck.getByRole('combobox', { name: 'Theme' }).selectOption({ label: 'Places' });
     await expect(deck.getByText('You had drawn every card here, so the deck was shuffled again.')).toBeVisible();
-    await expect(card).not.toContainText('Where would you like to live in ten years');
-    await expect.poll(() => state.config.promptCardsDrawn?.split(',').filter((id) => id.startsWith('places-')).length).toBe(1);
+    // A new round never opens on the card just shown
+    await expect(deck.getByRole('figure')).not.toContainText('Where would you like to live in ten years');
+    await expect.poll(() => state.config.promptCardsDrawn?.split(',')).toHaveLength(1);
 
     await page.keyboard.press('Escape');
     await expect(deck).toBeHidden();
+  });
+
+  test('waits for the settings before drawing, so the cards already drawn are never lost', async ({ page }) => {
+    const { state } = await setupMockApp(page, {
+      startAuthenticated: true,
+      config: { promptCardsDrawn: places(11).join(',') },
+    });
+    // The settings are slow to arrive
+    let releaseSettings = () => {};
+    const settingsHeld = new Promise<void>((resolve) => {
+      releaseSettings = resolve;
+    });
+    await page.route('http://localhost:5173/api/config', async (route) => {
+      if (route.request().method() === 'GET') await settingsHeld;
+      await route.fallback();
+    });
+    await page.goto('/journal?diary=1');
+
+    const draw = page.getByRole('button', { name: 'Draw a card' });
+    await expect(draw).toBeDisabled();
+    releaseSettings();
+    await draw.click();
+    const deck = page.getByRole('dialog', { name: 'Prompt cards' });
+    await expect(deck.getByText('48 cards left before the deck is shuffled')).toBeVisible();
+    // The card was added to the eleven places drawn before, not saved over them
+    await expect.poll(() => state.config.promptCardsDrawn?.split(',')).toHaveLength(12);
+    expect(state.config.promptCardsDrawn?.split(',').slice(0, 11)).toEqual(places(11));
   });
 
   test('draws French cards in French and passes an accessibility scan', async ({ page }) => {

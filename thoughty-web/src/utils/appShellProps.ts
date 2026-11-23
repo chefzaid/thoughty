@@ -65,6 +65,10 @@ interface BuildAuthenticatedLayoutPropsParams {
 export interface BuildAuthenticatedRoutesPropsParams {
   bulkSelectState: Pick<BulkSelectState, 'bulkMode' | 'clearSelection' | 'requestBulkAction' | 'selectedIds' | 'selectAll' | 'toggleBulkMode' | 'toggleSelect'>;
   config: Config;
+  /** The settings have arrived, or failed to, or the journal is open offline. */
+  configLoaded: boolean;
+  /** The stored settings were really read from the API, so a setting built on its stored value can be saved. */
+  configRead: boolean;
   deleteModalState: Pick<DeleteModalState, 'handleDelete'>;
   diariesState: Pick<DiariesState, 'currentDiaryId' | 'diaries' | 'fetchDiaries' | 'handleCreateDiary' | 'handleDeleteDiary' | 'handleReorderDiaries' | 'handleSetDefaultDiary' | 'handleUpdateDiary'>;
   downloadUserData: AuthenticatedRoutesProps['profileRouteProps']['onDownloadData'];
@@ -151,6 +155,8 @@ export function buildAuthenticatedLayoutProps({
 export function buildAuthenticatedRoutesProps({
   bulkSelectState,
   config,
+  configLoaded,
+  configRead,
   deleteModalState,
   diariesState,
   downloadUserData,
@@ -390,8 +396,12 @@ export function buildAuthenticatedRoutesProps({
         onFixWriting: entryFormState.diaryAiOff ? undefined : entryFormState.handleFixWriting,
         onGetInspiration: entryFormState.diaryAiOff ? undefined : handleGetInspiration,
         promptCardsDrawn: config.promptCardsDrawn,
-        // A draw that fails to save only lets a card come back sooner, so it needs no message
-        onPromptCardsDrawnChange: (promptCardsDrawn: string) => void updateConfig({ ...config, promptCardsDrawn }),
+        // A card drawn before the settings arrive would be drawn from an empty deck history and saved over it
+        promptCardsReady: configLoaded,
+        // A draw that fails to save (or, with the settings unread, is not saved) only lets a card come back sooner
+        onPromptCardsDrawnChange: (promptCardsDrawn: string) => {
+          if (configRead) void updateConfig({ ...config, promptCardsDrawn });
+        },
         onSubmit: entryFormState.handleSubmit,
         pendingFiles: entryFormState.pendingFiles,
         uploadedAttachments: entryFormState.uploadedAttachments,

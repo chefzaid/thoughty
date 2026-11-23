@@ -6,9 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getTranslation, type Language } from '../../utils/translations';
 import PromptCardsMenu from './PromptCardsMenu';
 
-function Composer({ language = 'en', initial = '', onSave = vi.fn(), onSelect = vi.fn() }: {
+function Composer({ language = 'en', initial = '', disabled, onSave = vi.fn(), onSelect = vi.fn() }: {
     language?: Language;
     initial?: string;
+    disabled?: boolean;
     onSave?: (drawn: string) => void;
     onSelect?: (question: string) => void;
 }) {
@@ -17,6 +18,7 @@ function Composer({ language = 'en', initial = '', onSave = vi.fn(), onSelect = 
         <PromptCardsMenu
             language={language}
             drawn={drawn}
+            disabled={disabled}
             onDrawnChange={(next) => {
                 setDrawn(next);
                 onSave(next);
@@ -113,5 +115,22 @@ describe('PromptCardsMenu', () => {
         await user.click(screen.getByRole('button', { name: 'Draw a card' }));
         await user.click(screen.getByText('Outside'));
         expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+
+    it('draws nothing while the cards drawn are not known, then draws from their history', async () => {
+        const onSave = vi.fn();
+        const user = userEvent.setup();
+        const places = Array.from({ length: 11 }, (_, index) => `places-${index + 1}`).join(',');
+        const { rerender } = render(<Composer initial={places} disabled onSave={onSave} />);
+
+        const drawButton = screen.getByRole('button', { name: 'Draw a card' });
+        expect(drawButton).toBeDisabled();
+        await user.click(drawButton);
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(onSave).not.toHaveBeenCalled();
+
+        rerender(<Composer initial={places} onSave={onSave} />);
+        await user.click(screen.getByRole('button', { name: 'Draw a card' }));
+        expect(onSave).toHaveBeenLastCalledWith(`${places},gratitude-1`);
     });
 });

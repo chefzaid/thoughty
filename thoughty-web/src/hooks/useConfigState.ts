@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Config, ProfileStats } from '../types';
 import type { Notifier } from './useAppNotice';
@@ -18,11 +18,17 @@ export const useConfig = (isAuthenticated: boolean, offline = false) => {
   const { configService } = useApiServices();
   const queryClient = useQueryClient();
   const offlineDisplay = useMemo(() => (offline ? readOfflineDisplay() : null), [offline]);
+  // Whether the API ever answered with the settings, as opposed to a save shown before they arrived
+  const [apiAnswered, setApiAnswered] = useState(false);
 
   const configQuery = useQuery({
     queryKey: CONFIG_QUERY_KEY,
     // Null when the settings could not be read: the defaults (or offline, the remembered look) apply
-    queryFn: async (): Promise<Config | null> => (await configService.fetchConfig()) ?? null,
+    queryFn: async (): Promise<Config | null> => {
+      const stored = await configService.fetchConfig();
+      if (stored) setApiAnswered(true);
+      return stored ?? null;
+    },
     enabled: isAuthenticated,
   });
 
@@ -38,6 +44,11 @@ export const useConfig = (isAuthenticated: boolean, offline = false) => {
   const config: Config = configQuery.data ?? offlineDisplay ?? {};
   /** True once the profile config has arrived (or failed to), so page-size based lookups use the user's setting. */
   const configLoaded = !configQuery.isPending || offline;
+  /**
+   * True once the stored settings have really been read from the API (not the defaults or the remembered
+   * look), so a setting built on its stored value, such as the prompt cards drawn, can be saved over it.
+   */
+  const configRead = apiAnswered && configQuery.data != null;
 
   useEffect(() => {
     if (configQuery.data) rememberOfflineDisplay(configQuery.data);
@@ -91,6 +102,7 @@ export const useConfig = (isAuthenticated: boolean, offline = false) => {
   return {
     config,
     configLoaded,
+    configRead,
     setConfig,
     profileStats,
     fetchConfig,

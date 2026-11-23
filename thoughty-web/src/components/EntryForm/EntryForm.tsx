@@ -69,6 +69,8 @@ interface EntryFormProps {
     /** The prompt cards drawn so far (the `promptCardsDrawn` setting), and saving them; Draw a card needs no AI. */
     readonly promptCardsDrawn?: string;
     readonly onPromptCardsDrawnChange?: (drawn: string) => void;
+    /** False until the settings holding the cards drawn have loaded: Draw a card waits for them. */
+    readonly promptCardsReady?: boolean;
     readonly onSubmit: NonNullable<ComponentPropsWithoutRef<'form'>['onSubmit']>;
     readonly theme?: 'light' | 'dark';
     readonly t: (key: string, params?: Record<string, string | number>) => string;
@@ -157,6 +159,7 @@ function EntryForm({
     onGetInspiration,
     promptCardsDrawn,
     onPromptCardsDrawnChange,
+    promptCardsReady = true,
     onSubmit,
     theme,
     t,
@@ -394,6 +397,7 @@ function EntryForm({
                         <PromptCardsMenu
                             language={resolveLanguage(language)}
                             drawn={promptCardsDrawn}
+                            disabled={!promptCardsReady}
                             onDrawnChange={onPromptCardsDrawnChange}
                             onSelect={(question) => setNewEntryText((current) => appendPrompt(current, question))}
                             theme={theme}

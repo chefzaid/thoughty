@@ -70,6 +70,8 @@ export function createRoutesParams(
       toggleSelect: vi.fn(),
     },
     config: { theme: 'dark', name: 'Zaid', tagMetadata: '{}' },
+    configLoaded: true,
+    configRead: true,
     deleteModalState: {
       handleDelete: vi.fn().mockResolvedValue(undefined),
     },
