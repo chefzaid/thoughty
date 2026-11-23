@@ -71,6 +71,7 @@ export type SettingsTranslationKey =
   | "saveSettings"
   | "settingsSaved"
   | "settingsSaveFailed"
+  | "settingsUnreadSaveRefused"
   | "personalInfo"
   | "appearance"
   | "memberSince"
@@ -156,6 +157,7 @@ export const settingsTranslations: Record<Language, Record<SettingsTranslationKe
     saveSettings: "Save Changes",
     settingsSaved: "Settings saved successfully",
     settingsSaveFailed: "Your settings could not be saved, so the previous ones are back. Try again.",
+    settingsUnreadSaveRefused: "Your settings could not be read yet, so this change was not saved. Reload the page and try again.",
     personalInfo: "Personal Information",
     appearance: "Appearance",
     memberSince: "Member since {year}",
@@ -243,6 +245,7 @@ export const settingsTranslations: Record<Language, Record<SettingsTranslationKe
     saveSettings: "Enregistrer",
     settingsSaved: "Paramètres enregistrés avec succès",
     settingsSaveFailed: "Vos paramètres n'ont pas pu être enregistrés : les précédents sont rétablis. Réessayez.",
+    settingsUnreadSaveRefused: "Vos paramètres n'ont pas encore pu être lus : ce changement n'a pas été enregistré. Rechargez la page et réessayez.",
     personalInfo: "Informations personnelles",
     appearance: "Apparence",
     memberSince: "Membre depuis {year}",

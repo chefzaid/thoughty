@@ -7,6 +7,8 @@ import { assignMissingTagColors, serializeTagMetadata, type TagMetadataMap } fro
 interface UseAppShellEffectsParams {
   allTags: string[];
   config: Config;
+  /** Whether the stored settings were really read: tag colors built on unread settings would replace the stored ones. */
+  configRead: boolean;
   currentDiaryId: number | null;
   isAuthenticated: boolean;
   routeDiaryId: number | null | undefined;
@@ -28,6 +30,7 @@ function tagColorSyncInput(allTags: readonly string[], config: Config): string {
 export function useAppShellEffects({
   allTags,
   config,
+  configRead,
   currentDiaryId,
   isAuthenticated,
   routeDiaryId,
@@ -43,7 +46,8 @@ export function useAppShellEffects({
       lastTagColorSyncInput.current = null;
       return;
     }
-    if (allTags.length === 0) {
+    // Unread (still loading, or the read failed), the colors would start from none and be saved over the stored ones
+    if (!configRead || allTags.length === 0) {
       return;
     }
 
@@ -65,7 +69,7 @@ export function useAppShellEffects({
       ...config,
       tagMetadata: nextSerializedTagMetadata,
     });
-  }, [allTags, config, isAuthenticated, serializedTagMetadata, tagMetadata, updateConfig]);
+  }, [allTags, config, configRead, isAuthenticated, serializedTagMetadata, tagMetadata, updateConfig]);
 
   useEffect(() => {
     if (!isAuthenticated || routeDiaryId === undefined || routeDiaryId === currentDiaryId) {

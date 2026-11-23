@@ -14,6 +14,7 @@ function createParams(
       theme: 'dark',
       tagMetadata: '{}',
     },
+    configRead: true,
     currentDiaryId: null,
     isAuthenticated: true,
     routeDiaryId: undefined,
@@ -45,6 +46,30 @@ describe('useAppShellEffects', () => {
         color: expect.stringMatching(/^#[0-9A-F]{6}$/),
       },
     });
+  });
+
+  it('gives no tag a color until the stored settings have been read', async () => {
+    const updateConfig = vi.fn().mockResolvedValue(true);
+    const params = createParams({ allTags: ['focus'], config: {}, configRead: false, updateConfig });
+
+    const { rerender } = renderHook(() => useAppShellEffects(params));
+    await new Promise((resolve) => { setTimeout(resolve, 20); });
+    expect(updateConfig).not.toHaveBeenCalled();
+
+    // Once read, the stored colors are kept and only the tag without one gets a color
+    Object.assign(params, {
+      allTags: ['focus', 'travel'],
+      config: { tagMetadata: '{"focus":{"color":"#112233"}}' },
+      configRead: true,
+      serializedTagMetadata: '{"focus":{"color":"#112233"}}',
+      tagMetadata: { focus: { color: '#112233' } },
+    });
+    rerender();
+
+    await waitFor(() => expect(updateConfig).toHaveBeenCalledTimes(1));
+    const saved = JSON.parse((updateConfig.mock.calls[0]![0] as { tagMetadata: string }).tagMetadata) as Record<string, { color: string }>;
+    expect(saved.focus).toEqual({ color: '#112233' });
+    expect(saved.travel?.color).toMatch(/^#[0-9A-F]{6}$/);
   });
 
   it('syncs the current diary from the route when authenticated', async () => {

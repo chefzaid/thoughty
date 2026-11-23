@@ -77,6 +77,33 @@ describe('appShellProps', () => {
     expect(updateConfig).not.toHaveBeenCalled();
   });
 
+  it('saves no change built on the stored settings before they were read, and says so', async () => {
+    const updateConfig = vi.fn().mockResolvedValue(true);
+    const saveConfig = vi.fn().mockResolvedValue(true);
+    const notify = vi.fn();
+    const props = buildAuthenticatedRoutesProps(createRoutesParams({
+      updateConfig, saveConfig, notify, config: {}, configLoaded: true, configRead: false,
+    }));
+
+    await expect(props.profileRouteProps.onUpdateConfig({ theme: 'light', name: 'zaid' })).resolves.toBe(false);
+    await expect(props.tagManagerRouteProps.onUpdateConfig({ tagMetadata: '{"new":{"color":"#7C3AED"}}' })).resolves.toBe(false);
+    await expect(props.journalRouteProps.entryForm.onDeleteTemplate?.('custom-1')).resolves.toBe(false);
+    expect(notify).toHaveBeenCalledTimes(3);
+    expect(notify).toHaveBeenCalledWith('settingsUnreadSaveRefused');
+
+    // The template name dialog says itself that the template was not saved
+    await expect(props.journalRouteProps.entryForm.onSaveTemplate?.({
+      name: 'Meeting', content: 'Notes', tags: [], visibility: 'private', format: 'plain',
+    })).resolves.toBe(false);
+    expect(notify).toHaveBeenCalledTimes(3);
+
+    // A setting that stands alone is still saved: it replaces nothing else
+    await props.memoirRouteProps.onSimpleModeChange?.(true);
+    await props.welcomeRouteProps.onFinish();
+    expect(saveConfig.mock.calls).toEqual([[{ memoirSimpleMode: true }], [{ onboardingDone: true }]]);
+    expect(updateConfig).not.toHaveBeenCalled();
+  });
+
   it('gives the feed the reading-aloud settings', () => {
     const readingProps = buildAuthenticatedRoutesProps(createRoutesParams({
       config: { theme: 'light', name: 'Zaid', language: 'fr', readDates: false, ttsVoiceUri: 'voice-1' },

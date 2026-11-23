@@ -346,6 +346,7 @@ export function useAppShellModel(): AppShellModel {
   useAppShellEffects({
     allTags: entriesState.allTags,
     config,
+    configRead,
     currentDiaryId,
     isAuthenticated,
     routeDiaryId,

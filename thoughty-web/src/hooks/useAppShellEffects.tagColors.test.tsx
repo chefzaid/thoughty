@@ -35,6 +35,7 @@ async function renderTagColorSync(initialTags: string[]) {
     useAppShellEffects({
       allTags: props.allTags,
       config: configState.config,
+      configRead: configState.configRead,
       currentDiaryId: null,
       isAuthenticated: props.isAuthenticated,
       routeDiaryId: undefined,
@@ -120,6 +121,27 @@ describe('useAppShellEffects tag color sync', () => {
     expect(mocks.updateConfig.mock.calls[2]![0]).toMatchObject({ theme: 'light' });
     expect(savedTagColors(2)).toEqual(['focus']);
     expect(Object.keys(parseTagMetadata(result.current.config.tagMetadata))).toEqual(['focus']);
+  });
+
+  it('saves no tag colors over the stored ones when the settings could not be read, then keeps them once read', async () => {
+    mocks.fetchConfig.mockResolvedValue(null);
+    mocks.updateConfig.mockResolvedValue(true);
+    const { result, update } = await renderTagColorSync(['focus']);
+    await settle();
+
+    expect(result.current.configRead).toBe(false);
+    expect(mocks.updateConfig).not.toHaveBeenCalled();
+
+    mocks.fetchConfig.mockResolvedValue({ theme: 'dark', tagMetadata: '{"focus":{"color":"#112233"}}' });
+    await act(async () => {
+      await result.current.fetchConfig();
+    });
+    update({ allTags: ['focus', 'travel'] });
+
+    await waitFor(() => expect(mocks.updateConfig).toHaveBeenCalledTimes(1));
+    const saved = parseTagMetadata((mocks.updateConfig.mock.calls[0]![0] as { tagMetadata?: string }).tagMetadata);
+    expect(saved.focus).toEqual({ color: '#112233' });
+    expect(saved.travel?.color).toMatch(/^#[0-9A-F]{6}$/);
   });
 
   it('tries again after signing out and back in', async () => {

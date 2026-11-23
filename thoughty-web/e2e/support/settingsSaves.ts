@@ -21,3 +21,20 @@ export async function failSettingsSaves(page: Page, failure: 'status' | 'network
   });
   return { refusedSaves: () => refusedSaves };
 }
+
+/**
+ * Makes every settings read (`GET /api/config`) fail with a server error, while saves still reach the mock API.
+ * Returns how many saves were sent so far.
+ */
+export async function failSettingsReads(page: Page) {
+  let saves = 0;
+  await page.route('http://localhost:5173/api/config', async (route) => {
+    if (route.request().method() === 'GET') {
+      await fulfillJson(route, { statusCode: 500, message: 'Internal server error' }, { status: 500 });
+      return;
+    }
+    saves += 1;
+    await route.fallback();
+  });
+  return { saves: () => saves };
+}

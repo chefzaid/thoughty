@@ -188,6 +188,13 @@ export function buildAuthenticatedRoutesProps({
   updateConfig,
 }: Readonly<BuildAuthenticatedRoutesPropsParams>): AuthenticatedRoutesProps {
   const knownTags = listKnownTags(entriesState.allTags, tagMetadata);
+  // A change built on the stored settings (a settings page, the tag list, the templates) waits for them to be
+  // read: built on the defaults instead, it would save those over the writer's settings
+  const saveOverStoredConfig = (newConfig: Config): Promise<boolean> => {
+    if (configRead) return saveConfig(newConfig);
+    notify(t('settingsUnreadSaveRefused'));
+    return Promise.resolve(false);
+  };
 
   return {
     feedRouteProps: {
@@ -244,7 +251,7 @@ export function buildAuthenticatedRoutesProps({
     },
     profileRouteProps: {
       config,
-      onUpdateConfig: saveConfig,
+      onUpdateConfig: saveOverStoredConfig,
       onDownloadData: downloadUserData,
       onBack: () => routingState.handleViewChange('journal'),
       t,
@@ -254,7 +261,7 @@ export function buildAuthenticatedRoutesProps({
     tagManagerRouteProps: {
       config,
       allTags: entriesState.allTags,
-      onUpdateConfig: saveConfig,
+      onUpdateConfig: saveOverStoredConfig,
       onRenameTag: handleRenameTag,
       onDeleteTag: handleDeleteTag,
       onLoadTagUsage: handleLoadTagUsage,
@@ -349,8 +356,9 @@ export function buildAuthenticatedRoutesProps({
       },
       entryForm: {
         entryTemplates: getEntryTemplates(config.entryTemplates, config.language),
-        // The name dialog says itself when the template could not be saved
+        // The name dialog says itself when the template could not be saved (or, with the settings unread, was not)
         onSaveTemplate: (draft: EntryTemplateDraft) => {
+          if (!configRead) return Promise.resolve(false);
           const currentTemplates = parseCustomEntryTemplates(config.entryTemplates);
           const nextTemplates = [...currentTemplates, createEntryTemplate(draft)];
           return updateConfig({
@@ -361,7 +369,7 @@ export function buildAuthenticatedRoutesProps({
         onDeleteTemplate: (templateId: string) => {
           const nextTemplates = parseCustomEntryTemplates(config.entryTemplates)
             .filter((template) => template.id !== templateId);
-          return saveConfig({
+          return saveOverStoredConfig({
             ...config,
             entryTemplates: serializeCustomEntryTemplates(nextTemplates),
           });

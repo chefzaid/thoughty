@@ -192,6 +192,8 @@ export interface MockAppState {
     promptCardsDrawn?: string;
     /** The writer's own entry templates, as the JSON text the setting holds. */
     entryTemplates?: string;
+    /** Each tag's color and category, as the JSON text the setting holds. */
+    tagMetadata?: string;
   };
   diaries: MockDiary[];
   /** The PIN, its wrong tries and the unlock (`mockApp.content-lock.ts`). */
