@@ -13,6 +13,7 @@ import { StatsTopWordsService } from './stats-top-words.service';
 import { ENTRY_WORDS_SQL } from './stats-sql';
 import { writersDayOr } from '@/common/utils/writers-day.util';
 import { readableEntrySql } from '@/common/content-lock';
+import { aiReadableEntrySql } from '@/common/diary-ai';
 
 const WORDS_PER_MINUTE = 200;
 
@@ -173,6 +174,7 @@ export class StatsService {
       const recentEntries =
         totalThoughts > 0
           ? await createQb()
+              .andWhere(aiReadableEntrySql())
               .select(['e.id', 'e.content', 'e.date', 'e.tags'])
               .orderBy('e.date', 'DESC')
               .addOrderBy('e.id', 'DESC')

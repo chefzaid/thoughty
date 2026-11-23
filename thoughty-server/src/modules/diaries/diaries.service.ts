@@ -15,6 +15,11 @@ function defaultTemplateField(dto: CreateDiaryDto | UpdateDiaryDto): Pick<Diary,
   return dto.defaultTemplateId === undefined ? undefined : { defaultTemplateId: dto.defaultTemplateId };
 }
 
+/** The AI mode to store, or undefined to keep the current one. */
+function aiModeField(dto: CreateDiaryDto | UpdateDiaryDto): Pick<Diary, 'aiMode'> | undefined {
+  return dto.aiMode === undefined ? undefined : { aiMode: dto.aiMode };
+}
+
 /** The validated goal fields to store, or undefined to keep the current goal. */
 function goalFields(dto: CreateDiaryDto | UpdateDiaryDto): DiaryGoalFields | undefined {
   if (dto.goalType === undefined) return undefined;
@@ -75,6 +80,7 @@ export class DiariesService {
         position: count,
         ...(goalFields(dto) ?? { goalType: null, goalTarget: null }),
         ...(defaultTemplateField(dto) ?? { defaultTemplateId: null }),
+        ...(aiModeField(dto) ?? { aiMode: 'on' }),
       }),
     );
   }
@@ -109,7 +115,7 @@ export class DiariesService {
     diary.icon = sanitizedIcon;
     diary.color = dto.color === undefined ? diary.color : requestedColor ?? diary.color;
     diary.visibility = visibility as 'public' | 'private';
-    Object.assign(diary, goalFields(dto), defaultTemplateField(dto));
+    Object.assign(diary, goalFields(dto), defaultTemplateField(dto), aiModeField(dto));
 
     return withUniqueName(() => this.diaryRepository.save(diary));
   }

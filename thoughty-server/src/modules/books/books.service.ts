@@ -45,6 +45,8 @@ export interface BookFile {
 interface SourcedBook {
   book: Book;
   source: BookVersionSource;
+  /** Whether a chapter holds an entry of a diary with AI off, which no AI narrative or framing may read. */
+  holdsAiOffEntries: boolean;
 }
 
 /** A dedication or epigraph as the book prints it, refused with `code` when it is longer than `maxLength`. */
@@ -119,7 +121,9 @@ export class BooksService {
       today: query.today,
       language,
     });
-    return { book: { ...book, dedication, epigraph, closingPage: query.closingPage === true }, source };
+    const aiOffIds = new Set(entries.filter((entry) => entry.diaryAiOff).map((entry) => entry.id));
+    const holdsAiOffEntries = book.chapters.some((chapter) => chapter.entries.some((entry) => aiOffIds.has(entry.id ?? 0)));
+    return { book: { ...book, dedication, epigraph, closingPage: query.closingPage === true }, source, holdsAiOffEntries };
   }
 
   async preview(userId: number, query: BookQueryDto): Promise<BookPreviewResponseDto> {
@@ -184,7 +188,10 @@ export class BooksService {
     query: BookQueryDto,
     coverImage?: Express.Multer.File,
   ): Promise<BookFile> {
-    const { book, source } = await this.buildSourcedBook(userId, query);
+    const { book, source, holdsAiOffEntries } = await this.buildSourcedBook(userId, query);
+    if (holdsAiOffEntries && (query.narrative !== false || query.chapterFraming === true)) {
+      throw apiError(BadRequestException, 'BOOK_AI_DIARY_OFF');
+    }
     book.cover = createBookCover(query.coverTheme, coverImage);
     book.interior = query.interiorTheme;
     if (query.narrative !== false) {

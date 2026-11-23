@@ -175,6 +175,7 @@ describe('appShellProps', () => {
       entryFormState: {
         addPendingFile: vi.fn(),
         draft: composerDraftSyncMock(),
+        diaryAiOff: false,
         diaryTemplateName: null,
         feelings: [],
         fixingWriting: false,

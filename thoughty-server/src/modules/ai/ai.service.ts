@@ -26,6 +26,7 @@ import { UNTRUSTED_CONTENT_INSTRUCTION, untrustedBlock, unwrapBlock } from './un
 import { COMPANION_SAFETY_INSTRUCTIONS } from './companion-safety';
 import { assertEntryNotSealed } from '@/modules/time-capsules/time-capsule.guard';
 import { assertEntryUnlocked, readableEntryWhere } from '@/common/content-lock';
+import { AI_READABLE_WHERE, assertEntryAiAllowed } from '@/common/diary-ai';
 
 export type { JournalAnalysis, SubjectAnalysis, ToneMoodAnalysis } from './journal-analysis';
 
@@ -242,6 +243,7 @@ export class AiService {
 
   async summarizeEntry(userId: number, dto: SummarizeEntryDto): Promise<{ summary: string }> {
     const entry = await this.assertEntryOwnership(userId, dto.entryId);
+    assertEntryAiAllowed(entry);
     if (!entry.content.trim()) {
       throw apiError(BadRequestException, 'AI_CONTENT_REQUIRED');
     }
@@ -266,7 +268,7 @@ export class AiService {
     dto: GenerateInspirationDto,
   ): Promise<{ question: string }> {
     const entries = await this.entryRepository.find({
-      where: { userId, ...readableEntryWhere(userId), ...(dto.diaryId == null ? {} : { diaryId: dto.diaryId }) },
+      where: { userId, ...readableEntryWhere(userId), ...AI_READABLE_WHERE, ...(dto.diaryId == null ? {} : { diaryId: dto.diaryId }) },
       select: { tags: true },
       order: { date: 'DESC', index: 'DESC' },
       take: INSPIRATION_ENTRY_WINDOW,
@@ -293,7 +295,7 @@ export class AiService {
   }
 
   async chat(userId: number, dto: ChatDto): Promise<{ reply: string }> {
-    await this.assertEntryOwnership(userId, dto.entryId);
+    assertEntryAiAllowed(await this.assertEntryOwnership(userId, dto.entryId));
 
     if (!dto.entryContent.trim()) {
       throw apiError(BadRequestException, 'AI_CONTENT_REQUIRED');

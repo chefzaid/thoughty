@@ -59,6 +59,7 @@ describe('StatsPersonalityAnalysisService', () => {
     expect(entryRepository.createQueryBuilder).toHaveBeenCalledTimes(2);
     expect(queryBuilders[0].where).toHaveBeenCalledWith('e.user_id = :userId', { userId: 7 });
     expect(queryBuilders[0].andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 3 });
+    expect(queryBuilders[0].andWhere).toHaveBeenCalledWith('NOT e.diary_ai_off');
     expect(queryBuilders[0].andWhere).toHaveBeenCalledWith('e.date >= :fromDate', {
       fromDate: '2024-01-01',
     });

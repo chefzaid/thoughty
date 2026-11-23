@@ -141,6 +141,13 @@ export class Entry {
   @Column({ name: 'diary_locked', type: 'boolean', default: false, insert: false, update: false })
   diaryLocked: boolean;
 
+  /**
+   * Whether the entry's diary has AI off (`Diary.aiMode`), kept in step by database triggers as
+   * `diaryLocked` is; the application never writes it. No AI feature reads an entry while it is set.
+   */
+  @Column({ name: 'diary_ai_off', type: 'boolean', default: false, insert: false, update: false })
+  diaryAiOff: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

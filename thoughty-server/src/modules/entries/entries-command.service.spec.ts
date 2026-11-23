@@ -30,7 +30,7 @@ describe('EntriesCommandService', () => {
     });
 
     expect(diaryRepository.findOne).toHaveBeenCalledWith({ where: { userId: 5, isDefault: true } });
-    expect(entryTaggingService.resolveSavedTags).toHaveBeenCalledWith(5, 'Hello world', [' work ', 'work']);
+    expect(entryTaggingService.resolveSavedTags).toHaveBeenCalledWith(5, 'Hello world', [' work ', 'work'], 42);
     expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({
       userId: 5,
       date: '2024-01-15',
@@ -57,7 +57,7 @@ describe('EntriesCommandService', () => {
       visibility: 'public',
     });
 
-    expect(entryTaggingService.resolveSavedTags).toHaveBeenCalledWith(2, 'Manual tags only', ['focus']);
+    expect(entryTaggingService.resolveSavedTags).toHaveBeenCalledWith(2, 'Manual tags only', ['focus'], undefined);
     expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({
       diaryId: undefined,
       format: 'markdown',

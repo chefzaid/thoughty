@@ -7,6 +7,7 @@ import DiaryIconPicker from './DiaryIconPicker';
 import DiaryColorField from './DiaryColorField';
 import DiaryTemplateField from './DiaryTemplateField';
 import DiaryReminderField from './DiaryReminderField';
+import DiaryAiField, { type DiaryAiMode } from './DiaryAiField';
 import { describeDiaryTemplate, type EntryTemplate } from '../../utils/entryTemplates';
 import type { Diary as ApiDiary, DiaryFormData } from '../../types';
 import { DEFAULT_DIARY_COLORS, normalizeDiaryColor, resolveDiaryColor, withAlpha } from '../../utils/diaryColors';
@@ -18,7 +19,7 @@ import DiaryLockButton from '../ContentLock/DiaryLockButton';
 
 /** The diary fields Manage Diaries reads. */
 type Diary = Pick<ApiDiary, 'id' | 'name' | 'icon' | 'color' | 'visibility' | 'isDefault' | 'goalType' | 'goalTarget' | 'defaultTemplateId'>
-    & Partial<Pick<ApiDiary, 'isLocked'>>;
+    & Partial<Pick<ApiDiary, 'isLocked' | 'aiMode'>>;
 
 /** The diaries' own writing reminder hours (by diary ID), and whether an email can reach the writer. */
 export interface DiaryReminderHours {
@@ -57,6 +58,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
     const visibilityHint = (current: 'public' | 'private') => (!publicSharing && current === 'private' ? t('featureOffPublicVisibility') : t('visibilityOverrideHint'));
     const [newDiaryGoal, setNewDiaryGoal] = useState(NO_DIARY_GOAL);
     const [newDiaryTemplate, setNewDiaryTemplate] = useState('');
+    const [newDiaryAiMode, setNewDiaryAiMode] = useState<DiaryAiMode>('on');
     const [editingDiary, setEditingDiary] = useState<Diary | null>(null);
     const [editName, setEditName] = useState<string>('');
     const [editIcon, setEditIcon] = useState<string>('');
@@ -64,6 +66,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
     const [editVisibility, setEditVisibility] = useState<'public' | 'private'>('private');
     const [editGoal, setEditGoal] = useState(NO_DIARY_GOAL);
     const [editTemplate, setEditTemplate] = useState('');
+    const [editAiMode, setEditAiMode] = useState<DiaryAiMode>('on');
     const [editReminder, setEditReminder] = useState('');
     const [savingEdit, setSavingEdit] = useState(false);
     /** A translation key, or a message the API sent, which `t` passes through. */
@@ -112,6 +115,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                 visibility: newDiaryVisibility,
                 ...goal.fields,
                 defaultTemplateId: newDiaryTemplate || null,
+                aiMode: newDiaryAiMode,
             });
             setNewDiaryName('');
             setNewDiaryIcon('📓');
@@ -119,6 +123,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
             setNewDiaryVisibility('private');
             setNewDiaryGoal(NO_DIARY_GOAL);
             setNewDiaryTemplate('');
+            setNewDiaryAiMode('on');
         } catch (err) {
             setError((err as Error).message || 'diaryCreateFailed');
         }
@@ -132,6 +137,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
         setEditVisibility(diary.visibility);
         setEditGoal(diaryGoalDraft(diary.goalType, diary.goalTarget));
         setEditTemplate(diary.defaultTemplateId ?? '');
+        setEditAiMode(diary.aiMode ?? 'on');
         setEditReminder(String(reminderHour(diary.id) ?? ''));
     };
 
@@ -153,6 +159,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                 visibility: editVisibility,
                 ...goal.fields,
                 defaultTemplateId: editTemplate || null,
+                aiMode: editAiMode,
             });
             if (onSaveWritingReminder && editReminder !== String(reminderHour(editingDiary.id) ?? '')) {
                 await onSaveWritingReminder(editingDiary.id, editReminder === '' ? null : Number(editReminder));
@@ -298,6 +305,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                         </div>
                         <DiaryGoalField goal={newDiaryGoal} onChange={setNewDiaryGoal} t={t} />
                         <DiaryTemplateField templateId={newDiaryTemplate} templates={entryTemplates} onChange={setNewDiaryTemplate} t={t} />
+                        <DiaryAiField aiMode={newDiaryAiMode} onChange={setNewDiaryAiMode} t={t} />
                         <button type="submit" className="create-btn">
                             {t('createDiary')}
                         </button>
@@ -364,6 +372,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                             </div>
                                             <DiaryGoalField goal={editGoal} onChange={setEditGoal} t={t} />
                                             <DiaryTemplateField templateId={editTemplate} templates={entryTemplates} onChange={setEditTemplate} t={t} />
+                                            <DiaryAiField aiMode={editAiMode} onChange={setEditAiMode} t={t} />
                                             {canSetReminder && (
                                                 <DiaryReminderField hour={editReminder} emailAvailable={writingReminders?.emailAvailable ?? false} onChange={setEditReminder} language={uiLanguage} t={t} />
                                             )}
@@ -411,6 +420,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                                 {diary.defaultTemplateId && (
                                                     <span className="diary-goal-summary">{describeDiaryTemplate(diary.defaultTemplateId, entryTemplates, t)}</span>
                                                 )}
+                                                {diary.aiMode === 'off' && <span className="diary-goal-summary">{t('diaryAiOffSummary')}</span>}
                                                 {reminderSummary(diary.id) && (
                                                     <span className="diary-goal-summary">{reminderSummary(diary.id)}</span>
                                                 )}

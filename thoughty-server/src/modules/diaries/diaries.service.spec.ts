@@ -110,7 +110,16 @@ describe('DiariesService', () => {
         goalType: null,
         goalTarget: null,
         defaultTemplateId: null,
+        aiMode: 'on',
       });
+    });
+
+    it('creates a diary with AI off', async () => {
+      diaryRepository.save.mockResolvedValue(mockDiary);
+
+      await service.create(1, { name: 'Health', aiMode: 'off' });
+
+      expect(diaryRepository.save).toHaveBeenCalledWith(expect.objectContaining({ aiMode: 'off' }));
     });
 
     it('creates a diary with a default template', async () => {
@@ -246,6 +255,21 @@ describe('DiariesService', () => {
 
       await service.update(1, 1, { name: 'Renamed', goalType: null });
       expect(diaryRepository.save).toHaveBeenLastCalledWith(expect.objectContaining({ goalType: null, goalTarget: null }));
+    });
+
+    it('turns AI off and on, and keeps the mode when the update leaves it out', async () => {
+      const diary = { ...mockDiary, aiMode: 'on' };
+      diaryRepository.findOne.mockResolvedValue(diary);
+      diaryRepository.save.mockImplementation(async (saved: unknown) => saved);
+
+      await service.update(1, 1, { name: 'Diary', aiMode: 'off' });
+      expect(diaryRepository.save).toHaveBeenLastCalledWith(expect.objectContaining({ aiMode: 'off' }));
+
+      await service.update(1, 1, { name: 'Renamed' });
+      expect(diaryRepository.save).toHaveBeenLastCalledWith(expect.objectContaining({ name: 'Renamed', aiMode: 'off' }));
+
+      await service.update(1, 1, { name: 'Renamed', aiMode: 'on' });
+      expect(diaryRepository.save).toHaveBeenLastCalledWith(expect.objectContaining({ aiMode: 'on' }));
     });
 
     it('sets, keeps and clears the default template', async () => {

@@ -13,6 +13,7 @@ export function makeDiary(overrides: Partial<Diary> & Pick<Diary, 'id' | 'name'>
     goalTarget: null,
     defaultTemplateId: null,
     isLocked: false,
+    aiMode: 'on',
     createdAt: '2026-01-01T00:00:00.000Z',
     ...overrides,
   };

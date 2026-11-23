@@ -1,5 +1,6 @@
 import { BadGatewayException, BadRequestException, Injectable } from '@nestjs/common';
 import { apiError } from '@/common/errors';
+import { assertEntryAiAllowed } from '@/common/diary-ai';
 import { ConfigService } from '@/modules/config';
 import { AiUsageService } from '@/modules/ai/ai-usage.service';
 import { resolveOpenRouterCredential } from '@/modules/ai/openrouter-credential.util';
@@ -51,6 +52,9 @@ export class AudioTranscriptionService {
       };
     }
 
+    if (attachment.entry) {
+      assertEntryAiAllowed(attachment.entry);
+    }
     const credential = await resolveOpenRouterCredential(this.configService, userId);
     if (!credential) {
       throw apiError(BadRequestException, 'AI_KEY_NOT_CONFIGURED');

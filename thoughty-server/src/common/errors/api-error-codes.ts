@@ -95,6 +95,8 @@ export const API_ERROR_MESSAGES = {
   DIARY_NOT_FOUND: 'Diary not found',
   DIARY_NAME_TAKEN: 'A diary with this name already exists',
   DIARY_DEFAULT_NOT_DELETABLE: 'Cannot delete the default diary',
+  // 403: an AI feature asked for an entry, a file or the memoir of a diary whose AI privacy mode is off.
+  DIARY_AI_OFF: 'AI is off in this diary',
   SETTINGS_RESERVED: 'Settings cannot be changed here',
 
   // Saved searches.
@@ -167,6 +169,8 @@ export const API_ERROR_MESSAGES = {
   BOOK_EPIGRAPH_TOO_LONG: 'The epigraph is too long',
   BOOK_AI_NARRATIVE_KEY_REQUIRED:
     'AI narrative requires an OpenRouter API key on the server. Disable the AI narrative option to download a plain book.',
+  BOOK_AI_DIARY_OFF:
+    'This book holds entries from a diary with AI off. Turn off the AI narrative and chapter framing, or leave that diary out.',
   BOOK_AI_FRAMING_KEY_REQUIRED:
     'AI chapter framing requires an OpenRouter API key on the server. Disable chapter introductions and summaries to generate the book without them.',
 

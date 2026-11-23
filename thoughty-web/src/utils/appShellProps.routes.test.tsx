@@ -240,4 +240,18 @@ describe('appShellProps', () => {
 
     expect(feed).toBe(params.entriesState.feed);
   });
+
+  it('offers no AI action in the composer while it writes into a diary with AI off', () => {
+    const on = createRoutesParams();
+    expect(buildAuthenticatedRoutesProps(on).journalRouteProps.entryForm).toMatchObject({
+      onSuggestTags: on.entryFormState.handleSuggestTags,
+      onFixWriting: on.entryFormState.handleFixWriting,
+    });
+
+    const off = createRoutesParams();
+    const { entryForm } = buildAuthenticatedRoutesProps({ ...off, entryFormState: { ...off.entryFormState, diaryAiOff: true } }).journalRouteProps;
+    expect(entryForm.onSuggestTags).toBeUndefined();
+    expect(entryForm.onFixWriting).toBeUndefined();
+    expect(entryForm.onGetInspiration).toBeUndefined();
+  });
 });

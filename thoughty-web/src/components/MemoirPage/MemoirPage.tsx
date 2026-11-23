@@ -14,6 +14,7 @@ import MemoirQuestionCard, { type MemoirWeekAction } from './MemoirQuestionCard'
 import MemoirSettings from './MemoirSettings';
 import MemoirSimpleModeCard from './MemoirSimpleModeCard';
 import { resolveLanguage } from '../../utils/language';
+import { isDiaryAiOff } from '../../utils/diaryAi';
 import { formatMemoirDay, localize, todayIn } from './memoirFormat';
 import { findQuestion, firstReturnDay } from './memoirQuestions';
 import { useMemoir } from './useMemoir';
@@ -129,6 +130,7 @@ function MemoirPage({
       onCancel={() => setActiveQuestionId(null)}
       eras={eras}
       answerDate={todayIn(program?.timeZone ?? 'UTC')}
+      aiAllowed={!isDiaryAiOff(diaries, program?.diaryId)}
       language={language}
       t={t}
     />

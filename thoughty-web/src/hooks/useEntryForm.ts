@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { Attachment, Config, Diary } from '../types';
 import { getAutoTagLimit } from '../utils/autoTagLimit';
+import { isComposerDiaryAiOff } from '../utils/diaryAi';
 import { formatEntryDate } from '../utils/entryDate';
 import { cleanEntryTitle } from '../utils/entryTime';
 import { defaultTimeCapsule, isValidTimeCapsuleDate, type TimeCapsuleDraft } from '../utils/timeCapsule';
@@ -69,8 +70,9 @@ export const useEntryForm = (
   const saving = useRef(false);
   const latestText = useRef(newEntryText);
   latestText.current = newEntryText;
-  // With AI switched off nothing adds tags, so an entry needs one of its own
-  const autoTagLimit = useFeatureFlag('ai') ? getAutoTagLimit(config.autoTagMaxTags) : 0;
+  // With AI switched off, or off in the composer's diary, nothing adds tags, so an entry needs one of its own
+  const diaryAiOff = isComposerDiaryAiOff(diaries, currentDiaryId);
+  const autoTagLimit = useFeatureFlag('ai') && !diaryAiOff ? getAutoTagLimit(config.autoTagMaxTags) : 0;
   const tagSuggestions = useEntryTagSuggestions(aiService, newEntryText, tags, setTags, autoTagLimit, setFormError);
 
   // The draft follows the writer to their other devices; the date, time, visibility, capsule and files stay here
@@ -278,6 +280,8 @@ export const useEntryForm = (
     removePendingFile,
     removeUploadedAttachment,
     draft,
+    /** Whether the composer writes into a diary with AI off, where it offers no AI action. */
+    diaryAiOff,
     /** The name of the diary template the composer holds untouched, which another start replaces without asking. */
     diaryTemplateName: untouchedTemplate ? templateFill.name : null,
   };

@@ -37,6 +37,7 @@ describe('EntryChatService', () => {
 
     expect(qb.where).toHaveBeenCalledWith('e.user_id = :userId', { userId: 4 });
     expect(qb.andWhere).toHaveBeenCalledWith('e.sealed_until IS NULL');
+    expect(qb.andWhere).toHaveBeenCalledWith('NOT e.diary_ai_off');
     expect(qb.andWhere).toHaveBeenCalledWith('e.tags @> :tagList', { tagList: ['walks'] });
     expect(qb.orderBy).toHaveBeenCalledWith('e.date', 'DESC');
     expect(qb.limit).toHaveBeenCalledWith(MAX_ENTRIES_CHAT_ENTRIES);

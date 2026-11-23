@@ -80,7 +80,7 @@ describe('YearMoodService', () => {
     await service.generate(7, 2025, 3);
 
     expect(yearReviewService.assertOwnedDiary).toHaveBeenCalledWith(7, 3);
-    expect(yearReviewService.loadYearEntries).toHaveBeenCalledWith(7, 2025, 3);
+    expect(yearReviewService.loadYearEntries).toHaveBeenCalledWith(7, 2025, 3, { forAi: true });
     expect(manager.delete).toHaveBeenCalledWith(YearReviewMood, { userId: 7, year: 2025, diaryId: 3 });
   });
 

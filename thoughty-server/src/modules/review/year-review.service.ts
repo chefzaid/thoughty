@@ -15,12 +15,19 @@ import type {
 import { plainExcerpt } from '@/common/utils/plain-excerpt.util';
 import { countWords, isoWeekdayIndex, longestStreak, rankTags } from './year-review-stats';
 import { lockedEntrySql, readableEntrySql } from '@/common/content-lock';
+import { aiReadableEntrySql } from '@/common/diary-ai';
 
 const TOP_TAGS = 10;
 const NEW_TAGS = 10;
 const FAVORITE_HIGHLIGHTS = 4;
 const EXCERPT_LENGTH = 220;
 const TOP_FEELINGS = 5;
+
+/** Which entries `loadEntries` leaves out beyond the recycle bin. */
+export interface LoadEntriesOptions {
+  leaveLockedOut?: boolean;
+  forAi?: boolean;
+}
 
 export interface YearEntry {
   id: number;
@@ -110,20 +117,21 @@ export class YearReviewService {
   }
 
   /** The year's entries, oldest first, with word counts. */
-  loadYearEntries(userId: number, year: number, diaryId?: number): Promise<YearEntry[]> {
-    return this.loadEntries(userId, yearRange(year), diaryId);
+  loadYearEntries(userId: number, year: number, diaryId?: number, options?: LoadEntriesOptions): Promise<YearEntry[]> {
+    return this.loadEntries(userId, yearRange(year), diaryId, options);
   }
 
   /**
    * The entries dated from `from` to `to` (YYYY-MM-DD, both included), oldest first, with word counts; the
    * recycle bin is left out, and so are locked entries unless the request is unlocked, or always with
-   * `leaveLockedOut` (for what is kept and shown later, when the unlock may have ended).
+   * `leaveLockedOut` (for what is kept and shown later, when the unlock may have ended); `forAi` also leaves
+   * out the entries of diaries with AI off, for what an AI prompt reads.
    */
   async loadEntries(
     userId: number,
     { from, to }: { from: string; to: string },
     diaryId?: number,
-    { leaveLockedOut = false }: { leaveLockedOut?: boolean } = {},
+    { leaveLockedOut = false, forAi = false }: LoadEntriesOptions = {},
   ): Promise<YearEntry[]> {
     const query = addSameDayOrder(
       this.entryRepository
@@ -138,6 +146,9 @@ export class YearReviewService {
     );
     if (diaryId) {
       query.andWhere('e.diary_id = :diaryId', { diaryId });
+    }
+    if (forAi) {
+      query.andWhere(aiReadableEntrySql());
     }
     const { entities, raw } = await query.getRawAndEntities<{ e_id: number; day: string }>();
     const days = new Map(raw.map((row) => [Number(row.e_id), row.day]));

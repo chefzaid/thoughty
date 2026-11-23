@@ -14,6 +14,7 @@ import type {
   JournalRetagPlanResponseDto,
 } from './dto/journal-retag.dto';
 import { readableEntryWhere } from '@/common/content-lock';
+import { AI_READABLE_WHERE } from '@/common/diary-ai';
 
 const MAX_ANALYZED_ENTRIES = 300;
 
@@ -30,7 +31,7 @@ export class AiJournalRetagService {
 
   async createPlan(userId: number): Promise<JournalRetagPlanResponseDto> {
     const [foundEntries, totalEntries] = await this.entryRepository.findAndCount({
-      where: { userId, ...readableEntryWhere(userId) },
+      where: { userId, ...readableEntryWhere(userId), ...AI_READABLE_WHERE },
       select: { id: true, date: true, index: true, content: true, tags: true },
       order: { date: 'DESC', index: 'ASC' },
       take: MAX_ANALYZED_ENTRIES,
@@ -93,7 +94,7 @@ export class AiJournalRetagService {
     }
 
     const entries = await this.entryRepository.find({
-      where: { userId, id: In([...uniqueAssignments.keys()]), ...readableEntryWhere(userId) },
+      where: { userId, id: In([...uniqueAssignments.keys()]), ...readableEntryWhere(userId), ...AI_READABLE_WHERE },
     });
     if (entries.length !== uniqueAssignments.size) {
       throw apiError(BadRequestException, 'ENTRIES_NOT_FOUND', 'One or more entries are unavailable');

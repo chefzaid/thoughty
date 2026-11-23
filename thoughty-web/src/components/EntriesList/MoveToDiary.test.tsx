@@ -14,7 +14,7 @@ const tFr = (key: string, params?: Record<string, string | number>) => getTransl
 
 const diary = (id: number, name: string, icon: string, isDefault = false): Diary => ({
     id, userId: 1, name, icon, color: id === 2 ? '#22C55E' : null, visibility: 'private', isDefault, position: id,
-    goalType: null, goalTarget: null, defaultTemplateId: null, isLocked: false, createdAt: '2026-01-01T00:00:00.000Z',
+    goalType: null, goalTarget: null, defaultTemplateId: null, isLocked: false, aiMode: 'on', createdAt: '2026-01-01T00:00:00.000Z',
 });
 const diaries = [diary(1, 'Work', '💼', true), diary(2, 'Travel', '✈️'), diary(3, 'Family', '🏠')];
 const entry = { ...mockEntries[0]!, title: 'Packing list', diary_id: 1 };

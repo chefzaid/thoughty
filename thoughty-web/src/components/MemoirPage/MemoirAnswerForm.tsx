@@ -34,18 +34,20 @@ interface MemoirAnswerFormProps {
   /** The day the answer will be dated (`YYYY-MM-DD`). */
   readonly answerDate?: string;
   readonly language?: Language;
+  /** False when the memoir diary has AI off: no transcription and no follow-up questions. */
+  readonly aiAllowed?: boolean;
   readonly t: TranslationFunction;
 }
 
-function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras = [], answerDate = '', language = 'en', t }: MemoirAnswerFormProps) {
+function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras = [], answerDate = '', language = 'en', aiAllowed = true, t }: MemoirAnswerFormProps) {
   const { upload, attachmentsService } = useRecordingUpload();
   const recorder = useVoiceRecorder();
   const [text, setText] = useState('');
   const [eraId, setEraId] = useState<number | null>(null);
   const [problem, setProblem] = useState<FormProblem>(null);
   const [busy, setBusy] = useState<'transcribing' | 'saving' | null>(null);
-  // Transcribing a recording is AI, left out while AI is switched off
-  const aiOn = useFeatureFlag('ai');
+  // Transcribing a recording is AI, left out while AI is switched off or off in the memoir diary
+  const aiOn = useFeatureFlag('ai') && aiAllowed;
   const fileInput = useRef<HTMLInputElement>(null);
   const answerField = useRef<HTMLTextAreaElement>(null);
   const fieldId = `memoir-answer-${questionId}`;

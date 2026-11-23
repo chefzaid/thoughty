@@ -423,5 +423,33 @@ describe("useEntryActions", () => {
         "No selected entries needed rephrasing.",
       );
     });
+
+    it("never sends an entry of a diary with AI off to be rephrased, and counts it unchanged", async () => {
+      const updateEntry = vi.fn().mockResolvedValue(true);
+      const fixWriting = vi.fn().mockResolvedValue("Improved");
+      await createEntriesServiceMock({ updateEntry });
+      await createAiServiceMock({ fixWriting });
+      const entry = (id: number, diaryId: number) => ({ id, content: `Entry ${id}`, tags: ["focus"], date: "2024-01-15", visibility: "private" as const, diary_id: diaryId });
+      const diaries = [{ id: 1, aiMode: "on" as const }, { id: 2, aiMode: "off" as const }];
+
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete, [entry(1, 1), entry(2, 2)], notifier, undefined, undefined, diaries));
+      act(() => result.current.selectAll([1, 2]));
+      await act(async () => {
+        await result.current.executeBulkAction("rephrase", { mode: "grammar" });
+      });
+
+      expect(fixWriting).toHaveBeenCalledTimes(1);
+      expect(fixWriting).toHaveBeenCalledWith("Entry 1", "grammar");
+      expect(mockNotify).toHaveBeenCalledWith("Bulk rephrase completed: 1 updated, 1 unchanged, 0 failed.");
+
+      // Only entries of diaries with AI off: nothing to rephrase
+      fixWriting.mockClear();
+      act(() => result.current.selectAll([2]));
+      await act(async () => {
+        await result.current.executeBulkAction("rephrase", { mode: "grammar" });
+      });
+      expect(fixWriting).not.toHaveBeenCalled();
+      expect(mockNotify).toHaveBeenLastCalledWith("No selected entries are available to rephrase.");
+    });
   });
 });

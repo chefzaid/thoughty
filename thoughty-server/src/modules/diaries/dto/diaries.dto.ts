@@ -1,7 +1,7 @@
-import { IsString, IsOptional, IsEnum, MaxLength, IsArray, IsIn, Matches } from 'class-validator';
+import { IsString, IsOptional, IsEnum, MaxLength, IsArray, IsIn, Matches, ValidateIf } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import type { DiaryGoalType } from '@/database/entities';
+import { DIARY_AI_MODES, type DiaryAiMode, type DiaryGoalType } from '@/database/entities';
 import { DIARY_GOAL_TYPES, IsDiaryGoalTarget } from './diary-goal.dto';
 import { StrictInt, toStrictInt } from '@/common/validation';
 
@@ -10,7 +10,7 @@ const DIARY_COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
 /** A template ID as the web app makes them (`builtin-gratitude`, `custom-1767225600000`); the `chk_diaries_default_template_id` constraint holds the same rule. */
 export const DIARY_TEMPLATE_ID_PATTERN = /^[A-Za-z0-9_-]{1,100}$/;
 
-/** The optional writing goal and default template, sent when creating or updating a diary. */
+/** The optional writing goal, default template and AI mode, sent when creating or updating a diary. */
 class DiaryGoalFieldsDto {
   @ApiPropertyOptional({
     enum: DIARY_GOAL_TYPES,
@@ -44,6 +44,16 @@ class DiaryGoalFieldsDto {
   @IsString()
   @Matches(DIARY_TEMPLATE_ID_PATTERN)
   defaultTemplateId?: string | null;
+
+  @ApiPropertyOptional({
+    enum: DIARY_AI_MODES,
+    example: 'off',
+    description: 'Whether the AI features may read the diary’s entries (`on`, the default) or none of them (`off`); left out keeps it on update',
+  })
+  // Left out keeps the mode; null is refused, as a diary always has one
+  @ValidateIf((_dto, value) => value !== undefined)
+  @IsIn(DIARY_AI_MODES)
+  aiMode?: DiaryAiMode;
 }
 
 export class CreateDiaryDto extends DiaryGoalFieldsDto {
@@ -130,6 +140,9 @@ export class DiaryResponseDto {
 
   @ApiProperty({ description: 'Whether the diary is locked behind the writer’s PIN, with every entry in it', example: false })
   isLocked: boolean;
+
+  @ApiProperty({ enum: DIARY_AI_MODES, example: 'on', description: 'Whether the AI features may read the diary’s entries; with `off` none reads them' })
+  aiMode: DiaryAiMode;
 
   @ApiProperty()
   createdAt: Date;

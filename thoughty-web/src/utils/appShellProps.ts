@@ -70,7 +70,7 @@ export interface BuildAuthenticatedRoutesPropsParams {
   downloadUserData: AuthenticatedRoutesProps['profileRouteProps']['onDownloadData'];
   entriesState: Pick<EntriesState, 'activeTargetId' | 'allTags' | 'availableMonths' | 'availableYears' | 'backlinksVersion' | 'deleteRevision' | 'entries' | 'fetchEntries' | 'fetchEntryBacklinks' | 'fetchEntryHistory' | 'filterArchiveStatus' | 'filterDateObj' | 'filterEraId' | 'filterFavorites' | 'filterMood' | 'filterPersonId' | 'filterTags' | 'filterVisibility' | 'feed' | 'groupedEntries' | 'listQuery' | 'loading' | 'rankedResults' | 'reorderEntries' | 'runSemanticSearch' | 'search' | 'searchMode' | 'searchSort' | 'semanticSearchResult' | 'semanticSearchStatus' | 'setEntryTask' | 'setFilterArchiveStatus' | 'setFilterDateObj' | 'setFilterEraId' | 'setFilterFavorites' | 'setFilterMood' | 'setFilterPersonId' | 'setFilterTags' | 'setFilterVisibility' | 'setSearch' | 'setSearchMode' | 'setSearchSort' | 'sourceEntry' | 'targetEntryId' | 'toggleArchived' | 'toggleFavorite' | 'togglePinned' | 'toggleVisibility' | 'unsealEntry'>;
   entryEditState: Pick<EntryEditState, 'addEditPendingFile' | 'editDate' | 'editDiaryId' | 'editExistingAttachments' | 'editFeelings' | 'editFormat' | 'editMood' | 'editPendingFiles' | 'editTags' | 'editText' | 'editTimeOfDay' | 'editTitle' | 'editVisibility' | 'editingEntry' | 'handleCancelEdit' | 'handleEdit' | 'handleSaveEdit' | 'removeEditAttachment' | 'removeEditPendingFile' | 'setEditDate' | 'setEditDiaryId' | 'setEditFeelings' | 'setEditFormat' | 'setEditMood' | 'setEditTags' | 'setEditText' | 'setEditTimeOfDay' | 'setEditTitle' | 'setEditVisibility'>;
-  entryFormState: Pick<EntryFormState, 'addPendingFile' | 'diaryTemplateName' | 'draft' | 'feelings' | 'fixingWriting' | 'formError' | 'format' | 'handleFixWriting' | 'handleSubmit' | 'handleSuggestTags' | 'mood' | 'newEntryText' | 'pendingFiles' | 'removePendingFile' | 'removeUploadedAttachment' | 'savedEntry' | 'selectedDate' | 'setFeelings' | 'setFormat' | 'setMood' | 'setNewEntryText' | 'setSelectedDate' | 'setTags' | 'setTimeCapsule' | 'setTimeOfDay' | 'setTitle' | 'setVisibility' | 'suggestingTags' | 'tags' | 'timeCapsule' | 'timeOfDay' | 'title' | 'uploadedAttachments' | 'visibility'>;
+  entryFormState: Pick<EntryFormState, 'addPendingFile' | 'diaryAiOff' | 'diaryTemplateName' | 'draft' | 'feelings' | 'fixingWriting' | 'formError' | 'format' | 'handleFixWriting' | 'handleSubmit' | 'handleSuggestTags' | 'mood' | 'newEntryText' | 'pendingFiles' | 'removePendingFile' | 'removeUploadedAttachment' | 'savedEntry' | 'selectedDate' | 'setFeelings' | 'setFormat' | 'setMood' | 'setNewEntryText' | 'setSelectedDate' | 'setTags' | 'setTimeCapsule' | 'setTimeOfDay' | 'setTitle' | 'setVisibility' | 'suggestingTags' | 'tags' | 'timeCapsule' | 'timeOfDay' | 'title' | 'uploadedAttachments' | 'visibility'>;
   entryNavigationState: Pick<EntryNavigationState, 'handleBackToSource' | 'handleNavigateToEntry' | 'handleOpenEntryInList' | 'handleShareEntry'>;
   handleDiscuss: (entry: Entry) => void;
   handleRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
@@ -384,10 +384,11 @@ export function buildAuthenticatedRoutesProps({
         tagMetadata,
         formError: entryFormState.formError,
         suggestingTags: entryFormState.suggestingTags,
-        onSuggestTags: entryFormState.handleSuggestTags,
+        // A diary with AI off offers no AI action in the composer
+        onSuggestTags: entryFormState.diaryAiOff ? undefined : entryFormState.handleSuggestTags,
         fixingWriting: entryFormState.fixingWriting,
-        onFixWriting: entryFormState.handleFixWriting,
-        onGetInspiration: handleGetInspiration,
+        onFixWriting: entryFormState.diaryAiOff ? undefined : entryFormState.handleFixWriting,
+        onGetInspiration: entryFormState.diaryAiOff ? undefined : handleGetInspiration,
         promptCardsDrawn: config.promptCardsDrawn,
         // A draw that fails to save only lets a card come back sooner, so it needs no message
         onPromptCardsDrawnChange: (promptCardsDrawn: string) => void updateConfig({ ...config, promptCardsDrawn }),

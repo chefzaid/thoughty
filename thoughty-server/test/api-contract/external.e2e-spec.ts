@@ -285,4 +285,33 @@ describeContract('external', (context) => {
     expect(removed.body).toMatchObject({ onedrive: { enabled: false } });
     expect((removed.body as { onedrive: { timeZone?: string } }).onedrive.timeZone).toBeUndefined();
   });
+
+  it('keeps every AI feature away from a diary with AI off, until it is turned back on', async () => {
+    const { alice } = context;
+    const form = { name: 'Health', icon: '🩺', visibility: 'private' };
+    const created = await call('POST /api/diaries', { as: alice, json: { ...form, aiMode: 'off' }, status: 201 });
+    const diary = created.body as { id: number; aiMode: string };
+    expect(diary.aiMode).toBe('off');
+    // Left out, the mode is kept; a mode it does not know, or none, is refused
+    const kept = await call('PUT /api/diaries/{id}', { as: alice, params: { id: diary.id }, json: form, status: 200 });
+    expect(kept.body).toMatchObject({ aiMode: 'off' });
+    for (const aiMode of ['local', null]) {
+      await call('PUT /api/diaries/{id}', { as: alice, params: { id: diary.id }, json: { ...form, aiMode }, status: 400, code: 'VALIDATION_FAILED' });
+    }
+
+    const privateId = await createEntry(context, alice, { text: 'A visit to the clinic', tags: ['health'], diaryId: diary.id });
+    const aiOff = { status: 403, code: 'DIARY_AI_OFF' } as const;
+    await call('POST /api/ai/summarize', { as: alice, json: { entryId: privateId }, ...aiOff });
+    const messages = [{ role: 'user', content: 'Why?' }];
+    await call('POST /api/ai/chat', { as: alice, json: { entryId: privateId, entryContent: 'A visit', messages }, ...aiOff });
+    // Whole-journal features never read it: retagging cannot reach it, and the duplicate scan leaves it out
+    const retag = { mode: 'add', assignments: [{ entryId: privateId, tags: ['ai'] }] };
+    await call('POST /api/ai/journal-retag/apply', { as: alice, json: retag, status: 400, code: 'ENTRIES_NOT_FOUND' });
+    const scan = await call('POST /api/ai/duplicates', { as: alice, json: { diaryId: diary.id }, status: 200 });
+    expect(scan.body).toMatchObject({ analyzedEntries: 0, totalEntries: 0 });
+
+    await call('PUT /api/diaries/{id}', { as: alice, params: { id: diary.id }, json: { ...form, aiMode: 'on' }, status: 200 });
+    await call('POST /api/ai/summarize', { as: alice, json: { entryId: privateId }, status: 400, code: 'AI_KEY_NOT_CONFIGURED' });
+    await call('DELETE /api/diaries/{id}', { as: alice, params: { id: diary.id }, status: 200 });
+  });
 });

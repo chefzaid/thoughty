@@ -210,6 +210,10 @@ Migration `1788307200000-content-locks` adds the PIN lock ([security](./security
 
 Removing the PIN clears every lock. Locks are part of the data download (`isLocked` on diaries and entries).
 
+## Diary AI Mode
+
+Migration `1790035200000-diary-ai-mode` adds the AI privacy mode of a diary ([security](./security.md#ai-privacy)): `diaries.ai_mode` (`on`, the default for every diary, or `off`, `chk_diaries_ai_mode`). As with the lock, every query that feeds an AI prompt has to tell from the entry row alone, so `entries.diary_ai_off` copies it: `trg_entries_copy_diary_ai_mode` sets it on every insert and every change of `diary_id`, and `trg_diaries_ai_mode_entries` follows a diary's mode to its entries (the application never writes it, `insert: false, update: false`). An entry without a diary counts as on. On `POST /api/diaries` `aiMode` defaults to `on`; on `PUT /api/diaries/:id` leaving it out keeps it, and `null` or another value is refused (`400 VALIDATION_FAILED`).
+
 ## Diary Writing Goals
 
 A diary can carry one optional writing goal in `goal_type` (`entries_per_week` or `words_per_day`) and `goal_target`. The `chk_diaries_goal` constraint keeps them set together or both null, with 1 to 50 entries a week or 10 to 10,000 words a day; `DIARY_GOAL_LIMITS` and the `IsDiaryGoalTarget` validator hold the same bounds for the API, which answers `400 VALIDATION_FAILED` outside them. On `PUT /api/diaries/:id`, leaving `goalType` out keeps the goal and `null` removes it.

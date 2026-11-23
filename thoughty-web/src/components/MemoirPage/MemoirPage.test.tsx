@@ -192,6 +192,14 @@ describe('MemoirPage', () => {
     expect(memoirService.fetchOverview).toHaveBeenCalledTimes(2);
   });
 
+  it('asks no follow-up questions about an answer when the memoir diary has AI off', async () => {
+    renderPage({ diaries: [makeDiary({ id: 6, name: 'My memoir', aiMode: 'off' })] });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'memoirAnswerQuestion' }));
+    expect(screen.getByLabelText('memoirYourAnswer')).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'memoirFollowUpsTitle' })).not.toBeInTheDocument();
+  });
+
   it('places an answer in one of the writer’s life eras', async () => {
     attachmentsService.list.mockResolvedValue({
       data: {

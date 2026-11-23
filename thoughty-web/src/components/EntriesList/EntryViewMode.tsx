@@ -11,6 +11,7 @@ import { extractDate } from './EntriesList.utils';
 import { formatEntryDay } from '../ShareLinks/shareLinkText';
 import { IconActionButton } from './EntryActionPrimitives';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
+import { isDiaryAiOff } from '../../utils/diaryAi';
 import EntryRephraseButton from './EntryRephraseButton';
 import EntrySecondaryActionsMenu from './EntrySecondaryActionsMenu';
 import EntrySummaryDialog from './EntrySummaryDialog';
@@ -154,8 +155,8 @@ function OpenEntryViewMode({
     tagMetadata,
     t,
 }: Readonly<EntryViewModeProps>) {
-    // The AI actions are left out while AI is switched off
-    const aiOn = useFeatureFlag('ai');
+    // The AI actions are left out while AI is switched off, and in a diary with AI off
+    const aiOn = useFeatureFlag('ai') && !isDiaryAiOff(diaries, entry.diary_id);
     const onDiscuss = aiOn ? discuss : undefined;
     const onRephrase = aiOn ? rephrase : undefined;
     const onSummarize = aiOn ? summarize : undefined;
@@ -345,6 +346,7 @@ function OpenEntryViewMode({
                 tagMetadata={tagMetadata}
                 onDeleteRevision={onDeleteRevision}
                 onHandleDeleteRevision={handleDeleteRevision}
+                aiAllowed={aiOn}
                 t={t}
             />
             <ShareImageDialog

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { apiError } from '@/common/errors';
 import { hideLockedEntries } from '@/common/content-lock';
+import { aiReadableEntrySql } from '@/common/diary-ai';
 import { stripMarkdown } from '@/common/utils';
 import { Entry } from '@/database/entities';
 import {
@@ -55,7 +56,7 @@ function fitToBudget(rows: readonly ChatEntryRow[]): Array<{ row: ChatEntryRow; 
  * A conversation with the AI about several entries at once: those the journal filters match (the list's day,
  * or a date range, among them), the newest fifty at most, which the replies cite by number. Each request reads
  * the entries afresh, so nothing of the conversation is kept. Sealed time capsules are never read, nor locked
- * entries unless the request is unlocked; entries in the recycle bin are left out by the entity's soft delete.
+ * entries unless the request is unlocked, nor those of a diary with AI off; entries in the recycle bin are left out by the entity's soft delete.
  */
 @Injectable()
 export class EntryChatService {
@@ -98,7 +99,8 @@ export class EntryChatService {
       .addSelect('e.content', 'content')
       .addSelect('COUNT(*) OVER ()', 'total')
       .where('e.user_id = :userId', { userId })
-      .andWhere('e.sealed_until IS NULL');
+      .andWhere('e.sealed_until IS NULL')
+      .andWhere(aiReadableEntrySql());
     applyEntryListFilters(qb, query, prepared, userId);
     hideLockedEntries(qb, userId);
     if (date) {

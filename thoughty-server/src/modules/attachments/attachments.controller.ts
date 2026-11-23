@@ -137,6 +137,7 @@ export class AttachmentsController {
     description: 'Audio attachment transcribed or cached transcript returned',
     type: AudioTranscriptionResponseDto,
   })
+  @ApiResponse({ status: 403, description: 'The attachment’s entry is in a diary with AI off (`DIARY_AI_OFF`)' })
   async transcribe(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,

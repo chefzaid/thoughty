@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import type { Entry } from '../types';
+import type { Diary, Entry } from '../types';
+import { isDiaryAiOff } from '../utils/diaryAi';
 import type { RephraseMode } from '../services/api/aiService';
 import { pluralPhrase } from '../utils/pluralPhrase';
 import { useApiServices } from './useApiServices';
@@ -64,7 +65,8 @@ const inDayOrder = (ids: number[], entries: Entry[]): number[] => {
 /**
  * The journal's bulk selection and its actions. `onMakeBook` receives the selected entries for the book
  * converter (Make a book); without it that action does nothing. `onDeleted` hears which entries went to the
- * recycle bin, oldest day first and in their order within the day.
+ * recycle bin, oldest day first and in their order within the day. Rephrasing leaves the entries of a diary
+ * with AI off (among `diaries`) as they are.
  */
 export const useBulkSelect = (
   onComplete: () => void,
@@ -72,6 +74,7 @@ export const useBulkSelect = (
   { notify, t, language }: Notifier,
   onMakeBook?: (entryIds: number[]) => void,
   onDeleted?: (entryIds: number[]) => void,
+  diaries: readonly Pick<Diary, 'id' | 'aiMode'>[] = [],
 ) => {
   const { entriesService, aiService } = useApiServices();
 
@@ -114,17 +117,19 @@ export const useBulkSelect = (
     const selectedEntries = ids
       .map((id) => entries.find((entry) => entry.id === id))
       .filter((entry): entry is Entry => Boolean(entry));
+    const rephrasable = selectedEntries.filter((entry) => !isDiaryAiOff(diaries, entry.diary_id));
 
-    if (selectedEntries.length === 0) {
+    if (rephrasable.length === 0) {
       notify(t('bulkRephraseNoEntries'));
       return;
     }
 
     let updatedCount = 0;
-    let unchangedCount = 0;
+    // An entry of a diary with AI off is never sent, so it stays unchanged
+    let unchangedCount = selectedEntries.length - rephrasable.length;
     let failedCount = 0;
 
-    for (const entry of selectedEntries) {
+    for (const entry of rephrasable) {
       const outcome = await rephraseSelectedEntry(
         entry,
         mode ?? 'grammar',
@@ -162,7 +167,7 @@ export const useBulkSelect = (
     }
 
     notify(t('bulkRephraseError'));
-  }, [aiService, entries, entriesService, language, notify, onComplete, selectedIds, t]);
+  }, [aiService, diaries, entries, entriesService, language, notify, onComplete, selectedIds, t]);
 
   const executeBulkAction = useCallback(async (action: Exclude<BulkAction, 'book'>, options?: BulkOptions) => {
     if (action === 'rephrase') {

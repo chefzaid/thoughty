@@ -256,4 +256,13 @@ describe('MemoirAnswerForm', () => {
     expect(screen.queryByRole('group', { name: 'memoirFollowUpsTitle' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'memoirSaveAnswer' })).toBeInTheDocument();
   });
+
+  it('offers neither interview mode nor transcription when the memoir diary has AI off', () => {
+    render(<MemoirAnswerForm questionId="childhood-home" questionText="What was home like?" onSubmit={vi.fn()} onCancel={vi.fn()} aiAllowed={false} t={t} />);
+    chooseFile(new File(['voice'], 'story.m4a', { type: 'audio/mp4' }));
+
+    expect(screen.getByText('memoirRecordingReady story.m4a')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'memoirTranscribe' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'memoirFollowUpsTitle' })).not.toBeInTheDocument();
+  });
 });

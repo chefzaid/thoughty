@@ -9,6 +9,7 @@ import { rankSemanticMatches, requestEmbeddings } from './semantic-search';
 import { AiUsageService } from './ai-usage.service';
 import { resolveOpenRouterCredential } from './openrouter-credential.util';
 import { readableEntryWhere } from '@/common/content-lock';
+import { AI_READABLE_WHERE } from '@/common/diary-ai';
 
 const MAX_ANALYZED_ENTRIES = 100;
 const MAX_ENTRY_CONTENT_LENGTH = 1200;
@@ -28,7 +29,7 @@ export class AiSemanticSearchService {
 
   async search(userId: number, dto: SemanticSearchDto): Promise<SemanticSearchResponseDto> {
     const [foundEntries, totalEntries] = await this.entryRepository.findAndCount({
-      where: { userId, ...readableEntryWhere(userId), ...(dto.diaryId == null ? {} : { diaryId: dto.diaryId }) },
+      where: { userId, ...readableEntryWhere(userId), ...AI_READABLE_WHERE, ...(dto.diaryId == null ? {} : { diaryId: dto.diaryId }) },
       select: { id: true, content: true, tags: true },
       order: { date: 'DESC', index: 'ASC' },
       take: MAX_ANALYZED_ENTRIES,

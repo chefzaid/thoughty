@@ -67,6 +67,21 @@ describePostgres('PostgreSQL entries chat', () => {
     ], messages);
   });
 
+  it('never reads an entry of a diary with AI off, nor counts it', async () => {
+    const [open, closed] = await dataSource.query(
+      `INSERT INTO diaries (user_id, name, ai_mode) VALUES ($1, 'Thoughts', 'on'), ($1, 'Health', 'off') RETURNING id`,
+      [userId],
+    );
+    const walk = await write({ content: 'A walk', tags: ['walks'], diaryId: open.id });
+    await write({ content: 'A walk to the clinic', tags: ['walks'], diaryId: closed.id });
+
+    await expect(chat.chat(userId, { tags: 'walks' }, { messages })).resolves.toMatchObject({
+      entries: [{ ref: 1, id: walk.id }],
+      total: 1,
+    });
+    await expectApiError(chat.chat(userId, { tags: 'walks', diaryId: closed.id }, { messages }), NotFoundException, 'ENTRY_CHAT_NO_MATCH');
+  });
+
   it('narrows to a date range and a life era, as the journal filters do', async () => {
     const era = await dataSource.getRepository(LifeEra).save({ userId, name: 'Autumn', startDate: '2026-09-01', endDate: '2026-10-31' });
     await write({ content: 'Summer', date: '2026-08-15' });

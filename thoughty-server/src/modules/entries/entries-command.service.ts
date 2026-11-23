@@ -73,7 +73,7 @@ export class EntriesCommandService {
   async create(userId: number, dto: CreateEntryDto): Promise<{ success: boolean; entryId: number }> {
     await assertMayPublish(this.featureFlags, dto.visibility);
     const targetDiaryId = await this.resolveTargetDiaryId(userId, dto.diaryId);
-    const resolvedTags = await this.entryTaggingService.resolveSavedTags(userId, dto.text, dto.tags);
+    const resolvedTags = await this.entryTaggingService.resolveSavedTags(userId, dto.text, dto.tags, targetDiaryId);
     const dateStr = dto.date || new Date().toISOString().split('T')[0];
 
     const countResult = await this.entryRepository.count({
@@ -139,7 +139,7 @@ export class EntriesCommandService {
 
     await this.revisionRepository.save(entryRevisionSnapshot(entry));
 
-    const resolvedTags = await this.entryTaggingService.resolveSavedTags(userId, dto.text, dto.tags);
+    const resolvedTags = await this.entryTaggingService.resolveSavedTags(userId, dto.text, dto.tags, entry.diaryId);
     const oldDate = entry.date;
     let newIndex = entry.index;
 

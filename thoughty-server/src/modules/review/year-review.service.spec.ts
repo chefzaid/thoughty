@@ -212,6 +212,14 @@ describe('YearReviewService', () => {
     });
   });
 
+  it('leaves the entries of diaries with AI off out only of what an AI prompt reads', async () => {
+    await service.loadEntries(7, { from: '2025-01-01', to: '2025-12-31' });
+    expect(builders[0].andWhere).not.toHaveBeenCalledWith('NOT e.diary_ai_off');
+
+    await service.loadYearEntries(7, 2025, undefined, { forAi: true });
+    expect(builders[1].andWhere).toHaveBeenCalledWith('NOT e.diary_ai_off');
+  });
+
   it('refuses a diary the writer does not own', async () => {
     diaryRepository.exists.mockResolvedValue(false);
 

@@ -5568,6 +5568,22 @@
               }
             }
           },
+          "403": {
+            "description": "The entry’s diary has AI off (`DIARY_AI_OFF`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "The entry’s diary has AI off (`DIARY_AI_OFF`)",
+                  "error": "Forbidden",
+                  "code": "FORBIDDEN"
+                }
+              }
+            }
+          },
           "503": {
             "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
             "content": {
@@ -5972,6 +5988,22 @@
               }
             }
           },
+          "403": {
+            "description": "The entry’s diary has AI off (`DIARY_AI_OFF`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "The entry’s diary has AI off (`DIARY_AI_OFF`)",
+                  "error": "Forbidden",
+                  "code": "FORBIDDEN"
+                }
+              }
+            }
+          },
           "503": {
             "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
             "content": {
@@ -6358,6 +6390,7 @@
                     "goalTarget": 3,
                     "defaultTemplateId": "builtin-gratitude",
                     "isLocked": false,
+                    "aiMode": "on",
                     "createdAt": "2026-06-24T10:00:00.000Z"
                   }
                 ]
@@ -6389,6 +6422,7 @@
                 "goalType": "entries_per_week",
                 "goalTarget": 3,
                 "defaultTemplateId": "builtin-gratitude",
+                "aiMode": "off",
                 "name": "Daily Journal",
                 "icon": "📓",
                 "visibility": "private",
@@ -6418,6 +6452,7 @@
                   "goalTarget": 3,
                   "defaultTemplateId": "builtin-gratitude",
                   "isLocked": false,
+                  "aiMode": "on",
                   "createdAt": "2026-06-24T10:00:00.000Z"
                 }
               }
@@ -6491,6 +6526,7 @@
                 "goalType": "entries_per_week",
                 "goalTarget": 3,
                 "defaultTemplateId": "builtin-gratitude",
+                "aiMode": "off",
                 "name": "Daily Journal",
                 "icon": "journal",
                 "visibility": "public",
@@ -6520,6 +6556,7 @@
                   "goalTarget": 3,
                   "defaultTemplateId": "builtin-gratitude",
                   "isLocked": false,
+                  "aiMode": "on",
                   "createdAt": "2026-06-24T10:00:00.000Z"
                 }
               }
@@ -6688,6 +6725,7 @@
                   "goalTarget": 3,
                   "defaultTemplateId": "builtin-gratitude",
                   "isLocked": false,
+                  "aiMode": "on",
                   "createdAt": "2026-06-24T10:00:00.000Z"
                 }
               }
@@ -7805,6 +7843,22 @@
                   "transcript": "example",
                   "transcribed_at": "2026-06-24T10:00:00.000Z",
                   "cached": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The attachment’s entry is in a diary with AI off (`DIARY_AI_OFF`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "The attachment’s entry is in a diary with AI off (`DIARY_AI_OFF`)",
+                  "error": "Forbidden",
+                  "code": "FORBIDDEN"
                 }
               }
             }
@@ -14693,6 +14747,22 @@
               }
             }
           },
+          "403": {
+            "description": "The memoir diary has AI off (`DIARY_AI_OFF`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "The memoir diary has AI off (`DIARY_AI_OFF`)",
+                  "error": "Forbidden",
+                  "code": "FORBIDDEN"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Unknown question, or memoir not started",
             "content": {
@@ -18521,6 +18591,7 @@
                   "goalTarget": 3,
                   "defaultTemplateId": "builtin-gratitude",
                   "isLocked": false,
+                  "aiMode": "on",
                   "createdAt": "2026-06-24T10:00:00.000Z"
                 }
               }
@@ -23933,6 +24004,15 @@
             "description": "Whether the diary is locked behind the writer’s PIN, with every entry in it",
             "example": false
           },
+          "aiMode": {
+            "type": "string",
+            "enum": [
+              "on",
+              "off"
+            ],
+            "example": "on",
+            "description": "Whether the AI features may read the diary’s entries; with `off` none reads them"
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -23951,6 +24031,7 @@
           "goalTarget",
           "defaultTemplateId",
           "isLocked",
+          "aiMode",
           "createdAt"
         ],
         "example": {
@@ -23966,6 +24047,7 @@
           "goalTarget": 3,
           "defaultTemplateId": "builtin-gratitude",
           "isLocked": false,
+          "aiMode": "on",
           "createdAt": "2026-06-24T10:00:00.000Z"
         }
       },
@@ -23995,6 +24077,15 @@
             "pattern": "^[A-Za-z0-9_-]{1,100}$",
             "example": "builtin-gratitude",
             "description": "Entry template the composer starts from in this diary (built-in or custom ID); null removes it, left out keeps it on update"
+          },
+          "aiMode": {
+            "type": "string",
+            "enum": [
+              "on",
+              "off"
+            ],
+            "example": "off",
+            "description": "Whether the AI features may read the diary’s entries (`on`, the default) or none of them (`off`); left out keeps it on update"
           },
           "name": {
             "type": "string",
@@ -24026,6 +24117,7 @@
           "goalType": "entries_per_week",
           "goalTarget": 3,
           "defaultTemplateId": "builtin-gratitude",
+          "aiMode": "off",
           "name": "Daily Journal",
           "icon": "📓",
           "visibility": "private",
@@ -24059,6 +24151,15 @@
             "example": "builtin-gratitude",
             "description": "Entry template the composer starts from in this diary (built-in or custom ID); null removes it, left out keeps it on update"
           },
+          "aiMode": {
+            "type": "string",
+            "enum": [
+              "on",
+              "off"
+            ],
+            "example": "off",
+            "description": "Whether the AI features may read the diary’s entries (`on`, the default) or none of them (`off`); left out keeps it on update"
+          },
           "name": {
             "type": "string",
             "description": "Diary name"
@@ -24087,6 +24188,7 @@
           "goalType": "entries_per_week",
           "goalTarget": 3,
           "defaultTemplateId": "builtin-gratitude",
+          "aiMode": "off",
           "name": "Daily Journal",
           "icon": "journal",
           "visibility": "public",
@@ -33859,6 +33961,7 @@
           "DIARY_NOT_FOUND",
           "DIARY_NAME_TAKEN",
           "DIARY_DEFAULT_NOT_DELETABLE",
+          "DIARY_AI_OFF",
           "SETTINGS_RESERVED",
           "SAVED_SEARCH_NOT_FOUND",
           "SAVED_SEARCH_NAME_TAKEN",
@@ -33910,6 +34013,7 @@
           "BOOK_DEDICATION_TOO_LONG",
           "BOOK_EPIGRAPH_TOO_LONG",
           "BOOK_AI_NARRATIVE_KEY_REQUIRED",
+          "BOOK_AI_DIARY_OFF",
           "BOOK_AI_FRAMING_KEY_REQUIRED",
           "AI_KEY_NOT_CONFIGURED",
           "AI_KEY_REJECTED",

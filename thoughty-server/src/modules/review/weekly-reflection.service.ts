@@ -39,7 +39,8 @@ function toReflectionDto(reflection: WeeklyReflection): WeeklyReflectionDto {
 /**
  * The weekly reflection: AI reads the past seven days of entries, only when the writer asks, for the
  * themes that came back, a short summary and one question for the week ahead, and the latest one is kept
- * per diary scope. Locked entries are never read, even while unlocked, since the reflection stays on show.
+ * per diary scope. Locked entries are never read, even while unlocked, since the reflection stays on show, nor
+ * those of a diary with AI off.
  */
 @Injectable()
 export class WeeklyReflectionService {
@@ -54,7 +55,7 @@ export class WeeklyReflectionService {
 
   /** The week's entries a reflection reads: with words, not archived, up to 21 spread across it, as plain text. */
   private async readableEntries(userId: number, week: ReflectionWeek, diaryId?: number): Promise<WeeklyReflectionEntry[]> {
-    const entries = await this.yearReviewService.loadEntries(userId, week, diaryId, { leaveLockedOut: true });
+    const entries = await this.yearReviewService.loadEntries(userId, week, diaryId, { leaveLockedOut: true, forAi: true });
     return entries
       .filter((entry) => !entry.isArchived && entry.words > 0)
       .map((entry) => ({ date: entry.date, text: plainExcerpt(entry.content, CHARACTERS_PER_ENTRY) }));

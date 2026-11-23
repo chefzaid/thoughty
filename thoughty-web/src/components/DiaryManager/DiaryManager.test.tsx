@@ -71,6 +71,7 @@ describe('DiaryManager', () => {
                 goalType: null,
                 goalTarget: null,
                 defaultTemplateId: null,
+                aiMode: 'on',
             });
         });
     });

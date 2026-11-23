@@ -246,11 +246,14 @@ export function EntryBodySection({
     tagMetadata,
     onDeleteRevision,
     onHandleDeleteRevision,
+    aiAllowed,
     t,
 }: Readonly<{
     entry: Entry;
     isDark: boolean;
     theme: Config['theme'];
+    /** Whether the AI may read the entry, so its recordings can be transcribed. */
+    aiAllowed: boolean;
     fontColor?: string;
     /** The writer's line and letter spacing for the entry's text. */
     spacing: EntrySpacing;
@@ -335,6 +338,7 @@ export function EntryBodySection({
                     attachments={belowText}
                     theme={theme}
                     t={t}
+                    aiAllowed={aiAllowed}
                 />
             )}
             <EntryHistorySection

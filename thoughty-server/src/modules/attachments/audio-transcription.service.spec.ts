@@ -1,4 +1,5 @@
-import { BadGatewayException, BadRequestException } from '@nestjs/common';
+import { BadGatewayException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { AudioTranscriptionService } from './audio-transcription.service';
 
 describe('AudioTranscriptionService', () => {
@@ -108,6 +109,21 @@ describe('AudioTranscriptionService', () => {
 
     await expect(service.transcribe(7, 4)).rejects.toThrow(BadRequestException);
     expect(configService.getDecryptedConfig).not.toHaveBeenCalled();
+  });
+
+  it('refuses an entry’s audio in a diary with AI off (403 DIARY_AI_OFF) before reading the audio', async () => {
+    attachmentsService.getOwnedAttachment.mockResolvedValue({ ...attachment, entry: { id: 2, diaryAiOff: true } });
+
+    await expectApiError(service.transcribe(7, 4), ForbiddenException, 'DIARY_AI_OFF');
+    expect(configService.getDecryptedConfig).not.toHaveBeenCalled();
+    expect(attachmentsService.getFileBuffer).not.toHaveBeenCalled();
+  });
+
+  it('transcribes an entry’s audio in a diary with AI on', async () => {
+    attachmentsService.getOwnedAttachment.mockResolvedValue({ ...attachment, entry: { id: 2, diaryAiOff: false } });
+    jest.spyOn(global, 'fetch').mockResolvedValue({ ok: true, json: jest.fn().mockResolvedValue({ text: 'Hello' }) } as never);
+
+    await expect(service.transcribe(7, 4)).resolves.toMatchObject({ transcript: 'Hello', cached: false });
   });
 
   it('requires an OpenRouter credential', async () => {

@@ -16,6 +16,10 @@ import { DiaryWritingReminder } from './diary-writing-reminder.entity';
 /** A diary's writing goal: a number of entries each Monday-to-Sunday week, or of words each day. */
 export type DiaryGoalType = 'entries_per_week' | 'words_per_day';
 
+/** What the AI features may read of a diary: everything (`on`) or nothing (`off`). */
+export const DIARY_AI_MODES = ['on', 'off'] as const;
+export type DiaryAiMode = (typeof DIARY_AI_MODES)[number];
+
 /** Diary names are unique per writer, ignoring case and surrounding spaces. */
 export const DIARY_NAME_UNIQUE_INDEX = 'uq_diaries_user_name';
 
@@ -66,6 +70,10 @@ export class Diary {
   /** Whether the writer locked the diary behind their PIN; each of its entries is locked with it. */
   @Column({ name: 'is_locked', type: 'boolean', default: false })
   isLocked: boolean;
+
+  /** Whether the AI features may read the diary's entries; each entry copies it (`Entry.diaryAiOff`). */
+  @Column({ name: 'ai_mode', type: 'varchar', length: 10, default: 'on' })
+  aiMode: DiaryAiMode;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

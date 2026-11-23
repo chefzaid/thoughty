@@ -140,7 +140,7 @@ describe('useAppShellModel', () => {
     expect(mocks.useEntryEdit).toHaveBeenCalledWith(expect.anything(), expect.any(Function), notifier, expect.any(Function));
     expect(mocks.buildAuthenticatedRoutesProps).toHaveBeenCalledWith(expect.objectContaining({ handleMoveToDiary: expect.any(Function) }));
     expect(mocks.useDeleteModal).toHaveBeenCalledWith(expect.any(Function), notifier);
-    expect(mocks.useBulkSelect).toHaveBeenCalledWith(expect.any(Function), expect.anything(), notifier, expect.any(Function), offerDeleteUndo);
+    expect(mocks.useBulkSelect).toHaveBeenCalledWith(expect.any(Function), expect.anything(), notifier, expect.any(Function), offerDeleteUndo, expect.any(Array));
     expect(mocks.useDeleteUndo).toHaveBeenCalledWith(expect.any(Function), notifier);
   });
 

@@ -392,6 +392,8 @@ describe('StatsService', () => {
       expect(statsJournalAnalysisService.analyze).toHaveBeenCalledWith(1, [
         { id: 9, content: 'I feel calm today.', date: '2024-02-20', tags: ['calm'] },
       ]);
+      // The entries the AI reads leave out those of diaries with AI off
+      expect(mockQb.andWhere).toHaveBeenCalledWith('NOT e.diary_ai_off');
       expect(result.toneMoodAnalysis).toEqual({
         dominantMood: 'calm',
         dominantTone: 'candid',

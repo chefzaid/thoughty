@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { apiError } from '@/common/errors';
+import { assertDiaryAiAllowed } from '@/common/diary-ai';
 import { MemoirProgram } from '@/database/entities';
 import { AiMemoirFollowUpsService } from '@/modules/ai';
 import { ConfigService } from '@/modules/config';
@@ -26,9 +27,12 @@ export class MemoirFollowUpsService {
     if (!question) {
       throw apiError(NotFoundException, 'MEMOIR_UNKNOWN_QUESTION');
     }
-    if (!(await this.programRepository.exists({ where: { userId } }))) {
+    const program = await this.programRepository.findOne({ where: { userId }, relations: { diary: true } });
+    if (!program) {
       throw apiError(NotFoundException, 'MEMOIR_NOT_STARTED');
     }
+    // The answer is going to the memoir diary, which may keep AI out
+    assertDiaryAiAllowed(program.diary);
 
     const language = resolveMemoirLanguage((await this.configService.getConfig(userId)).language);
     const questions = await this.aiFollowUps.suggest(userId, {

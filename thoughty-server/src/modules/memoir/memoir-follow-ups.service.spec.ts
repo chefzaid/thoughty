@@ -1,16 +1,16 @@
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { MemoirFollowUpsService } from './memoir-follow-ups.service';
 
 describe('MemoirFollowUpsService', () => {
-  const programRepository = { exists: jest.fn() };
+  const programRepository = { findOne: jest.fn() };
   const configService = { getConfig: jest.fn() };
   const aiFollowUps = { suggest: jest.fn() };
   const service = new MemoirFollowUpsService(programRepository as never, configService as never, aiFollowUps as never);
 
   beforeEach(() => {
     jest.clearAllMocks();
-    programRepository.exists.mockResolvedValue(true);
+    programRepository.findOne.mockResolvedValue({ userId: 4, diary: { id: 9, aiMode: 'on' } });
     configService.getConfig.mockResolvedValue({ language: 'fr' });
     aiFollowUps.suggest.mockResolvedValue(['Que chantait votre grand-mère ?']);
   });
@@ -19,7 +19,7 @@ describe('MemoirFollowUpsService', () => {
     await expect(service.suggest(4, { questionId: 'childhood-home', text: 'Un figuier.', asked: ['Qui l’a planté ?'] }))
       .resolves.toEqual({ questions: ['Que chantait votre grand-mère ?'] });
 
-    expect(programRepository.exists).toHaveBeenCalledWith({ where: { userId: 4 } });
+    expect(programRepository.findOne).toHaveBeenCalledWith({ where: { userId: 4 }, relations: { diary: true } });
     expect(aiFollowUps.suggest).toHaveBeenCalledWith(4, {
       question: expect.stringMatching(/maison/),
       answer: 'Un figuier.',
@@ -36,8 +36,14 @@ describe('MemoirFollowUpsService', () => {
 
   it('refuses an unknown question, or a memoir not started, before asking the AI', async () => {
     await expectApiError(service.suggest(4, { questionId: 'moon-landing', text: 'x' }), NotFoundException, 'MEMOIR_UNKNOWN_QUESTION');
-    programRepository.exists.mockResolvedValue(false);
+    programRepository.findOne.mockResolvedValue(null);
     await expectApiError(service.suggest(4, { questionId: 'childhood-home', text: 'x' }), NotFoundException, 'MEMOIR_NOT_STARTED');
+    expect(aiFollowUps.suggest).not.toHaveBeenCalled();
+  });
+
+  it('refuses with 403 DIARY_AI_OFF when the memoir diary has AI off, before asking the AI', async () => {
+    programRepository.findOne.mockResolvedValue({ userId: 4, diary: { id: 9, aiMode: 'off' } });
+    await expectApiError(service.suggest(4, { questionId: 'childhood-home', text: 'x' }), ForbiddenException, 'DIARY_AI_OFF');
     expect(aiFollowUps.suggest).not.toHaveBeenCalled();
   });
 });

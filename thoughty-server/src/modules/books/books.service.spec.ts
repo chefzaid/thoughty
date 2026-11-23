@@ -330,6 +330,16 @@ describe('BooksService', () => {
       expect(aiService.composeChapterFraming).not.toHaveBeenCalled();
     });
 
+    it('should refuse AI narrative and framing for a book holding an entry of a diary with AI off, not a plain book', async () => {
+      mockQueryBuilder.getMany.mockResolvedValue([mockEntries[0], { ...mockEntries[2], id: 3, diaryAiOff: true }]);
+      await expect(service.export(1, { format: 'md' })).rejects.toMatchObject({ status: 400, response: { code: 'BOOK_AI_DIARY_OFF' } });
+      await expect(service.export(1, { narrative: false, chapterFraming: true })).rejects.toMatchObject({ response: { code: 'BOOK_AI_DIARY_OFF' } });
+      expect(aiService.composeBookChapter).not.toHaveBeenCalled();
+      await expect(service.export(1, { format: 'md', narrative: false })).resolves.toMatchObject({ content: expect.stringContaining('Random thought') });
+      await service.export(1, { format: 'md', includeUntagged: false }); // its chapter left out, the others are woven
+      expect(aiService.composeBookChapter).toHaveBeenCalled();
+    });
+
     it('should reject narrative export when AI is not configured', async () => {
       aiService.isConfigured.mockReturnValue(false);
 

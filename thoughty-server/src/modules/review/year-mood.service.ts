@@ -22,7 +22,7 @@ export class YearMoodService {
 
   /** Up to five entries per month, spread across it, as plain text of at most 600 characters. */
   async sampleYear(userId: number, year: number, diaryId?: number): Promise<{ samples: YearMoodSample[]; analyzedEntries: number }> {
-    const entries = (await this.yearReviewService.loadYearEntries(userId, year, diaryId))
+    const entries = (await this.yearReviewService.loadYearEntries(userId, year, diaryId, { forAi: true }))
       .filter((entry) => !entry.isArchived && entry.words > 0);
     const byMonth = new Map<string, typeof entries>();
     for (const entry of entries) {

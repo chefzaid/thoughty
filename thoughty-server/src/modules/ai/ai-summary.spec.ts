@@ -99,6 +99,13 @@ describe('AiService entry summaries', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('refuses an entry of a diary with AI off, without calling the model', async () => {
+    entryRepository.findOne.mockResolvedValueOnce({ id: 10, userId: 1, content: 'Private', diaryAiOff: true });
+
+    await expect(service.summarizeEntry(1, { entryId: 10 })).rejects.toMatchObject({ response: { code: 'DIARY_AI_OFF' } });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('rejects summary requests when OpenRouter is not configured', async () => {
     service = await createService('');
 

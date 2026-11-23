@@ -87,7 +87,7 @@ describe('WeeklyReflectionService', () => {
       aiAvailable: true,
     });
     expect(yearReviewService.assertOwnedDiary).toHaveBeenCalledWith(7, 3);
-    expect(yearReviewService.loadEntries).toHaveBeenCalledWith(7, { from: '2026-11-15', to: '2026-11-21' }, 3, { leaveLockedOut: true });
+    expect(yearReviewService.loadEntries).toHaveBeenCalledWith(7, { from: '2026-11-15', to: '2026-11-21' }, 3, { leaveLockedOut: true, forAi: true });
     expect(reflectionRepository.findOne).toHaveBeenCalledWith({ where: { userId: 7, diaryId: 3 } });
   });
 

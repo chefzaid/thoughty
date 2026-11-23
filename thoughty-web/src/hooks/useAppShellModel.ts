@@ -155,7 +155,7 @@ export function useAppShellModel(): AppShellModel {
     navigate(to, { state });
   }, [currentDiaryId, navigate]);
 
-  const bulkSelectState = useBulkSelect(entriesState.fetchEntries, entriesState.entries, notifier, handleMakeBook, offerDeleteUndo);
+  const bulkSelectState = useBulkSelect(entriesState.fetchEntries, entriesState.entries, notifier, handleMakeBook, offerDeleteUndo, diariesState.diaries);
 
   /** Opens the list at the first entry of a year or month among the filters, leaving out the day filter. */
   const { entriesService, listQuery, openListAt, setFilterDateObj, setTargetEntryId } = entriesState;

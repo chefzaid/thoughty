@@ -9,6 +9,8 @@ interface AudioTranscriptProps {
   readonly attachmentsService: AttachmentsService;
   readonly isDark: boolean;
   readonly t: (key: string) => string;
+  /** False in a diary with AI off, where a recording without a transcript offers none. */
+  readonly aiAllowed?: boolean;
 }
 
 function AudioTranscript({
@@ -16,8 +18,9 @@ function AudioTranscript({
   attachmentsService,
   isDark,
   t,
+  aiAllowed = true,
 }: AudioTranscriptProps) {
-  const aiOn = useFeatureFlag("ai");
+  const aiOn = useFeatureFlag("ai") && aiAllowed;
   const [transcript, setTranscript] = useState(
     attachment.transcript?.trim() ?? "",
   );

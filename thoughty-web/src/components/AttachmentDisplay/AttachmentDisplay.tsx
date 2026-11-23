@@ -20,6 +20,8 @@ interface AttachmentDisplayProps {
   readonly attachments: Attachment[];
   readonly theme?: "light" | "dark";
   readonly t: (key: string, params?: Record<string, string | number>) => string;
+  /** False in a diary with AI off, where recordings are not transcribed. */
+  readonly aiAllowed?: boolean;
 }
 
 interface ActivePreviewAttachment {
@@ -40,7 +42,7 @@ function StoredAttachmentResource({
   return children(url);
 }
 
-function AttachmentDisplay({ attachments, theme, t }: AttachmentDisplayProps) {
+function AttachmentDisplay({ attachments, theme, t, aiAllowed = true }: AttachmentDisplayProps) {
   const [activePreview, setActivePreview] =
     useState<ActivePreviewAttachment | null>(null);
   const { attachmentsService } = useApiServices();
@@ -185,6 +187,7 @@ function AttachmentDisplay({ attachments, theme, t }: AttachmentDisplayProps) {
                       attachmentsService={attachmentsService}
                       isDark={isDark}
                       t={t}
+                      aiAllowed={aiAllowed}
                     />
                   )}
                 </div>

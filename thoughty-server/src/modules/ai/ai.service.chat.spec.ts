@@ -57,6 +57,13 @@ describe('AiService', () => {
       await expect(service.chat(1, chatDto)).rejects.toThrow('Entry not found');
     });
 
+    it('refuses an entry of a diary with AI off, without calling the model', async () => {
+      entryRepository.findOne.mockResolvedValueOnce({ id: 10, userId: 1, diaryAiOff: true });
+
+      await expect(service.chat(1, chatDto)).rejects.toMatchObject({ response: { code: 'DIARY_AI_OFF' } });
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it('returns the AI reply', async () => {
       fetchMock.mockResolvedValue({
         ok: true,

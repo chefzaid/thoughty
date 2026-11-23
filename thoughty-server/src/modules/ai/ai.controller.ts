@@ -149,6 +149,7 @@ export class AiController {
     description: 'Entry summary returned successfully',
     type: EntrySummaryResponseDto,
   })
+  @ApiResponse({ status: 403, description: 'The entry’s diary has AI off (`DIARY_AI_OFF`)' })
   async summarizeEntry(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: SummarizeEntryDto,
@@ -242,6 +243,7 @@ export class AiController {
     description: 'AI reply returned successfully',
     type: ChatResponseDto,
   })
+  @ApiResponse({ status: 403, description: 'The entry’s diary has AI off (`DIARY_AI_OFF`)' })
   async chat(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ChatDto,
