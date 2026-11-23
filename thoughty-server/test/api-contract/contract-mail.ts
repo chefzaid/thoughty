@@ -8,6 +8,8 @@ export interface SentMail {
   to: string;
   subject: string;
   text: string;
+  html?: string;
+  replyTo?: unknown;
 }
 
 /** What the API handed the mail server; nothing leaves the process. */

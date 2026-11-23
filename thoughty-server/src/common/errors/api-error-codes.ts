@@ -231,6 +231,11 @@ export const API_ERROR_MESSAGES = {
   COMMENTS_FOLLOWERS_ONLY: 'Only followers of its writer can comment on this entry',
   COMMENT_PIN_HIDDEN: 'Show this comment again before pinning it',
   FEATURE_REQUEST_NOT_FOUND: 'Feature request not found',
+
+  // The public Contact page form (`POST /api/contact`).
+  CONTACT_INVALID_REQUEST: 'This message could not be accepted',
+  CONTACT_NOT_CONFIGURED: 'Messages cannot be sent from the Contact page on this server',
+  CONTACT_NOT_SENT: 'The message could not be sent. Try again later',
 } as const;
 
 export type ApiErrorCode = keyof typeof API_ERROR_MESSAGES;

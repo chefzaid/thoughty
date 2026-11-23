@@ -61,6 +61,7 @@ flowchart TD
 | `cloud-sync` | provider connections, file browsing, schedules, queued jobs |
 | `config` | user preferences and profile, encrypted settings, data export, the feature-flag endpoint (`GET /api/config/feature-flags`; the flags themselves are `src/common/feature-flags`) |
 | `feature-requests` | community idea board and votes |
+| `contact` | the public Contact page form (`POST /api/contact`, `ContactService`): checks the bot-trap field, then emails the message as plain text to `CONTACT_EMAIL` through the auth module's `EmailService` (`sendPlainTextEmail`, the visitor as reply-to); nothing is stored |
 | `social` | public feed (its topics and word search), follows of writers and topics, comments and their controls (who may comment, hidden and pinned comments), likes, saved entries, notifications (comments, likes and new followers, read from those tables; `notification_reads` keeps when they were last opened), leaderboard, achievements (karma and badges) |
 | `account-purge` | permanent deletion of deleted accounts after the grace period, expired sign-up requests and account activity older than a year |
 | `memoir` | guided memoir: question catalogue (a year of questions and themed chapters a writer adds; the public `GET /api/memoir/questions`, `MemoirQuestionsController`, lists it for the question page), program settings and chosen themes, answers as entries, photo prompts (`POST /api/memoir/photo-answers`: an old photo and its story as an entry, the photo placed in the text), skipping or setting aside this week's question (`POST /api/memoir/skip`, `POST /api/memoir/snooze`), interview mode (`POST /api/memoir/follow-ups`, `MemoirFollowUpsService` with `AiMemoirFollowUpsService`: AI follow-up questions for an answer being written, nothing kept), weekly delivery and email |
@@ -332,6 +333,9 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 |  | `COMMENTS_FOLLOWERS_ONLY` | Only followers of its writer can comment on this entry |
 |  | `COMMENT_PIN_HIDDEN` | Show this comment again before pinning it |
 |  | `FEATURE_REQUEST_NOT_FOUND` | Feature request not found |
+| The Contact page form | `CONTACT_INVALID_REQUEST` | This message could not be accepted |
+|  | `CONTACT_NOT_CONFIGURED` | Messages cannot be sent from the Contact page on this server |
+|  | `CONTACT_NOT_SENT` | The message could not be sent. Try again later |
 
 ## Data Ownership Rules
 

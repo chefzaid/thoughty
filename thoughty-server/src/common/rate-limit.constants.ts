@@ -23,6 +23,8 @@ export const RATE_LIMITS = {
   // A private share link, opened without signing in: the entry or book, then each picture and video range.
   sharedLinkRead: { limit: 60, ttl: FIFTEEN_MINUTES_MS },
   sharedLinkFile: { limit: 600, ttl: FIFTEEN_MINUTES_MS },
+  // The public Contact page form, per address: each message is an email to the deployment's inbox.
+  contactMessage: { limit: 5, ttl: ONE_HOUR_MS },
   // PIN tries and changes; the per-account lockout in the database is what protects the PIN itself.
   contentPin: { limit: 20, ttl: FIFTEEN_MINUTES_MS },
 } as const;

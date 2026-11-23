@@ -15,6 +15,9 @@ data:
   CORS_ORIGIN: "https://thoughty.example.com"
   # Base URL used to build links in transactional emails. Replace with your ingress host.
   FRONTEND_URL: "https://thoughty.example.com"
+  # Inbox that receives the public Contact page's messages (sent through the SMTP settings).
+  # Replace with your own support address.
+  CONTACT_EMAIL: "contact@swirlit.dev"
   # Access token lifetime (consumed by @nestjs/jwt sign options).
   JWT_EXPIRES_IN: "15m"
   # Object storage (non-secret parts). Credentials are injected via Vault.

@@ -187,6 +187,14 @@ describeContract('external', (context) => {
     expect(removed.body).toMatchObject({ hasPersonalKey: false, source: 'none' });
   });
 
+  it('keeps the Contact form closed without a mail server', async () => {
+    await call('POST /api/contact', {
+      json: { name: 'Visitor', email: 'visitor@example.com', message: 'Is anyone reading this?', website: '' },
+      status: 503,
+      code: 'CONTACT_NOT_CONFIGURED',
+    });
+  });
+
   it('lists no cloud connection and refuses every cloud action until one is made', async () => {
     const { alice } = context;
     const status = await call('GET /api/cloud-sync/status', { as: alice, status: 200 });

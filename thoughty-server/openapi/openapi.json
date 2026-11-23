@@ -11669,6 +11669,112 @@
         ]
       }
     },
+    "/api/contact": {
+      "post": {
+        "description": "Emails the message as plain text to the deployment's `CONTACT_EMAIL`, with the sender as reply-to. Nothing is stored. Five messages per hour from one address.",
+        "operationId": "ContactController_send",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContactMessageDto"
+              },
+              "example": {
+                "name": "Camille",
+                "email": "camille@example.com",
+                "message": "How do I move my entries from Day One?",
+                "website": "example"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Handed to the mail server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error, or the hidden bot-trap field filled in (`CONTACT_INVALID_REQUEST`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Validation error, or the hidden bot-trap field filled in (`CONTACT_INVALID_REQUEST`)",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many messages from this address (`RATE_LIMITED`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 429,
+                  "message": "Too many messages from this address (`RATE_LIMITED`)",
+                  "error": "Too Many Requests",
+                  "code": "RATE_LIMITED"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The mail server refused the message (`CONTACT_NOT_SENT`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 502,
+                  "message": "The mail server refused the message (`CONTACT_NOT_SENT`)",
+                  "error": "Bad Gateway",
+                  "code": "BAD_GATEWAY"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "No mail server, or `CONTACT_EMAIL` is not an address (`CONTACT_NOT_CONFIGURED`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "No mail server, or `CONTACT_EMAIL` is not an address (`CONTACT_NOT_CONFIGURED`)",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Send a message from the Contact page",
+        "tags": [
+          "Contact"
+        ]
+      }
+    },
     "/api/entries/feed": {
       "get": {
         "operationId": "FeedController_getFeed",
@@ -28389,6 +28495,44 @@
           "voted": true
         }
       },
+      "ContactMessageDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Camille",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string",
+            "example": "camille@example.com",
+            "maxLength": 254,
+            "description": "Where the reply goes"
+          },
+          "message": {
+            "type": "string",
+            "example": "How do I move my entries from Day One?",
+            "minLength": 10,
+            "maxLength": 5000
+          },
+          "website": {
+            "type": "string",
+            "description": "Hidden bot-trap field; must be left empty by real users"
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "message"
+        ],
+        "example": {
+          "name": "Camille",
+          "email": "camille@example.com",
+          "message": "How do I move my entries from Day One?",
+          "website": "example"
+        }
+      },
       "PublicFeedAuthorDto": {
         "type": "object",
         "properties": {
@@ -34335,7 +34479,10 @@
           "COMMENTS_CLOSED",
           "COMMENTS_FOLLOWERS_ONLY",
           "COMMENT_PIN_HIDDEN",
-          "FEATURE_REQUEST_NOT_FOUND"
+          "FEATURE_REQUEST_NOT_FOUND",
+          "CONTACT_INVALID_REQUEST",
+          "CONTACT_NOT_CONFIGURED",
+          "CONTACT_NOT_SENT"
         ],
         "description": "Stable machine-readable code (docs/architecture.md, \"API error codes\"). Every error the API raises carries one; only an unexpected server failure (500) may come without it.",
         "example": "VALIDATION_FAILED"

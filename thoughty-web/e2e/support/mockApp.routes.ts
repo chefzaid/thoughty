@@ -38,6 +38,7 @@ import { handleSignUpRoutes } from "./mockApp.sign-up";
 import { handlePasswordResetRoutes } from "./mockApp.password-reset";
 import { handleContentLockRoutes, readMockUnlock } from "./mockApp.content-lock";
 import { handleAccountActivityRoutes } from "./mockApp.account-activity";
+import { handleContactRoutes } from "./mockApp.contact";
 
 async function handleAuthRoutes({
   route,
@@ -356,7 +357,7 @@ export async function registerMockAppRoutes(page: Page, state: MockAppState) {
     if (await handleAiCredentialRoutes(context)) {
       return;
     }
-    if (await handleFeatureRequestRoutes(context)) {
+    if (await handleFeatureRequestRoutes(context) || await handleContactRoutes(context)) {
       return;
     }
     if (await handleDiaryRoutes(context)) {

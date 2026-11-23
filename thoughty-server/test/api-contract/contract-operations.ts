@@ -204,6 +204,8 @@ export const CONTRACT_SUITES = {
     'GET /api/feature-requests/votes',
     'POST /api/feature-requests/{id}/vote',
   ],
+  // The Contact page form, with a mail server; `external` checks it without one
+  contact: ['POST /api/contact'],
   'comment-controls': [
     'PUT /api/entries/{entryId}/comment-policy',
     'PUT /api/entries/{entryId}/comments/{commentId}/hidden',

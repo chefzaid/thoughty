@@ -1,4 +1,5 @@
 import Footer from '../Footer/Footer';
+import ContactForm from './ContactForm';
 import SupportResourceList from '../SupportResources/SupportResourceList';
 import '../IntroPage/IntroPage.css';
 import './ContactPage.css';
@@ -23,9 +24,8 @@ const FAQ_ITEMS = [
 ] as const;
 
 /**
- * The support page: guides, answers, and where to write. No address receives messages yet (see TODO.md ›
- * Needs Input), so instead of a form whose messages would go nowhere it says so and points to the
- * feedback board, which does keep what is posted, and to the guides and answers below.
+ * The support page: a form whose messages the API emails to the deployment's inbox, the community board for
+ * feature ideas, the crisis lines, guides and answers.
  */
 function ContactPage({ theme, t, onBackHome, onOpenFeedback }: Readonly<ContactPageProps>) {
   const isLight = theme === 'light';
@@ -43,13 +43,15 @@ function ContactPage({ theme, t, onBackHome, onOpenFeedback }: Readonly<ContactP
             </button>
           </div>
 
-          <section className="contact-panel" aria-labelledby="contact-closed-title">
-            <h2 id="contact-closed-title">{t('contactClosedTitle')}</h2>
-            <p>{t('contactClosedBody')}</p>
-            <button type="button" className="intro-btn primary" onClick={onOpenFeedback}>
-              {t('contactOpenFeedback')}
-            </button>
-          </section>
+          <div className="contact-side">
+            <ContactForm t={t} />
+            <section className="contact-panel contact-ideas" aria-labelledby="contact-ideas-title">
+              <p id="contact-ideas-title">{t('contactIdeasBody')}</p>
+              <button type="button" className="intro-btn secondary" onClick={onOpenFeedback}>
+                {t('contactOpenFeedback')}
+              </button>
+            </section>
+          </div>
         </section>
 
         <section className="landing-section contact-support" aria-labelledby="contact-support-title">

@@ -47,8 +47,17 @@ export type PublicPagesTranslationKey =
   | "contactEyebrow"
   | "contactTitle"
   | "contactSubtitle"
-  | "contactClosedTitle"
-  | "contactClosedBody"
+  | "contactFormTitle"
+  | "contactFormIntro"
+  | "contactNameLabel"
+  | "contactEmailLabel"
+  | "contactMessageLabel"
+  | "contactMessageHint"
+  | "contactSubmit"
+  | "contactSending"
+  | "contactSuccess"
+  | "contactSendError"
+  | "contactIdeasBody"
   | "contactOpenFeedback"
   | "contactGuidesKicker"
   | "contactGuidesTitle"
@@ -152,7 +161,7 @@ export const publicPagesTranslations: Record<Language, Record<PublicPagesTransla
       "Journal entries are private by default. Public visibility is an explicit entry-level choice. Eligible public entries can appear to signed-in users in the community feed, while platform moderation can hide public content without changing your ownership. Anyone who can see your public entries can follow you; followers are only shown to you as a count.",
     privacyDataTitle: "Data we use",
     privacyDataBody:
-      "Thoughty stores account details, profile settings, diaries, entries, tags, attachments, the people you follow, your comments and likes, sync preferences, and subscription records needed to provide the service.",
+      "Thoughty stores account details, profile settings, diaries, entries, tags, attachments, the people you follow, your comments and likes, sync preferences, and subscription records needed to provide the service. A message sent from the Contact page is emailed to the team with your name and address, and the app keeps no copy.",
     privacyControlTitle: "Your controls",
     privacyControlBody:
       "You can edit or delete entries, download your user data, export journals in portable formats, change visibility, and delete your account from the app. A deleted account and all its data are permanently removed within 30 days.",
@@ -177,10 +186,18 @@ export const publicPagesTranslations: Record<Language, Record<PublicPagesTransla
     contactEyebrow: "Support",
     contactTitle: "Contact and support",
     contactSubtitle:
-      "Start with the most common guides and questions for keeping your journal organized and portable, or share an idea on the community board.",
-    contactClosedTitle: "Messages cannot be sent from here yet",
-    contactClosedBody:
-      "No inbox receives messages from this page yet, so there is no form to fill in that would lose what you write. Ideas and feature requests have a home on the community board, and the guides and answers below cover the usual questions.",
+      "Send a question or report a problem, or start with the most common guides and questions for keeping your journal organized and portable.",
+    contactFormTitle: "Send a message",
+    contactFormIntro: "It goes by email to the Thoughty team, who reply to the address you give.",
+    contactNameLabel: "Name",
+    contactEmailLabel: "Email",
+    contactMessageLabel: "Message",
+    contactMessageHint: "10 to 5,000 characters. Leave out passwords and anything you would not put in an email.",
+    contactSubmit: "Send message",
+    contactSending: "Sending…",
+    contactSuccess: "Thank you, your message was sent. We will reply by email.",
+    contactSendError: "Your message could not be sent. Check your connection and try again.",
+    contactIdeasBody: "An idea for a feature? Share it on the community board, where others can vote for it.",
     contactOpenFeedback: "Open the community board",
     contactGuidesKicker: "How to",
     contactGuidesTitle: "How to guides",
@@ -297,7 +314,7 @@ export const publicPagesTranslations: Record<Language, Record<PublicPagesTransla
       "Les entrées du journal sont privées par défaut. La visibilité publique est un choix explicite pour chaque entrée. Les entrées publiques éligibles peuvent apparaître aux utilisateurs connectés dans le fil de la communauté, tandis que la modération peut masquer un contenu public sans changer votre propriété. Toute personne qui voit vos entrées publiques peut vous suivre ; vos abonnés ne vous sont présentés que sous forme de nombre.",
     privacyDataTitle: "Données utilisées",
     privacyDataBody:
-      "Thoughty stocke les informations de compte, réglages de profil, journaux, entrées, tags, pièces jointes, personnes que vous suivez, vos commentaires et j'aime, préférences de synchronisation et éléments d’abonnement nécessaires au service.",
+      "Thoughty stocke les informations de compte, réglages de profil, journaux, entrées, tags, pièces jointes, personnes que vous suivez, vos commentaires et j'aime, préférences de synchronisation et éléments d’abonnement nécessaires au service. Un message envoyé depuis la page Contact part par e-mail à l’équipe avec votre nom et votre adresse, et l’application n’en garde aucune copie.",
     privacyControlTitle: "Vos contrôles",
     privacyControlBody:
       "Vous pouvez modifier ou supprimer des entrées, télécharger vos données, exporter vos journaux dans des formats portables, changer la visibilité et supprimer votre compte. Un compte supprimé et toutes ses données sont effacés définitivement sous 30 jours.",
@@ -322,10 +339,18 @@ export const publicPagesTranslations: Record<Language, Record<PublicPagesTransla
     contactEyebrow: "Support",
     contactTitle: "Contact et support",
     contactSubtitle:
-      "Commencez par les guides et les questions les plus courants pour garder votre journal organisé et portable, ou partagez une idée sur le tableau de la communauté.",
-    contactClosedTitle: "Les messages ne peuvent pas encore être envoyés d’ici",
-    contactClosedBody:
-      "Aucune boîte de réception ne reçoit encore les messages de cette page : il n’y a donc pas de formulaire qui perdrait ce que vous écrivez. Les idées et demandes de fonctionnalités ont leur place sur le tableau de la communauté, et les guides et réponses ci-dessous couvrent les questions habituelles.",
+      "Envoyez une question ou signalez un problème, ou commencez par les guides et les questions les plus courants pour garder votre journal organisé et portable.",
+    contactFormTitle: "Envoyer un message",
+    contactFormIntro: "Il part par e-mail à l’équipe Thoughty, qui vous répond à l’adresse indiquée.",
+    contactNameLabel: "Nom",
+    contactEmailLabel: "E-mail",
+    contactMessageLabel: "Message",
+    contactMessageHint: "De 10 à 5 000 caractères. N’y mettez ni mot de passe ni rien que vous n’écririez pas dans un e-mail.",
+    contactSubmit: "Envoyer le message",
+    contactSending: "Envoi…",
+    contactSuccess: "Merci, votre message a été envoyé. Nous vous répondrons par e-mail.",
+    contactSendError: "Votre message n’a pas pu être envoyé. Vérifiez votre connexion et réessayez.",
+    contactIdeasBody: "Une idée de fonctionnalité ? Partagez-la sur le tableau de la communauté, où chacun peut voter.",
     contactOpenFeedback: "Ouvrir le tableau de la communauté",
     contactGuidesKicker: "Guides",
     contactGuidesTitle: "Guides pratiques",

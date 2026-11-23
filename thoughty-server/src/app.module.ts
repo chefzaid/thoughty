@@ -15,6 +15,7 @@ import { AiModule } from './modules/ai';
 import { CloudSyncModule } from './modules/cloud-sync';
 import { MetricsModule } from './modules/metrics';
 import { FeatureRequestsModule } from './modules/feature-requests';
+import { ContactModule } from './modules/contact';
 import { SocialModule } from './modules/social';
 import { MemoirModule } from './modules/memoir';
 import { ReviewModule } from './modules/review';
@@ -76,6 +77,7 @@ import {
     CloudSyncModule,
     MetricsModule,
     FeatureRequestsModule,
+    ContactModule,
     SocialModule,
     MemoirModule,
     ReviewModule,

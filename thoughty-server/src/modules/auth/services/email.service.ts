@@ -21,6 +21,13 @@ export interface RenderedEmail {
   headers?: Record<string, string>;
 }
 
+/** A plain-text email with the address replies should go to, such as a Contact page message. */
+export interface PlainTextEmail {
+  subject: string;
+  text: string;
+  replyTo: { name: string; address: string };
+}
+
 /**
  * A failed send as it may be logged: the error's name and SMTP reply code, never its message,
  * which can quote the address.
@@ -341,6 +348,21 @@ export class EmailService {
       html: email.html,
       text: email.text,
       headers: email.headers,
+    });
+  }
+
+  /** Sends text only, no HTML, so nothing the sender wrote is ever rendered as markup. */
+  async sendPlainTextEmail(toEmail: string, email: PlainTextEmail): Promise<void> {
+    if (!this.transporter) {
+      throw new Error('Email service not configured');
+    }
+
+    await this.transporter.sendMail({
+      from: this.configService.get<string>('SMTP_FROM') || this.configService.get<string>('SMTP_USER'),
+      to: toEmail,
+      replyTo: email.replyTo,
+      subject: email.subject,
+      text: email.text,
     });
   }
 

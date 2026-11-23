@@ -21,7 +21,7 @@ const PUBLIC_ROUTES: Record<string, RouteContent> = {
   '/about': (page) => [page.getByRole('heading', { name: 'Small, product-led, and close to the writing.' })],
   '/privacy': (page) => [page.getByRole('heading', { name: 'Security and providers' })],
   '/terms': (page) => [page.getByRole('heading', { name: 'Service changes' })],
-  '/contact': (page) => [page.getByRole('button', { name: 'Open the community board' }), page.getByRole('heading', { name: 'Which formats are available?' })],
+  '/contact': (page) => [page.getByRole('textbox', { name: 'Message' }), page.getByRole('heading', { name: 'Which formats are available?' })],
   // Signed out the vote button asks to sign in first; signed in it votes
   '/feedback': (page) => [page.getByRole('button', { name: /^(Sign in to vote|Vote) for Mood calendar$/ })],
   '/blog': (page) => [page.getByRole('heading', { name: 'Prompts for writing when the day feels noisy' })],

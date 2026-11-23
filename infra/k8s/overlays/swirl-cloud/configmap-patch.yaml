@@ -10,6 +10,8 @@ data:
   REDIS_HOST: redis.swirl.internal
   CORS_ORIGIN: https://thoughty.swirlit.dev
   FRONTEND_URL: https://thoughty.swirlit.dev
+  # The Contact page's messages
+  CONTACT_EMAIL: contact@swirlit.dev
   # Two proxies precede the API: Cloudflare (an edge address, or the HA tunnel connector on
   # loopback) and Traefik. Trusting only private ranges would key rate limits on the shared
   # Cloudflare edge address. Traefik drops X-Forwarded-For from peers outside its trusted edge

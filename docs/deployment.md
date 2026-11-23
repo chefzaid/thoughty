@@ -40,7 +40,7 @@ The UI and `/api` are public, so local accounts can register and sign in. Only `
 
 ## Configuration and Secrets
 
-Non-secret settings are in `infra/k8s/base/configmap.yaml`, overridden by `infra/k8s/overlays/swirl-cloud/configmap-patch.yaml` (hosts, `CORS_ORIGIN`, `FRONTEND_URL`, `KEYCLOAK_*`). The S3 and backup endpoints are AWS placeholders; set them before enabling attachments or backups.
+Non-secret settings are in `infra/k8s/base/configmap.yaml`, overridden by `infra/k8s/overlays/swirl-cloud/configmap-patch.yaml` (hosts, `CORS_ORIGIN`, `FRONTEND_URL`, `CONTACT_EMAIL`, `KEYCLOAK_*`). `CONTACT_EMAIL` is the inbox of the Contact page's messages ([Operations](./operations.md#email-delivery)). The S3 and backup endpoints are AWS placeholders; set them before enabling attachments or backups.
 
 | Vault KV path | Contents |
 |---|---|

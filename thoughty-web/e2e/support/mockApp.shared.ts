@@ -16,6 +16,7 @@ import { createMockAccountActivityState, type MockAccountActivityState } from ".
 import { createMockContentLockState, type MockContentLockState } from "./mockApp.content-lock";
 import type { MockCloudFile, MockCloudProvider, MockCloudProviderStatus, MockCloudSchedule } from "./mockApp.cloud";
 import { createMockSignUpState, type MockSignUpOptions, type MockSignUpState } from "./mockApp.sign-up";
+import { createMockContactState, type MockContactOptions, type MockContactState } from "./mockApp.contact";
 
 export type { MockCloudFile, MockCloudProvider, MockCloudProviderStatus, MockCloudSchedule } from "./mockApp.cloud";
 
@@ -155,6 +156,7 @@ export interface SetupMockAppOptions {
   /** Runtime feature flags to switch off, such as `{ ai: false }`; every feature is on by default. */
   featureFlags?: MockFeatureFlags;
   signUp?: MockSignUpOptions;
+  contact?: MockContactOptions;
 }
 
 export interface MockAppState {
@@ -246,6 +248,7 @@ export interface MockAppState {
   nextEntryId: number;
   lastLoginPayload: AuthPayload | null;
   signUp: MockSignUpState;
+  contact: MockContactState;
   lastVerificationToken: string | null;
   verificationResendCount: number;
   twoFactorSetupCount: number;
@@ -433,6 +436,7 @@ export function createMockAppState(
       ) + 1,
     lastLoginPayload: null,
     signUp: createMockSignUpState(options.signUp),
+    contact: createMockContactState(options.contact),
     lastVerificationToken: null,
     verificationResendCount: 0,
     twoFactorSetupCount: 0,

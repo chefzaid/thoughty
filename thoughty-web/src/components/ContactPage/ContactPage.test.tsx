@@ -5,12 +5,16 @@ import { describe, expect, it, vi } from 'vitest';
 
 import ContactPage from './ContactPage';
 
+vi.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => ({ authFetch: vi.fn(), user: null }),
+}));
+
 const messages: Record<string, string> = {
   contactEyebrow: 'Support',
   contactTitle: 'Contact and support',
   contactSubtitle: 'Send a question and browse guides.',
-  contactClosedTitle: 'Messages cannot be sent from here yet',
-  contactClosedBody: 'No inbox receives messages from this page yet.',
+  contactFormTitle: 'Send a message',
+  contactIdeasBody: 'An idea for a feature?',
   contactOpenFeedback: 'Open the community board',
   contactGuidesKicker: 'Guides',
   contactGuidesTitle: 'How to guides',
@@ -54,13 +58,13 @@ describe('ContactPage', () => {
     expect(screen.getByRole('heading', { name: 'Frequently asked questions' })).toBeInTheDocument();
   });
 
-  it('offers no message form while no inbox receives messages, and says so', () => {
-    const { container } = renderPage();
+  it('offers the message form beside the way to the community board', () => {
+    renderPage();
 
-    expect(container.querySelector('form, input, textarea, select')).toBeNull();
-    expect(screen.queryByText(/sent|ready/i, { selector: 'output, [role="status"]' })).not.toBeInTheDocument();
-    const panel = screen.getByRole('region', { name: 'Messages cannot be sent from here yet' });
-    expect(panel).toHaveTextContent('No inbox receives messages from this page yet.');
+    expect(screen.getByRole('form', { name: 'Send a message' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'An idea for a feature?' })).toContainElement(
+      screen.getByRole('button', { name: 'Open the community board' }),
+    );
   });
 
   it('always lists the crisis lines', () => {

@@ -182,6 +182,9 @@ export const apiErrorsTranslations: Record<Language, Record<ApiErrorTranslationK
     apiError_COMMENTS_FOLLOWERS_ONLY: 'Only followers of its writer can comment on this entry.',
     apiError_COMMENT_PIN_HIDDEN: 'Show this comment again before pinning it.',
     apiError_FEATURE_REQUEST_NOT_FOUND: 'This feature request could not be found.',
+    apiError_CONTACT_INVALID_REQUEST: 'This message could not be accepted.',
+    apiError_CONTACT_NOT_CONFIGURED: 'Messages cannot be sent from this page right now. Share ideas on the community board instead.',
+    apiError_CONTACT_NOT_SENT: 'Your message could not be sent. Try again in a few minutes.',
   },
   fr: {
     apiError_VALIDATION_FAILED: 'Certaines informations envoyées sont manquantes ou invalides.',
@@ -356,5 +359,8 @@ export const apiErrorsTranslations: Record<Language, Record<ApiErrorTranslationK
     apiError_COMMENTS_FOLLOWERS_ONLY: 'Seuls les abonnés de son auteur peuvent commenter cette entrée.',
     apiError_COMMENT_PIN_HIDDEN: 'Affichez de nouveau ce commentaire avant de l’épingler.',
     apiError_FEATURE_REQUEST_NOT_FOUND: 'Cette demande de fonctionnalité est introuvable.',
+    apiError_CONTACT_INVALID_REQUEST: 'Ce message n’a pas pu être accepté.',
+    apiError_CONTACT_NOT_CONFIGURED: 'Les messages ne peuvent pas être envoyés depuis cette page pour le moment. Partagez plutôt vos idées sur le tableau de la communauté.',
+    apiError_CONTACT_NOT_SENT: 'Votre message n’a pas pu être envoyé. Réessayez dans quelques minutes.',
   },
 };
