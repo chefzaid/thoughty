@@ -8,6 +8,8 @@ import './DuplicateReview.css';
 
 interface DuplicateReviewProps {
   readonly diaryId: number | null;
+  /** Whether the scan reads all diaries and leaves those with AI off out, which its count then says. */
+  readonly aiOffLeftOut?: boolean;
   readonly theme?: 'light' | 'dark';
   readonly language: Language;
   readonly t: TranslationFunction;
@@ -18,6 +20,7 @@ interface DuplicateReviewProps {
 
 function DuplicateReview({
   diaryId,
+  aiOffLeftOut = false,
   theme,
   language,
   t,
@@ -125,6 +128,7 @@ function DuplicateReview({
                     })}
                   </p>
                   {scan.truncated && <p className="duplicate-scan-limit">{t('duplicateScanLimited')}</p>}
+                  {aiOffLeftOut && <p className="duplicate-scan-count">{t('diaryAiOffLeftOut')}</p>}
                   {scan.groups.length === 0 && (
                     <p className="duplicate-review-state">{t('noDuplicatesFound')}</p>
                   )}

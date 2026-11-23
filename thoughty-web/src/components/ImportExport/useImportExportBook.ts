@@ -8,6 +8,7 @@ import type { BookStart } from '../../utils/appRouting';
 import { appendBookSourceParams, bookVersionsQuery, describeBookStart, initialBookOptions, isBookSourceReady } from './bookSource';
 import { useBookSourceData } from './useBookSourceData';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
+import { useDiaryAiScope } from '../DiaryAi/diaryAiScope';
 import { isCachedPdfFor, pdfSettings, readBookFile, type CachedBookPdf, type GeneratedBookFile } from './bookFile';
 import {
     type BookOptions,
@@ -42,8 +43,10 @@ export function useImportExportBook({
     t,
 }: UseImportExportBookProps) {
     const [chosenOptions, setOptions] = useState<BookOptions>(() => initialBookOptions(initialStart, t));
-    // While AI is switched off the book is plain: no AI narrative and no AI chapter framing
-    const aiOn = useFeatureFlag('ai');
+    // While AI is switched off, or the book is of a diary with AI off, it is plain: no AI narrative and no AI
+    // chapter framing (a saved search or picked entries from such a diary are refused by the server)
+    const diaryAiOff = useDiaryAiScope(diaryId).aiOff && chosenOptions.source === 'journal';
+    const aiOn = useFeatureFlag('ai') && !diaryAiOff;
     const options = useMemo(
         () => (aiOn ? chosenOptions : { ...chosenOptions, narrative: false, chapterFraming: false }),
         [aiOn, chosenOptions],
@@ -304,6 +307,7 @@ export function useImportExportBook({
 
     return {
         action,
+        aiOn,
         changeOption,
         closePagePreview,
         cloudProvider: selectedCloudProvider,

@@ -29,7 +29,6 @@ import { describeBookVersionSource } from './bookSource';
 import { bookUsesAi } from './bookFile';
 import type { SavedSearch } from '../../services/api/savedSearchesService';
 import type { BookSourceLoad } from './useBookSourceData';
-import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 
 const BOOK_CHECKBOXES: ReadonlyArray<{
     key: 'narrative' | 'chapterFraming' | 'embedImages' | 'includeUntagged' | 'includeDates' | 'includeToc';
@@ -56,6 +55,7 @@ export function BookSection({
     sectionRef,
     diaryName,
     options,
+    aiOn,
     preview,
     sourceReady,
     sourceNote,
@@ -85,6 +85,8 @@ export function BookSection({
     sectionRef: RefObject<HTMLElement | null>;
     diaryName?: string;
     options: BookOptions;
+    /** Whether the AI options are offered: AI is on, and the book is not of a diary with AI off. */
+    aiOn: boolean;
     preview: BookPreviewData | null;
     /** Whether the source names its entries, so the book can be previewed and generated. */
     sourceReady: boolean;
@@ -118,8 +120,7 @@ export function BookSection({
         ? t('savingBookVersion')
         : generatingLabel;
     const usesAi = bookUsesAi(options);
-    // The AI options are left out while AI is switched off
-    const aiOn = useFeatureFlag('ai');
+    // The AI options are left out while AI is switched off, or the book is of a diary with AI off
     const checkboxes = aiOn ? BOOK_CHECKBOXES : BOOK_CHECKBOXES.filter(({ key }) => key !== 'narrative' && key !== 'chapterFraming');
 
     return (

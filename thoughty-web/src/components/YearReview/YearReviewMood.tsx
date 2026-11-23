@@ -5,6 +5,8 @@ import { feelingLabel, moodLabelKey, nearestMoodLevel } from '../../utils/entryM
 import type { Language } from '../../utils/translations';
 import { countPhrase } from './yearReviewFormat';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
+import FeatureOffNote from '../FeatureFlags/FeatureOffNote';
+import type { DiaryAiScope } from '../../utils/diaryAi';
 import './YearReviewMood.css';
 
 const WIDTH = 720;
@@ -25,10 +27,13 @@ interface YearReviewMoodProps {
   /** Moods the writer recorded that year; when present, the arc is drawn from them, without AI. */
   readonly recordedMood?: RecordedMood | null;
   readonly aiAvailable: boolean;
+  /** Whether the diary reviewed has AI off (no AI reading is offered), or all are and those with AI off are left out. */
+  readonly diaryAi?: DiaryAiScope;
   readonly reading: boolean;
   readonly failed: boolean;
   readonly onRead: () => void;
   readonly language: Language;
+  readonly theme?: 'light' | 'dark';
   readonly t: TranslationFunction;
 }
 
@@ -108,10 +113,46 @@ function RecordedMoodArc({ recorded, language, t }: Readonly<{ recorded: Recorde
 }
 
 /**
+ * Asking AI for the arc: what it sends and the button, while AI is on and the diary reviewed has it on; that
+ * the diary has AI off; or that AI is off or unavailable.
+ */
+function MoodReadAction({ aiAvailable, aiOn, diaryAi, hasMood, reading, onRead, theme, t }: Readonly<{
+  aiAvailable: boolean;
+  aiOn: boolean;
+  diaryAi: DiaryAiScope;
+  hasMood: boolean;
+  reading: boolean;
+  onRead: () => void;
+  theme?: 'light' | 'dark';
+  t: TranslationFunction;
+}>) {
+  if (!aiAvailable || !aiOn) {
+    return <p className="review-note review-print-hidden">{t(aiOn ? 'reviewMoodUnavailable' : 'featureOffAi')}</p>;
+  }
+  if (diaryAi.aiOff) {
+    return <FeatureOffNote message="diaryAiOffNotice" theme={theme} className="review-print-hidden" t={t} />;
+  }
+  return (
+    <>
+      <p className="review-note review-privacy review-print-hidden">
+        {diaryAi.aiOffLeftOut ? `${t('reviewMoodPrivacy')} ${t('diaryAiOffLeftOut')}` : t('reviewMoodPrivacy')}
+      </p>
+      <div className="review-actions review-print-hidden">
+        <button type="button" className={hasMood ? 'review-secondary' : 'review-primary'} disabled={reading} onClick={onRead}>
+          {reading ? t('reviewMoodReading') : t(hasMood ? 'reviewMoodAgain' : 'reviewMoodAction')}
+        </button>
+      </div>
+    </>
+  );
+}
+
+/**
  * The mood arc. When the writer recorded moods that year it is drawn from them, without AI;
  * otherwise AI reads it from a sample of entries, only when the writer asks.
  */
-function YearReviewMood({ mood, recordedMood = null, aiAvailable, reading, failed, onRead, language, t }: YearReviewMoodProps) {
+function YearReviewMood({
+  mood, recordedMood = null, aiAvailable, diaryAi = { aiOff: false, aiOffLeftOut: false }, reading, failed, onRead, language, theme, t,
+}: YearReviewMoodProps) {
   const aiOn = useFeatureFlag('ai');
   if (recordedMood) {
     return (
@@ -143,22 +184,18 @@ function YearReviewMood({ mood, recordedMood = null, aiAvailable, reading, faile
             {t('reviewMoodGenerated', { date: generatedOn, entries: countPhrase(t, 'reviewEntries', mood.analyzedEntries, language) })}
           </p>
         </>
-      ) : (
-        <p className="review-note">{t('reviewMoodIntro')}</p>
-      )}
+      ) : !diaryAi.aiOff && <p className="review-note">{t('reviewMoodIntro')}</p>}
 
-      {aiAvailable && aiOn ? (
-        <>
-          <p className="review-note review-privacy review-print-hidden">{t('reviewMoodPrivacy')}</p>
-          <div className="review-actions review-print-hidden">
-            <button type="button" className={mood ? 'review-secondary' : 'review-primary'} disabled={reading} onClick={onRead}>
-              {reading ? t('reviewMoodReading') : t(mood ? 'reviewMoodAgain' : 'reviewMoodAction')}
-            </button>
-          </div>
-        </>
-      ) : (
-        <p className="review-note review-print-hidden">{t(aiOn ? 'reviewMoodUnavailable' : 'featureOffAi')}</p>
-      )}
+      <MoodReadAction
+        aiAvailable={aiAvailable}
+        aiOn={aiOn}
+        diaryAi={diaryAi}
+        hasMood={mood !== null}
+        reading={reading}
+        onRead={onRead}
+        theme={theme}
+        t={t}
+      />
       {failed && <p className="review-error" role="alert">{t('reviewMoodError')}</p>}
       <p className="review-note review-print-hidden">{t('reviewMoodRecordHint')}</p>
     </section>

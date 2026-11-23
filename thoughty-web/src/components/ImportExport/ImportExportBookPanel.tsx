@@ -60,6 +60,7 @@ export function ImportExportBookPanel({
             sectionRef={sectionRef}
             diaryName={diaryName}
             options={book.options}
+            aiOn={book.aiOn}
             preview={book.preview}
             sourceReady={book.sourceReady}
             sourceNote={book.sourceNote}

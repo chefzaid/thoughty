@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import JournalView from './JournalView';
-import { createProps, focusModeTrigger, listLayoutRoute } from './JournalView.test-helpers';
+import { createProps, focusModeTrigger, listLayoutRoute, mockDiaries } from './JournalView.test-helpers';
 import type { JournalViewProps } from './JournalView.test-helpers';
 
 vi.mock('../DiaryTabs/DiaryTabs', async () => ({ default: (await import('./JournalView.test-helpers')).MockDiaryTabs }));
@@ -175,5 +175,24 @@ describe('JournalView', () => {
     expect(screen.getByTestId('filter-era-count')).toHaveTextContent('0');
     fireEvent.click(screen.getByTestId('manage-eras-btn'));
     expect(props.onManageLifeEras).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers no journal-wide AI action while a diary with AI off is shown, and says all diaries leave it out', () => {
+    const diaries = [mockDiaries[0]!, { ...mockDiaries[1]!, aiMode: 'off' as const }];
+    const { rerender } = render(<JournalView {...createProps({ diaryTabs: { diaries, currentDiaryId: 2 } })} />);
+
+    expect(screen.queryByTestId('discuss-entries')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('duplicate-review')).not.toBeInTheDocument();
+    expect(screen.getByTestId('filter-controls')).toHaveAttribute('data-ai-allowed', 'false');
+
+    rerender(<JournalView {...createProps({ diaryTabs: { diaries, currentDiaryId: null } })} />);
+    expect(screen.getByTestId('filter-controls')).toHaveAttribute('data-ai-allowed', 'true');
+    expect(screen.getByTestId('filter-controls')).toHaveAttribute('data-ai-off-left-out', 'true');
+    expect(screen.getByTestId('discuss-entries')).toHaveAttribute('data-ai-off-left-out', 'true');
+    expect(screen.getByTestId('duplicate-review')).toHaveAttribute('data-ai-off-left-out', 'true');
+
+    rerender(<JournalView {...createProps({ diaryTabs: { diaries, currentDiaryId: 1 } })} />);
+    expect(screen.getByTestId('discuss-entries')).toHaveAttribute('data-ai-off-left-out', 'false');
+    expect(screen.getByTestId('filter-controls')).toHaveAttribute('data-ai-allowed', 'true');
   });
 });

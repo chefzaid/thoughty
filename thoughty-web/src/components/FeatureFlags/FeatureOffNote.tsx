@@ -1,10 +1,11 @@
 import type { TranslationFunction } from '../../types';
+import type { DiaryAiTranslationKey } from '../../utils/translations.diaryAi';
 import type { FeatureFlagsTranslationKey } from '../../utils/translations.featureFlags';
 import './FeatureOffNote.css';
 
 interface FeatureOffNoteProps {
-  /** What the note says, such as `featureOffAi`. */
-  readonly message: FeatureFlagsTranslationKey;
+  /** What the note says, such as `featureOffAi`, or `diaryAiOffNotice` where the diary shown has AI off. */
+  readonly message: FeatureFlagsTranslationKey | DiaryAiTranslationKey;
   readonly theme?: 'light' | 'dark';
   readonly className?: string;
   readonly t: TranslationFunction;

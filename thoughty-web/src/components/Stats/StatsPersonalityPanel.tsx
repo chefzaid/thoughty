@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import type { components } from '../../generated/openapi';
+import type { DiaryAiScope } from '../../utils/diaryAi';
+import FeatureOffNote from '../FeatureFlags/FeatureOffNote';
 import './StatsPersonalityPanel.css';
 
 type PersonalityRequest =
@@ -10,6 +12,8 @@ type PersonalityAnalysis = components['schemas']['PersonalityAnalysisDto'];
 interface StatsPersonalityPanelProps {
     readonly themeClass: 'light' | 'dark';
     readonly diaryId?: number | null;
+    /** Whether the diary shown has AI off (nothing to analyze), or all diaries are and those with AI off are left out. */
+    readonly diaryAi?: DiaryAiScope;
     readonly t: (
         key: string,
         params?: Record<string, string | number>
@@ -19,6 +23,7 @@ interface StatsPersonalityPanelProps {
 export default function StatsPersonalityPanel({
     themeClass,
     diaryId,
+    diaryAi = { aiOff: false, aiOffLeftOut: false },
     t,
 }: Readonly<StatsPersonalityPanelProps>) {
     const { authFetch } = useAuth();
@@ -94,108 +99,122 @@ export default function StatsPersonalityPanel({
                 <h2 id="personality-insights-heading">
                     {t('personalityInsights')}
                 </h2>
-                <div className="personality-controls">
-                    <label>
-                        <span>{t('personalityFromDate')}</span>
-                        <input
-                            type="date"
-                            value={fromDate}
-                            max={toDate || undefined}
-                            onChange={(event) =>
-                                setFromDate(event.target.value)
-                            }
-                        />
-                    </label>
-                    <label>
-                        <span>{t('personalityToDate')}</span>
-                        <input
-                            type="date"
-                            value={toDate}
-                            min={fromDate || undefined}
-                            onChange={(event) => setToDate(event.target.value)}
-                        />
-                    </label>
-                    <button
-                        type="button"
-                        className="personality-analyze-button"
-                        onClick={analyze}
-                        disabled={loading}
-                    >
-                        <i
-                            className={`codicon ${loading ? 'codicon-loading codicon-modifier-spin' : 'codicon-sparkle'}`}
-                        />
-                        <span>
-                            {loading
-                                ? t('analyzingPersonality')
-                                : t('analyzePersonality')}
-                        </span>
-                    </button>
-                </div>
+                {!diaryAi.aiOff && (
+                    <div className="personality-controls">
+                        <label>
+                            <span>{t('personalityFromDate')}</span>
+                            <input
+                                type="date"
+                                value={fromDate}
+                                max={toDate || undefined}
+                                onChange={(event) =>
+                                    setFromDate(event.target.value)
+                                }
+                            />
+                        </label>
+                        <label>
+                            <span>{t('personalityToDate')}</span>
+                            <input
+                                type="date"
+                                value={toDate}
+                                min={fromDate || undefined}
+                                onChange={(event) => setToDate(event.target.value)}
+                            />
+                        </label>
+                        <button
+                            type="button"
+                            className="personality-analyze-button"
+                            onClick={analyze}
+                            disabled={loading}
+                        >
+                            <i
+                                className={`codicon ${loading ? 'codicon-loading codicon-modifier-spin' : 'codicon-sparkle'}`}
+                            />
+                            <span>
+                                {loading
+                                    ? t('analyzingPersonality')
+                                    : t('analyzePersonality')}
+                            </span>
+                        </button>
+                    </div>
+                )}
             </div>
 
-            {error && (
-                <p className="personality-message error" role="alert">
-                    {error}
-                </p>
-            )}
+            {diaryAi.aiOff ? (
+                <FeatureOffNote message="diaryAiOffNotice" theme={themeClass} t={t} />
+            ) : (
+                <>
+                    {error && (
+                        <p className="personality-message error" role="alert">
+                            {error}
+                        </p>
+                    )}
 
-            {analysis && (
-                <div className="personality-results" aria-live="polite">
-                    <p className="personality-summary">{analysis.summary}</p>
-                    <dl className="personality-metrics">
-                        <div>
-                            <dt>{t('analyzedEntries')}</dt>
-                            <dd>{analysis.analyzedEntries}</dd>
-                        </div>
-                        <div>
-                            <dt>{t('personalityWordsAnalyzed')}</dt>
-                            <dd>{analysis.analyzedWords.toLocaleString()}</dd>
-                        </div>
-                        <div>
-                            <dt>{t('personalityDateRange')}</dt>
-                            <dd>
-                                {analysis.fromDate} - {analysis.toDate}
-                            </dd>
-                        </div>
-                    </dl>
-                    <ul className="personality-traits">
-                        {analysis.traits.map((trait) => (
-                            <li key={trait.label}>
-                                <div className="personality-trait-heading">
-                                    <strong>{trait.label}</strong>
-                                    <span>{trait.score}</span>
+                    {analysis && (
+                        <div className="personality-results" aria-live="polite">
+                            <p className="personality-summary">{analysis.summary}</p>
+                            <dl className="personality-metrics">
+                                <div>
+                                    <dt>{t('analyzedEntries')}</dt>
+                                    <dd>{analysis.analyzedEntries}</dd>
                                 </div>
-                                <div
-                                    className="personality-score-track"
-                                    aria-hidden="true"
-                                >
-                                    <span
-                                        style={{ width: `${trait.score}%` }}
-                                    />
+                                <div>
+                                    <dt>{t('personalityWordsAnalyzed')}</dt>
+                                    <dd>{analysis.analyzedWords.toLocaleString()}</dd>
                                 </div>
-                                <p>{trait.evidence}</p>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
+                                <div>
+                                    <dt>{t('personalityDateRange')}</dt>
+                                    <dd>
+                                        {analysis.fromDate} - {analysis.toDate}
+                                    </dd>
+                                </div>
+                            </dl>
+                            <ul className="personality-traits">
+                                {analysis.traits.map((trait) => (
+                                    <li key={trait.label}>
+                                        <div className="personality-trait-heading">
+                                            <strong>{trait.label}</strong>
+                                            <span>{trait.score}</span>
+                                        </div>
+                                        <div
+                                            className="personality-score-track"
+                                            aria-hidden="true"
+                                        >
+                                            <span
+                                                style={{ width: `${trait.score}%` }}
+                                            />
+                                        </div>
+                                        <p>{trait.evidence}</p>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
 
-            {hasRequested && !loading && !analysis && !error && (
-                <p className="personality-message">
-                    {t('personalityUnavailable')}
-                </p>
-            )}
+                    {hasRequested && !loading && !analysis && !error && (
+                        <p className="personality-message">
+                            {t('personalityUnavailable')}
+                        </p>
+                    )}
 
-            <div className="personality-notes">
-                <p>
-                    <i className="codicon codicon-lock" aria-hidden="true" />
-                    {t('personalityPrivacy')}
-                </p>
-                <p>
-                    <i className="codicon codicon-info" aria-hidden="true" />
-                    {t('personalityDisclaimer')}
-                </p>
-            </div>
+                    <div className="personality-notes">
+                        <p>
+                            <i className="codicon codicon-lock" aria-hidden="true" />
+                            {t('personalityPrivacy')}
+                        </p>
+                        <p>
+                            <i className="codicon codicon-info" aria-hidden="true" />
+                            {t('personalityDisclaimer')}
+                        </p>
+                        {diaryAi.aiOffLeftOut && (
+                            <p>
+                                <i className="codicon codicon-info" aria-hidden="true" />
+                                {t('diaryAiOffLeftOut')}
+                            </p>
+                        )}
+                    </div>
+                </>
+            )}
         </section>
     );
 }

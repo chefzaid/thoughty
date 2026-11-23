@@ -146,4 +146,14 @@ describe('DiscussEntriesButton', () => {
     expect(await screen.findByText('2 entrées lues, les plus récentes sur 80')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '[1] 1 mars 2026 · Spring' })).toBeInTheDocument();
   });
+
+  it('says what it read left the diaries with AI off out, while all diaries are shown', async () => {
+    chatService.send.mockResolvedValue({ data: reply(), error: null });
+    render(<DiscussEntriesButton scope="tags=walks" listEmpty={false} aiOffLeftOut onOpenEntry={vi.fn()} language="en" theme="light" t={t} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Discuss' }));
+    ask('What comes back?');
+
+    expect(await screen.findByText('Read 2 entries. Diaries with AI off are left out.')).toBeInTheDocument();
+  });
 });

@@ -1,4 +1,6 @@
 import type { components } from '../../generated/openapi';
+import type { DiaryAiScope } from '../../utils/diaryAi';
+import FeatureOffNote from '../FeatureFlags/FeatureOffNote';
 import './StatsInsights.css';
 
 type StatsData = components['schemas']['StatsResponseDto'];
@@ -9,7 +11,16 @@ interface StatsInsightsProps {
     readonly themeClass: 'light' | 'dark';
     readonly toneMoodAnalysis?: ToneMoodAnalysis | null;
     readonly subjectAnalysis?: SubjectAnalysis | null;
+    /** Whether the diary shown has AI off (nothing is read), or all diaries are and those with AI off are left out. */
+    readonly diaryAi?: DiaryAiScope;
     readonly t: (key: string, params?: Record<string, string | number>) => string;
+}
+
+const NO_DIARY_AI_OFF: DiaryAiScope = { aiOff: false, aiOffLeftOut: false };
+
+/** Under a reading's description: that the diaries with AI off were left out of what it read. */
+function LeftOutNote({ shown, t }: Readonly<{ shown: boolean; t: StatsInsightsProps['t'] }>) {
+    return shown ? <p className="tone-mood-description">{t('diaryAiOffLeftOut')}</p> : null;
 }
 
 function formatInsightLabel(label: string): string {
@@ -54,21 +65,37 @@ function InsightBreakdown({
     );
 }
 
+/** Where a reading would be: that the diary shown has AI off, or that there is nothing to read yet. */
+function InsightUnavailable({ message, themeClass, diaryAiOff, t }: Readonly<{
+    message: string;
+    themeClass: 'light' | 'dark';
+    diaryAiOff: boolean;
+    t: StatsInsightsProps['t'];
+}>) {
+    return diaryAiOff
+        ? <FeatureOffNote message="diaryAiOffNotice" theme={themeClass} t={t} />
+        : <p className="tone-mood-unavailable">{t(message)}</p>;
+}
+
 function ToneMoodCard({
-    analysis,
+    analysis: readAnalysis,
     themeClass,
+    diaryAi,
     t,
 }: Readonly<{
     analysis?: ToneMoodAnalysis | null;
     themeClass: 'light' | 'dark';
+    diaryAi: DiaryAiScope;
     t: StatsInsightsProps['t'];
 }>) {
+    const analysis = diaryAi.aiOff ? null : readAnalysis;
     return (
         <section className={`chart-card tone-mood-card ${themeClass}`} aria-labelledby="tone-mood-heading">
             <div className="chart-header tone-mood-header">
                 <div>
                     <h2 id="tone-mood-heading">{t('toneMoodInsights')}</h2>
                     <p className="tone-mood-description">{t('toneMoodInsightsDescription')}</p>
+                    <LeftOutNote shown={Boolean(analysis) && diaryAi.aiOffLeftOut} t={t} />
                 </div>
                 {analysis && (
                     <div className={`tone-mood-sample ${themeClass}`}>
@@ -111,27 +138,31 @@ function ToneMoodCard({
                     </div>
                 </>
             ) : (
-                <p className="tone-mood-unavailable">{t('toneMoodUnavailable')}</p>
+                <InsightUnavailable message="toneMoodUnavailable" themeClass={themeClass} diaryAiOff={diaryAi.aiOff} t={t} />
             )}
         </section>
     );
 }
 
 function SubjectCard({
-    analysis,
+    analysis: readAnalysis,
     themeClass,
+    diaryAi,
     t,
 }: Readonly<{
     analysis?: SubjectAnalysis | null;
     themeClass: 'light' | 'dark';
+    diaryAi: DiaryAiScope;
     t: StatsInsightsProps['t'];
 }>) {
+    const analysis = diaryAi.aiOff ? null : readAnalysis;
     return (
         <section className={`chart-card subject-insights-card ${themeClass}`} aria-labelledby="subject-insights-heading">
             <div className="chart-header tone-mood-header">
                 <div>
                     <h2 id="subject-insights-heading">{t('subjectsDiscussed')}</h2>
                     <p className="tone-mood-description">{t('subjectsDiscussedDescription')}</p>
+                    <LeftOutNote shown={Boolean(analysis) && diaryAi.aiOffLeftOut} t={t} />
                 </div>
                 {analysis && (
                     <div className={`tone-mood-sample subject-insights-sample ${themeClass}`}>
@@ -151,7 +182,7 @@ function SubjectCard({
                     />
                 </>
             ) : (
-                <p className="tone-mood-unavailable">{t('subjectsDiscussedUnavailable')}</p>
+                <InsightUnavailable message="subjectsDiscussedUnavailable" themeClass={themeClass} diaryAiOff={diaryAi.aiOff} t={t} />
             )}
         </section>
     );
@@ -161,12 +192,13 @@ export default function StatsInsights({
     themeClass,
     toneMoodAnalysis,
     subjectAnalysis,
+    diaryAi = NO_DIARY_AI_OFF,
     t,
 }: Readonly<StatsInsightsProps>) {
     return (
         <>
-            <ToneMoodCard analysis={toneMoodAnalysis} themeClass={themeClass} t={t} />
-            <SubjectCard analysis={subjectAnalysis} themeClass={themeClass} t={t} />
+            <ToneMoodCard analysis={toneMoodAnalysis} themeClass={themeClass} diaryAi={diaryAi} t={t} />
+            <SubjectCard analysis={subjectAnalysis} themeClass={themeClass} diaryAi={diaryAi} t={t} />
         </>
     );
 }

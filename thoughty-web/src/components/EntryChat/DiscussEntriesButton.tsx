@@ -11,6 +11,8 @@ interface DiscussEntriesButtonProps {
   readonly scope: string;
   /** Whether the filtered list has no entry, so there is nothing to discuss. */
   readonly listEmpty: boolean;
+  /** Whether the conversation reads all diaries and leaves those with AI off out, which it then says. */
+  readonly aiOffLeftOut?: boolean;
   /** Opens an entry a reply cites in the reader, among the entries that reply read. */
   readonly onOpenEntry: (readIds: readonly number[], entryId: number) => void;
   readonly language: Language;
@@ -23,7 +25,7 @@ interface DiscussEntriesButtonProps {
  * The conversation outlives the dialog, so opening a cited entry and coming back finds it again; other filters
  * start a new one. With nothing to discuss the button stays reachable, dimmed, and says why.
  */
-export default function DiscussEntriesButton({ scope, listEmpty, onOpenEntry, language, theme = 'dark', t }: DiscussEntriesButtonProps) {
+export default function DiscussEntriesButton({ scope, listEmpty, aiOffLeftOut = false, onOpenEntry, language, theme = 'dark', t }: DiscussEntriesButtonProps) {
   const [open, setOpen] = useState(false);
   const chat = useEntryChat(scope);
   const hintId = useId();
@@ -50,7 +52,7 @@ export default function DiscussEntriesButton({ scope, listEmpty, onOpenEntry, la
       </button>
       <span id={hintId} className="sr-only">{hint}</span>
       {open && (
-        <EntryChatDialog chat={chat} onClose={() => setOpen(false)} onOpenEntry={openEntry} language={language} theme={theme} t={t} />
+        <EntryChatDialog chat={chat} aiOffLeftOut={aiOffLeftOut} onClose={() => setOpen(false)} onOpenEntry={openEntry} language={language} theme={theme} t={t} />
       )}
     </>
   );

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FeatureFlagsContext } from '../FeatureFlags/featureFlags';
+import { DiaryAiContext } from '../DiaryAi/diaryAiScope';
 import { getTranslation } from '../../utils/translations';
 import WeeklyReflectionSection from './WeeklyReflectionSection';
 
@@ -27,10 +28,15 @@ const week = (overrides: object = {}) => ({
     error: null,
 });
 
-function renderSection({ diaryId = null, ai = true }: { diaryId?: number | null; ai?: boolean } = {}) {
+const diaries = [{ id: 3, aiMode: 'on' as const }, { id: 4, aiMode: 'off' as const }];
+
+function renderSection({ diaryId = null, ai = true, language = 'en' }: { diaryId?: number | null; ai?: boolean; language?: 'en' | 'fr' } = {}) {
+    const translate = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);
     return render(
         <FeatureFlagsContext.Provider value={{ ai }}>
-            <WeeklyReflectionSection diaryId={diaryId} language="en" t={t} />
+            <DiaryAiContext.Provider value={diaries}>
+                <WeeklyReflectionSection diaryId={diaryId} language={language} theme="light" t={translate} />
+            </DiaryAiContext.Provider>
         </FeatureFlagsContext.Provider>,
     );
 }
@@ -141,5 +147,32 @@ describe('WeeklyReflectionSection', () => {
         answer(week());
         await Promise.resolve();
         expect(screen.queryByRole('region')).not.toBeInTheDocument();
+    });
+
+    it('says a diary with AI off is not read, in place of the reflection, in English and French', async () => {
+        service.fetchWeek.mockResolvedValue(week({ reflection }));
+        const { unmount } = renderSection({ diaryId: 4 });
+
+        const region = await screen.findByRole('region', { name: 'Your week' });
+        expect(within(region).getByRole('note')).toHaveTextContent('AI is off for this diary: no AI feature reads its entries.');
+        expect(within(region).queryByRole('button')).not.toBeInTheDocument();
+        expect(within(region).queryByText('What will you plant next?')).not.toBeInTheDocument();
+        unmount();
+
+        renderSection({ diaryId: 4, language: 'fr' });
+        expect(await screen.findByRole('note')).toHaveTextContent("L'IA est désactivée pour ce journal : aucune fonction d'IA ne lit ses entrées.");
+    });
+
+    it('says the diaries with AI off are left out while all diaries are shown, not for one diary with AI on', async () => {
+        service.fetchWeek.mockResolvedValue(week());
+        const { unmount } = renderSection();
+
+        const region = await screen.findByRole('region', { name: 'Your week' });
+        expect(within(region).getByText(/locked entries are never sent\. .* Diaries with AI off are left out\.$/)).toBeInTheDocument();
+        unmount();
+
+        renderSection({ diaryId: 3 });
+        await screen.findByRole('button', { name: 'Reflect on my week' });
+        expect(screen.queryByText(/Diaries with AI off are left out/)).not.toBeInTheDocument();
     });
 });

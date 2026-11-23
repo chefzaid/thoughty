@@ -29,3 +29,19 @@ export function isComposerDiaryAiOff(diaries: readonly AiModeDiary[], currentDia
 export function isDiaryAiOffRefusal(refusal: ApiErrorTranslationKey | null): boolean {
   return refusal === 'apiError_DIARY_AI_OFF';
 }
+
+/** How a journal-wide AI action stands with the diary it reads (`null` for all diaries). */
+export interface DiaryAiScope {
+  /** The one diary it reads has AI off, so the action reads nothing and is not offered. */
+  readonly aiOff: boolean;
+  /** It reads all diaries and some have AI off, which it leaves out. */
+  readonly aiOffLeftOut: boolean;
+}
+
+/** Whether a journal-wide AI action on `diaryId` (all diaries when null) is off, or leaves diaries out. */
+export function diaryAiScope(diaries: readonly AiModeDiary[], diaryId: number | null | undefined): DiaryAiScope {
+  return {
+    aiOff: isDiaryAiOff(diaries, diaryId),
+    aiOffLeftOut: diaryId == null && diaries.some((diary) => diary.aiMode === 'off'),
+  };
+}

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
 import type { Diary, TranslationFunction } from '../../types';
+import { diaryAiScope } from '../../utils/diaryAi';
 import { resolveLanguage } from '../../utils/language';
 import PageHeader from '../PageHeader/PageHeader';
 import YearReviewCharts from './YearReviewCharts';
@@ -81,10 +82,12 @@ function YearReviewPage({ theme, language: rawLanguage, diaries, year, diaryId, 
           mood={data.mood}
           recordedMood={data.recordedMood}
           aiAvailable={data.aiAvailable}
+          diaryAi={diaryAiScope(diaries, diaryId)}
           reading={mood.isPending}
           failed={mood.isError}
           onRead={() => mood.mutate()}
           language={language}
+          theme={theme}
           t={t}
         />
         <YearReviewShare key={`${data.year}-${data.diaryId ?? 'all'}`} review={data} language={language} onOpenEntry={onOpenEntry} t={t} />

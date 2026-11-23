@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getTranslation } from "../../utils/translations";
+import { DiaryAiContext } from "../DiaryAi/diaryAiScope";
 import JournalRetagReview from "./JournalRetagReview";
 
 const previewJournalRetag = vi.fn();
@@ -185,5 +186,24 @@ describe("JournalRetagReview", () => {
     await user.click(screen.getByRole("button", { name: translate("organizeJournalTags") }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(expected);
+  });
+
+  it("says the plan left out the diaries with AI off, when the writer has any", async () => {
+    const user = userEvent.setup();
+    previewJournalRetag.mockResolvedValue({ data: plan, error: null });
+    const { unmount } = render(
+      <DiaryAiContext.Provider value={[{ id: 1, aiMode: "on" }, { id: 2, aiMode: "off" }]}>
+        <JournalRetagReview isDark language="en" onApplied={vi.fn()} t={t} />
+      </DiaryAiContext.Provider>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "organizeJournalTags" }));
+    expect(await screen.findByText("diaryAiOffLeftOut")).toBeInTheDocument();
+    unmount();
+
+    render(<JournalRetagReview isDark language="en" onApplied={vi.fn()} t={t} />);
+    await user.click(screen.getByRole("button", { name: "organizeJournalTags" }));
+    expect(await screen.findByText("journalRetagLimited")).toBeInTheDocument();
+    expect(screen.queryByText("diaryAiOffLeftOut")).not.toBeInTheDocument();
   });
 });

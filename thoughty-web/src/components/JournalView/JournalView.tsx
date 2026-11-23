@@ -37,6 +37,7 @@ import SupportAfterSave from '../SupportResources/SupportAfterSave';
 import ComfortReadsCard from '../ComfortReads/ComfortReadsCard';
 import type { SavedEntry } from '../ComfortReads/comfortReadsState';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
+import { diaryAiScope } from '../../utils/diaryAi';
 import { useJournalPeopleCheck } from './useJournalPeopleCheck';
 import ComposerCalendarEvents from '../CalendarEvents/ComposerCalendarEvents';
 import JournalDayEvents from '../CalendarEvents/JournalDayEvents';
@@ -112,8 +113,10 @@ function JournalView({
   const reader = useEntryReaderRoute();
   const showCalendar = layoutRoute.layout === 'calendar';
   const language = resolveLanguage(config.language);
-  // Discussing entries and looking for duplicates are AI, so they are left out while AI is switched off
-  const aiOn = useFeatureFlag('ai');
+  // Discussing entries, looking for duplicates and meaning search are AI, so they are left out while AI is
+  // switched off or the diary shown has AI off; with all diaries shown, they say AI-off diaries were left out
+  const aiOffScope = diaryAiScope(diaryTabs.diaries, diaryTabs.currentDiaryId);
+  const aiOn = useFeatureFlag('ai') && !aiOffScope.aiOff;
   const theme = config.theme ?? 'dark';
   const { list: eraList, eras } = useLifeEraList();
   const selectedEra = eras.find((era) => era.id === filters.filterEraId) ?? null;
@@ -268,6 +271,8 @@ function JournalView({
       <div ref={searchRef}>
         <FilterControls
           {...filters}
+          aiAllowed={!aiOffScope.aiOff}
+          aiOffLeftOut={aiOffScope.aiOffLeftOut}
           eras={eras}
           onManageEras={onManageLifeEras}
           people={people}
@@ -287,6 +292,7 @@ function JournalView({
                 <DiscussEntriesButton
                   scope={readerScopeFromList(randomEntry.query)}
                   listEmpty={randomEntry.listEmpty}
+                  aiOffLeftOut={aiOffScope.aiOffLeftOut}
                   onOpenEntry={(readIds, entryId) => readAmong(entryId, readIds)}
                   language={language}
                   theme={theme}
@@ -316,6 +322,7 @@ function JournalView({
               {aiOn && (
                 <DuplicateReview
                   {...duplicateReview}
+                  aiOffLeftOut={aiOffScope.aiOffLeftOut}
                   theme={config.theme}
                   language={language}
                   t={t}

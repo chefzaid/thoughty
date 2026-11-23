@@ -173,4 +173,19 @@ describe('DuplicateReview', () => {
     await user.click(screen.getByRole('button', { name: translate('findDuplicates') }));
     expect(await screen.findByText(expected)).toBeVisible();
   });
+
+  it('says a scan of all diaries left those with AI off out, and says nothing of them otherwise', async () => {
+    const user = userEvent.setup();
+    const props = { diaryId: null, language: 'en' as const, t, onFindDuplicates: vi.fn().mockResolvedValue(scanResult), onDelete: vi.fn(), onNavigateToEntry: vi.fn() };
+    const { unmount } = render(<DuplicateReview {...props} aiOffLeftOut />);
+
+    await user.click(screen.getByRole('button', { name: 'findDuplicates' }));
+    expect(await screen.findByText('diaryAiOffLeftOut')).toBeVisible();
+    unmount();
+
+    render(<DuplicateReview {...props} />);
+    await user.click(screen.getByRole('button', { name: 'findDuplicates' }));
+    expect(await screen.findByText('duplicateScanCount_other:2/45')).toBeVisible();
+    expect(screen.queryByText('diaryAiOffLeftOut')).not.toBeInTheDocument();
+  });
 });

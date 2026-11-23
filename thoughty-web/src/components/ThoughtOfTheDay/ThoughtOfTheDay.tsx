@@ -143,7 +143,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
             );
         }
 
-        const weeklyReflection = <WeeklyReflectionSection diaryId={diaryId ?? null} language={language} t={t} />;
+        const weeklyReflection = <WeeklyReflectionSection diaryId={diaryId ?? null} language={language} theme={theme} t={t} />;
         if (!hasRandomEntry && !hasOnThisDay && openedCapsules.length === 0 && dueRereads.length === 0 && personDates.length === 0 && reachOuts.length === 0) {
             return (
                 <div className="thought-of-day-content">

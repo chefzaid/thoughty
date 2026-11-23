@@ -56,6 +56,10 @@ interface FilterControlsProps {
     readonly t: (key: string, params?: Record<string, string | number>) => string;
     readonly onOpenHighlights: () => void;
     readonly actions?: ReactNode;
+    /** False while the diary shown has AI off, so meaning search is not offered. */
+    readonly aiAllowed?: boolean;
+    /** Whether meaning search reads all diaries and leaves those with AI off out, which its count then says. */
+    readonly aiOffLeftOut?: boolean;
 }
 
 function FilterControls({
@@ -93,11 +97,14 @@ function FilterControls({
     theme,
     t,
     onOpenHighlights,
-    actions
+    actions,
+    aiAllowed = true,
+    aiOffLeftOut = false,
 }: FilterControlsProps) {
     const isLight = theme === 'light';
-    // Meaning search is AI: while AI is switched off only word search is offered, and a meaning search goes back to it
-    const aiOn = useFeatureFlag('ai');
+    // Meaning search is AI: while AI is switched off, or the diary shown has AI off, only word search is offered,
+    // and a meaning search goes back to it
+    const aiOn = useFeatureFlag('ai') && aiAllowed;
     useEffect(() => {
         if (!aiOn && searchMode === 'semantic') setSearchMode('keyword');
     }, [aiOn, searchMode, setSearchMode]);
@@ -438,6 +445,7 @@ function FilterControls({
                                 analyzed: semanticSearchResult.analyzedEntries,
                             })}
                             {semanticSearchResult.truncated ? ` ${t('semanticSearchLimited')}` : ''}
+                            {aiOffLeftOut ? ` ${t('diaryAiOffLeftOut')}` : ''}
                         </p>
                     )}
                 </div>

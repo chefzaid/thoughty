@@ -47,7 +47,7 @@ import {
   type SessionUnreachablePageProps,
 } from '../utils/appShellProps';
 import type { RephraseMode, SummaryGuidance } from '../services/api/aiService';
-import type { Entry, PublicViewType, ViewType } from '../types';
+import type { Diary, Entry, PublicViewType, ViewType } from '../types';
 import { landingViewFor } from '../utils/landingView';
 import { isDiaryAiOffRefusal } from '../utils/diaryAi';
 
@@ -75,6 +75,7 @@ interface AppShellModel {
   introPageProps: IntroPageProps;
   /** Set while the session goes on but Thoughty could not say whose it is (and no writer here is theirs). */
   sessionUnreachablePageProps: SessionUnreachablePageProps | null;
+  diaries: Diary[];
 }
 
 export function useAppShellModel(): AppShellModel {
@@ -465,5 +466,7 @@ export function useAppShellModel(): AppShellModel {
     authenticatedRoutesProps,
     introPageProps,
     sessionUnreachablePageProps,
+    /** The diaries, for the AI actions of pages that read a diary's entries without receiving them. */
+    diaries: diariesState.diaries,
   };
 }

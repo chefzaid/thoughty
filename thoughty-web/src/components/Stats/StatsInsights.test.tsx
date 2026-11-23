@@ -57,4 +57,31 @@ describe('StatsInsights', () => {
         expect(within(subjectCard as HTMLElement).getByText('999')).toBeInTheDocument();
         expect(container.querySelector('.tone-mood-bar-fill.subject')).toHaveStyle({ width: '100%' });
     });
+
+    it('says the diary shown has AI off in place of both readings', () => {
+        render(<StatsInsights themeClass="light" toneMoodAnalysis={null} subjectAnalysis={null} diaryAi={{ aiOff: true, aiOffLeftOut: false }} t={t} />);
+
+        const notes = screen.getAllByRole('note');
+        expect(notes).toHaveLength(2);
+        expect(notes[0]).toHaveTextContent('diaryAiOffNotice');
+        expect(notes[0]).toHaveClass('light');
+        expect(screen.queryByText('Tone unavailable')).not.toBeInTheDocument();
+        expect(screen.queryByText('Subjects unavailable')).not.toBeInTheDocument();
+    });
+
+    it('says the readings of all diaries left those with AI off out, only once there is a reading', () => {
+        render(
+            <StatsInsights
+                themeClass="dark"
+                toneMoodAnalysis={null}
+                subjectAnalysis={{ subjectBreakdown: { family: 2 }, analyzedEntries: 2, summary: '' }}
+                diaryAi={{ aiOff: false, aiOffLeftOut: true }}
+                t={t}
+            />,
+        );
+
+        const subjects = screen.getByRole('region', { name: 'Subjects Discussed' });
+        expect(within(subjects).getByText('diaryAiOffLeftOut')).toBeInTheDocument();
+        expect(within(screen.getByRole('region', { name: 'Tone and Mood' })).queryByText('diaryAiOffLeftOut')).not.toBeInTheDocument();
+    });
 });

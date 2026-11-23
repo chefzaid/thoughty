@@ -233,6 +233,26 @@ describe('YearReviewPage', () => {
     expect(screen.queryByRole('button', { name: 'reviewMoodAction' })).not.toBeInTheDocument();
   });
 
+  it('says a diary with AI off is not read for the mood, and that all diaries leave such diaries out', async () => {
+    const diaries = [
+      { id: 3, name: 'Travel', aiMode: 'on' },
+      { id: 4, name: 'Private', aiMode: 'off' },
+    ] as YearReviewPageProps['diaries'];
+    const { unmount } = renderPage({ diaries, diaryId: 4, theme: 'light' });
+    const moodCard = await screen.findByRole('region', { name: 'reviewMoodTitle' });
+
+    expect(within(moodCard).getByRole('note')).toHaveTextContent('diaryAiOffNotice');
+    expect(within(moodCard).getByRole('note')).toHaveClass('light');
+    expect(within(moodCard).queryByRole('button', { name: 'reviewMoodAction' })).not.toBeInTheDocument();
+    expect(within(moodCard).queryByText('reviewMoodIntro')).not.toBeInTheDocument();
+    unmount();
+
+    renderPage({ diaries, diaryId: null });
+    const allDiaries = await screen.findByRole('region', { name: 'reviewMoodTitle' });
+    expect(within(allDiaries).getByText('reviewMoodPrivacy diaryAiOffLeftOut')).toBeInTheDocument();
+    expect(within(allDiaries).getByRole('button', { name: 'reviewMoodAction' })).toBeInTheDocument();
+  });
+
   it('posts an edited summary to the public feed and links to it', async () => {
     entriesService.createEntry.mockResolvedValue({ success: true, entryId: 99 });
     const { onOpenEntry } = renderPage();

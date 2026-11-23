@@ -16,6 +16,8 @@ export const ENTRY_CHAT_MAX_ENTRIES = 50;
 
 interface EntryChatDialogProps {
   readonly chat: EntryChatState;
+  /** Whether the entries read leave out the diaries with AI off, which the reading summary then says. */
+  readonly aiOffLeftOut?: boolean;
   readonly onClose: () => void;
   /** Opens a cited entry in the reader, among the entries its reply read. */
   readonly onOpenEntry: (readIds: readonly number[], entryId: number) => void;
@@ -30,7 +32,7 @@ interface EntryChatDialogProps {
  * entries by number with buttons that open them. Focus starts in the message field and Escape closes it;
  * closing keeps the conversation for when it opens again on the same filters.
  */
-export default function EntryChatDialog({ chat, onClose, onOpenEntry, language, theme, t }: EntryChatDialogProps) {
+export default function EntryChatDialog({ chat, aiOffLeftOut = false, onClose, onOpenEntry, language, theme, t }: EntryChatDialogProps) {
   const [input, setInput] = useState('');
   const [supportClosed, setSupportClosed] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -68,9 +70,10 @@ export default function EntryChatDialog({ chat, onClose, onOpenEntry, language, 
     inputRef.current?.focus();
   };
 
-  const reading = chat.reading && (chat.reading.count < chat.reading.total
+  const readCount = chat.reading && (chat.reading.count < chat.reading.total
     ? pluralPhrase(t, 'entryChatReadNewest', chat.reading.count, language, { total: chat.reading.total.toLocaleString(language) })
     : pluralPhrase(t, 'entryChatRead', chat.reading.count, language));
+  const reading = readCount && aiOffLeftOut ? `${readCount}. ${t('diaryAiOffLeftOut')}` : readCount;
   const borderClass = isLight ? 'border-gray-200' : 'border-gray-700';
   const secondaryButtonClass = isLight ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-gray-700 text-gray-200 hover:bg-gray-600';
 

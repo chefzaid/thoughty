@@ -2,6 +2,7 @@ import { lazy, Suspense, type ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 
 import LoadingSpinner from './components/LoadingSpinner/LoadingSpinner';
+import { DiaryAiContext } from './components/DiaryAi/diaryAiScope';
 import NotificationsMenu from './components/Notifications/NotificationsMenu';
 import IntroPage from './components/IntroPage/IntroPage';
 import { useAppShellModel } from './hooks/useAppShellModel';
@@ -59,6 +60,7 @@ function AppShell() {
     authenticatedRoutesProps,
     introPageProps,
     sessionUnreachablePageProps,
+    diaries,
   } = useAppShellModel();
 
   if (authLoading) {
@@ -133,12 +135,14 @@ function AppShell() {
   }
 
   return renderLazy(
-    <AuthenticatedAppLayout
-      {...authenticatedLayoutProps}
-      notifications={<NotificationsMenu language={authenticatedLayoutProps.config.language} t={authenticatedLayoutProps.t} />}
-    >
-      <AuthenticatedRoutes {...authenticatedRoutesProps} />
-    </AuthenticatedAppLayout>,
+    <DiaryAiContext.Provider value={diaries}>
+      <AuthenticatedAppLayout
+        {...authenticatedLayoutProps}
+        notifications={<NotificationsMenu language={authenticatedLayoutProps.config.language} t={authenticatedLayoutProps.t} />}
+      >
+        <AuthenticatedRoutes {...authenticatedRoutesProps} />
+      </AuthenticatedAppLayout>
+    </DiaryAiContext.Provider>,
   );
 }
 

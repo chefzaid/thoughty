@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { composerDiaryId, isComposerDiaryAiOff, isDiaryAiOff, isDiaryAiOffRefusal } from './diaryAi';
+import { composerDiaryId, diaryAiScope, isComposerDiaryAiOff, isDiaryAiOff, isDiaryAiOffRefusal } from './diaryAi';
 
 const diaries = [
   { id: 1, aiMode: 'on' as const, isDefault: true },
@@ -31,5 +31,14 @@ describe('diary AI mode', () => {
     expect(isDiaryAiOffRefusal('apiError_DIARY_AI_OFF')).toBe(true);
     expect(isDiaryAiOffRefusal('apiError_AI_KEY_NOT_CONFIGURED')).toBe(false);
     expect(isDiaryAiOffRefusal(null)).toBe(false);
+  });
+
+  it('says a journal-wide AI action on a diary with AI off reads nothing, and one on all diaries leaves them out', () => {
+    expect(diaryAiScope(diaries, 2)).toEqual({ aiOff: true, aiOffLeftOut: false });
+    expect(diaryAiScope(diaries, 1)).toEqual({ aiOff: false, aiOffLeftOut: false });
+    expect(diaryAiScope(diaries, null)).toEqual({ aiOff: false, aiOffLeftOut: true });
+    expect(diaryAiScope(diaries, undefined)).toEqual({ aiOff: false, aiOffLeftOut: true });
+    expect(diaryAiScope([{ id: 1, aiMode: 'on' }], null)).toEqual({ aiOff: false, aiOffLeftOut: false });
+    expect(diaryAiScope([], null)).toEqual({ aiOff: false, aiOffLeftOut: false });
   });
 });

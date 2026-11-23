@@ -31,6 +31,7 @@ function renderSection(language: Language, versions: BookVersionData[], props: P
             activeSection="book"
             sectionRef={{ current: null }}
             options={DEFAULT_BOOK_OPTIONS}
+            aiOn
             preview={null}
             sourceReady
             savedSearches={{ status: 'idle' }}

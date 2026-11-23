@@ -100,8 +100,10 @@ export const MockFilterControls = (props: {
   onManageEras?: () => void;
   people?: readonly Person[];
   onManagePeople?: () => void;
+  aiAllowed?: boolean;
+  aiOffLeftOut?: boolean;
 }) => (
-  <div data-testid="filter-controls">
+  <div data-testid="filter-controls" data-ai-allowed={String(props.aiAllowed)} data-ai-off-left-out={String(props.aiOffLeftOut)}>
     {props.actions}
     <span data-testid="filter-era-count">{props.eras?.length ?? 0}</span>
     <button type="button" data-testid="manage-eras-btn" onClick={props.onManageEras}>Manage eras</button>
@@ -174,16 +176,23 @@ export const MockRandomEntryButton = ({ listEmpty, onOpen }: { listEmpty: boolea
 );
 
 /** Stands in for **Discuss**: shows the scope it discusses and opens entry 22 as a reply that read 21 and 22 cites it. */
-export const MockDiscussEntriesButton = ({ scope, listEmpty, onOpenEntry }: {
-  scope: string; listEmpty: boolean; onOpenEntry: (readIds: readonly number[], entryId: number) => void;
+export const MockDiscussEntriesButton = ({ scope, listEmpty, aiOffLeftOut, onOpenEntry }: {
+  scope: string; listEmpty: boolean; aiOffLeftOut?: boolean; onOpenEntry: (readIds: readonly number[], entryId: number) => void;
 }) => (
-  <button type="button" data-testid="discuss-entries" data-scope={scope} data-list-empty={String(listEmpty)} onClick={() => onOpenEntry([21, 22], 22)}>
+  <button
+    type="button"
+    data-testid="discuss-entries"
+    data-scope={scope}
+    data-list-empty={String(listEmpty)}
+    data-ai-off-left-out={String(aiOffLeftOut)}
+    onClick={() => onOpenEntry([21, 22], 22)}
+  >
     Open a cited entry
   </button>
 );
 
-export const MockDuplicateReview = ({ diaryId }: { diaryId: number | null }) => (
-  <div data-testid="duplicate-review">{diaryId}</div>
+export const MockDuplicateReview = ({ diaryId, aiOffLeftOut }: { diaryId: number | null; aiOffLeftOut?: boolean }) => (
+  <div data-testid="duplicate-review" data-ai-off-left-out={String(aiOffLeftOut)}>{diaryId}</div>
 );
 
 /** The list layout, for the specs that render the journal without a router. */

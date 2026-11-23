@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vite
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ImportExport from './ImportExport';
 import { cloudOk } from '../../services/api/cloudSyncService.test-helpers';
+import { DiaryAiContext } from '../DiaryAi/diaryAiScope';
 
 vi.mock('../../contexts/AuthContext', () => {
     const authFetch = (...args: Parameters<typeof fetch>) => {
@@ -124,6 +125,19 @@ describe('ImportExport book section', () => {
         expect(screen.getByRole('button', { name: 'uploadBook' })).toBeDisabled();
         expect(screen.getByText('bookCloudConnectHint')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'book' })).toBeInTheDocument();
+    });
+
+    it('offers no AI prose, chapter introductions or weaving for a book of a diary with AI off', async () => {
+        render(
+            <DiaryAiContext.Provider value={[{ id: 1, aiMode: 'off' }]}>
+                <ImportExport theme="dark" t={mockT} diaryId={1} diaryName="Personal" />
+            </DiaryAiContext.Provider>,
+        );
+
+        expect(await screen.findByText('bookIncludeUntagged')).toBeInTheDocument();
+        expect(screen.queryByText('bookNarrative')).not.toBeInTheDocument();
+        expect(screen.queryByText('bookChapterFraming')).not.toBeInTheDocument();
+        expect(screen.queryByLabelText('bookWeavingMode')).not.toBeInTheDocument();
     });
 
     it('creates and downloads an immutable book version', async () => {

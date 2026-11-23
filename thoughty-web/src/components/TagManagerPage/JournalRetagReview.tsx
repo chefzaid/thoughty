@@ -9,6 +9,7 @@ import type {
 import type { TranslationFunction } from "../ProfilePage/types";
 import { pluralPhrase } from "../../utils/pluralPhrase";
 import type { Language } from "../../utils/translations";
+import { useDiaryAiScope } from "../DiaryAi/diaryAiScope";
 import "./JournalRetagReview.css";
 
 interface JournalRetagReviewProps {
@@ -27,6 +28,8 @@ function tagsMatch(left: string[], right: string[]): boolean {
 
 function JournalRetagReview({ isDark, language, onApplied, t }: JournalRetagReviewProps) {
   const { aiService } = useApiServices();
+  // The plan reads the whole journal, leaving out the diaries with AI off
+  const { aiOffLeftOut } = useDiaryAiScope(null);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
@@ -197,6 +200,7 @@ function JournalRetagReview({ isDark, language, onApplied, t }: JournalRetagRevi
                       {plan.truncated && (
                         <p className="warning">{t("journalRetagLimited")}</p>
                       )}
+                      {aiOffLeftOut && <p>{t("diaryAiOffLeftOut")}</p>}
                       {plan.themes.length > 0 && (
                         <div
                           className="journal-retag-themes"

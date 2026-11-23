@@ -18,6 +18,7 @@ import StatsActivityHeatmap from './StatsActivityHeatmap';
 import StatsInsights from './StatsInsights';
 import StatsPersonalityPanel from './StatsPersonalityPanel';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
+import { useDiaryAiScope } from '../DiaryAi/diaryAiScope';
 import StatsCorrelationGraph from './StatsCorrelationGraph';
 import StatsMoodPanel from './StatsMoodPanel';
 import StatsMoodTags from './StatsMoodTags';
@@ -86,6 +87,8 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onSearch
     const quiet = useQuietMode();
     // The AI reading of writing tendencies is left out while AI is switched off
     const aiOn = useFeatureFlag('ai');
+    // A diary with AI off has no AI reading; all diaries leave those with AI off out
+    const diaryAi = useDiaryAiScope(diaryId);
     // The writing times are read in the writer's own time zone
     const timeZone = useMemo(() => browserTimeZone(), []);
     const [stats, setStats] = useState<StatsData | null>(null);
@@ -408,9 +411,10 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onSearch
                             themeClass={themeClass}
                             toneMoodAnalysis={stats.toneMoodAnalysis}
                             subjectAnalysis={stats.subjectAnalysis}
+                            diaryAi={diaryAi}
                             t={t}
                         />
-                        {aiOn && <StatsPersonalityPanel themeClass={themeClass} diaryId={diaryId} t={t} />}
+                        {aiOn && <StatsPersonalityPanel themeClass={themeClass} diaryId={diaryId} diaryAi={diaryAi} t={t} />}
                     </>
                 )}
             </div>

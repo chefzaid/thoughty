@@ -347,6 +347,28 @@ describe('FilterControls', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('semanticSearchError');
   });
 
+  it('offers no meaning search while the diary shown has AI off, and goes back to word search', () => {
+    const setSearchMode = vi.fn();
+    render(<FilterControls {...defaultProps} searchMode="semantic" setSearchMode={setSearchMode} aiAllowed={false} />);
+
+    expect(screen.queryByRole('group', { name: 'searchMode' })).not.toBeInTheDocument();
+    expect(setSearchMode).toHaveBeenCalledWith('keyword');
+  });
+
+  it('says a meaning search of all diaries left those with AI off out', () => {
+    render(
+      <FilterControls
+        {...defaultProps}
+        searchMode="semantic"
+        semanticSearchStatus="complete"
+        semanticSearchResult={{ analyzedEntries: 3, totalEntries: 3, truncated: false, matches: [] }}
+        aiOffLeftOut
+      />,
+    );
+
+    expect(screen.getByText(/semanticSearchCount/)).toHaveTextContent('semanticSearchCount diaryAiOffLeftOut');
+  });
+
   it('explains the search operators to assistive technology and, while searching, on screen', () => {
     const { rerender } = render(<FilterControls {...defaultProps} />);
     const input = screen.getByRole('textbox', { name: 'searchEntriesLabel' });
