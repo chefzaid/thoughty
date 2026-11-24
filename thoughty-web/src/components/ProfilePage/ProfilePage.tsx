@@ -281,6 +281,7 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats,
           defaultCommentPolicy={localConfig.defaultCommentPolicy}
           handleChange={handleChange}
           isDark={isDark}
+          language={resolveLanguage(config.language)}
           t={t}
         />
       ) : (

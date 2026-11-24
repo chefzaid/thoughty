@@ -14,6 +14,8 @@ function createQueryBuilder() {
   ]) {
     qb[method] = jest.fn(() => qb);
   }
+  // An entry missing from the feed is not there at all, rather than one shown as a teaser
+  qb.getExists = jest.fn().mockResolvedValue(false);
   return qb;
 }
 

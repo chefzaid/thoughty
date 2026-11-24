@@ -182,6 +182,7 @@ export class UserDataExportService {
           authProvider: user.authProvider,
           avatarUrl: user.avatarUrl,
           emailVerified: user.emailVerified,
+          followersByApproval: user.followersByApproval,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
         }
@@ -189,11 +190,7 @@ export class UserDataExportService {
 
     const safeSettings = settings
       .filter((setting) => isExportableSettingKey(setting.key))
-      .map((setting) => ({
-        key: setting.key,
-        value: setting.value,
-        updatedAt: setting.updatedAt,
-      }));
+      .map((setting) => ({ key: setting.key, value: setting.value, updatedAt: setting.updatedAt }));
 
     return {
       exportedAt: new Date().toISOString(),
@@ -455,10 +452,16 @@ export class UserDataExportService {
     ]);
 
     return {
-      following: follows.map((follow) => ({
+      following: follows.filter((follow) => follow.status !== 'pending').map((follow) => ({
         userId: follow.followedId,
         username: follow.followed.username,
         followedAt: follow.createdAt,
+      })),
+      // Requests to follow writers who approve their followers, still waiting for them
+      followRequests: follows.filter((follow) => follow.status === 'pending').map((follow) => ({
+        userId: follow.followedId,
+        username: follow.followed.username,
+        requestedAt: follow.createdAt,
       })),
       followedTopics: topics.map((topic) => ({ tag: topic.tag, followedAt: topic.createdAt })),
       mutedWriters: mutes.map((mute) => ({

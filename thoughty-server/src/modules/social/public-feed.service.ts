@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { Entry, EntryComment, UserFollow } from '@/database/entities';
+import { Entry, EntryComment, type FollowStatus, UserFollow } from '@/database/entities';
 import { inlineImagesToAltText } from '@/common/utils';
-import type { GetPublicFeedQueryDto, PublicFeedResponseDto } from './dto';
+import type { GetPublicFeedQueryDto, PublicFeedEntryDto, PublicFeedResponseDto } from './dto';
 import { LikesService } from './likes.service';
 import { applyEntrySearchMatch, EntrySearchService } from '@/modules/entries';
 import { applyFeedScope, applyFeedTopic } from './public-feed-filters';
-import { applyPublicFeedVisibility, excludeHiddenWriters } from './public-feed-visibility';
+import { applyPublicFeedVisibility, excludeHiddenWriters, excludeUnreadable } from './public-feed-visibility';
 import { SavedEntriesService } from './saved-entries.service';
 
 @Injectable()
@@ -44,6 +44,7 @@ export class PublicFeedService {
         'u.id',
         'u.username',
         'u.avatarUrl',
+        'u.followersByApproval',
       ]);
     applyPublicFeedVisibility(qb);
     // Muting keeps a writer out of the stream tabs; the reader's own Saved list keeps what they chose, and
@@ -64,6 +65,10 @@ export class PublicFeedService {
     if (prepared) {
       applyEntrySearchMatch(qb, prepared);
     }
+    // A teaser shows no text or tags, so a topic or a search never lists one: it would tell what they hold
+    if (query.tag !== undefined || prepared) {
+      excludeUnreadable(qb, 'e.user_id', userId);
+    }
 
     const total = await qb.getCount();
     // Each row is one entry (its author and the reader's save are one each), so a plain LIMIT pages it
@@ -73,8 +78,8 @@ export class PublicFeedService {
     const entries = await qb.getMany();
     const totalPages = Math.ceil(total / limit);
     const entryIds = entries.map((entry) => entry.id);
-    const [followedIds, commentCounts, likes, savedIds] = await Promise.all([
-      this.findFollowedAuthorIds(
+    const [followStates, commentCounts, likes, savedIds] = await Promise.all([
+      this.findFollowStates(
         userId,
         entries.map((entry) => entry.user.id),
       ),
@@ -86,28 +91,39 @@ export class PublicFeedService {
     ]);
 
     return {
-      entries: entries.map((entry) => ({
-        id: entry.id,
-        date: entry.date,
-        index: entry.index,
-        title: entry.title ?? null,
-        timeOfDay: entry.timeOfDay ?? null,
-        tags: entry.tags,
-        // Attachments are private: an inline image reaches the feed as its alt text
-        content: entry.format === 'markdown' ? inlineImagesToAltText(entry.content) : entry.content,
-        format: entry.format,
-        createdAt: entry.createdAt,
-        commentCount: commentCounts.get(entry.id) ?? 0,
-        likeCount: likes.get(entry.id)?.likeCount ?? 0,
-        liked: likes.get(entry.id)?.liked ?? false,
-        saved: savedIds.has(entry.id),
-        author: {
+      entries: entries.map((entry): PublicFeedEntryDto => {
+        const followStatus = followStates.get(entry.user.id);
+        const author = {
           id: entry.user.id,
           username: entry.user.username,
           avatarUrl: entry.user.avatarUrl,
-          isFollowed: followedIds.has(entry.user.id),
-        },
-      })),
+          isFollowed: followStatus === 'approved',
+          followRequested: followStatus === 'pending',
+          approvalRequired: entry.user.followersByApproval,
+        };
+        const saved = savedIds.has(entry.id);
+        if (isTeaser(entry.user, userId, followStatus)) {
+          return toTeaser(entry, author, saved);
+        }
+        return {
+          id: entry.id,
+          date: entry.date,
+          index: entry.index,
+          title: entry.title ?? null,
+          timeOfDay: entry.timeOfDay ?? null,
+          tags: entry.tags,
+          // Attachments are private: an inline image reaches the feed as its alt text
+          content: entry.format === 'markdown' ? inlineImagesToAltText(entry.content) : entry.content,
+          format: entry.format,
+          createdAt: entry.createdAt,
+          commentCount: commentCounts.get(entry.id) ?? 0,
+          likeCount: likes.get(entry.id)?.likeCount ?? 0,
+          liked: likes.get(entry.id)?.liked ?? false,
+          saved,
+          locked: false,
+          author,
+        };
+      }),
       total,
       page,
       totalPages,
@@ -115,15 +131,16 @@ export class PublicFeedService {
     };
   }
 
-  private async findFollowedAuthorIds(userId: number, authorIds: number[]): Promise<Set<number>> {
+  /** The reader's follow of each author, approved or still a request, if any. */
+  private async findFollowStates(userId: number, authorIds: number[]): Promise<Map<number, FollowStatus>> {
     const candidates = [...new Set(authorIds)].filter((authorId) => authorId !== userId);
-    if (candidates.length === 0) return new Set();
+    if (candidates.length === 0) return new Map();
 
     const follows = await this.followRepository.find({
       where: { followerId: userId, followedId: In(candidates) },
-      select: { followedId: true },
+      select: { followedId: true, status: true },
     });
-    return new Set(follows.map((follow) => follow.followedId));
+    return new Map(follows.map((follow) => [follow.followedId, follow.status]));
   }
 
   /**
@@ -148,4 +165,41 @@ export class PublicFeedService {
     }).getRawMany<{ entryId: number | string; count: number | string }>();
     return new Map(rows.map((row) => [Number(row.entryId), Number(row.count)]));
   }
+}
+
+/** The reader sees only a teaser of another writer's entry when that writer approves followers and has not approved them. */
+function isTeaser(
+  author: Pick<Entry['user'], 'id' | 'followersByApproval'>,
+  readerId: number,
+  followStatus: FollowStatus | undefined,
+): boolean {
+  return author.followersByApproval && author.id !== readerId && followStatus !== 'approved';
+}
+
+/**
+ * What a teaser carries: who wrote it, its day and its title, and nothing of its text, tags, time of day,
+ * likes or comments, so a writer who is not an approved follower can ask to follow without reading it.
+ */
+function toTeaser(
+  entry: Entry,
+  author: PublicFeedEntryDto['author'],
+  saved: boolean,
+): PublicFeedEntryDto {
+  return {
+    id: entry.id,
+    date: entry.date,
+    index: entry.index,
+    title: entry.title ?? null,
+    timeOfDay: null,
+    tags: [],
+    content: '',
+    format: 'plain',
+    createdAt: entry.createdAt,
+    commentCount: 0,
+    likeCount: 0,
+    liked: false,
+    saved,
+    locked: true,
+    author,
+  };
 }

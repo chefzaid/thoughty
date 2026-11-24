@@ -86,6 +86,13 @@ export class User {
   @Column({ name: 'deleted_at', type: 'timestamp', nullable: true })
   deletedAt: Date | null;
 
+  /**
+   * Followers by approval: new follows wait as requests until the writer approves them, and only approved
+   * followers read the writer's public entries (others see a teaser). Off unless the writer turns it on.
+   */
+  @Column({ name: 'followers_by_approval', type: 'boolean', default: false })
+  followersByApproval: boolean;
+
   @Column({ name: 'deletion_reason', type: 'text', nullable: true })
   deletionReason: string | null;
 

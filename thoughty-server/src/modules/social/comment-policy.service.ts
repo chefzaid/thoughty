@@ -69,6 +69,9 @@ export class CommentPolicyService {
   ): Promise<boolean> {
     if (policy === 'closed') return false;
     if (policy === 'everyone' || userId === writerId) return true;
-    return this.followRepository.exists({ where: { followerId: userId, followedId: writerId } });
+    // A request still waiting for the writer's approval is not a follow yet
+    return this.followRepository.exists({
+      where: { followerId: userId, followedId: writerId, status: 'approved' },
+    });
   }
 }

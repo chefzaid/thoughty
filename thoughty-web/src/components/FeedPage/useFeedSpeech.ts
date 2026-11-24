@@ -25,6 +25,10 @@ export function toFeedSpeechEntry(entry: PublicFeedEntry): SpeechEntry {
   };
 }
 
+/** What reading on goes through: a teaser has no text to read, so it is passed over. */
+const readable = (entries: PublicFeedEntry[]): SpeechEntry[] =>
+  entries.filter((entry) => !entry.locked).map(toFeedSpeechEntry);
+
 /**
  * The Journal's reading controls for the feed: reads one entry, or reads on from an entry through the
  * loaded entries and then through the next pages, which it loads the way the infinite scroll does.
@@ -39,15 +43,15 @@ export function useFeedSpeech({ entries, hasMore, fetchNextPage, language, readD
     const index = latest.entries.findIndex((entry) => entry.id === afterId);
     // The entry left the list (the scope changed): there is nothing to read on to.
     if (index === -1) return [];
-    const loaded = latest.entries.slice(index + 1);
-    if (loaded.length > 0 || !latest.hasMore) return loaded.map(toFeedSpeechEntry);
-    return (await latest.fetchNextPage()).map(toFeedSpeechEntry);
+    const loaded = readable(latest.entries.slice(index + 1));
+    if (loaded.length > 0 || !latest.hasMore) return loaded;
+    return readable(await latest.fetchNextPage());
   }, []);
 
   const { speakEntry, speakFromEntry } = speech;
   const readEntry = useCallback((entry: PublicFeedEntry) => speakEntry(toFeedSpeechEntry(entry)), [speakEntry]);
   const readFromEntry = useCallback((entry: PublicFeedEntry) => {
-    speakFromEntry(latestRef.current.entries.map(toFeedSpeechEntry), entry.id, loadMore);
+    speakFromEntry(readable(latestRef.current.entries), entry.id, loadMore);
   }, [loadMore, speakFromEntry]);
 
   return {

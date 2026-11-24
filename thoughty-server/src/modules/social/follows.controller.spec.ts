@@ -6,6 +6,8 @@ describe('FollowsController', () => {
     follow: jest.fn(),
     unfollow: jest.fn(),
     removeFollower: jest.fn(),
+    approveFollower: jest.fn(),
+    setApproval: jest.fn(),
   };
   const topics = { follow: jest.fn(), unfollow: jest.fn() };
   const controller = new FollowsController(service as never, topics as never);
@@ -46,6 +48,27 @@ describe('FollowsController', () => {
       following: false,
     });
     expect(service.removeFollower).toHaveBeenCalledWith(4, 7);
+  });
+
+  it('approves a request to follow the authenticated user', async () => {
+    service.approveFollower.mockResolvedValue({ userId: 7, following: true, requested: false });
+
+    await expect(controller.approveFollower(user as never, 7)).resolves.toEqual({
+      userId: 7,
+      following: true,
+      requested: false,
+    });
+    expect(service.approveFollower).toHaveBeenCalledWith(4, 7);
+  });
+
+  it('turns followers by approval on or off for the authenticated user', async () => {
+    service.setApproval.mockResolvedValue({ required: false, approved: 2 });
+
+    await expect(controller.setApproval(user as never, { required: false })).resolves.toEqual({
+      required: false,
+      approved: 2,
+    });
+    expect(service.setApproval).toHaveBeenCalledWith(4, false);
   });
 
   it('follows and unfollows a topic for the authenticated user', async () => {

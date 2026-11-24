@@ -1,6 +1,7 @@
 import { fulfillJson, type RouteContext } from './mockApp.route-utils';
 import type { MockAppState } from './mockApp.shared';
 import { authorId, feedEligibleEntries } from './mockApp.social-shared';
+import { dropRequest } from './mockApp.routes.follow-approval';
 
 /**
  * Muting and blocking writers, and removing a follower. `state.writers` holds who the reader muted and
@@ -13,6 +14,7 @@ function writerName(state: MockAppState, userId: number): string {
   return entry?.authorUsername
     || state.comments.find((comment) => comment.userId === userId)?.username
     || state.writers.followers.find((follower) => follower.id === userId)?.username
+    || state.followApproval.requests.find((asking) => asking.id === userId)?.username
     || `user${userId}`;
 }
 
@@ -22,6 +24,7 @@ function isReachable(state: MockAppState, userId: number): boolean {
   return eligible.some((entry) => authorId(entry, state) === userId)
     || state.comments.some((comment) => comment.userId === userId && eligible.some((entry) => entry.id === comment.entryId))
     || state.writers.followers.some((follower) => follower.id === userId)
+    || state.followApproval.requests.some((asking) => asking.id === userId)
     || state.writers.blocked.includes(userId);
 }
 
@@ -32,6 +35,8 @@ function hiddenWriter(state: MockAppState, id: number) {
 function block(state: MockAppState, userId: number) {
   if (!state.writers.blocked.includes(userId)) state.writers.blocked.push(userId);
   state.followedUserIds = state.followedUserIds.filter((id) => id !== userId);
+  state.followApproval.requestedUserIds = state.followApproval.requestedUserIds.filter((id) => id !== userId);
+  dropRequest(state, userId);
   if (state.writers.followers.some((follower) => follower.id === userId)) {
     state.writers.followers = state.writers.followers.filter((follower) => follower.id !== userId);
     state.followerCount = Math.max(0, state.followerCount - 1);
@@ -56,7 +61,8 @@ export async function handleWriterControlRoutes({ route, request, pathname, stat
       state.writers.followers = state.writers.followers.filter((candidate) => candidate.id !== userId);
       state.followerCount = Math.max(0, state.followerCount - 1);
     }
-    await fulfillJson(route, { userId, following: false });
+    dropRequest(state, userId);
+    await fulfillJson(route, { userId, following: false, requested: false });
     return true;
   }
 

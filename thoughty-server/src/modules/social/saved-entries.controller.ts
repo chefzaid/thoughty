@@ -21,6 +21,7 @@ export class SavedEntriesController {
   @ApiResponse({ status: 200, description: 'The entry is saved', type: SavedStateDto })
   @ApiResponse({ status: 400, description: 'Users cannot save their own entries' })
   @ApiResponse({ status: 404, description: 'The entry is not visible in the public feed' })
+  @ApiResponse({ status: 403, description: 'Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)' })
   saveEntry(
     @CurrentUser() user: AuthenticatedUser,
     @Param('entryId', ParseIntPipe) entryId: number,

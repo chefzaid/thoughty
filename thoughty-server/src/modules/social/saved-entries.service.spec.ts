@@ -19,6 +19,8 @@ function createQueryBuilder() {
   ]) {
     qb[method] = jest.fn(() => qb);
   }
+  // An entry missing from the feed is not there at all, rather than one shown as a teaser
+  qb.getExists = jest.fn().mockResolvedValue(false);
   return qb;
 }
 
@@ -71,6 +73,18 @@ describe('SavedEntriesService', () => {
     await expect(service.setSaved(7, 8, true)).rejects.toBeInstanceOf(NotFoundException);
     await expect(service.setSaved(7, 8, false)).rejects.toBeInstanceOf(NotFoundException);
     expect(savedEntryRepository.delete).not.toHaveBeenCalled();
+  });
+
+  it('refuses to save a teaser, and lets a save made before it be taken back', async () => {
+    entryQb.getOne.mockResolvedValueOnce(null);
+    entryQb.getExists.mockResolvedValueOnce(true);
+    await expect(service.setSaved(7, 8, true)).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'FOLLOW_APPROVAL_REQUIRED' }),
+    });
+
+    entryQb.andWhere.mockClear();
+    await expect(service.setSaved(7, 8, false)).resolves.toEqual({ saved: false });
+    expect(entryQb.andWhere).not.toHaveBeenCalledWith(expect.stringContaining('followers_by_approval'), expect.anything());
   });
 
   it('tells which entries the reader saved', async () => {

@@ -13,6 +13,7 @@ import {
   SavedEntry,
   Setting,
   TopicFollow,
+  User,
   UserBlock,
   UserFollow,
   UserMute,
@@ -98,6 +99,7 @@ describePostgres('Muting and blocking writers on PostgreSQL', () => {
     follows = new FollowsService(
       followRepository,
       entryRepository,
+      dataSource.getRepository(User),
       new TopicFollowsService(dataSource.getRepository(TopicFollow)),
     );
     leaderboard = new LeaderboardService(entryRepository);

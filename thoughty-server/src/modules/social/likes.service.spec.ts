@@ -22,6 +22,8 @@ function createQueryBuilder() {
   ]) {
     qb[method] = jest.fn(() => qb);
   }
+  // An entry missing from the feed is not there at all, rather than one shown as a teaser
+  qb.getExists = jest.fn().mockResolvedValue(false);
   return qb;
 }
 
@@ -82,6 +84,23 @@ describe('LikesService', () => {
     entryQb.getOne.mockResolvedValue(null);
     await expect(service.setEntryLike(7, 8, true)).rejects.toBeInstanceOf(NotFoundException);
     expect(entryLikeRepository.createQueryBuilder).not.toHaveBeenCalled();
+  });
+
+  it('refuses to like a teaser, and lets a like made before it be taken back', async () => {
+    entryQb.getOne.mockResolvedValueOnce(null);
+    entryQb.getExists.mockResolvedValueOnce(true);
+    await expect(service.setEntryLike(7, 8, true)).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'FOLLOW_APPROVAL_REQUIRED' }),
+    });
+    expect(entryLikeRepository.createQueryBuilder).not.toHaveBeenCalled();
+
+    const summaryQb = createQueryBuilder();
+    summaryQb.getRawMany.mockResolvedValue([]);
+    entryLikeRepository.createQueryBuilder.mockReturnValue(summaryQb);
+    entryQb.andWhere.mockClear();
+    await expect(service.setEntryLike(7, 8, false)).resolves.toEqual({ liked: false, likeCount: 0 });
+    expect(entryQb.andWhere).not.toHaveBeenCalledWith(expect.stringContaining('followers_by_approval'), expect.anything());
+    expect(entryLikeRepository.delete).toHaveBeenCalledWith({ entryId: 8, userId: 7 });
   });
 
   it('likes and unlikes a comment by someone else on a visible entry', async () => {

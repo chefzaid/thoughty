@@ -9,6 +9,7 @@ export type PublicFeedResponse = paths['/api/entries/feed']['get']['responses'][
 export type FollowedUser = components['schemas']['FollowedUserDto'];
 export type FollowsResponse = components['schemas']['FollowsResponseDto'];
 export type FollowState = components['schemas']['FollowStateDto'];
+export type FollowApprovalState = components['schemas']['FollowApprovalStateDto'];
 export type FollowedTopic = components['schemas']['FollowedTopicDto'];
 export type TopicFollowState = components['schemas']['TopicFollowStateDto'];
 /**
@@ -59,11 +60,31 @@ export const createFeedService = (authFetch: (url: string, options?: RequestInit
     return requestJson(request, 'Failed to update the follow');
   },
 
-  /** Drops someone from the reader's followers; they are not told. */
+  /** Drops someone from the reader's followers, or declines their request; they are not told. */
   removeFollower(userId: number): Promise<ServiceResult<FollowState>> {
     return requestJson(
       authFetch(`/api/follows/followers/${userId}`, { method: 'DELETE' }),
       'followerRemoveError',
+    );
+  },
+
+  /** Approves a request to follow the reader. */
+  approveFollower(userId: number): Promise<ServiceResult<FollowState>> {
+    return requestJson(
+      authFetch(`/api/follows/followers/${userId}`, { method: 'PUT' }),
+      'followRequestApproveError',
+    );
+  },
+
+  /** Followers by approval: on, new follows wait as requests; off, the requests still waiting are approved. */
+  setFollowApproval(required: boolean): Promise<ServiceResult<FollowApprovalState>> {
+    return requestJson(
+      authFetch('/api/follows/approval', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ required }),
+      }),
+      'followApprovalSaveError',
     );
   },
 

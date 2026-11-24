@@ -5,6 +5,14 @@ import { authorId, feedEligibleEntries, likeState, setLiked } from './mockApp.so
 import { handleWriterControlRoutes } from './mockApp.routes.writer-controls';
 import { handleNotificationRoutes } from './mockApp.routes.notifications';
 import {
+  authorFollowFields,
+  followWriter,
+  handleFollowApprovalRoutes,
+  isTeaser,
+  toTeaser,
+  unfollowWriter,
+} from './mockApp.routes.follow-approval';
+import {
   carriesFollowedTopic,
   carriesTopic,
   followedTopicsResponse,
@@ -42,6 +50,8 @@ async function handlePublicFeedRoute({ route, request, pathname, searchParams, s
     .filter((entry) => (entryId ? entry.id === entryId : inScope(entry) && unmuted(entry)))
     .filter((entry) => !tag || carriesTopic(entry, tag))
     .filter((entry) => !search || matchesFeedSearch(entry, search))
+    // A teaser has no text or tags to show, so a topic or a search never lists one (nor a followed topic)
+    .filter((entry) => !isTeaser(entry, state) || (!tag && !search && (scope !== 'following' || state.followedUserIds.includes(authorId(entry, state)))))
     .sort((left, right) => {
       if (scope === 'saved') return savedOrder(left) - savedOrder(right);
       const dateComparison = (right.createdAt || right.date).localeCompare(left.createdAt || left.date);
@@ -52,7 +62,7 @@ async function handlePublicFeedRoute({ route, request, pathname, searchParams, s
   const totalPages = Math.ceil(eligibleEntries.length / limit);
 
   await fulfillJson(route, {
-    entries: entries.map((entry) => ({
+    entries: entries.map((entry) => ({ entry, shown: {
       id: entry.id,
       date: entry.date,
       index: entry.index,
@@ -65,13 +75,14 @@ async function handlePublicFeedRoute({ route, request, pathname, searchParams, s
       commentCount: visibleComments(state, entry).length,
       ...likeState(entry.likeCount, state.likedEntryIds, entry.id),
       saved: state.savedEntryIds.includes(entry.id),
+      locked: false,
       author: {
         id: authorId(entry, state),
         username: entry.authorUsername || state.user.username,
         avatarUrl: entry.authorAvatarUrl ?? null,
-        isFollowed: state.followedUserIds.includes(authorId(entry, state)),
+        ...authorFollowFields(authorId(entry, state), state),
       },
-    })),
+    } })).map(({ entry, shown }) => (isTeaser(entry, state) ? toTeaser(shown) : shown)),
     total: eligibleEntries.length,
     page,
     totalPages,
@@ -92,9 +103,17 @@ async function handleFollowRoutes({ route, request, pathname, state }: RouteCont
           followedAt: '2026-07-01T12:00:00.000Z',
         }))
         .sort((left, right) => left.username.localeCompare(right.username)),
+      requested: state.followApproval.requestedUserIds.map((id) => ({
+        id,
+        username: authors.get(id)?.authorUsername || `user${id}`,
+        avatarUrl: authors.get(id)?.authorAvatarUrl ?? null,
+        followedAt: '2026-07-02T12:00:00.000Z',
+      })),
       topics: followedTopicsResponse(state),
       followers: state.writers.followers,
       followerCount: state.followerCount,
+      requests: state.followApproval.requests,
+      approvalRequired: state.followApproval.required,
     });
     return true;
   }
@@ -111,13 +130,11 @@ async function handleFollowRoutes({ route, request, pathname, state }: RouteCont
       await fulfillJson(route, { message: 'User not found', statusCode: 404 }, { status: 404 });
       return true;
     }
-    if (!state.followedUserIds.includes(userId)) state.followedUserIds.push(userId);
-    await fulfillJson(route, { userId, following: true });
+    await fulfillJson(route, followWriter(state, userId));
     return true;
   }
   if (request.method() === 'DELETE') {
-    state.followedUserIds = state.followedUserIds.filter((id) => id !== userId);
-    await fulfillJson(route, { userId, following: false });
+    await fulfillJson(route, unfollowWriter(state, userId));
     return true;
   }
   return false;
@@ -263,6 +280,7 @@ export async function handleSocialRoutes(context: RouteContext): Promise<boolean
     || (await handleAchievementsRoute(context))
     || (await handleLeaderboardRoute(context))
     || (await handleTopicFollowRoutes(context))
+    || (await handleFollowApprovalRoutes(context))
     || (await handleWriterControlRoutes(context))
     || (await handleNotificationRoutes(context))
     || (await handleFollowRoutes(context))

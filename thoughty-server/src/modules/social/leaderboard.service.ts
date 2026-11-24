@@ -12,6 +12,7 @@ import type {
 import {
   applyPublicFeedVisibility,
   excludeHiddenWriters,
+  excludeUnreadable,
   joinEngagementByOthers,
 } from './public-feed-visibility';
 
@@ -59,7 +60,9 @@ const toEntryRank = (row: EntryRankRow): LeaderboardEntryRankDto => ({
 /**
  * Ranks only what the public feed can show, so private journaling activity and moderated,
  * archived, or deleted-account content never influence or appear in the rankings. A writer the
- * viewer has a block with, either way, is left out of what that viewer sees.
+ * viewer has a block with, either way, is left out of what that viewer sees, and the most liked and most
+ * commented entries are only those the viewer may read (not those of a writer who approves their followers
+ * and has not approved the viewer, whose text the excerpt would show).
  */
 @Injectable()
 export class LeaderboardService {
@@ -129,7 +132,7 @@ export class LeaderboardService {
     table: 'entry_likes' | 'entry_comments',
   ): Promise<EntryRankRow[]> {
     return (
-      joinEngagementByOthers(this.publicEntries(viewerId, since), table)
+      joinEngagementByOthers(excludeUnreadable(this.publicEntries(viewerId, since), 'e.user_id', viewerId), table)
         .select('e.id', 'id')
         // Raw DATE values would be parsed into time-zone-dependent Date objects.
         .addSelect("TO_CHAR(e.date, 'YYYY-MM-DD')", 'date')

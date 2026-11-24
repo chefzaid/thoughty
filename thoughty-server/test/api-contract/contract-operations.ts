@@ -227,6 +227,8 @@ export const CONTRACT_SUITES = {
     'DELETE /api/writers/{userId}/block',
     'DELETE /api/follows/followers/{userId}',
   ],
+  // Followers by approval: requests, approving and declining them, and the teaser others read
+  'follow-approval': ['PUT /api/follows/approval', 'PUT /api/follows/followers/{userId}'],
   notifications: ['GET /api/notifications', 'GET /api/notifications/unread', 'PUT /api/notifications/read'],
   calendar: ['GET /api/calendar', 'GET /api/calendar/events', 'GET /api/calendar/days', 'POST /api/calendar/import', 'DELETE /api/calendar'],
   featureFlags: ['GET /api/config/feature-flags'],

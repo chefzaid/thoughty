@@ -26,6 +26,7 @@ export class CommentsController {
     type: EntryCommentsResponseDto,
   })
   @ApiResponse({ status: 404, description: 'The entry is not visible in the public feed' })
+  @ApiResponse({ status: 403, description: 'Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)' })
   list(
     @CurrentUser() user: AuthenticatedUser,
     @Param('entryId', ParseIntPipe) entryId: number,
@@ -37,6 +38,11 @@ export class CommentsController {
   @Throttle(throttleDefault(RATE_LIMITS.socialWrite))
   @ApiOperation({ summary: 'Comment on a public entry' })
   @ApiResponse({ status: 201, description: 'The new comment', type: EntryCommentDto })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Comments are closed or for followers only, or only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)',
+  })
   @ApiResponse({ status: 404, description: 'The entry is not visible in the public feed' })
   create(
     @CurrentUser() user: AuthenticatedUser,

@@ -83,7 +83,7 @@ describeContract('writer-controls', (context) => {
       params: { userId: bob.id },
       status: 200,
     });
-    expect(removed.body).toEqual({ userId: bob.id, following: false });
+    expect(removed.body).toEqual({ userId: bob.id, following: false, requested: false });
     expect((await follows(alice)).followers).toEqual([]);
     expect((await follows(bob)).following).toEqual([]);
   });

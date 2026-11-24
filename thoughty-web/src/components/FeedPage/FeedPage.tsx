@@ -13,7 +13,8 @@ import { formatCardDate } from '../ShareImageCard/shareCardLayout';
 import EntryComments from './EntryComments';
 import LikeButton from './LikeButton';
 import SaveButton from './SaveButton';
-import FeedAuthor from './FeedAuthor';
+import FeedAuthor, { type FollowControl } from './FeedAuthor';
+import FeedTeaser from './FeedTeaser';
 import FollowingPanel from './FollowingPanel';
 import FeedTopicBar from './FeedTopicBar';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
@@ -241,6 +242,10 @@ function FeedPage({
           onUnfollowTopic={(topic) => void follows.setTopicFollow(topic, false)}
           followers={follows.followers}
           onRemoveFollower={(user) => void follows.removeFollower(user)}
+          requests={follows.requests}
+          onApproveRequest={(user) => void follows.approveRequest(user)}
+          onDeclineRequest={(user) => void follows.declineRequest(user)}
+          requested={follows.requested}
           followerCount={follows.followerCount}
           loaded={follows.loaded}
           loadError={follows.loadError}
@@ -262,6 +267,22 @@ function FeedPage({
       <div className="feed-list">
         {entries.map((entry) => {
           const isOwn = scope === 'mine' || entry.author.id === currentUserId;
+          const followStatus = follows.followStatus(entry.author);
+          const follow: FollowControl = {
+            status: followStatus,
+            pending: follows.pendingIds.has(entry.author.id),
+            onToggle: () => void follows.setFollow(entry.author, followStatus === 'none'),
+          };
+          const writerMenu = isOwn ? undefined : (
+            <WriterMenu
+              username={entry.author.username}
+              disabled={writers.pendingIds.has(entry.author.id)}
+              onMute={() => writers.mute(entry.author)}
+              onBlock={() => writers.requestBlock(entry.author)}
+              t={t}
+            />
+          );
+          if (entry.locked) return <FeedTeaser key={entry.id} entry={entry} follow={follow} menu={writerMenu} t={t} />;
           return (
             <article className={`feed-entry${speech.activeEntryId === entry.id ? ' reading' : ''}`} key={entry.id}>
               <FeedAuthor
@@ -269,20 +290,8 @@ function FeedPage({
                 date={entry.date}
                 time={entry.timeOfDay}
                 t={t}
-                follow={isOwn ? undefined : {
-                  followed: follows.isFollowed(entry.author),
-                  pending: follows.pendingIds.has(entry.author.id),
-                  onToggle: () => void follows.setFollow(entry.author, !follows.isFollowed(entry.author)),
-                }}
-                menu={isOwn ? undefined : (
-                  <WriterMenu
-                    username={entry.author.username}
-                    disabled={writers.pendingIds.has(entry.author.id)}
-                    onMute={() => writers.mute(entry.author)}
-                    onBlock={() => writers.requestBlock(entry.author)}
-                    t={t}
-                  />
-                )}
+                follow={isOwn ? undefined : follow}
+                menu={writerMenu}
               />
               {entry.title && <h2 className="feed-entry-title">{entry.title}</h2>}
               <div className="feed-content privacy-text">

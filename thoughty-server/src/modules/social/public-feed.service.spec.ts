@@ -71,11 +71,17 @@ describe('PublicFeedService', () => {
         mood: 2,
         feelings: ['lonely'],
         createdAt,
-        user: { id: 3, username: 'writer', avatarUrl: '/avatar.png', email: 'private@example.com' },
+        user: {
+          id: 3,
+          username: 'writer',
+          avatarUrl: '/avatar.png',
+          email: 'private@example.com',
+          followersByApproval: false,
+        },
       },
     ]);
     repository.createQueryBuilder.mockReturnValue(qb);
-    followRepository.find.mockResolvedValue([{ followedId: 3 }]);
+    followRepository.find.mockResolvedValue([{ followedId: 3, status: 'approved' }]);
     commentQb.getRawMany.mockResolvedValue([{ entryId: '8', count: '4' }]);
     likesService.summarizeEntryLikes.mockResolvedValue(
       new Map([[8, { likeCount: 6, liked: true }]]),
@@ -99,7 +105,15 @@ describe('PublicFeedService', () => {
           likeCount: 6,
           liked: true,
           saved: true,
-          author: { id: 3, username: 'writer', avatarUrl: '/avatar.png', isFollowed: true },
+          locked: false,
+          author: {
+            id: 3,
+            username: 'writer',
+            avatarUrl: '/avatar.png',
+            isFollowed: true,
+            followRequested: false,
+            approvalRequired: false,
+          },
         },
       ],
       total: 12,
@@ -115,6 +129,7 @@ describe('PublicFeedService', () => {
         'u.id',
         'u.username',
         'u.avatarUrl',
+        'u.followersByApproval',
       ]),
     );
     // Recorded moods are private: the feed neither reads nor returns them
@@ -132,7 +147,7 @@ describe('PublicFeedService', () => {
     expect(qb.innerJoin).not.toHaveBeenCalled();
     expect(savedEntriesService.findSavedIds).toHaveBeenCalledWith(7, [8]);
     expect(followRepository.find).toHaveBeenCalledWith(
-      expect.objectContaining({ select: { followedId: true } }),
+      expect.objectContaining({ select: { followedId: true, status: true } }),
     );
     expect(commentQb.where).toHaveBeenCalledWith('c.entry_id IN (:...entryIds)', { entryIds: [8] });
     expect(commentQb.andWhere).toHaveBeenCalledWith('u.deleted_at IS NULL');
@@ -153,10 +168,12 @@ describe('PublicFeedService', () => {
       String(sql).includes('user_follows'),
     )!;
     expect(condition).toContain(
-      'e.user_id IN (SELECT f.followed_id FROM user_follows f WHERE f.follower_id = :userId)',
+      "e.user_id IN (SELECT f.followed_id FROM user_follows f WHERE f.follower_id = :userId AND f.status = 'approved')",
     );
-    // A followed topic brings in other writers' entries carrying it, never the reader's own
+    // A followed topic brings in other writers' entries carrying it, never the reader's own, and only those
+    // the reader may read (a teaser has no tags to show why it would be there)
     expect(condition).toContain('OR (e.user_id <> :userId AND EXISTS (');
+    expect(condition).toContain('aw.followers_by_approval');
     expect(condition).toContain(
       'tf.user_id = :userId AND tf.tag IN (SELECT lower(et.tag) FROM unnest(e.tags) AS et(tag))',
     );
@@ -320,5 +337,106 @@ describe('PublicFeedService', () => {
     expect(savedEntriesService.findSavedIds).toHaveBeenCalledWith(7, [9]);
     expect(result.entries.map((entry) => entry.id)).toEqual([9]);
     expect(result.entries[0].saved).toBe(false);
+  });
+
+  const approvingWriterEntry = (id: number, authorId: number) => ({
+    id,
+    date: '2026-08-04',
+    index: 2,
+    title: 'Letters to my sister',
+    timeOfDay: '07:10',
+    tags: ['family'],
+    content: 'Something only my followers read',
+    format: 'markdown',
+    createdAt: new Date('2026-08-04T07:10:00Z'),
+    user: { id: authorId, username: 'noor', avatarUrl: null, followersByApproval: true },
+  });
+
+  it('gives only a teaser of an approving writer\'s entry to a reader they have not approved', async () => {
+    const qb = createQueryBuilder();
+    qb.getCount.mockResolvedValue(3);
+    qb.getMany.mockResolvedValue([
+      approvingWriterEntry(10, 3),
+      approvingWriterEntry(11, 4),
+      approvingWriterEntry(12, 5),
+    ]);
+    repository.createQueryBuilder.mockReturnValue(qb);
+    // Asked to follow 4 and still waiting; 5 approved the follow
+    followRepository.find.mockResolvedValue([
+      { followedId: 4, status: 'pending' },
+      { followedId: 5, status: 'approved' },
+    ]);
+    likesService.summarizeEntryLikes.mockResolvedValue(new Map([[10, { likeCount: 3, liked: true }]]));
+    commentQb.getRawMany.mockResolvedValue([{ entryId: '10', count: '2' }]);
+    savedEntriesService.findSavedIds.mockResolvedValue(new Set([10]));
+
+    const { entries } = await service.getFeed(7, {});
+
+    expect(entries[0]).toEqual({
+      id: 10,
+      date: '2026-08-04',
+      index: 2,
+      title: 'Letters to my sister',
+      timeOfDay: null,
+      tags: [],
+      content: '',
+      format: 'plain',
+      createdAt: new Date('2026-08-04T07:10:00Z'),
+      commentCount: 0,
+      likeCount: 0,
+      liked: false,
+      saved: true,
+      locked: true,
+      author: {
+        id: 3,
+        username: 'noor',
+        avatarUrl: null,
+        isFollowed: false,
+        followRequested: false,
+        approvalRequired: true,
+      },
+    });
+    expect(JSON.stringify(entries[0])).not.toContain('only my followers');
+    expect(entries[1]).toEqual(
+      expect.objectContaining({
+        locked: true,
+        content: '',
+        author: expect.objectContaining({ isFollowed: false, followRequested: true }),
+      }),
+    );
+    expect(entries[2]).toEqual(
+      expect.objectContaining({
+        locked: false,
+        content: 'Something only my followers read',
+        tags: ['family'],
+        author: expect.objectContaining({ isFollowed: true, approvalRequired: true }),
+      }),
+    );
+  });
+
+  it('never gives a teaser of the reader\'s own entries', async () => {
+    const qb = createQueryBuilder();
+    qb.getCount.mockResolvedValue(1);
+    qb.getMany.mockResolvedValue([approvingWriterEntry(10, 7)]);
+    repository.createQueryBuilder.mockReturnValue(qb);
+
+    const { entries } = await service.getFeed(7, { scope: 'mine' });
+
+    expect(entries[0]).toEqual(expect.objectContaining({ locked: false, content: 'Something only my followers read' }));
+  });
+
+  it('keeps teasers out of a topic and a search, whose words they do not show', async () => {
+    const plain = emptyFeedQuery();
+    await service.getFeed(7, {});
+    expect(plain.andWhere).not.toHaveBeenCalledWith(expect.stringContaining('followers_by_approval'), expect.anything());
+
+    const topic = emptyFeedQuery();
+    await service.getFeed(7, { tag: 'family' });
+    expect(topic.andWhere).toHaveBeenCalledWith(expect.stringContaining('followers_by_approval'), { viewerId: 7 });
+
+    const search = emptyFeedQuery();
+    entrySearchService.prepare.mockResolvedValueOnce({ kind: 'literal', text: 'sister' });
+    await service.getFeed(7, { search: 'sister' });
+    expect(search.andWhere).toHaveBeenCalledWith(expect.stringContaining('followers_by_approval'), { viewerId: 7 });
   });
 });

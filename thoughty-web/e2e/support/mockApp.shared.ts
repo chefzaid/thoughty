@@ -17,6 +17,7 @@ import { createMockContentLockState, type MockContentLockState } from "./mockApp
 import type { MockCloudFile, MockCloudProvider, MockCloudProviderStatus, MockCloudSchedule } from "./mockApp.cloud";
 import { createMockSignUpState, type MockSignUpOptions, type MockSignUpState } from "./mockApp.sign-up";
 import { createMockContactState, type MockContactOptions, type MockContactState } from "./mockApp.contact";
+import { createMockFollowApprovalState, type MockFollowApprovalState } from "./mockApp.routes.follow-approval";
 
 export type { MockCloudFile, MockCloudProvider, MockCloudProviderStatus, MockCloudSchedule } from "./mockApp.cloud";
 
@@ -127,6 +128,8 @@ export interface SetupMockAppOptions {
   cloudFiles?: MockCloudFile[];
   followedUserIds?: number[];
   followerCount?: number;
+  /** Followers by approval: the reader's switch and requests, and the other writers who approve theirs. */
+  followApproval?: Partial<MockFollowApprovalState>;
   writers?: Partial<MockAppState["writers"]>;
   accountActivity?: Partial<MockAccountActivityState>;
   comments?: MockComment[];
@@ -221,6 +224,7 @@ export interface MockAppState {
   featureRequestVotes: number[];
   followedUserIds: number[];
   followerCount: number;
+  followApproval: MockFollowApprovalState;
   writers: { muted: number[]; blocked: number[]; followers: components["schemas"]["FollowedUserDto"][] };
   comments: MockComment[];
   likedEntryIds: number[];
@@ -410,6 +414,7 @@ export function createMockAppState(
     featureRequestVotes: [],
     followedUserIds: [...(options.followedUserIds || [])],
     followerCount: options.followerCount ?? 0,
+    followApproval: createMockFollowApprovalState(options.followApproval),
     writers: { muted: [...(options.writers?.muted || [])], blocked: [...(options.writers?.blocked || [])], followers: [...(options.writers?.followers || [])] },
     comments: [...(options.comments || [])],
     likedEntryIds: [...(options.likedEntryIds || [])],

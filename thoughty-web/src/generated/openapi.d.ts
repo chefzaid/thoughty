@@ -2055,9 +2055,26 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List followed users and topics, and the followers */
+        /** List followed users and topics, the followers, and the follow requests both ways */
         get: operations["FollowsController_list"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/follows/approval": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Turn Followers by approval on or off; turning it off approves the requests still waiting */
+        put: operations["FollowsController_setApproval"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2073,10 +2090,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** Follow an author who has public entries in the feed */
+        /** Follow an author who has public entries in the feed, or ask to when they approve their followers (`requested`) */
         put: operations["FollowsController_follow"];
         post?: never;
-        /** Stop following a user */
+        /** Stop following a user, or withdraw a request still waiting */
         delete: operations["FollowsController_unfollow"];
         options?: never;
         head?: never;
@@ -2091,9 +2108,10 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
+        /** Approve a request to follow you */
+        put: operations["FollowsController_approveFollower"];
         post?: never;
-        /** Remove a follower, without telling them */
+        /** Remove a follower, or decline a request to follow you, without telling them */
         delete: operations["FollowsController_removeFollower"];
         options?: never;
         head?: never;
@@ -9066,15 +9084,21 @@ export interface components {
          *       "id": 1,
          *       "username": "Daily Journal",
          *       "avatarUrl": "https://thoughty.example.com/callback",
-         *       "isFollowed": true
+         *       "isFollowed": true,
+         *       "followRequested": true,
+         *       "approvalRequired": true
          *     }
          */
         PublicFeedAuthorDto: {
             id: number;
             username: string;
             avatarUrl?: string | null;
-            /** @description Whether the current user follows this author */
+            /** @description Whether the current user follows this author (an approved follow) */
             isFollowed: boolean;
+            /** @description Whether the current user asked to follow this author and the request still waits for their approval */
+            followRequested: boolean;
+            /** @description Whether this author approves their followers (Followers by approval): following them sends a request */
+            approvalRequired: boolean;
         };
         /**
          * @example {
@@ -9093,11 +9117,14 @@ export interface components {
          *       "likeCount": 3,
          *       "liked": true,
          *       "saved": true,
+         *       "locked": true,
          *       "author": {
          *         "id": 1,
          *         "username": "Daily Journal",
          *         "avatarUrl": "https://thoughty.example.com/callback",
-         *         "isFollowed": true
+         *         "isFollowed": true,
+         *         "followRequested": true,
+         *         "approvalRequired": true
          *       }
          *     }
          */
@@ -9112,7 +9139,9 @@ export interface components {
              * @example 08:30
              */
             timeOfDay: string | null;
+            /** @description Empty in a teaser (`locked`) */
             tags: string[];
+            /** @description Empty in a teaser (`locked`) */
             content: string;
             /** @enum {string} */
             format: "plain" | "markdown";
@@ -9126,6 +9155,8 @@ export interface components {
             liked: boolean;
             /** @description Whether the entry is in the current user’s Saved list */
             saved: boolean;
+            /** @description A teaser: the author approves their followers and has not approved the current user, so only the author, the day and the title are given (no text, tags, time of day, likes or comments), and liking, saving or commenting answers `FOLLOW_APPROVAL_REQUIRED` until they approve a follow request */
+            locked: boolean;
             author: components["schemas"]["PublicFeedAuthorDto"];
         };
         /**
@@ -9147,11 +9178,14 @@ export interface components {
          *           "likeCount": 3,
          *           "liked": true,
          *           "saved": true,
+         *           "locked": true,
          *           "author": {
          *             "id": 1,
          *             "username": "Daily Journal",
          *             "avatarUrl": "https://thoughty.example.com/callback",
-         *             "isFollowed": true
+         *             "isFollowed": true,
+         *             "followRequested": true,
+         *             "approvalRequired": true
          *           }
          *         }
          *       ],
@@ -9183,7 +9217,10 @@ export interface components {
             username: string;
             /** @example null */
             avatarUrl: string | null;
-            /** @example 2026-09-01T08:30:00.000Z */
+            /**
+             * @description When the follow, or the request, was made
+             * @example 2026-09-01T08:30:00.000Z
+             */
             followedAt: string;
         };
         /**
@@ -9211,6 +9248,14 @@ export interface components {
          *           "followedAt": "2026-09-01T08:30:00.000Z"
          *         }
          *       ],
+         *       "requested": [
+         *         {
+         *           "id": 2,
+         *           "username": "maya",
+         *           "avatarUrl": null,
+         *           "followedAt": "2026-09-01T08:30:00.000Z"
+         *         }
+         *       ],
          *       "topics": [
          *         {
          *           "tag": "gratitude",
@@ -9225,33 +9270,87 @@ export interface components {
          *           "followedAt": "2026-09-01T08:30:00.000Z"
          *         }
          *       ],
-         *       "followerCount": 3
+         *       "followerCount": 3,
+         *       "requests": [
+         *         {
+         *           "id": 2,
+         *           "username": "maya",
+         *           "avatarUrl": null,
+         *           "followedAt": "2026-09-01T08:30:00.000Z"
+         *         }
+         *       ],
+         *       "approvalRequired": false
          *     }
          */
         FollowsResponseDto: {
-            /** @description Active users the current user follows */
+            /** @description Active users the current user follows (approved follows) */
             following: components["schemas"]["FollowedUserDto"][];
+            /** @description Active users the current user asked to follow, whose approval is still waited for; each can be withdrawn */
+            requested: components["schemas"]["FollowedUserDto"][];
             /** @description Topics (tags) the current user follows, by name */
             topics: components["schemas"]["FollowedTopicDto"][];
-            /** @description Active users following the current user, by name, listed to them alone; `followedAt` is when each started following */
+            /** @description Active users following the current user (approved), by name, listed to them alone; `followedAt` is when each started following */
             followers: components["schemas"]["FollowedUserDto"][];
             /**
-             * @description Number of active users following the current user
+             * @description Number of active users following the current user (approved)
              * @example 3
              */
             followerCount: number;
+            /** @description Active users asking to follow the current user, by name, listed to them alone, each to approve or decline; `followedAt` is when they asked */
+            requests: components["schemas"]["FollowedUserDto"][];
+            /**
+             * @description Followers by approval: whether new follows of the current user wait for their approval
+             * @example false
+             */
+            approvalRequired: boolean;
+        };
+        /**
+         * @example {
+         *       "required": true
+         *     }
+         */
+        FollowApprovalDto: {
+            /**
+             * @description Whether new follows wait for approval; turning it off approves every request still waiting
+             * @example true
+             */
+            required: boolean;
+        };
+        /**
+         * @example {
+         *       "required": false,
+         *       "approved": 2
+         *     }
+         */
+        FollowApprovalStateDto: {
+            /** @example false */
+            required: boolean;
+            /**
+             * @description Requests approved by turning it off (0 when turned on)
+             * @example 2
+             */
+            approved: number;
         };
         /**
          * @example {
          *       "userId": 2,
-         *       "following": true
+         *       "following": true,
+         *       "requested": false
          *     }
          */
         FollowStateDto: {
             /** @example 2 */
             userId: number;
-            /** @example true */
+            /**
+             * @description An approved follow
+             * @example true
+             */
             following: boolean;
+            /**
+             * @description A request waiting for the followed writer’s approval (they approve their followers)
+             * @example false
+             */
+            requested: boolean;
         };
         /**
          * @example {
@@ -9804,7 +9903,7 @@ export interface components {
              * @example comment
              * @enum {string}
              */
-            type: "comment" | "entryLike" | "commentLike" | "follow";
+            type: "comment" | "entryLike" | "commentLike" | "follow" | "followRequest";
             /** @example 2026-11-21T08:30:00.000Z */
             createdAt: string;
             /**
@@ -9813,7 +9912,7 @@ export interface components {
              */
             unread: boolean;
             actor: components["schemas"]["NotificationActorDto"];
-            /** @description Null for a new follower */
+            /** @description Null for a new follower or a follow request */
             entry: components["schemas"]["NotificationEntryDto"] | null;
             /** @description The comment written (`comment`) or liked (`commentLike`); null otherwise */
             comment: components["schemas"]["NotificationCommentDto"] | null;
@@ -12808,7 +12907,7 @@ export interface components {
          * @example VALIDATION_FAILED
          * @enum {string}
          */
-        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "FEATURE_DISABLED" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_WEAK_PASSWORD" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "AUTH_INVALID_SIGN_UP_TOKEN" | "AUTH_EMAIL_UNDELIVERABLE" | "AUTH_EMAIL_ALREADY_SET" | "AUTH_EMAIL_MISSING" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "ENTRY_CHAT_NO_MATCH" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "CONTENT_LOCKED" | "CONTENT_LOCKED_PRIVATE" | "CONTENT_PIN_NOT_SET" | "CONTENT_PIN_INCORRECT" | "CONTENT_PIN_BLOCKED" | "CONTENT_PIN_PROOF_REQUIRED" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "DIARY_AI_OFF" | "DIARY_AI_CONSENT_REQUIRED" | "SETTINGS_RESERVED" | "ENTRY_TEMPLATES_INVALID" | "ENTRY_TEMPLATE_NAME_TOO_LONG" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "COMPOSER_DRAFT_CONFLICT" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "ACCESS_TOKEN_NOT_FOUND" | "ACCESS_TOKEN_LIMIT_REACHED" | "ACCESS_TOKEN_INVALID" | "ACCESS_TOKEN_SCOPE_MISSING" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "CALENDAR_FILE_INVALID" | "CALENDAR_EVENT_LIMIT_REACHED" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "PERSON_DATE_BIRTHDAY_TWICE" | "PERSON_CONTACT_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_DIARY_OFF" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "MEMOIR_PHOTO_EMPTY" | "MEMOIR_PHOTO_NOT_IMAGE" | "MEMOIR_PHOTO_IN_USE" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "REVIEW_WEEK_EMPTY" | "REVIEW_REFLECTION_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "SOCIAL_CANNOT_SAVE_OWN_ENTRY" | "SOCIAL_CANNOT_MUTE_SELF" | "SOCIAL_CANNOT_BLOCK_SELF" | "COMMENT_NOT_FOUND" | "COMMENTS_CLOSED" | "COMMENTS_FOLLOWERS_ONLY" | "COMMENT_PIN_HIDDEN" | "FEATURE_REQUEST_NOT_FOUND" | "CONTACT_INVALID_REQUEST" | "CONTACT_NOT_CONFIGURED" | "CONTACT_NOT_SENT";
+        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "FEATURE_DISABLED" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_WEAK_PASSWORD" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "AUTH_INVALID_SIGN_UP_TOKEN" | "AUTH_EMAIL_UNDELIVERABLE" | "AUTH_EMAIL_ALREADY_SET" | "AUTH_EMAIL_MISSING" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "ENTRY_CHAT_NO_MATCH" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "CONTENT_LOCKED" | "CONTENT_LOCKED_PRIVATE" | "CONTENT_PIN_NOT_SET" | "CONTENT_PIN_INCORRECT" | "CONTENT_PIN_BLOCKED" | "CONTENT_PIN_PROOF_REQUIRED" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "DIARY_AI_OFF" | "DIARY_AI_CONSENT_REQUIRED" | "SETTINGS_RESERVED" | "ENTRY_TEMPLATES_INVALID" | "ENTRY_TEMPLATE_NAME_TOO_LONG" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "COMPOSER_DRAFT_CONFLICT" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "ACCESS_TOKEN_NOT_FOUND" | "ACCESS_TOKEN_LIMIT_REACHED" | "ACCESS_TOKEN_INVALID" | "ACCESS_TOKEN_SCOPE_MISSING" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "CALENDAR_FILE_INVALID" | "CALENDAR_EVENT_LIMIT_REACHED" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "PERSON_DATE_BIRTHDAY_TWICE" | "PERSON_CONTACT_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_DIARY_OFF" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "MEMOIR_PHOTO_EMPTY" | "MEMOIR_PHOTO_NOT_IMAGE" | "MEMOIR_PHOTO_IN_USE" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "REVIEW_WEEK_EMPTY" | "REVIEW_REFLECTION_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "SOCIAL_CANNOT_SAVE_OWN_ENTRY" | "SOCIAL_CANNOT_MUTE_SELF" | "SOCIAL_CANNOT_BLOCK_SELF" | "COMMENT_NOT_FOUND" | "FOLLOW_APPROVAL_REQUIRED" | "FOLLOW_REQUEST_NOT_FOUND" | "COMMENTS_CLOSED" | "COMMENTS_FOLLOWERS_ONLY" | "COMMENT_PIN_HIDDEN" | "FEATURE_REQUEST_NOT_FOUND" | "CONTACT_INVALID_REQUEST" | "CONTACT_NOT_CONFIGURED" | "CONTACT_NOT_SENT";
         /**
          * @example {
          *       "statusCode": 401,
@@ -21695,11 +21794,14 @@ export interface operations {
                      *           "likeCount": 3,
                      *           "liked": true,
                      *           "saved": true,
+                     *           "locked": true,
                      *           "author": {
                      *             "id": 1,
                      *             "username": "Daily Journal",
                      *             "avatarUrl": "https://thoughty.example.com/callback",
-                     *             "isFollowed": true
+                     *             "isFollowed": true,
+                     *             "followRequested": true,
+                     *             "approvalRequired": true
                      *           }
                      *         }
                      *       ],
@@ -21740,7 +21842,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Users and topics followed by the authenticated user, and who follows them */
+            /** @description Users and topics followed by the authenticated user, who follows them, the requests waiting either way, and whether they approve their followers */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21749,6 +21851,14 @@ export interface operations {
                     /**
                      * @example {
                      *       "following": [
+                     *         {
+                     *           "id": 2,
+                     *           "username": "maya",
+                     *           "avatarUrl": null,
+                     *           "followedAt": "2026-09-01T08:30:00.000Z"
+                     *         }
+                     *       ],
+                     *       "requested": [
                      *         {
                      *           "id": 2,
                      *           "username": "maya",
@@ -21770,10 +21880,88 @@ export interface operations {
                      *           "followedAt": "2026-09-01T08:30:00.000Z"
                      *         }
                      *       ],
-                     *       "followerCount": 3
+                     *       "followerCount": 3,
+                     *       "requests": [
+                     *         {
+                     *           "id": 2,
+                     *           "username": "maya",
+                     *           "avatarUrl": null,
+                     *           "followedAt": "2026-09-01T08:30:00.000Z"
+                     *         }
+                     *       ],
+                     *       "approvalRequired": false
                      *     }
                      */
                     "application/json": components["schemas"]["FollowsResponseDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    FollowsController_setApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "required": true
+                 *     }
+                 */
+                "application/json": components["schemas"]["FollowApprovalDto"];
+            };
+        };
+        responses: {
+            /** @description The switch as saved */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "required": false,
+                     *       "approved": 2
+                     *     }
+                     */
+                    "application/json": components["schemas"]["FollowApprovalStateDto"];
+                };
+            };
+            /** @description `required` is not a boolean */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "`required` is not a boolean",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
@@ -21806,7 +21994,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The user is followed */
+            /** @description The user is followed, or asked */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21815,7 +22003,8 @@ export interface operations {
                     /**
                      * @example {
                      *       "userId": 2,
-                     *       "following": true
+                     *       "following": true,
+                     *       "requested": false
                      *     }
                      */
                     "application/json": components["schemas"]["FollowStateDto"];
@@ -21885,7 +22074,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The user is no longer followed */
+            /** @description The user is no longer followed nor asked */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21894,10 +22083,74 @@ export interface operations {
                     /**
                      * @example {
                      *       "userId": 2,
-                     *       "following": true
+                     *       "following": true,
+                     *       "requested": false
                      *     }
                      */
                     "application/json": components["schemas"]["FollowStateDto"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    FollowsController_approveFollower: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The user follows the authenticated user (`following` is true) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "userId": 2,
+                     *       "following": true,
+                     *       "requested": false
+                     *     }
+                     */
+                    "application/json": components["schemas"]["FollowStateDto"];
+                };
+            };
+            /** @description This user has not asked to follow you */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "This user has not asked to follow you",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
@@ -21930,7 +22183,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The user no longer follows the authenticated user (`following` is false) */
+            /** @description The user no longer follows nor asks to follow the authenticated user (`following` is false) */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -21939,7 +22192,8 @@ export interface operations {
                     /**
                      * @example {
                      *       "userId": 2,
-                     *       "following": true
+                     *       "following": true,
+                     *       "requested": false
                      *     }
                      */
                     "application/json": components["schemas"]["FollowStateDto"];
@@ -22135,6 +22389,23 @@ export interface operations {
                     "application/json": components["schemas"]["EntryCommentsResponseDto"];
                 };
             };
+            /** @description Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 403,
+                     *       "message": "Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)",
+                     *       "error": "Forbidden",
+                     *       "code": "FORBIDDEN"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description The entry is not visible in the public feed */
             404: {
                 headers: {
@@ -22215,6 +22486,23 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["EntryCommentDto"];
+                };
+            };
+            /** @description Comments are closed or for followers only, or only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 403,
+                     *       "message": "Comments are closed or for followers only, or only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)",
+                     *       "error": "Forbidden",
+                     *       "code": "FORBIDDEN"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description The entry is not visible in the public feed */
@@ -22743,6 +23031,23 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 403,
+                     *       "message": "Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)",
+                     *       "error": "Forbidden",
+                     *       "code": "FORBIDDEN"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description The entry is not visible in the public feed */
             404: {
                 headers: {
@@ -22885,6 +23190,23 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 403,
+                     *       "message": "Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)",
+                     *       "error": "Forbidden",
+                     *       "code": "FORBIDDEN"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description No visible comment with this id on the entry */
             404: {
                 headers: {
@@ -23021,6 +23343,23 @@ export interface operations {
                      *       "message": "Users cannot save their own entries",
                      *       "error": "Bad Request",
                      *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 403,
+                     *       "message": "Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)",
+                     *       "error": "Forbidden",
+                     *       "code": "FORBIDDEN"
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];

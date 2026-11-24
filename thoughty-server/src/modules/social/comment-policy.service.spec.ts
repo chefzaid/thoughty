@@ -57,7 +57,7 @@ describe('CommentPolicyService', () => {
       canComment: true,
     });
     expect(followRepository.exists).toHaveBeenCalledWith({
-      where: { followerId: 7, followedId: 5 },
+      where: { followerId: 7, followedId: 5, status: 'approved' },
     });
   });
 

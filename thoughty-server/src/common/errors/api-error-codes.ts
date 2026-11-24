@@ -229,6 +229,9 @@ export const API_ERROR_MESSAGES = {
   SOCIAL_CANNOT_MUTE_SELF: 'You cannot mute yourself',
   SOCIAL_CANNOT_BLOCK_SELF: 'You cannot block yourself',
   COMMENT_NOT_FOUND: 'Comment not found',
+  // Followers by approval: only approved followers read a writer's public entries.
+  FOLLOW_APPROVAL_REQUIRED: 'Only the followers its writer approved can read this entry',
+  FOLLOW_REQUEST_NOT_FOUND: 'This writer has not asked to follow you',
   // Comment controls: who may comment on an entry, and its hidden and pinned comments.
   COMMENTS_CLOSED: 'Comments are closed on this entry',
   COMMENTS_FOLLOWERS_ONLY: 'Only followers of its writer can comment on this entry',

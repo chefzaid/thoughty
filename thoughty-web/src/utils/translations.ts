@@ -42,6 +42,7 @@ import { contentLockTranslations, type ContentLockTranslationKey } from "./trans
 import { journalFeedTranslations, type JournalFeedTranslationKey } from "./translations.journalFeed";
 import { savedEntriesTranslations, type SavedEntriesTranslationKey } from "./translations.savedEntries";
 import { writerControlsTranslations, type WriterControlsTranslationKey } from "./translations.writerControls";
+import { followApprovalTranslations, type FollowApprovalTranslationKey } from "./translations.followApproval";
 import { accountActivityTranslations, type AccountActivityTranslationKey } from "./translations.accountActivity";
 import { accessTokensTranslations, type AccessTokensTranslationKey } from "./translations.accessTokens";
 import { feedTopicsTranslations, type FeedTopicsTranslationKey } from "./translations.feedTopics";
@@ -143,6 +144,7 @@ export type TranslationKey =
   | JournalFeedTranslationKey
   | SavedEntriesTranslationKey
   | WriterControlsTranslationKey
+  | FollowApprovalTranslationKey
   | AccountActivityTranslationKey
   | AccessTokensTranslationKey
   | CommentControlsTranslationKey
@@ -249,6 +251,7 @@ export const translations: Translations = {
     ...journalFeedTranslations.en,
     ...savedEntriesTranslations.en,
     ...writerControlsTranslations.en,
+    ...followApprovalTranslations.en,
     ...accountActivityTranslations.en,
     ...accessTokensTranslations.en,
     ...feedTopicsTranslations.en,
@@ -348,6 +351,7 @@ export const translations: Translations = {
     ...journalFeedTranslations.fr,
     ...savedEntriesTranslations.fr,
     ...writerControlsTranslations.fr,
+    ...followApprovalTranslations.fr,
     ...accountActivityTranslations.fr,
     ...accessTokensTranslations.fr,
     ...feedTopicsTranslations.fr,

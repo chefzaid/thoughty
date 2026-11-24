@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import type { PublicFeedAuthor } from '../../services/api';
+import type { FollowStatus } from './useFollows';
 
 type Translate = (key: string, params?: Record<string, string | number>) => string;
 
@@ -25,13 +26,47 @@ interface FeedAuthorProps {
   readonly time?: string | null;
   readonly t: Translate;
   /** Omitted for the user's own entries, which cannot be followed. */
-  readonly follow?: {
-    readonly followed: boolean;
-    readonly pending: boolean;
-    readonly onToggle: () => void;
-  };
+  readonly follow?: FollowControl;
   /** After the follow button: what else the reader can do about this writer (mute, block). */
   readonly menu?: ReactNode;
+}
+
+export interface FollowControl {
+  readonly status: FollowStatus;
+  readonly pending: boolean;
+  /** Follows, or stops following; asks to follow, or withdraws the request. */
+  readonly onToggle: () => void;
+}
+
+const FOLLOW_LOOKS: Record<FollowStatus, { icon: string; label: string }> = {
+  following: { icon: 'check', label: 'followingAuthor' },
+  requested: { icon: 'watch', label: 'followRequestedAuthor' },
+  none: { icon: 'add', label: 'followAuthor' },
+};
+
+/**
+ * Follow, or Ask to follow a writer who approves their followers; then Following, or Requested (pressed, and
+ * pressing it again withdraws the request).
+ */
+export function FollowButton({ author, follow, t }: { readonly author: PublicFeedAuthor; readonly follow: FollowControl; readonly t: Translate }) {
+  const look = FOLLOW_LOOKS[follow.status];
+  const label = follow.status === 'none' && author.approvalRequired ? 'askToFollowAuthor' : look.label;
+  let className = 'feed-follow';
+  if (follow.status !== 'none') className += follow.status === 'requested' ? ' followed requested' : ' followed';
+  return (
+    <button
+      type="button"
+      className={className}
+      aria-pressed={follow.status !== 'none'}
+      title={follow.status === 'requested' ? t('cancelFollowRequest', { username: author.username }) : undefined}
+      disabled={follow.pending}
+      onClick={follow.onToggle}
+    >
+      <span className={`codicon codicon-${look.icon}`} aria-hidden="true" />
+      {t(label)}
+      <span className="sr-only"> {author.username}</span>
+    </button>
+  );
 }
 
 function FeedAuthor({ author, date, time, t, follow, menu }: FeedAuthorProps) {
@@ -42,19 +77,7 @@ function FeedAuthor({ author, date, time, t, follow, menu }: FeedAuthorProps) {
         <strong>{author.username}</strong>
         <time dateTime={time ? `${date}T${time}` : date}>{time ? `${date} · ${time}` : date}</time>
       </div>
-      {follow && (
-        <button
-          type="button"
-          className={`feed-follow ${follow.followed ? 'followed' : ''}`}
-          aria-pressed={follow.followed}
-          disabled={follow.pending}
-          onClick={follow.onToggle}
-        >
-          <span className={`codicon ${follow.followed ? 'codicon-check' : 'codicon-add'}`} aria-hidden="true" />
-          {follow.followed ? t('followingAuthor') : t('followAuthor')}
-          <span className="sr-only"> {author.username}</span>
-        </button>
-      )}
+      {follow && <FollowButton author={author} follow={follow} t={t} />}
       {menu}
     </div>
   );

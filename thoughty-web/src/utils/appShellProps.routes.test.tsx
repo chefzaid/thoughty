@@ -121,8 +121,8 @@ describe('appShellProps', () => {
     const { feedRouteProps } = buildAuthenticatedRoutesProps(params);
     feedRouteProps.onWriteAbout?.({
       id: 4, date: '2026-08-01', index: 1, title: null, timeOfDay: null, tags: ['walks'], content: 'A walk', format: 'plain',
-      createdAt: '2026-08-01T12:00:00.000Z', commentCount: 0, likeCount: 0, liked: false, saved: false,
-      author: { id: 2, username: 'maya', avatarUrl: null, isFollowed: false },
+      createdAt: '2026-08-01T12:00:00.000Z', commentCount: 0, likeCount: 0, liked: false, saved: false, locked: false,
+      author: { id: 2, username: 'maya', avatarUrl: null, isFollowed: false, followRequested: false, approvalRequired: false },
     });
     expect(params.routingState.handleViewChange).toHaveBeenCalledWith('journal', {
       writeAbout: { content: 'A walk', format: 'plain', username: 'maya' },

@@ -12071,11 +12071,14 @@
                       "likeCount": 3,
                       "liked": true,
                       "saved": true,
+                      "locked": true,
                       "author": {
                         "id": 1,
                         "username": "Daily Journal",
                         "avatarUrl": "https://thoughty.example.com/callback",
-                        "isFollowed": true
+                        "isFollowed": true,
+                        "followRequested": true,
+                        "approvalRequired": true
                       }
                     }
                   ],
@@ -12121,7 +12124,7 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Users and topics followed by the authenticated user, and who follows them",
+            "description": "Users and topics followed by the authenticated user, who follows them, the requests waiting either way, and whether they approve their followers",
             "content": {
               "application/json": {
                 "schema": {
@@ -12129,6 +12132,14 @@
                 },
                 "example": {
                   "following": [
+                    {
+                      "id": 2,
+                      "username": "maya",
+                      "avatarUrl": null,
+                      "followedAt": "2026-09-01T08:30:00.000Z"
+                    }
+                  ],
+                  "requested": [
                     {
                       "id": 2,
                       "username": "maya",
@@ -12150,7 +12161,16 @@
                       "followedAt": "2026-09-01T08:30:00.000Z"
                     }
                   ],
-                  "followerCount": 3
+                  "followerCount": 3,
+                  "requests": [
+                    {
+                      "id": 2,
+                      "username": "maya",
+                      "avatarUrl": null,
+                      "followedAt": "2026-09-01T08:30:00.000Z"
+                    }
+                  ],
+                  "approvalRequired": false
                 }
               }
             }
@@ -12177,7 +12197,83 @@
             "bearer": []
           }
         ],
-        "summary": "List followed users and topics, and the followers",
+        "summary": "List followed users and topics, the followers, and the follow requests both ways",
+        "tags": [
+          "Social"
+        ]
+      }
+    },
+    "/api/follows/approval": {
+      "put": {
+        "operationId": "FollowsController_setApproval",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FollowApprovalDto"
+              },
+              "example": {
+                "required": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The switch as saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowApprovalStateDto"
+                },
+                "example": {
+                  "required": false,
+                  "approved": 2
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`required` is not a boolean",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "`required` is not a boolean",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Turn Followers by approval on or off; turning it off approves the requests still waiting",
         "tags": [
           "Social"
         ]
@@ -12198,7 +12294,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The user is followed",
+            "description": "The user is followed, or asked",
             "content": {
               "application/json": {
                 "schema": {
@@ -12206,7 +12302,8 @@
                 },
                 "example": {
                   "userId": 2,
-                  "following": true
+                  "following": true,
+                  "requested": false
                 }
               }
             }
@@ -12265,7 +12362,7 @@
             "bearer": []
           }
         ],
-        "summary": "Follow an author who has public entries in the feed",
+        "summary": "Follow an author who has public entries in the feed, or ask to when they approve their followers (`requested`)",
         "tags": [
           "Social"
         ]
@@ -12284,7 +12381,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The user is no longer followed",
+            "description": "The user is no longer followed nor asked",
             "content": {
               "application/json": {
                 "schema": {
@@ -12292,7 +12389,8 @@
                 },
                 "example": {
                   "userId": 2,
-                  "following": true
+                  "following": true,
+                  "requested": false
                 }
               }
             }
@@ -12319,13 +12417,84 @@
             "bearer": []
           }
         ],
-        "summary": "Stop following a user",
+        "summary": "Stop following a user, or withdraw a request still waiting",
         "tags": [
           "Social"
         ]
       }
     },
     "/api/follows/followers/{userId}": {
+      "put": {
+        "operationId": "FollowsController_approveFollower",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The user follows the authenticated user (`following` is true)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowStateDto"
+                },
+                "example": {
+                  "userId": 2,
+                  "following": true,
+                  "requested": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "This user has not asked to follow you",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "This user has not asked to follow you",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Approve a request to follow you",
+        "tags": [
+          "Social"
+        ]
+      },
       "delete": {
         "operationId": "FollowsController_removeFollower",
         "parameters": [
@@ -12340,7 +12509,7 @@
         ],
         "responses": {
           "200": {
-            "description": "The user no longer follows the authenticated user (`following` is false)",
+            "description": "The user no longer follows nor asks to follow the authenticated user (`following` is false)",
             "content": {
               "application/json": {
                 "schema": {
@@ -12348,7 +12517,8 @@
                 },
                 "example": {
                   "userId": 2,
-                  "following": true
+                  "following": true,
+                  "requested": false
                 }
               }
             }
@@ -12375,7 +12545,7 @@
             "bearer": []
           }
         ],
-        "summary": "Remove a follower, without telling them",
+        "summary": "Remove a follower, or decline a request to follow you, without telling them",
         "tags": [
           "Social"
         ]
@@ -12576,6 +12746,22 @@
               }
             }
           },
+          "403": {
+            "description": "Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)",
+                  "error": "Forbidden",
+                  "code": "FORBIDDEN"
+                }
+              }
+            }
+          },
           "404": {
             "description": "The entry is not visible in the public feed",
             "content": {
@@ -12666,6 +12852,22 @@
                   "liked": true,
                   "hidden": true,
                   "pinned": true
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Comments are closed or for followers only, or only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Comments are closed or for followers only, or only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)",
+                  "error": "Forbidden",
+                  "code": "FORBIDDEN"
                 }
               }
             }
@@ -13299,6 +13501,22 @@
               }
             }
           },
+          "403": {
+            "description": "Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)",
+                  "error": "Forbidden",
+                  "code": "FORBIDDEN"
+                }
+              }
+            }
+          },
           "404": {
             "description": "The entry is not visible in the public feed",
             "content": {
@@ -13465,6 +13683,22 @@
               }
             }
           },
+          "403": {
+            "description": "Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)",
+                  "error": "Forbidden",
+                  "code": "FORBIDDEN"
+                }
+              }
+            }
+          },
           "404": {
             "description": "No visible comment with this id on the entry",
             "content": {
@@ -13626,6 +13860,22 @@
                   "message": "Users cannot save their own entries",
                   "error": "Bad Request",
                   "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)",
+                  "error": "Forbidden",
+                  "code": "FORBIDDEN"
                 }
               }
             }
@@ -28832,19 +29082,31 @@
           },
           "isFollowed": {
             "type": "boolean",
-            "description": "Whether the current user follows this author"
+            "description": "Whether the current user follows this author (an approved follow)"
+          },
+          "followRequested": {
+            "type": "boolean",
+            "description": "Whether the current user asked to follow this author and the request still waits for their approval"
+          },
+          "approvalRequired": {
+            "type": "boolean",
+            "description": "Whether this author approves their followers (Followers by approval): following them sends a request"
           }
         },
         "required": [
           "id",
           "username",
-          "isFollowed"
+          "isFollowed",
+          "followRequested",
+          "approvalRequired"
         ],
         "example": {
           "id": 1,
           "username": "Daily Journal",
           "avatarUrl": "https://thoughty.example.com/callback",
-          "isFollowed": true
+          "isFollowed": true,
+          "followRequested": true,
+          "approvalRequired": true
         }
       },
       "PublicFeedEntryDto": {
@@ -28871,13 +29133,15 @@
             "example": "08:30"
           },
           "tags": {
+            "description": "Empty in a teaser (`locked`)",
             "type": "array",
             "items": {
               "type": "string"
             }
           },
           "content": {
-            "type": "string"
+            "type": "string",
+            "description": "Empty in a teaser (`locked`)"
           },
           "format": {
             "type": "string",
@@ -28906,6 +29170,10 @@
             "type": "boolean",
             "description": "Whether the entry is in the current user’s Saved list"
           },
+          "locked": {
+            "type": "boolean",
+            "description": "A teaser: the author approves their followers and has not approved the current user, so only the author, the day and the title are given (no text, tags, time of day, likes or comments), and liking, saving or commenting answers `FOLLOW_APPROVAL_REQUIRED` until they approve a follow request"
+          },
           "author": {
             "$ref": "#/components/schemas/PublicFeedAuthorDto"
           }
@@ -28924,6 +29192,7 @@
           "likeCount",
           "liked",
           "saved",
+          "locked",
           "author"
         ],
         "example": {
@@ -28942,11 +29211,14 @@
           "likeCount": 3,
           "liked": true,
           "saved": true,
+          "locked": true,
           "author": {
             "id": 1,
             "username": "Daily Journal",
             "avatarUrl": "https://thoughty.example.com/callback",
-            "isFollowed": true
+            "isFollowed": true,
+            "followRequested": true,
+            "approvalRequired": true
           }
         }
       },
@@ -28997,11 +29269,14 @@
               "likeCount": 3,
               "liked": true,
               "saved": true,
+              "locked": true,
               "author": {
                 "id": 1,
                 "username": "Daily Journal",
                 "avatarUrl": "https://thoughty.example.com/callback",
-                "isFollowed": true
+                "isFollowed": true,
+                "followRequested": true,
+                "approvalRequired": true
               }
             }
           ],
@@ -29029,7 +29304,8 @@
           },
           "followedAt": {
             "type": "string",
-            "example": "2026-09-01T08:30:00.000Z"
+            "example": "2026-09-01T08:30:00.000Z",
+            "description": "When the follow, or the request, was made"
           }
         },
         "required": [
@@ -29071,7 +29347,14 @@
         "type": "object",
         "properties": {
           "following": {
-            "description": "Active users the current user follows",
+            "description": "Active users the current user follows (approved follows)",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FollowedUserDto"
+            }
+          },
+          "requested": {
+            "description": "Active users the current user asked to follow, whose approval is still waited for; each can be withdrawn",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/FollowedUserDto"
@@ -29085,7 +29368,7 @@
             }
           },
           "followers": {
-            "description": "Active users following the current user, by name, listed to them alone; `followedAt` is when each started following",
+            "description": "Active users following the current user (approved), by name, listed to them alone; `followedAt` is when each started following",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/FollowedUserDto"
@@ -29094,17 +29377,40 @@
           "followerCount": {
             "type": "number",
             "example": 3,
-            "description": "Number of active users following the current user"
+            "description": "Number of active users following the current user (approved)"
+          },
+          "requests": {
+            "description": "Active users asking to follow the current user, by name, listed to them alone, each to approve or decline; `followedAt` is when they asked",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FollowedUserDto"
+            }
+          },
+          "approvalRequired": {
+            "type": "boolean",
+            "example": false,
+            "description": "Followers by approval: whether new follows of the current user wait for their approval"
           }
         },
         "required": [
           "following",
+          "requested",
           "topics",
           "followers",
-          "followerCount"
+          "followerCount",
+          "requests",
+          "approvalRequired"
         ],
         "example": {
           "following": [
+            {
+              "id": 2,
+              "username": "maya",
+              "avatarUrl": null,
+              "followedAt": "2026-09-01T08:30:00.000Z"
+            }
+          ],
+          "requested": [
             {
               "id": 2,
               "username": "maya",
@@ -29126,7 +29432,54 @@
               "followedAt": "2026-09-01T08:30:00.000Z"
             }
           ],
-          "followerCount": 3
+          "followerCount": 3,
+          "requests": [
+            {
+              "id": 2,
+              "username": "maya",
+              "avatarUrl": null,
+              "followedAt": "2026-09-01T08:30:00.000Z"
+            }
+          ],
+          "approvalRequired": false
+        }
+      },
+      "FollowApprovalDto": {
+        "type": "object",
+        "properties": {
+          "required": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether new follows wait for approval; turning it off approves every request still waiting"
+          }
+        },
+        "required": [
+          "required"
+        ],
+        "example": {
+          "required": true
+        }
+      },
+      "FollowApprovalStateDto": {
+        "type": "object",
+        "properties": {
+          "required": {
+            "type": "boolean",
+            "example": false
+          },
+          "approved": {
+            "type": "number",
+            "example": 2,
+            "description": "Requests approved by turning it off (0 when turned on)"
+          }
+        },
+        "required": [
+          "required",
+          "approved"
+        ],
+        "example": {
+          "required": false,
+          "approved": 2
         }
       },
       "FollowStateDto": {
@@ -29138,16 +29491,24 @@
           },
           "following": {
             "type": "boolean",
-            "example": true
+            "example": true,
+            "description": "An approved follow"
+          },
+          "requested": {
+            "type": "boolean",
+            "example": false,
+            "description": "A request waiting for the followed writer’s approval (they approve their followers)"
           }
         },
         "required": [
           "userId",
-          "following"
+          "following",
+          "requested"
         ],
         "example": {
           "userId": 2,
-          "following": true
+          "following": true,
+          "requested": false
         }
       },
       "TopicFollowStateDto": {
@@ -29993,7 +30354,8 @@
               "comment",
               "entryLike",
               "commentLike",
-              "follow"
+              "follow",
+              "followRequest"
             ],
             "example": "comment"
           },
@@ -30011,7 +30373,7 @@
           },
           "entry": {
             "nullable": true,
-            "description": "Null for a new follower",
+            "description": "Null for a new follower or a follow request",
             "type": "object",
             "allOf": [
               {
@@ -34763,6 +35125,8 @@
           "SOCIAL_CANNOT_MUTE_SELF",
           "SOCIAL_CANNOT_BLOCK_SELF",
           "COMMENT_NOT_FOUND",
+          "FOLLOW_APPROVAL_REQUIRED",
+          "FOLLOW_REQUEST_NOT_FOUND",
           "COMMENTS_CLOSED",
           "COMMENTS_FOLLOWERS_ONLY",
           "COMMENT_PIN_HIDDEN",

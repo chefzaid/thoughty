@@ -30,6 +30,7 @@ describe('NotificationsService', () => {
         row({ type: 'entryLike', unread: false, actor_id: '3', username: 'sam', avatar_url: '/a.png', entry_id: 42, entry_date: '2026-11-20', entry_index: 1 }),
         row({ type: 'commentLike', entry_id: 50, entry_date: '2026-11-19', entry_index: 2, entry_title: 'Theirs', comment_id: 8, comment_excerpt: 'Mine' }),
         row({ type: 'follow', actor_id: 4, username: 'lee' }),
+        row({ type: 'followRequest', actor_id: 6, username: 'pia' }),
       ])
       .mockResolvedValueOnce([{ count: '3' }]);
 
@@ -60,6 +61,7 @@ describe('NotificationsService', () => {
       }),
       expect.objectContaining({ id: 'commentLike:8:2', comment: { id: 8, excerpt: 'Mine' } }),
       expect.objectContaining({ id: 'follow:4', entry: null, comment: null }),
+      expect.objectContaining({ id: 'followRequest:6', type: 'followRequest', entry: null, comment: null }),
     ]);
   });
 
@@ -73,6 +75,8 @@ describe('NotificationsService', () => {
     for (const table of ['entry_comments c', 'entry_likes l', 'comment_likes cl', 'user_follows f']) {
       expect(statement).toContain(`FROM ${table}`);
     }
+    // A request waiting for the reader's approval is told apart from a follow
+    expect(statement).toContain("CASE f.status WHEN 'pending' THEN 'followRequest' ELSE 'follow' END");
     // A comment the writer hid, the reader's own doings, deleted accounts, blocks and mutes
     expect(statement).toContain('c.hidden_at IS NULL');
     expect(statement).toContain('a.actor_id <> $1');

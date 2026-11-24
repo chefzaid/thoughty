@@ -221,6 +221,26 @@ describe('feedService', () => {
     ]);
   });
 
+  it('approves a follow request and turns followers by approval on or off', async () => {
+    const authFetch = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ userId: 6, following: true, requested: false }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ required: false, approved: 2 }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ message: 'Down' }), { status: 500 }));
+    const service = createFeedService(authFetch);
+
+    await expect(service.approveFollower(6)).resolves.toEqual({
+      data: { userId: 6, following: true, requested: false },
+      error: null,
+    });
+    await expect(service.setFollowApproval(false)).resolves.toEqual({ data: { required: false, approved: 2 }, error: null });
+    await expect(service.approveFollower(7)).resolves.toEqual(expect.objectContaining({ data: null }));
+    expect(authFetch.mock.calls).toEqual([
+      ['/api/follows/followers/6', { method: 'PUT' }],
+      ['/api/follows/approval', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{"required":false}' }],
+      ['/api/follows/followers/7', { method: 'PUT' }],
+    ]);
+  });
+
   it('reports a refused block with its fallback key', async () => {
     const authFetch = vi.fn().mockRejectedValue(new Error('offline'));
     vi.spyOn(console, 'error').mockImplementation(() => undefined);

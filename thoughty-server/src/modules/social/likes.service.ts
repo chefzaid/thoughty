@@ -30,7 +30,7 @@ export class LikesService {
   ) {}
 
   async setEntryLike(userId: number, entryId: number, like: boolean): Promise<LikeStateDto> {
-    const entry = await findFeedVisibleEntry(this.entryRepository, entryId, userId);
+    const entry = await findFeedVisibleEntry(this.entryRepository, entryId, userId, { readable: like });
     if (like && entry.userId === userId) {
       throw apiError(BadRequestException, 'SOCIAL_CANNOT_LIKE_OWN_ENTRY');
     }
@@ -55,7 +55,7 @@ export class LikesService {
     commentId: number,
     like: boolean,
   ): Promise<LikeStateDto> {
-    const entry = await findFeedVisibleEntry(this.entryRepository, entryId, userId);
+    const entry = await findFeedVisibleEntry(this.entryRepository, entryId, userId, { readable: like });
     const comment = await excludeHiddenWriters(
       this.commentRepository
         .createQueryBuilder('c')

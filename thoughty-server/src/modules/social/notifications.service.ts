@@ -11,7 +11,8 @@ export const NOTIFICATION_EXCERPT_LENGTH = 140;
 
 /**
  * What a writer is told about, read straight from where it is kept, with the reader as `$1`: comments on their
- * entries and likes on them, likes on their comments, and new followers. Only what is still there counts: a like
+ * entries and likes on them, likes on their comments, new followers, and requests to follow them still waiting
+ * for their approval (which become a new follower once approved, and go once declined or withdrawn). Only what is still there counts: a like
  * taken back, a comment removed or hidden, a follow ended or an account deleted takes its notification away. It
  * leaves out the reader's own doings, everyone they blocked or who blocked them and the writers they muted, as
  * the feed does, and anything about an entry the feed no longer shows (private again, archived, moderated, in the
@@ -42,7 +43,7 @@ const ACTIVITY_CTE = `
       JOIN entry_comments lc ON lc.id = cl.comment_id
      WHERE lc.user_id = $1
     UNION ALL
-    SELECT 'follow', f.created_at, f.follower_id, NULL, NULL
+    SELECT CASE f.status WHEN 'pending' THEN 'followRequest' ELSE 'follow' END, f.created_at, f.follower_id, NULL, NULL
       FROM user_follows f
      WHERE f.followed_id = $1
   )
@@ -133,13 +134,15 @@ export class NotificationsService {
   }
 }
 
-/** A key that stays the same for the same notification: its type and what it is about, and who for a like or a follow. */
+/** A key that stays the same for the same notification: its type and what it is about, and who for a like, a follow or a request. */
 function notificationKey(row: NotificationRow): string {
   switch (row.type) {
     case 'comment':
       return `comment:${row.comment_id}`;
     case 'follow':
       return `follow:${row.actor_id}`;
+    case 'followRequest':
+      return `followRequest:${row.actor_id}`;
     case 'entryLike':
       return `entryLike:${row.entry_id}:${row.actor_id}`;
     default:

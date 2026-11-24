@@ -97,6 +97,11 @@ describe('LeaderboardService', () => {
       });
       expect(qb.limit).toHaveBeenCalledWith(LEADERBOARD_SIZE);
     }
+    // The ranked entries are only those the viewer may read, never teasers of an approving writer's
+    for (const qb of [liked, commented]) {
+      expect(qb.andWhere).toHaveBeenCalledWith(expect.stringContaining('followers_by_approval'), { viewerId: 1 });
+    }
+    expect(authors.andWhere).not.toHaveBeenCalledWith(expect.stringContaining('followers_by_approval'), expect.anything());
     expect(liked.innerJoin).toHaveBeenCalledWith(
       'entry_likes',
       'x',

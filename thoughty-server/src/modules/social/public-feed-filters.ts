@@ -1,5 +1,6 @@
 import type { ObjectLiteral, SelectQueryBuilder } from 'typeorm';
 import type { PublicFeedScope } from './dto';
+import { readableBy } from './public-feed-visibility';
 
 /** Whether the entry (alias `e`) carries a tag of the topics followed by `:userId`, ignoring case. */
 const CARRIES_FOLLOWED_TOPIC = `EXISTS (
@@ -9,7 +10,8 @@ const CARRIES_FOLLOWED_TOPIC = `EXISTS (
 
 /**
  * Narrows a feed query on entries aliased `e` to one tab, and orders it: the reader's own entries
- * (`mine`), the entries by the writers they follow or carrying a topic they follow (`following`), the
+ * (`mine`), the entries by the writers whose follow is approved or carrying a topic they follow (`following`;
+ * only from writers they may read, as a teaser has no tags to show why it is there), the
  * entries they saved (`saved`, the most recently saved first), or everyone else's (`community`).
  */
 export function applyFeedScope<T extends ObjectLiteral>(
@@ -21,8 +23,8 @@ export function applyFeedScope<T extends ObjectLiteral>(
     qb.andWhere('e.user_id = :userId', { userId });
   } else if (scope === 'following') {
     qb.andWhere(
-      `(e.user_id IN (SELECT f.followed_id FROM user_follows f WHERE f.follower_id = :userId)
-        OR (e.user_id <> :userId AND ${CARRIES_FOLLOWED_TOPIC}))`,
+      `(e.user_id IN (SELECT f.followed_id FROM user_follows f WHERE f.follower_id = :userId AND f.status = 'approved')
+        OR (e.user_id <> :userId AND ${CARRIES_FOLLOWED_TOPIC} AND ${readableBy('e.user_id', 'userId')}))`,
       { userId },
     );
   } else {

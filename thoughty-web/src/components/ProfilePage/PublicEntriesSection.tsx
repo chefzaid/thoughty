@@ -1,16 +1,22 @@
 import type { ChangeEvent } from 'react';
+import type { Language } from '../../utils/translations';
 import type { ProfileConfig, TranslationFunction } from './types';
 import { COMMENT_POLICY_OPTIONS } from '../FeedPage/commentPolicyOptions';
+import FollowApprovalSetting from './FollowApprovalSetting';
 
 interface PublicEntriesSectionProps {
   readonly defaultCommentPolicy: ProfileConfig['defaultCommentPolicy'];
   readonly handleChange: (event: ChangeEvent<HTMLSelectElement>) => void;
   readonly isDark: boolean;
+  readonly language: Language;
   readonly t: TranslationFunction;
 }
 
-/** What applies to every public entry unless the entry says otherwise: who may comment on it. */
-function PublicEntriesSection({ defaultCommentPolicy, handleChange, isDark, t }: PublicEntriesSectionProps) {
+/**
+ * What applies to every public entry unless the entry says otherwise: who may comment on it; and who reads them:
+ * everyone, or only the followers approved (Followers by approval).
+ */
+function PublicEntriesSection({ defaultCommentPolicy, handleChange, isDark, language, t }: PublicEntriesSectionProps) {
   return (
     <div className="profile-section">
       <div className="section-header">
@@ -38,6 +44,7 @@ function PublicEntriesSection({ defaultCommentPolicy, handleChange, isDark, t }:
             ))}
           </select>
         </div>
+        <FollowApprovalSetting isDark={isDark} language={language} t={t} />
       </div>
     </div>
   );

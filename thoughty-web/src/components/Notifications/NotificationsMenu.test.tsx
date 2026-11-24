@@ -8,7 +8,7 @@ import { withFeatureFlags } from '../../test/featureFlags';
 import { QuietModeContext } from '../QuietMode/quietMode';
 import { getTranslation } from '../../utils/translations';
 import NotificationsMenu from './NotificationsMenu';
-import { notificationMessage } from './notificationMessage';
+import { notificationIcon, notificationMessage } from './notificationMessage';
 
 const service = { list: vi.fn(), countUnread: vi.fn(), markRead: vi.fn() };
 
@@ -183,5 +183,16 @@ describe('notificationMessage', () => {
       'maya a aimé votre commentaire sur l’entrée du 20 novembre 2026',
     );
     expect(notificationMessage(base, 'fr', fr)).toBe('maya a commenté « Morning walk »');
+  });
+
+  it('tells of a request to follow, and where to answer it', () => {
+    const request = { ...base, id: 'followRequest:2', type: 'followRequest' as const, entry: null, comment: null };
+    expect(notificationMessage(request, 'en', en)).toBe(
+      'maya asks to follow you. Approve or decline in the feed’s Following tab',
+    );
+    expect(notificationMessage(request, 'fr', fr)).toBe(
+      'maya demande à vous suivre. Approuvez ou refusez dans l’onglet Abonnements du fil',
+    );
+    expect(notificationIcon(request)).toBe('person-add');
   });
 });

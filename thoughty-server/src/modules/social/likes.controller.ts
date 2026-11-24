@@ -23,6 +23,7 @@ export class LikesController {
   })
   @ApiResponse({ status: 400, description: 'Users cannot like their own entries' })
   @ApiResponse({ status: 404, description: 'The entry is not visible in the public feed' })
+  @ApiResponse({ status: 403, description: 'Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)' })
   likeEntry(
     @CurrentUser() user: AuthenticatedUser,
     @Param('entryId', ParseIntPipe) entryId: number,
@@ -56,6 +57,7 @@ export class LikesController {
   })
   @ApiResponse({ status: 400, description: 'Users cannot like their own comments' })
   @ApiResponse({ status: 404, description: 'No visible comment with this id on the entry' })
+  @ApiResponse({ status: 403, description: 'Only the followers its writer approved can read this entry (`FOLLOW_APPROVAL_REQUIRED`)' })
   likeComment(
     @CurrentUser() user: AuthenticatedUser,
     @Param('entryId', ParseIntPipe) entryId: number,

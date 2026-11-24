@@ -1,10 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-/** What happened: a comment on your entry, a like on your entry or comment, or a new follower. */
-export const notificationTypes = ['comment', 'entryLike', 'commentLike', 'follow'] as const;
+/**
+ * What happened: a comment on your entry, a like on your entry or comment, a new follower, or a request to follow
+ * you waiting for your approval (Followers by approval).
+ */
+export const notificationTypes = ['comment', 'entryLike', 'commentLike', 'follow', 'followRequest'] as const;
 export type NotificationType = (typeof notificationTypes)[number];
 
-/** Who commented, liked or followed. */
+/** Who commented, liked, followed or asked to follow. */
 export class NotificationActorDto {
   @ApiProperty({ example: 2 })
   id!: number;
@@ -62,7 +65,7 @@ export class NotificationDto {
   @ApiProperty({ type: NotificationActorDto })
   actor!: NotificationActorDto;
 
-  @ApiProperty({ type: NotificationEntryDto, nullable: true, description: 'Null for a new follower' })
+  @ApiProperty({ type: NotificationEntryDto, nullable: true, description: 'Null for a new follower or a follow request' })
   entry!: NotificationEntryDto | null;
 
   @ApiProperty({
