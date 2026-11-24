@@ -38,21 +38,21 @@ describe('an entry in a diary with AI off', () => {
         expect(screen.getByRole('button', { name: 'transcribeAudio' })).toBeInTheDocument();
     });
 
-    it('offers Rephrase, Summarize and the chat in a diary on the writer’s own model, but no transcription yet', () => {
+    it('offers Rephrase, Summarize, the chat and transcription in a diary on the writer’s own model', () => {
         const diaries = [makeDiary({ id: 1, name: 'Letters', aiMode: 'local' })];
         const entry = { ...createEntryViewModeProps().entry, attachments: [recording] };
         render(<EntryViewMode {...createEntryViewModeProps({ entry, diaries, onDiscuss: vi.fn(), onRephrase: vi.fn(), onSummarize: vi.fn() })} />);
 
         expect(screen.getByTitle('Discuss entry')).toBeInTheDocument();
         expect(screen.getByTitle('Rephrase entry')).toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: 'transcribeAudio' })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'transcribeAudio' })).toBeInTheDocument();
     });
 
     it('offers no transcription for a recording, and still shows a transcript already made', () => {
-        const { container } = render(<AudioTranscript attachment={recording} attachmentsService={{} as never} isDark t={t} aiMode="off" />);
+        const { container } = render(<AudioTranscript attachment={recording} attachmentsService={{} as never} localAiService={{} as never} isDark t={t} aiMode="off" />);
         expect(container).toBeEmptyDOMElement();
 
-        render(<AudioTranscript attachment={{ ...recording, transcript: 'Said before' }} attachmentsService={{} as never} isDark t={t} aiMode="off" />);
+        render(<AudioTranscript attachment={{ ...recording, transcript: 'Said before' }} attachmentsService={{} as never} localAiService={{} as never} isDark t={t} aiMode="off" />);
         expect(screen.getByText('Said before')).toBeInTheDocument();
     });
 });

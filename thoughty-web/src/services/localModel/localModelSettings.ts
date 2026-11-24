@@ -1,6 +1,6 @@
 /**
  * The writer's own model server, for the diaries set to "My own model only": an OpenAI-compatible address (Ollama,
- * LM Studio, llama.cpp's server), the model to ask, and the key it may want. It lives in this browser only, per
+ * LM Studio, llama.cpp's server), the model to ask, the key it may want, and the speech-to-text model if it has one. It lives in this browser only, per
  * writer: Thoughty's server never learns it, and the key goes when the writer signs out (`forgetLocalModelKeys`).
  */
 export interface LocalModelSettings {
@@ -12,7 +12,15 @@ export interface LocalModelSettings {
   readonly model: string;
   /** Sent as a bearer token when set; most local servers want none. */
   readonly apiKey: string;
+  /**
+   * The speech-to-text model recordings are sent to (`POST {baseUrl}/audio/transcriptions`), such as `whisper-1`
+   * or `Systran/faster-whisper-small`; empty when the writer set none, so recordings are not transcribed.
+   */
+  readonly transcriptionModel: string;
 }
+
+/** Settings as stored, from before the speech-to-text model was asked too. */
+type StoredLocalModelSettings = Omit<LocalModelSettings, 'transcriptionModel'> & { readonly transcriptionModel?: string };
 
 /** Why an address cannot be used: not a web address, or plain http to another device. */
 export type LocalModelAddressProblem = 'localModelAddressInvalid' | 'localModelAddressNeedsHttps';
@@ -48,14 +56,15 @@ export function parseLocalModelAddress(input: string): LocalModelAddress {
   return { baseUrl: `${url.origin}${url.pathname.replace(/\/+$/, '')}`, problem: null };
 }
 
-function isSettings(value: unknown): value is LocalModelSettings {
+function isSettings(value: unknown): value is StoredLocalModelSettings {
   if (!value || typeof value !== 'object') return false;
   const settings = value as Record<string, unknown>;
   return typeof settings.baseUrl === 'string'
     && parseLocalModelAddress(settings.baseUrl).baseUrl === settings.baseUrl
     && typeof settings.model === 'string'
     && settings.model.trim() !== ''
-    && typeof settings.apiKey === 'string';
+    && typeof settings.apiKey === 'string'
+    && (settings.transcriptionModel === undefined || typeof settings.transcriptionModel === 'string');
 }
 
 /** The writer's model server on this browser, or null when they set none (or it cannot be read). */
@@ -64,7 +73,7 @@ export function readLocalModelSettings(userId: number | null | undefined): Local
   try {
     const stored = globalThis.localStorage?.getItem(`${STORAGE_PREFIX}${userId}`);
     const parsed: unknown = stored ? JSON.parse(stored) : null;
-    return isSettings(parsed) ? parsed : null;
+    return isSettings(parsed) ? { ...parsed, transcriptionModel: parsed.transcriptionModel?.trim() ?? '' } : null;
   } catch {
     return null;
   }

@@ -13,19 +13,25 @@ import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import { confirmAiRequest } from '../DiaryAi/aiConsent';
 import { useRequestAiConsent } from '../DiaryAi/aiConsentContext';
 import { diaryOffersAi, type DiaryAiMode } from '../../utils/diaryAi';
+import { useLocalAiService } from '../../hooks/useLocalAiService';
+import type { AiAnswer } from '../../services/api/aiTypes';
 
 const MAX_RECORDING_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_AUDIO = 'audio/mpeg,audio/mp4,audio/x-m4a,audio/aac,audio/ogg,audio/wav,audio/webm';
 
-type FormProblem = 'empty' | 'tooLarge' | 'upload' | 'transcribe' | 'save' | null;
-
-const PROBLEM_MESSAGES: Record<Exclude<FormProblem, null>, string> = {
+const PROBLEM_MESSAGES = {
   empty: 'memoirAnswerEmpty',
   tooLarge: 'memoirRecordingTooLarge',
   upload: 'memoirUploadError',
   transcribe: 'memoirTranscribeError',
   save: 'memoirAnswerError',
-};
+} as const;
+
+/** What the form says went wrong: one of its own messages, or why the writer's own model gave no text. */
+type FormProblem = (typeof PROBLEM_MESSAGES)[keyof typeof PROBLEM_MESSAGES] | NonNullable<AiAnswer<never>['refusal']> | null;
+
+/** A recording's text, or what the form says instead; null when the writer cancelled. */
+type Transcription = { readonly text: string } | { readonly problem: NonNullable<FormProblem> } | null;
 
 interface MemoirAnswerFormProps {
   readonly questionId: string;
@@ -49,13 +55,14 @@ interface MemoirAnswerFormProps {
 
 function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras = [], answerDate = '', language = 'en', aiMode = 'on', diaryId = null, t }: MemoirAnswerFormProps) {
   const { upload, attachmentsService } = useRecordingUpload();
+  const localAiService = useLocalAiService();
   const recorder = useVoiceRecorder();
   const [text, setText] = useState('');
   const [eraId, setEraId] = useState<number | null>(null);
   const [problem, setProblem] = useState<FormProblem>(null);
   const [busy, setBusy] = useState<'transcribing' | 'saving' | null>(null);
   // Transcribing a recording and the follow-up questions are AI, left out while AI is switched off or off in the
-  // memoir diary; on the writer's own model the follow-ups go there, and transcription is not offered yet
+  // memoir diary; on the writer's own model both go there
   const aiFeature = useFeatureFlag('ai');
   const followUpsOn = aiFeature && diaryOffersAi(aiMode, 'prompt');
   const transcriptionOn = aiFeature && diaryOffersAi(aiMode, 'transcription');
@@ -72,11 +79,31 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
     event.target.value = '';
     if (!file) return;
     if (file.size > MAX_RECORDING_BYTES) {
-      setProblem('tooLarge');
+      setProblem(PROBLEM_MESSAGES.tooLarge);
       return;
     }
     setProblem(null);
     recorder.setRecording({ file, url: URL.createObjectURL(file), seconds: null });
+  };
+
+  /** The recording's text from Thoughty's provider: asked first in a diary that asks each time, then uploaded. */
+  const transcribeOnServer = async (recording: { file: File; seconds: number | null }): Promise<Transcription> => {
+    // Asked before the upload, so a recording the writer keeps from the AI is not uploaded for it either
+    const consent = await confirmAiRequest(aiMode, requestConsent, {
+      task: 'transcription',
+      recording: { name: recording.file.name, seconds: recording.seconds },
+    });
+    if (!consent.send) return null;
+    const attachmentId = await uploadRecording();
+    if (!attachmentId) return { problem: PROBLEM_MESSAGES.upload };
+    const transcription = await attachmentsService.transcribeAttachment(attachmentId, diaryId, consent.aiConsent);
+    return transcription?.transcript ? { text: transcription.transcript } : { problem: PROBLEM_MESSAGES.transcribe };
+  };
+
+  /** The recording's text from the writer's own model, sent there from this page; nothing is uploaded for it. */
+  const transcribeOnOwnModel = async (file: File): Promise<Transcription> => {
+    const { data, refusal } = await localAiService.transcribe(file, file.name);
+    return data === null ? { problem: refusal ?? PROBLEM_MESSAGES.transcribe } : { text: data };
   };
 
   const handleTranscribe = async () => {
@@ -84,27 +111,14 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
     if (!recording) return;
     setBusy('transcribing');
     setProblem(null);
-    // Asked before the upload, so a recording the writer keeps from the AI is not uploaded for it either
-    const consent = await confirmAiRequest(aiMode, requestConsent, {
-      task: 'transcription',
-      recording: { name: recording.file.name, seconds: recording.seconds },
-    });
-    if (!consent.send) {
-      setBusy(null);
-      return;
-    }
-    const attachmentId = await uploadRecording();
-    const transcription = attachmentId ? await attachmentsService.transcribeAttachment(attachmentId, diaryId, consent.aiConsent) : null;
+    const result = aiMode === 'local' ? await transcribeOnOwnModel(recording.file) : await transcribeOnServer(recording);
     setBusy(null);
-    if (!attachmentId) {
-      setProblem('upload');
+    if (!result) return;
+    if ('problem' in result) {
+      setProblem(result.problem);
       return;
     }
-    if (!transcription?.transcript) {
-      setProblem('transcribe');
-      return;
-    }
-    setText((current) => (current.trim() ? `${current.trim()}\n\n${transcription.transcript}` : transcription.transcript));
+    setText((current) => (current.trim() ? `${current.trim()}\n\n${result.text}` : result.text));
   };
 
   // A follow-up goes at the end of the answer, in bold, with the caret below it to answer it
@@ -122,7 +136,7 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
     event.preventDefault();
     if (busy || recorder.status === 'recording') return;
     if (!text.trim() && !recorder.recording) {
-      setProblem('empty');
+      setProblem(PROBLEM_MESSAGES.empty);
       return;
     }
     setBusy('saving');
@@ -130,7 +144,7 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
     const attachmentId = recorder.recording ? await uploadRecording() : null;
     if (recorder.recording && !attachmentId) {
       setBusy(null);
-      setProblem('upload');
+      setProblem(PROBLEM_MESSAGES.upload);
       return;
     }
     const saved = await onSubmit({
@@ -140,7 +154,7 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
       ...(eraId ? { eraId } : {}),
     });
     setBusy(null);
-    if (!saved) setProblem('save');
+    if (!saved) setProblem(PROBLEM_MESSAGES.save);
   };
 
   return (
@@ -228,7 +242,7 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
         t={t}
       />
 
-      {problem && <p className="memoir-error" role="alert">{t(PROBLEM_MESSAGES[problem])}</p>}
+      {problem && <p className="memoir-error" role="alert">{t(problem)}</p>}
       <div className="memoir-actions">
         <button type="submit" className="memoir-primary" disabled={busy !== null || recorder.status === 'recording'}>
           <span className="codicon codicon-save" aria-hidden="true" />

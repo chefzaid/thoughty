@@ -46,7 +46,7 @@ describe('useEntryForm in a diary on the writer’s own model', () => {
   };
 
   it('rephrases and tags with that model from this browser, unasked, and never through the API', async () => {
-    writeLocalModelSettings(7, { baseUrl: 'http://localhost:11434/v1', model: 'llama3.2', apiKey: '' });
+    writeLocalModelSettings(7, { baseUrl: 'http://localhost:11434/v1', model: 'llama3.2', apiKey: '', transcriptionModel: '' });
     const fetchMock = vi.fn().mockResolvedValueOnce(answer('Dear sis, I miss you.')).mockResolvedValueOnce(answer('["family", "missing"]'));
     vi.stubGlobal('fetch', fetchMock);
     const requestConsent = vi.fn();
@@ -84,7 +84,7 @@ describe('useEntryForm in a diary on the writer’s own model', () => {
   });
 
   it('saves an entry without tags and has that model tag it from this browser once saved, never the server', async () => {
-    writeLocalModelSettings(7, { baseUrl: 'https://models.home.example/v1', model: 'qwen2.5', apiKey: '' });
+    writeLocalModelSettings(7, { baseUrl: 'https://models.home.example/v1', model: 'qwen2.5', apiKey: '', transcriptionModel: '' });
     const fetchMock = vi.fn().mockResolvedValue(answer('["family", "missing", "letters", "extra"]'));
     vi.stubGlobal('fetch', fetchMock);
     const onSuccess = vi.fn();
@@ -103,7 +103,7 @@ describe('useEntryForm in a diary on the writer’s own model', () => {
   });
 
   it('says the entry is saved without tags when that model gives none', async () => {
-    writeLocalModelSettings(7, { baseUrl: 'http://localhost:11434/v1', model: 'llama3.2', apiKey: '' });
+    writeLocalModelSettings(7, { baseUrl: 'http://localhost:11434/v1', model: 'llama3.2', apiKey: '', transcriptionModel: '' });
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
     const { result } = renderForm();
 

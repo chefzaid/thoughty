@@ -1,9 +1,14 @@
-import { IsOptional, Min } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Attachment } from '@/database/entities';
 import { AttachmentResponseDto } from '@/modules/entries/dto';
 import { StrictInt } from '@/common/validation';
 import { AiConsentProperty } from '@/common/diary-ai';
+import { API_ERROR_MESSAGES } from '@/common/errors';
+
+/** The longest transcript the browser may send for a recording (5 MB of speech is well under it). */
+export const TRANSCRIPT_MAX_LENGTH = 50_000;
 
 export class LinkAttachmentDto {
   @ApiPropertyOptional({ description: 'Entry ID to link attachment to' })
@@ -28,6 +33,25 @@ export class TranscribeAttachmentDto {
 
   @AiConsentProperty()
   aiConsent?: boolean;
+}
+
+/** A transcript the writer's own model made in the browser, for a recording in a diary set to that model. */
+export class StoreTranscriptDto {
+  @ApiProperty({
+    description:
+      `The recording's text, trimmed; at most ${TRANSCRIPT_MAX_LENGTH} characters (a longer one is refused with ` +
+      '`400 TRANSCRIPT_TOO_LONG`)',
+    minLength: 1,
+    maxLength: TRANSCRIPT_MAX_LENGTH,
+  })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(TRANSCRIPT_MAX_LENGTH, {
+    message: API_ERROR_MESSAGES.TRANSCRIPT_TOO_LONG,
+    context: { code: 'TRANSCRIPT_TOO_LONG' },
+  })
+  transcript: string;
 }
 
 export class AudioTranscriptionResponseDto {

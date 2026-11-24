@@ -69,8 +69,36 @@ function record(attachment: MockAttachment, entryId: number | null) {
   return { ...attachment, entry_id: entryId, created_at: "2026-08-01T12:00:00.000Z" };
 }
 
+/** The longest transcript the API keeps (`TRANSCRIPT_MAX_LENGTH`). */
+const TRANSCRIPT_MAX_LENGTH = 50_000;
+
 /**
- * `/api/attachments/*`: uploads, links, deletes, and video poster frames; serves videos and poster
+ * `PUT /api/attachments/{id}/transcript`: keeps the transcript the writer's own model made of a recording on an
+ * entry of a diary set to that model, as the API does, refusing any other.
+ */
+async function storeLocalTranscript({ route, request, state }: Pick<RouteContext, "route" | "request" | "state">, id: number): Promise<void> {
+  const entry = state.entries.find((candidate) => candidate.attachments?.some((attachment) => attachment.id === id));
+  const attachment = entry?.attachments?.find((candidate) => candidate.id === id) ?? poolOf(state).find((candidate) => candidate.id === id);
+  const text = String((request.postDataJSON() as { transcript?: unknown }).transcript ?? "").trim();
+  if (!attachment) {
+    await fulfillApiError(route, 404, "ATTACHMENT_NOT_FOUND", "Attachment not found");
+  } else if (!attachment.mimetype.startsWith("audio/")) {
+    await fulfillApiError(route, 400, "ATTACHMENT_NOT_AUDIO", "Only audio attachments can be transcribed");
+  } else if (state.diaries.find((diary) => diary.id === entry?.diaryId)?.aiMode !== "local") {
+    await fulfillApiError(route, 403, "TRANSCRIPT_LOCAL_DIARY_ONLY", "Only a recording in a diary on your own model takes a transcript made in the browser");
+  } else if (!text) {
+    await fulfillApiError(route, 400, "VALIDATION_FAILED", "transcript should not be empty");
+  } else if (text.length > TRANSCRIPT_MAX_LENGTH) {
+    await fulfillApiError(route, 400, "TRANSCRIPT_TOO_LONG", "The transcript is too long to keep");
+  } else {
+    attachment.transcript = text;
+    attachment.transcribed_at = "2026-11-24T10:00:00.000Z";
+    await fulfillJson(route, { transcript: text, transcribed_at: attachment.transcribed_at, cached: false });
+  }
+}
+
+/**
+ * `/api/attachments/*`: uploads, links, deletes, transcripts made by the writer's own model, and video poster frames; serves videos and poster
  * frames as they were sent and every other file as a small PNG.
  */
 export async function handleAttachmentRoutes({ route, request, pathname, state }: RouteContext): Promise<boolean> {
@@ -130,6 +158,12 @@ export async function handleAttachmentRoutes({ route, request, pathname, state }
       const entry = state.entries.find((candidate) => candidate.attachments?.includes(attachment));
       await fulfillJson(route, record(attachment, entry ? entry.id : null), { status: 201 });
     }
+    return true;
+  }
+
+  const transcript = /^\/api\/attachments\/(\d+)\/transcript$/.exec(pathname);
+  if (transcript && method === "PUT") {
+    await storeLocalTranscript({ route, request, state }, Number(transcript[1]));
     return true;
   }
 

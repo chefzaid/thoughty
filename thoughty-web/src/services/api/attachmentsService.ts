@@ -1,6 +1,8 @@
 import type { components } from "../../generated/openapi";
 import type { Attachment } from "../../types";
-import { isVideoAttachment } from "../../utils/attachments";
+import { getAttachmentUrl, isVideoAttachment } from "../../utils/attachments";
+import { readApiErrorKey } from "./base";
+import type { AiAnswer } from "./aiTypes";
 import { captureVideoPoster } from "../../utils/videoPoster";
 
 /** What an upload or a link answers: the attachment with its entry and upload time. */
@@ -130,11 +132,43 @@ export const createAttachmentsService = (
     }
   };
 
+  /** A stored file's bytes, read with the session from Thoughty's own address; null when it cannot be read. */
+  const downloadAttachment = async (storedFilename: string): Promise<Blob | null> => {
+    try {
+      const response = await authFetch(getAttachmentUrl(storedFilename));
+      return response.ok ? await response.blob() : null;
+    } catch (error) {
+      console.error("Error downloading attachment:", error);
+      return null;
+    }
+  };
+
+  /**
+   * Keeps the transcript the writer's own model made of a recording in a diary set to that model; the server takes
+   * nothing else, and calls no AI. A refusal names the API's error code (a transcript too long, another diary).
+   */
+  const storeTranscript = async (id: number, transcript: string): Promise<AiAnswer<AudioTranscription>> => {
+    try {
+      const response = await authFetch(`/api/attachments/${id}/transcript`, {
+        method: "PUT",
+        body: JSON.stringify({ transcript }),
+      });
+      return response.ok
+        ? { data: (await response.json()) as AudioTranscription, refusal: null }
+        : { data: null, refusal: await readApiErrorKey(response) };
+    } catch (error) {
+      console.error("Error storing transcript:", error);
+      return { data: null, refusal: null };
+    }
+  };
+
   return {
     uploadAttachment,
     linkAttachment,
     deleteAttachment,
     transcribeAttachment,
+    downloadAttachment,
+    storeTranscript,
   };
 };
 

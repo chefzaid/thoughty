@@ -15,10 +15,10 @@ export type DiaryAiMode = Diary['aiMode'];
 export type DiaryAiTask = 'tag' | 'writing' | 'summary' | 'chat' | 'prompt' | 'transcription';
 
 /**
- * The AI actions a diary on the writer's own model sends there from this browser, with the server's prompts: all
- * of them but transcription, which needs a speech-to-text endpoint the app does not call yet.
+ * The AI actions a diary on the writer's own model sends there from this browser: the text ones with the server's
+ * prompts, and transcription to its speech-to-text endpoint (`/audio/transcriptions`). That is every one of them.
  */
-export const LOCAL_MODEL_TASKS: readonly DiaryAiTask[] = ['writing', 'tag', 'summary', 'chat', 'prompt'];
+export const LOCAL_MODEL_TASKS: readonly DiaryAiTask[] = ['writing', 'tag', 'summary', 'chat', 'prompt', 'transcription'];
 
 /** The AI mode of the diary `diaryId`; on for an entry without a diary, or a diary not loaded. */
 export function diaryAiMode(diaries: readonly AiModeDiary[], diaryId: number | null | undefined): DiaryAiMode {

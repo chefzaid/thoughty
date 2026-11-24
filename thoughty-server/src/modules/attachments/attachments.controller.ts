@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Put,
   Delete,
   Get,
   Param,
@@ -37,12 +38,14 @@ import { MAX_POSTER_SIZE, MAX_VIDEO_SIZE } from './attachment-media';
 import {
   LinkAttachmentDto,
   TranscribeAttachmentDto,
+  StoreTranscriptDto,
   AudioTranscriptionResponseDto,
   AttachmentRecordResponseDto,
   toAttachmentRecordResponse,
 } from './dto';
 import { SuccessResponseDto } from '@/common/dto';
 import { AudioTranscriptionService } from './audio-transcription.service';
+import { LocalTranscriptService } from './local-transcript.service';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { MULTIPART_FIELD_LIMITS } from '@/common/multipart-limits';
@@ -60,6 +63,7 @@ export class AttachmentsController {
     private readonly attachmentsService: AttachmentsService,
     private readonly audioTranscriptionService: AudioTranscriptionService,
     private readonly videoPosterService: VideoPosterService,
+    private readonly localTranscriptService: LocalTranscriptService,
   ) {}
 
   @Post('upload')
@@ -158,6 +162,35 @@ export class AttachmentsController {
     @Body() dto: TranscribeAttachmentDto,
   ): Promise<AudioTranscriptionResponseDto> {
     return this.audioTranscriptionService.transcribe(user.userId, id, dto.diaryId, dto.aiConsent);
+  }
+
+  @Put(':id/transcript')
+  @RequireFeature('ai')
+  @ApiOperation({
+    summary: 'Store the transcript the writer’s own model made of a recording',
+    description:
+      'For a recording on an entry of a diary set to the writer’s own model only: the browser sends the recording ' +
+      'to that model and this route keeps only the text it answered, as a transcript Thoughty made is kept. No AI ' +
+      'provider is called. It replaces any earlier transcript of the recording.',
+  })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Transcript stored', type: AudioTranscriptionResponseDto })
+  @ApiResponse({
+    status: 400,
+    description: 'Not an audio recording (`ATTACHMENT_NOT_AUDIO`), an empty transcript, or one too long (`TRANSCRIPT_TOO_LONG`)',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'The recording is on no entry of a diary set to the writer’s own model (`TRANSCRIPT_LOCAL_DIARY_ONLY`)',
+  })
+  @ApiResponse({ status: 404, description: 'Attachment not found, or not the writer’s (`ATTACHMENT_NOT_FOUND`)' })
+  @ApiResponse({ status: 423, description: 'The recording’s entry is locked and the request is not unlocked' })
+  async storeTranscript(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: StoreTranscriptDto,
+  ): Promise<AudioTranscriptionResponseDto> {
+    return this.localTranscriptService.store(user.userId, id, dto.transcript);
   }
 
   @Delete(':id')

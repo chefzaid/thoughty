@@ -8188,6 +8188,141 @@
         ]
       }
     },
+    "/api/attachments/{id}/transcript": {
+      "put": {
+        "description": "For a recording on an entry of a diary set to the writer’s own model only: the browser sends the recording to that model and this route keeps only the text it answered, as a transcript Thoughty made is kept. No AI provider is called. It replaces any earlier transcript of the recording.",
+        "operationId": "AttachmentsController_storeTranscript",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoreTranscriptDto"
+              },
+              "example": {
+                "transcript": "example"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Transcript stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioTranscriptionResponseDto"
+                },
+                "example": {
+                  "transcript": "example",
+                  "transcribed_at": "2026-06-24T10:00:00.000Z",
+                  "cached": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not an audio recording (`ATTACHMENT_NOT_AUDIO`), an empty transcript, or one too long (`TRANSCRIPT_TOO_LONG`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Not an audio recording (`ATTACHMENT_NOT_AUDIO`), an empty transcript, or one too long (`TRANSCRIPT_TOO_LONG`)",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The recording is on no entry of a diary set to the writer’s own model (`TRANSCRIPT_LOCAL_DIARY_ONLY`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "The recording is on no entry of a diary set to the writer’s own model (`TRANSCRIPT_LOCAL_DIARY_ONLY`)",
+                  "error": "Forbidden",
+                  "code": "FORBIDDEN"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Attachment not found, or not the writer’s (`ATTACHMENT_NOT_FOUND`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Attachment not found, or not the writer’s (`ATTACHMENT_NOT_FOUND`)",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "The recording’s entry is locked and the request is not unlocked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 423,
+                  "message": "The recording’s entry is locked and the request is not unlocked",
+                  "error": "Locked",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `ai` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Store the transcript the writer’s own model made of a recording",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
     "/api/attachments/{id}": {
       "delete": {
         "operationId": "AttachmentsController_delete",
@@ -27522,6 +27657,23 @@
           "cached": true
         }
       },
+      "StoreTranscriptDto": {
+        "type": "object",
+        "properties": {
+          "transcript": {
+            "type": "string",
+            "description": "The recording's text, trimmed; at most 50000 characters (a longer one is refused with `400 TRANSCRIPT_TOO_LONG`)",
+            "minLength": 1,
+            "maxLength": 50000
+          }
+        },
+        "required": [
+          "transcript"
+        ],
+        "example": {
+          "transcript": "example"
+        }
+      },
       "BookVersionSourceDto": {
         "type": "object",
         "properties": {
@@ -35076,6 +35228,8 @@
           "ATTACHMENT_NOT_VIDEO",
           "ATTACHMENT_RANGE_NOT_SATISFIABLE",
           "TRANSCRIPTION_FAILED",
+          "TRANSCRIPT_LOCAL_DIARY_ONLY",
+          "TRANSCRIPT_TOO_LONG",
           "IMPORT_CONTENT_REQUIRED",
           "IMPORT_FILE_TOO_LARGE",
           "IMPORT_TOO_MANY_ENTRIES",

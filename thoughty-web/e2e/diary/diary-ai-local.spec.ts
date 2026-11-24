@@ -208,4 +208,61 @@ test.describe('A diary on the writer’s own model', () => {
     expect(chatRequests.at(-1)?.messages[1]?.content).toContain('<memoir_answer>\nMy grandmother sang in the kitchen every morning.\n</memoir_answer>');
     expect(state.memoir.lastFollowUpsPayload).toBeNull();
   });
+
+  test('transcribes an entry’s recording and a memoir recording on the writer’s speech-to-text model, Thoughty keeping only the text', async ({ page }) => {
+    const recording = { id: 77, original_filename: 'lake.webm', stored_filename: 'stored-lake.webm', mimetype: 'audio/webm', size: 68 };
+    const entries = initialEntries.map((entry) => (entry.id === 102 ? { ...entry, attachments: [recording] } : entry));
+    const { state } = await setupMockApp(page, { startAuthenticated: true, diaries: localDiaries, initialEntries: entries, memoirProgram: { diaryId: 2 } });
+    const thoughtyRequests: string[] = [];
+    page.on('request', (request) => {
+      const { pathname } = new URL(request.url());
+      if (/^\/api\/attachments\/(upload|\d+\/transcri)/.test(pathname)) thoughtyRequests.push(`${request.method()} ${pathname}`);
+    });
+    // A chat server such as Ollama has no speech-to-text endpoint: the test says so, and what to run instead
+    await routeLocalModelServer(page);
+    const panel = await setUpLocalModel(page);
+    await panel.getByLabel('Speech-to-text model (optional)').fill('whisper-1');
+    await panel.getByRole('button', { name: 'Test connection' }).click();
+    await expect(panel.getByText('Connected: llama3.2 is ready on your server.')).toBeVisible();
+    await expect(panel.getByText(/has no speech-to-text endpoint .*such as speaches, LocalAI/)).toBeVisible();
+
+    await page.unroute(`${LOCAL_MODEL_URL}/**`);
+    const { transcriptionRequests } = await routeLocalModelServer(page, { transcript: ' Dear sister, I miss the lake. ' });
+    await panel.getByLabel('Speech-to-text model (optional)').fill('');
+    await panel.getByRole('button', { name: 'Save model server' }).click();
+    await expect(panel.getByText('Saved in this browser.')).toBeVisible();
+
+    // Without a speech-to-text model the recording is not sent anywhere, and the entry says where to set one
+    await page.goto('/journal?diary=2');
+    const entry = page.locator('#entry-102');
+    await entry.getByRole('button', { name: 'Transcribe audio' }).click();
+    await expect(entry.getByRole('alert')).toHaveText(/set a speech-to-text model under Your own model/);
+    expect(transcriptionRequests).toHaveLength(0);
+
+    await setUpLocalModel(page);
+    await panel.getByLabel('Speech-to-text model (optional)').fill('whisper-1');
+    await panel.getByRole('button', { name: 'Test connection' }).click();
+    await expect(panel.getByText('Speech to text: whisper-1 transcribes recordings on your server.')).toBeVisible();
+    await panel.getByRole('button', { name: 'Save model server' }).click();
+    await expect(panel.getByText('Saved in this browser.')).toBeVisible();
+
+    await page.goto('/journal?diary=2');
+    await entry.getByRole('button', { name: 'Transcribe audio' }).click();
+    await expect(entry.getByText('Dear sister, I miss the lake.')).toBeVisible();
+    expect(transcriptionRequests.at(-1)).toEqual({ model: 'whisper-1', filename: 'lake.webm', bytes: expect.any(Number) });
+    expect(transcriptionRequests.at(-1)?.bytes).toBeGreaterThan(0);
+    expect(state.entries.find((candidate) => candidate.id === 102)?.attachments?.[0]?.transcript).toBe('Dear sister, I miss the lake.');
+    const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).include('#entry-102').analyze();
+    expect(results.violations.map(({ id }) => id)).toEqual([]);
+
+    // The memoir's recording goes from the recorder to the model, and its text into the answer: nothing is uploaded for it
+    await page.goto('/memoir');
+    const week = page.getByRole('region', { name: 'This week’s question' });
+    await week.getByRole('button', { name: 'Answer', exact: true }).click();
+    await week.locator('input[type="file"]').setInputFiles({ name: 'story.webm', mimeType: 'audio/webm', buffer: Buffer.from('mock audio') });
+    await week.getByRole('button', { name: 'Turn the recording into text' }).click();
+    await expect(week.getByLabel('Your answer')).toHaveValue('Dear sister, I miss the lake.');
+    expect(transcriptionRequests.at(-1)).toEqual({ model: 'whisper-1', filename: 'story.webm', bytes: 10 });
+    expect(thoughtyRequests).toEqual(['PUT /api/attachments/77/transcript']);
+  });
 });

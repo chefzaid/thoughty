@@ -5,6 +5,7 @@ import { AttachmentsController } from './attachments.controller';
 import { AttachmentsService } from './attachments.service';
 import { AudioTranscriptionService } from './audio-transcription.service';
 import { VideoPosterService } from './video-poster.service';
+import { LocalTranscriptService } from './local-transcript.service';
 
 describe('AttachmentsController form fields over HTTP', () => {
   let app: INestApplication;
@@ -23,6 +24,7 @@ describe('AttachmentsController form fields over HTTP', () => {
       { provide: AttachmentsService, useValue: attachmentsService },
       { provide: AudioTranscriptionService, useValue: {} },
       { provide: VideoPosterService, useValue: {} },
+      { provide: LocalTranscriptService, useValue: {} },
     ]);
   });
 

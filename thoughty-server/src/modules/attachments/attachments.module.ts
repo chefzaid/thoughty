@@ -5,13 +5,14 @@ import { AttachmentsController } from './attachments.controller';
 import { AttachmentsService } from './attachments.service';
 import { AudioTranscriptionService } from './audio-transcription.service';
 import { VideoPosterService } from './video-poster.service';
+import { LocalTranscriptService } from './local-transcript.service';
 import { AiModule } from '@/modules/ai/ai.module';
 import { UserConfigModule } from '@/modules/config';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Attachment, Entry]), AiModule, UserConfigModule],
   controllers: [AttachmentsController],
-  providers: [AttachmentsService, AudioTranscriptionService, VideoPosterService],
+  providers: [AttachmentsService, AudioTranscriptionService, LocalTranscriptService, VideoPosterService],
   exports: [AttachmentsService],
 })
 export class AttachmentsModule {}

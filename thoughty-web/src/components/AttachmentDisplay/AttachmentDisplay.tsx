@@ -21,7 +21,10 @@ interface AttachmentDisplayProps {
   readonly attachments: Attachment[];
   readonly theme?: "light" | "dark";
   readonly t: (key: string, params?: Record<string, string | number>) => string;
-  /** The AI mode of the entry's diary: with it off recordings are not transcribed, and asking each time asks first. */
+  /**
+   * The AI mode of the entry's diary: with it off recordings are not transcribed, asking each time asks first, and
+   * on the writer's own model they are transcribed there.
+   */
   readonly aiMode?: DiaryAiMode;
 }
 
@@ -46,7 +49,7 @@ function StoredAttachmentResource({
 function AttachmentDisplay({ attachments, theme, t, aiMode = "on" }: AttachmentDisplayProps) {
   const [activePreview, setActivePreview] =
     useState<ActivePreviewAttachment | null>(null);
-  const { attachmentsService } = useApiServices();
+  const { attachmentsService, localAiService } = useApiServices();
   const isDark = theme !== "light";
 
   if (!attachments || attachments.length === 0) return null;
@@ -186,6 +189,7 @@ function AttachmentDisplay({ attachments, theme, t, aiMode = "on" }: AttachmentD
                     <AudioTranscript
                       attachment={file}
                       attachmentsService={attachmentsService}
+                      localAiService={localAiService}
                       isDark={isDark}
                       t={t}
                       aiMode={aiMode}

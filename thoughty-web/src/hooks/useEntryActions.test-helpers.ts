@@ -64,6 +64,8 @@ export const apiModuleMock = () => ({
     linkAttachment: vi.fn(),
     deleteAttachment: vi.fn(),
     transcribeAttachment: vi.fn(),
+    downloadAttachment: vi.fn(),
+    storeTranscript: vi.fn(),
   })),
   createAiService: vi.fn(() => ({
     suggestTags: vi.fn(),

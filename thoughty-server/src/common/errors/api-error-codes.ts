@@ -160,6 +160,11 @@ export const API_ERROR_MESSAGES = {
   ATTACHMENT_NOT_VIDEO: 'Only video attachments have a poster frame',
   ATTACHMENT_RANGE_NOT_SATISFIABLE: 'The requested range is outside the file',
   TRANSCRIPTION_FAILED: 'Audio transcription request failed',
+  // 403: `PUT /api/attachments/{id}/transcript` for a recording that is not on an entry of a diary set to the writer's
+  // own model, the only one whose transcript the browser makes and sends.
+  TRANSCRIPT_LOCAL_DIARY_ONLY: 'Only a recording in a diary on your own model takes a transcript made in the browser',
+  // 400: a transcript sent by the browser longer than the API keeps (`TRANSCRIPT_MAX_LENGTH`).
+  TRANSCRIPT_TOO_LONG: 'The transcript is too long to keep',
 
   // Import, export and books.
   IMPORT_CONTENT_REQUIRED: 'File content is required',

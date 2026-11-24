@@ -6,6 +6,7 @@ import { AttachmentsService } from '@/modules/attachments/attachments.service';
 import { existsSync } from 'node:fs';
 import { AudioTranscriptionService } from '@/modules/attachments/audio-transcription.service';
 import { VideoPosterService } from '@/modules/attachments/video-poster.service';
+import { LocalTranscriptService } from '@/modules/attachments/local-transcript.service';
 import { BooksController } from '@/modules/books/books.controller';
 import { BooksService } from '@/modules/books/books.service';
 import { BookVersionsService } from '@/modules/books/book-versions.service';
@@ -26,6 +27,7 @@ describe('Multipart upload limits', () => {
         { provide: AttachmentsService, useValue: { upload } },
         { provide: AudioTranscriptionService, useValue: {} },
         { provide: VideoPosterService, useValue: {} },
+        { provide: LocalTranscriptService, useValue: {} },
         { provide: BooksService, useValue: { export: exportBook } },
         { provide: BookVersionsService, useValue: { create: createVersion } },
         { provide: BookEntrySourceService, useValue: {} },

@@ -25,6 +25,11 @@ const AUDIO_FORMATS: Readonly<Record<string, string>> = {
   'audio/webm': 'webm',
 };
 
+/** Whether an attachment of this type is a recording a transcript can be made of. */
+export function isTranscribableAudio(mimetype: string): boolean {
+  return Object.hasOwn(AUDIO_FORMATS, mimetype);
+}
+
 interface OpenRouterTranscriptionResponse {
   text?: unknown;
   usage?: unknown;

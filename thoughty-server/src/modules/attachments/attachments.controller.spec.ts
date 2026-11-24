@@ -5,6 +5,7 @@ import { AttachmentsController, RangeNotSatisfiableException } from './attachmen
 import { VideoPosterService } from './video-poster.service';
 import { AttachmentsService } from './attachments.service';
 import { AudioTranscriptionService } from './audio-transcription.service';
+import { LocalTranscriptService } from './local-transcript.service';
 import { ContentLockedException } from '@/common/content-lock';
 import { apiError } from '@/common/errors';
 
@@ -13,6 +14,7 @@ describe('AttachmentsController', () => {
   let attachmentsService: any;
   let audioTranscriptionService: any;
   let videoPosterService: { setPoster: jest.Mock };
+  let localTranscriptService: { store: jest.Mock };
 
   const mockUser = { userId: 1, email: 'test@example.com' };
 
@@ -37,6 +39,7 @@ describe('AttachmentsController', () => {
     };
     audioTranscriptionService = { transcribe: jest.fn() };
     videoPosterService = { setPoster: jest.fn() };
+    localTranscriptService = { store: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AttachmentsController],
@@ -44,6 +47,7 @@ describe('AttachmentsController', () => {
         { provide: AttachmentsService, useValue: attachmentsService },
         { provide: AudioTranscriptionService, useValue: audioTranscriptionService },
         { provide: VideoPosterService, useValue: videoPosterService },
+        { provide: LocalTranscriptService, useValue: localTranscriptService },
       ],
     }).compile();
 
@@ -117,6 +121,16 @@ describe('AttachmentsController', () => {
 
       expect(attachmentsService.delete).toHaveBeenCalledWith(1, 1);
       expect(result).toEqual({ success: true });
+    });
+  });
+
+  describe('storeTranscript', () => {
+    it('stores the text the writer’s own model made, for the authenticated user', async () => {
+      const stored = { transcript: 'Made on my laptop', transcribed_at: new Date('2026-11-24T10:00:00Z'), cached: false };
+      localTranscriptService.store.mockResolvedValue(stored);
+
+      await expect(controller.storeTranscript(mockUser as any, 4, { transcript: 'Made on my laptop' })).resolves.toEqual(stored);
+      expect(localTranscriptService.store).toHaveBeenCalledWith(1, 4, 'Made on my laptop');
     });
   });
 

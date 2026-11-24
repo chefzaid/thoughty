@@ -15,7 +15,21 @@ export type LocalModelProblem =
   | 'localModelNotOpenAi'
   | 'localModelTimeout'
   | 'localModelUnreadable'
-  | 'localModelFailed';
+  | 'localModelFailed'
+  | LocalTranscriptionProblem;
+
+/**
+ * Why a recording was not transcribed: no speech-to-text model set, none at the address (`/audio/transcriptions`
+ * answered 404 or 405), the model unknown there, the recording refused as too large (413), Thoughty could not hand
+ * the recording to this page, or the model heard no words.
+ */
+export type LocalTranscriptionProblem =
+  | 'localModelTranscriptionModelRequired'
+  | 'localModelNoTranscription'
+  | 'localModelTranscriptionModelNotFound'
+  | 'localModelRecordingTooLarge'
+  | 'localModelRecordingUnavailable'
+  | 'localModelNoSpeech';
 
 export type LocalModelResult<T> = { readonly data: T; readonly problem: null } | { readonly data: null; readonly problem: LocalModelProblem };
 
@@ -28,10 +42,10 @@ export interface LocalModelMessage {
 const COMPLETION_TIMEOUT_MS = 120_000;
 const TEST_TIMEOUT_MS = 10_000;
 
-const failed = (problem: LocalModelProblem): LocalModelResult<never> => ({ data: null, problem });
-const answered = <T>(data: T): LocalModelResult<T> => ({ data, problem: null });
+export const failed = (problem: LocalModelProblem): LocalModelResult<never> => ({ data: null, problem });
+export const answered = <T>(data: T): LocalModelResult<T> => ({ data, problem: null });
 
-function headers(settings: LocalModelSettings, json: boolean): HeadersInit {
+export function headers(settings: LocalModelSettings, json: boolean): HeadersInit {
   return {
     ...(json ? { 'Content-Type': 'application/json' } : {}),
     ...(settings.apiKey ? { Authorization: `Bearer ${settings.apiKey}` } : {}),
@@ -58,7 +72,7 @@ async function networkProblem(error: unknown, url: string): Promise<LocalModelPr
 }
 
 /** The problem a refused answer names: a refused key, an unknown model, or no OpenAI-compatible API there. */
-async function statusProblem(response: Response): Promise<LocalModelProblem> {
+export async function statusProblem(response: Response): Promise<LocalModelProblem> {
   if (response.status === 401 || response.status === 403) return 'localModelUnauthorized';
   const body = await response.text().catch(() => '');
   if ((response.status === 404 || response.status === 400) && /model/i.test(body) && /not.?found|does not exist|no such/i.test(body)) {
@@ -67,16 +81,25 @@ async function statusProblem(response: Response): Promise<LocalModelProblem> {
   return response.status === 404 || response.status === 405 ? 'localModelNotOpenAi' : 'localModelFailed';
 }
 
-async function send(url: string, init: RequestInit, timeoutMs: number): Promise<LocalModelResult<Response>> {
+/**
+ * A request to the writer's server: no cookies, no redirects, a timeout. A refused answer is named by `problemFor`
+ * (`statusProblem` by default).
+ */
+export async function send(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+  problemFor: (response: Response) => Promise<LocalModelProblem> = statusProblem,
+): Promise<LocalModelResult<Response>> {
   try {
     const response = await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs), redirect: 'error', credentials: 'omit' });
-    return response.ok ? answered(response) : failed(await statusProblem(response));
+    return response.ok ? answered(response) : failed(await problemFor(response));
   } catch (error) {
     return failed(await networkProblem(error, url));
   }
 }
 
-async function readJson(response: Response): Promise<unknown> {
+export async function readJson(response: Response): Promise<unknown> {
   try {
     return await response.json();
   } catch {

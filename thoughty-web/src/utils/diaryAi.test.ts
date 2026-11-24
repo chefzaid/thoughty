@@ -66,14 +66,14 @@ describe('diary AI mode', () => {
     expect(diaryAiScope([], null)).toEqual(ALL_DIARIES_AI_ON);
   });
 
-  it('offers every AI action but with AI off, and in a diary on the writer’s own model only those it takes', () => {
+  it('offers every AI action but with AI off, a diary on the writer’s own model taking them all, transcription too', () => {
     const tasks: DiaryAiTask[] = ['writing', 'tag', 'summary', 'chat', 'prompt', 'transcription'];
     const offered = (mode: 'on' | 'off' | 'ask' | 'local') => tasks.filter((task) => diaryOffersAi(mode, task));
 
     expect(offered('on')).toEqual(tasks);
     expect(offered('ask')).toEqual(tasks);
     expect(offered('off')).toEqual([]);
-    expect(offered('local')).toEqual(['writing', 'tag', 'summary', 'chat', 'prompt']);
+    expect(offered('local')).toEqual(tasks);
   });
 
   it('names each mode that is not simply on in Manage Diaries', () => {

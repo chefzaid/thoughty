@@ -46,6 +46,7 @@ const GUARDED_ROUTES: Record<FeatureFlag, Array<[Controller, string]>> = {
     [AiController, 'chat'],
     [AiController, 'getHistory'],
     [AttachmentsController, 'transcribe'],
+    [AttachmentsController, 'storeTranscript'],
     [ReviewController, 'readMood'],
     [StatsController, 'analyzePersonality'],
   ],

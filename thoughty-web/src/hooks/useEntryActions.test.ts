@@ -272,6 +272,8 @@ describe("useEntryActions", () => {
         linkAttachment,
         deleteAttachment,
         transcribeAttachment: vi.fn(),
+        downloadAttachment: vi.fn(),
+        storeTranscript: vi.fn(),
       });
 
       const { result } = renderHook(() =>

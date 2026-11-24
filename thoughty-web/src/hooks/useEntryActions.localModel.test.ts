@@ -21,7 +21,7 @@ const answer = (content: string) => new Response(JSON.stringify({ choices: [{ me
 beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
-  writeLocalModelSettings(7, { baseUrl: 'https://models.home.example/v1', model: 'qwen2.5', apiKey: '' });
+  writeLocalModelSettings(7, { baseUrl: 'https://models.home.example/v1', model: 'qwen2.5', apiKey: '', transcriptionModel: '' });
 });
 
 afterEach(() => vi.unstubAllGlobals());

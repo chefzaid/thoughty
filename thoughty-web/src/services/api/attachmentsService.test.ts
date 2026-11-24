@@ -201,4 +201,43 @@ describe("createAttachmentsService", () => {
       await expect(service.transcribeAttachment(9)).resolves.toBeNull();
     });
   });
+
+  describe("downloadAttachment", () => {
+    it("reads a stored file with the session from Thoughty's own address", async () => {
+      const blob = new Blob(["voice"], { type: "audio/webm" });
+      authFetch.mockResolvedValue({ ok: true, blob: () => Promise.resolve(blob) });
+
+      await expect(service.downloadAttachment("stored-9.webm")).resolves.toBe(blob);
+      expect(authFetch).toHaveBeenCalledWith("/api/attachments/file/stored-9.webm");
+    });
+
+    it("answers null when the file cannot be read", async () => {
+      authFetch.mockResolvedValueOnce({ ok: false }).mockRejectedValueOnce(new Error("offline"));
+
+      await expect(service.downloadAttachment("stored-9.webm")).resolves.toBeNull();
+      await expect(service.downloadAttachment("stored-9.webm")).resolves.toBeNull();
+    });
+  });
+
+  describe("storeTranscript", () => {
+    it("sends only the text the writer's own model made", async () => {
+      const stored = { transcript: "Dear sister", transcribed_at: "2026-11-24T10:00:00.000Z", cached: false };
+      authFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve(stored) });
+
+      await expect(service.storeTranscript(9, "Dear sister")).resolves.toEqual({ data: stored, refusal: null });
+      expect(authFetch).toHaveBeenCalledWith("/api/attachments/9/transcript", {
+        method: "PUT",
+        body: JSON.stringify({ transcript: "Dear sister" }),
+      });
+    });
+
+    it("names the API's refusal, and none when the request fails", async () => {
+      authFetch
+        .mockResolvedValueOnce(new Response(JSON.stringify({ statusCode: 400, code: "TRANSCRIPT_TOO_LONG", message: "Too long" }), { status: 400 }))
+        .mockRejectedValueOnce(new Error("offline"));
+
+      await expect(service.storeTranscript(9, "x")).resolves.toEqual({ data: null, refusal: "apiError_TRANSCRIPT_TOO_LONG" });
+      await expect(service.storeTranscript(9, "x")).resolves.toEqual({ data: null, refusal: null });
+    });
+  });
 });

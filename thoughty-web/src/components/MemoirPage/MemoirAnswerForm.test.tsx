@@ -10,7 +10,8 @@ vi.mock('../../hooks/useAuthenticatedService', () => ({ useAuthenticatedService:
 const memoirService = { followUps: vi.fn() };
 vi.mock('../../hooks/useMemoirService', () => ({ useMemoirService: () => memoirService }));
 // Interview mode on the writer's own model is tested in MemoirFollowUps.test.tsx
-vi.mock('../../hooks/useLocalAiService', () => ({ useLocalAiService: () => ({}) }));
+const localAiService = { transcribe: vi.fn() };
+vi.mock('../../hooks/useLocalAiService', () => ({ useLocalAiService: () => localAiService }));
 
 const t = (key: string, params?: Record<string, string | number>) =>
   params ? `${key} ${Object.values(params).join(' ')}` : key;
@@ -269,11 +270,20 @@ describe('MemoirAnswerForm', () => {
     expect(screen.queryByRole('group', { name: 'memoirFollowUpsTitle' })).not.toBeInTheDocument();
   });
 
-  it('offers interview mode on the writer’s own model when the memoir diary uses only it, but no transcription yet', () => {
+  it('offers interview mode and transcription on the writer’s own model when the memoir diary uses only it, uploading nothing to transcribe', async () => {
+    localAiService.transcribe.mockResolvedValueOnce({ data: null, refusal: 'localModelTranscriptionModelRequired' }).mockResolvedValueOnce({ data: 'We played marbles.', refusal: null });
     render(<MemoirAnswerForm questionId="childhood-home" questionText="What was home like?" onSubmit={vi.fn()} onCancel={vi.fn()} aiMode="local" t={t} />);
-    chooseFile(new File(['voice'], 'story.m4a', { type: 'audio/mp4' }));
+    const file = new File(['voice'], 'story.m4a', { type: 'audio/mp4' });
+    chooseFile(file);
 
-    expect(screen.queryByRole('button', { name: 'memoirTranscribe' })).not.toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'memoirFollowUpsTitle' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'memoirTranscribe' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('localModelTranscriptionModelRequired');
+
+    fireEvent.click(screen.getByRole('button', { name: 'memoirTranscribe' }));
+    await waitFor(() => expect(screen.getByLabelText('memoirYourAnswer')).toHaveValue('We played marbles.'));
+    expect(localAiService.transcribe).toHaveBeenCalledWith(file, 'story.m4a');
+    expect(attachmentsService.uploadAttachment).not.toHaveBeenCalled();
+    expect(attachmentsService.transcribeAttachment).not.toHaveBeenCalled();
   });
 });

@@ -7,15 +7,21 @@ import { confirmAiRequest } from "../DiaryAi/aiConsent";
 import { useRequestAiConsent } from "../DiaryAi/aiConsentContext";
 import { diaryOffersAi, type DiaryAiMode } from "../../utils/diaryAi";
 import { readAudioDuration } from "../../utils/audioDuration";
+import type { LocalAiService } from "../../services/localModel/localAiService";
+import { transcribeStoredRecording } from "../../services/localModel/localTranscript";
+import type { AiAnswer } from "../../services/api/aiTypes";
 
 interface AudioTranscriptProps {
   readonly attachment: Attachment;
   readonly attachmentsService: AttachmentsService;
+  /** The writer's own model, which a diary set to it transcribes with from this browser. */
+  readonly localAiService: Pick<LocalAiService, "transcribe">;
   readonly isDark: boolean;
   readonly t: (key: string) => string;
   /**
-   * The AI mode of the entry's diary: with AI off a recording without a transcript offers none, and a diary that
-   * asks each time shows the writer the recording and where it goes before sending it.
+   * The AI mode of the entry's diary: with AI off a recording without a transcript offers none, a diary that asks
+   * each time shows the writer the recording and where it goes before sending it, and one on the writer's own model
+   * sends it there from this browser, Thoughty's server keeping only the text.
    */
   readonly aiMode?: DiaryAiMode;
   /** The recording's address in the page, to read its length for that preview. */
@@ -25,40 +31,47 @@ interface AudioTranscriptProps {
 function AudioTranscript({
   attachment,
   attachmentsService,
+  localAiService,
   isDark,
   t,
   aiMode = "on",
   sourceUrl = null,
 }: AudioTranscriptProps) {
-  // A diary on the writer's own model offers none: speech to text runs on Thoughty's provider only
   const aiOn = useFeatureFlag("ai") && diaryOffersAi(aiMode, "transcription");
   const requestConsent = useRequestAiConsent();
   const [transcript, setTranscript] = useState(
     attachment.transcript?.trim() ?? "",
   );
   const [isLoading, setIsLoading] = useState(false);
-  const [hasError, setHasError] = useState(false);
+  /** The translation key of why the last try gave no transcript. */
+  const [problem, setProblem] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const transcribe = async () => {
-    setIsLoading(true);
-    setHasError(false);
+  /** The transcript from Thoughty's provider, once a diary that asks each time has been asked; null when cancelled. */
+  const transcribeOnServer = async (): Promise<AiAnswer<string> | null> => {
     const seconds = aiMode === "ask" ? await readAudioDuration(sourceUrl) : null;
     const consent = await confirmAiRequest(aiMode, requestConsent, {
       task: "transcription",
       recording: { name: attachment.original_filename, seconds },
     });
-    if (!consent.send) {
-      setIsLoading(false);
-      return;
-    }
+    if (!consent.send) return null;
     const result = await attachmentsService.transcribeAttachment(attachment.id, null, consent.aiConsent);
+    return result ? { data: result.transcript, refusal: null } : { data: null, refusal: null };
+  };
+
+  const transcribe = async () => {
+    setIsLoading(true);
+    setProblem(null);
+    const result = aiMode === "local"
+      ? await transcribeStoredRecording(attachment, attachmentsService, localAiService)
+      : await transcribeOnServer();
     setIsLoading(false);
-    if (!result) {
-      setHasError(true);
+    if (!result) return;
+    if (result.data === null) {
+      setProblem(result.refusal ?? "audioTranscriptionFailed");
       return;
     }
-    setTranscript(result.transcript);
+    setTranscript(result.data);
   };
 
   const copyTranscript = async () => {
@@ -91,9 +104,9 @@ function AudioTranscript({
           />
           {isLoading ? t("transcribingAudio") : t("transcribeAudio")}
         </button>
-        {hasError && (
+        {problem && (
           <p className={`mt-1 text-xs ${tintedTextClass("red", isDark ? "dark" : "light")}`} role="alert">
-            {t("audioTranscriptionFailed")}
+            {t(problem)}
           </p>
         )}
       </div>
