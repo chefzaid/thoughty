@@ -61,6 +61,17 @@ describe('web security headers', () => {
     expect(block).toContain('try_files $uri /index.html;');
   });
 
+  it('fills the site address into the sitemap and robots.txt the build writes, from the address each request came to', async () => {
+    const config = read('nginx.conf');
+    const block = /location ~ \^\/\(sitemap\\\.xml\|robots\\\.txt\)\$ \{([^}]*)\}/.exec(config)?.[1] ?? '';
+    const { SITE_ORIGIN_PLACEHOLDER } = await import('./utils/searchEngineFiles');
+
+    expect(config).toMatch(/map \$http_x_forwarded_proto \$thoughty_site_scheme \{\s*https\s+https;\s*default\s+\$scheme;\s*\}/);
+    expect(block).toContain(`sub_filter '${SITE_ORIGIN_PLACEHOLDER}' '$thoughty_site_scheme://$host';`);
+    expect(block).toContain('sub_filter_once off;');
+    expect(block).toContain('sub_filter_types text/xml text/plain;');
+  });
+
   it('has no inline scripts in the HTML entry point', () => {
     const scripts = read('index.html').match(/<script\b[^>]*>[\s\S]*?<\/script>/g) ?? [];
 

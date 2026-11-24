@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import Footer from './Footer';
+import { DisplayLanguageContext } from '../../contexts/displayLanguage';
 
 describe('Footer', () => {
     const defaultProps = {
@@ -34,6 +35,13 @@ describe('Footer', () => {
         expect(screen.getByText('Contact Us')).toBeInTheDocument();
         expect(screen.getByRole('link', { name: 'Memoir questions' })).toHaveAttribute('href', '/memoir-questions');
         expect(screen.getByRole('link', { name: 'Journal templates' })).toHaveAttribute('href', '/journal-templates');
+    });
+
+    it('leads to the public pages in the language being read', () => {
+        render(<DisplayLanguageContext.Provider value="fr"><Footer {...defaultProps} /></DisplayLanguageContext.Provider>);
+        expect(screen.getByRole('link', { name: 'About' })).toHaveAttribute('href', '/fr/about');
+        expect(screen.getByRole('link', { name: 'Memoir questions' })).toHaveAttribute('href', '/fr/memoir-questions');
+        expect(screen.getByRole('link', { name: 'Contact Us' })).toHaveAttribute('href', '/fr/contact');
     });
 
     it('applies dark theme styles correctly', () => {

@@ -66,4 +66,21 @@ describe('useConfig display', () => {
     expect(bodyTheme()).toBe('dark');
     expect(result.current.t('signIn')).toBe('Se connecter');
   });
+
+  it('reads a localized public page in its path’s language, for a visitor and a writer alike', async () => {
+    stubBrowserLanguages(['fr-FR']);
+    stubSystemScheme(false);
+    const visitor = renderHook(() => useConfig(false, false, 'en'));
+    expect(visitor.result.current.display.language).toBe('en');
+    expect(visitor.result.current.preferredLanguage).toBe('fr');
+
+    mocks.fetchConfig.mockResolvedValue({ language: 'en', theme: 'light' });
+    mocks.fetchProfileStats.mockResolvedValue(null);
+    const writer = renderHook(() => useConfig(true, false, 'fr'));
+    // Where the English address sends a writer waits for their settings
+    expect(writer.result.current.preferredLanguage).toBeNull();
+    await waitFor(() => expect(writer.result.current.display).toEqual({ language: 'fr', theme: 'light' }));
+    expect(writer.result.current.preferredLanguage).toBe('en');
+    expect(writer.result.current.t('signIn')).toBe('Se connecter');
+  });
 });

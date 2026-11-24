@@ -114,7 +114,7 @@ function MemoirQuestionsPage({ theme, t, language, isAuthenticated, onSignUp, on
       closing={{
         title: t('questionsPageCtaTitle'),
         body: t('questionsPageCtaBody'),
-        linkHref: getPublicPathForView('journalTemplates'),
+        linkHref: getPublicPathForView('journalTemplates', language),
         linkLabel: t('questionsPageTemplatesLink'),
       }}
     >

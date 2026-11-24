@@ -1,3 +1,4 @@
+import { useDisplayLanguage } from '../../contexts/displayLanguage';
 import { getPublicPathForView, type PublicViewType } from '../../types';
 import { mutedTextClass } from '../../utils/tintedText';
 
@@ -19,6 +20,8 @@ interface FooterProps {
 function Footer({ t, theme }: Readonly<FooterProps>) {
     const year = new Date().getFullYear();
     const isLight = theme === 'light';
+    // The pages it leads to open in the language being read
+    const language = useDisplayLanguage();
 
     return (
         <footer className={`mt-12 py-8 border-t transition-colors ${isLight ? 'border-gray-200 bg-gray-50/50' : 'border-gray-800 bg-gray-900/50'}`}>
@@ -30,7 +33,7 @@ function Footer({ t, theme }: Readonly<FooterProps>) {
 
                 <div className="flex flex-wrap justify-center gap-6">
                     {FOOTER_LINKS.map(([view, labelKey]) => (
-                        <a key={view} href={getPublicPathForView(view)} className={`text-sm hover:underline transition-colors ${isLight ? 'text-gray-600 hover:text-gray-900' : 'text-gray-400 hover:text-gray-100'}`}>
+                        <a key={view} href={getPublicPathForView(view, language)} className={`text-sm hover:underline transition-colors ${isLight ? 'text-gray-600 hover:text-gray-900' : 'text-gray-400 hover:text-gray-100'}`}>
                             {t(labelKey)}
                         </a>
                     ))}

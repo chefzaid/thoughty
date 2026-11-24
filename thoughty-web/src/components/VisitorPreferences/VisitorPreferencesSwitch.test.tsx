@@ -6,7 +6,7 @@ import VisitorPreferencesSwitch from './VisitorPreferencesSwitch';
 import { getTranslation, type Language } from '../../utils/translations';
 
 function renderSwitch(language: Language, theme: 'light' | 'dark') {
-  const preferences = { language, theme, chooseLanguage: vi.fn(), chooseTheme: vi.fn() };
+  const preferences = { language, preferredLanguage: language, theme, chooseLanguage: vi.fn(), chooseTheme: vi.fn() };
   render(<VisitorPreferencesSwitch preferences={preferences} t={(key) => getTranslation(language, key)} />);
   return preferences;
 }

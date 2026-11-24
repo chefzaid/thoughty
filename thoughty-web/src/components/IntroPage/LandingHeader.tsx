@@ -1,3 +1,5 @@
+import { useDisplayLanguage } from '../../contexts/displayLanguage';
+import { getPublicPathForView } from '../../types';
 import './LandingHeader.css';
 
 /** What the landing page's buttons need: the visitor's state and where each button leads. */
@@ -12,6 +14,7 @@ export interface LandingActionProps {
 /** The sticky landing header: brand, section links and the sign-in or open-journal buttons. */
 export default function LandingHeader(props: Readonly<LandingActionProps>) {
   const { isAuthenticated, onOpenJournal, onSignIn, onSignUp, t } = props;
+  const language = useDisplayLanguage();
 
   return (
     <header className="landing-header">
@@ -23,7 +26,7 @@ export default function LandingHeader(props: Readonly<LandingActionProps>) {
         <a href="#features">{t('landingNavFeatures')}</a>
         <a href="#memoir">{t('landingNavMemoir')}</a>
         <a href="#privacy">{t('landingNavPrivacy')}</a>
-        <a href="/blog">{t('landingNavBlog')}</a>
+        <a href={getPublicPathForView('blog', language)}>{t('landingNavBlog')}</a>
       </nav>
       <div className="landing-header-actions">
         {isAuthenticated ? (

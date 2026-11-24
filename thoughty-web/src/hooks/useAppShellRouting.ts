@@ -10,6 +10,7 @@ import {
   getPublicPathForView,
   viewSupportsDiarySearch,
 } from '../types';
+import type { Language } from '../utils/translations';
 
 interface UseAppShellRoutingParams {
   currentDiaryId: number | null;
@@ -22,6 +23,8 @@ interface UseAppShellRoutingParams {
   importExportFormat: ImportExportFormat;
   importExportIncludeVisibility: boolean;
   importExportSection: ImportExportSection;
+  /** The language the pages are read in: the localized public pages open in it. */
+  language: Language;
   logout: () => Promise<void>;
   navigate: NavigateFunction;
   /** The current address, so a diary change keeps the journal's list or calendar layout. */
@@ -40,6 +43,7 @@ export function useAppShellRouting({
   importExportFormat,
   importExportIncludeVisibility,
   importExportSection,
+  language,
   logout,
   navigate,
   searchParams,
@@ -73,8 +77,8 @@ export function useAppShellRouting({
   }, [currentDiaryId, navigate]);
 
   const handlePublicViewChange = useCallback((view: PublicViewType) => {
-    navigate(getPublicPathForView(view));
-  }, [navigate]);
+    navigate(getPublicPathForView(view, language));
+  }, [language, navigate]);
 
   const handleDiaryChange = useCallback((diaryId: number | null) => {
     setCurrentDiaryId(diaryId);

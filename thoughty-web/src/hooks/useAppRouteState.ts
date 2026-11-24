@@ -3,6 +3,7 @@ import { useLocation, useSearchParams } from 'react-router-dom';
 import { parseJournalPersonParam } from '../utils/appRouting';
 
 import {
+  getLocalizedPublicPage,
   getPublicViewForPath,
   getViewForPath,
   parseBooleanSearchParam,
@@ -19,6 +20,8 @@ export function useAppRouteState() {
   const [searchParams] = useSearchParams();
   const currentView = getViewForPath(location.pathname);
   const publicView = getPublicViewForPath(location.pathname);
+  // A localized public page is read in its path's language: English as it is, French under /fr/
+  const pageLanguage = getLocalizedPublicPage(location.pathname)?.language ?? null;
   const routeDiaryId = currentView && viewSupportsDiarySearch(currentView)
     ? parseDiarySearchParam(searchParams)
     : undefined;
@@ -32,6 +35,7 @@ export function useAppRouteState() {
     searchParams,
     currentView,
     publicView,
+    pageLanguage,
     routeDiaryId,
     routeEntryId,
     routePersonId,

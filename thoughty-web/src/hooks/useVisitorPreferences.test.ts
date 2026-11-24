@@ -55,4 +55,26 @@ describe('useVisitorPreferences', () => {
     act(() => scheme.switchTo(true));
     expect(result.current.theme).toBe('dark');
   });
+
+  it('reads the pages after a localized one in its language until the visitor picks one', () => {
+    stubBrowserLanguages(['en-US']);
+    const { result, rerender } = renderHook(({ page }) => useVisitorPreferences(page), {
+      initialProps: { page: 'fr' as 'en' | 'fr' | null },
+    });
+    expect(result.current).toMatchObject({ language: 'fr', preferredLanguage: 'en' });
+
+    // Sign-in, say, has no language in its path
+    rerender({ page: null });
+    expect(result.current.language).toBe('fr');
+
+    rerender({ page: 'en' });
+    rerender({ page: null });
+    expect(result.current.language).toBe('en');
+
+    rerender({ page: 'fr' });
+    rerender({ page: null });
+    act(() => result.current.chooseLanguage('en'));
+    expect(result.current).toMatchObject({ language: 'en', preferredLanguage: 'en' });
+    expect(localStorage.getItem('thoughty.visitorLanguage')).toBe('en');
+  });
 });

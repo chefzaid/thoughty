@@ -19,6 +19,7 @@ function createParams(
     importExportFormat: 'txt',
     importExportIncludeVisibility: false,
     importExportSection: 'export',
+    language: 'en',
     logout: vi.fn().mockResolvedValue(undefined),
     navigate: vi.fn(),
     setCurrentDiaryId: vi.fn(),
@@ -104,6 +105,19 @@ describe('useAppShellRouting', () => {
       search: '',
     });
     expect(navigate).toHaveBeenNthCalledWith(3, '/register');
+  });
+
+  it('opens the localized public pages in the language read, the sign-in pages at their only address', () => {
+    const navigate = vi.fn();
+    const { result } = renderHook(() => useAppShellRouting(createParams({ language: 'fr', navigate })));
+
+    act(() => {
+      result.current.handlePublicViewChange('about');
+      result.current.handlePublicViewChange('intro');
+      result.current.handlePublicViewChange('login');
+    });
+
+    expect(navigate.mock.calls).toEqual([['/fr/about'], ['/fr/'], ['/login']]);
   });
 
   it('carries navigation state to a view when given', () => {

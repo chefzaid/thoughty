@@ -16,9 +16,10 @@ const PROFILE_STATS_QUERY_KEY = ['app', 'profile-stats'] as const;
 /**
  * The writer's settings. `offline` is set while the journal is open without a connection (see
  * `useAuthSession`): the app then counts as loaded at once, and looks and reads as it did when the
- * settings were last read on this browser, until the API answers.
+ * settings were last read on this browser, until the API answers. `pageLanguage` is the language the
+ * path of a localized public page asks for (`/fr/…`), which that page is read in by writers and visitors alike.
  */
-export const useConfig = (isAuthenticated: boolean, offline = false) => {
+export const useConfig = (isAuthenticated: boolean, offline = false, pageLanguage: Language | null = null) => {
   const { configService } = useApiServices();
   const queryClient = useQueryClient();
   const offlineDisplay = useMemo(() => (offline ? readOfflineDisplay() : null), [offline]);
@@ -83,10 +84,15 @@ export const useConfig = (isAuthenticated: boolean, offline = false) => {
     return success;
   }, [configService, queryClient]);
 
-  const visitor = useVisitorPreferences();
+  const visitor = useVisitorPreferences(pageLanguage);
   // A writer's pages follow their settings (English and dark until they load); a visitor's follow the
-  // browser's language and the system theme, or what they picked with the switch on the public pages
-  const language: Language = isAuthenticated ? resolveLanguage(config.language) : visitor.language;
+  // browser's language and the system theme, or what they picked with the switch on the public pages.
+  // A localized public page is read in its path's language either way.
+  const language: Language = pageLanguage ?? (isAuthenticated ? resolveLanguage(config.language) : visitor.language);
+  // Where the English address of a localized public page sends the reader (also every other language's):
+  // a writer's saved language once read, a visitor's pick or browser language
+  let preferredLanguage: Language | null = visitor.preferredLanguage;
+  if (isAuthenticated) preferredLanguage = configLoaded ? resolveLanguage(config.language) : null;
   const accountTheme: Theme = config.theme === 'light' ? 'light' : 'dark';
   const theme = isAuthenticated ? accountTheme : visitor.theme;
 
@@ -120,6 +126,7 @@ export const useConfig = (isAuthenticated: boolean, offline = false) => {
     downloadUserData,
     /** The language and theme the pages show in, for a writer or a visitor. */
     display: { language, theme },
+    preferredLanguage,
     visitor,
     t,
   };

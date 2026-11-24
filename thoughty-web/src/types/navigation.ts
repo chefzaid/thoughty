@@ -70,12 +70,65 @@ export function getViewForPath(pathname: string): ViewType | null {
   return getViewFromPath(VIEW_PATHS, pathname);
 }
 
-export function getPublicPathForView(view: PublicViewType): string {
-  return PUBLIC_VIEW_PATHS[view];
+/**
+ * The public pages search engines index, each in every interface language and the path deciding which:
+ * English at the page's own path (also the address for any other language, `x-default`), French under
+ * `/fr` (`/fr/` for the presentation page). The sign-in, sign-up and emailed-link pages are not among them.
+ */
+export const LOCALIZED_PUBLIC_VIEWS = [
+  'intro', 'about', 'blog', 'memoirQuestions', 'journalTemplates', 'feedback', 'contact', 'privacy', 'terms',
+] as const satisfies readonly PublicViewType[];
+export type LocalizedPublicView = typeof LOCALIZED_PUBLIC_VIEWS[number];
+
+/**
+ * The languages of the public pages' paths, the interface languages (`Language` in utils/translations,
+ * not imported so the build's Node scripts can read this file alone); the first is the one without a prefix.
+ */
+export const PAGE_LANGUAGES = ['en', 'fr'] as const;
+export type PageLanguage = typeof PAGE_LANGUAGES[number];
+export const DEFAULT_PAGE_LANGUAGE: PageLanguage = PAGE_LANGUAGES[0];
+const LANGUAGE_PATH_PREFIXES: Record<PageLanguage, string> = { en: '', fr: '/fr' };
+
+/** A localized public page and the language its path asks for. */
+export interface LocalizedPublicPage {
+  readonly view: LocalizedPublicView;
+  readonly language: PageLanguage;
+}
+
+function isLocalizedPublicView(view: PublicViewType | null): view is LocalizedPublicView {
+  return (LOCALIZED_PUBLIC_VIEWS as readonly (PublicViewType | null)[]).includes(view);
+}
+
+/** The path of a public page; a localized one in `language` (English by default), the others as they are. */
+export function getPublicPathForView(view: PublicViewType, language: PageLanguage = DEFAULT_PAGE_LANGUAGE): string {
+  const path = PUBLIC_VIEW_PATHS[view];
+  const prefix = isLocalizedPublicView(view) ? LANGUAGE_PATH_PREFIXES[language] : '';
+  if (!prefix) return path;
+  return path === '/' ? `${prefix}/` : `${prefix}${path}`;
+}
+
+/** The localized public page a path opens and the language it asks for, or null for any other path. */
+export function getLocalizedPublicPage(pathname: string): LocalizedPublicPage | null {
+  const path = normalizePath(pathname);
+  const prefixed = PAGE_LANGUAGES.find((language) => {
+    const prefix = LANGUAGE_PATH_PREFIXES[language];
+    return prefix !== '' && (path === prefix || path.startsWith(`${prefix}/`));
+  });
+  const language = prefixed ?? DEFAULT_PAGE_LANGUAGE;
+  const view = getViewFromPath(PUBLIC_VIEW_PATHS, path.slice(LANGUAGE_PATH_PREFIXES[language].length) || '/');
+  return isLocalizedPublicView(view) ? { view, language } : null;
+}
+
+/** A localized page's address in each language, and the one for every other language (`x-default`). */
+export function getPublicPageAlternates(view: LocalizedPublicView): readonly { readonly hreflang: string; readonly path: string }[] {
+  return [
+    ...PAGE_LANGUAGES.map((language) => ({ hreflang: language, path: getPublicPathForView(view, language) })),
+    { hreflang: 'x-default', path: getPublicPathForView(view, DEFAULT_PAGE_LANGUAGE) },
+  ];
 }
 
 export function getPublicViewForPath(pathname: string): PublicViewType | null {
-  return getViewFromPath(PUBLIC_VIEW_PATHS, pathname);
+  return getLocalizedPublicPage(pathname)?.view ?? getViewFromPath(PUBLIC_VIEW_PATHS, pathname);
 }
 
 export function viewSupportsDiarySearch(view: ViewType): view is DiaryScopedViewType {

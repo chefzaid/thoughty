@@ -7,7 +7,8 @@ import AiConsentDialog from './components/DiaryAi/AiConsentDialog';
 import { AiConsentContext } from './components/DiaryAi/aiConsentContext';
 import NotificationsMenu from './components/Notifications/NotificationsMenu';
 import IntroPage from './components/IntroPage/IntroPage';
-import { useAppShellModel } from './hooks/useAppShellModel';
+import { DisplayLanguageContext } from './contexts/displayLanguage';
+import { useAppShellModel, type AppShellModel } from './hooks/useAppShellModel';
 import PublicAppLayout from './routes/PublicAppLayout';
 import { getPathForView, getPublicPathForView, type TranslationFunction } from './types';
 
@@ -36,37 +37,36 @@ function renderLazy(children: ReactNode) {
   );
 }
 
-function AppShell() {
-  const {
-    authLoading,
-    isAuthenticated,
-    currentView,
-    landingView,
-    publicView,
-    authPageProps,
-    aboutPageProps,
-    blogPageProps,
-    contactPageProps,
-    feedbackPageProps,
-    memoirQuestionsPageProps,
-    journalTemplatesPageProps,
-    legalPageProps,
-    verifyEmailPageProps,
-    completeSignUpPageProps,
-    resetPasswordPageProps,
-    unsubscribePageProps,
-    authenticatedLayoutProps,
-    authenticatedRoutesProps,
-    introPageProps,
-    sessionUnreachablePageProps,
-    addEmailPageProps,
-    diaries,
-    aiConsent,
-    visitorPreferences,
-  } = useAppShellModel();
-
+function AppShellScreens({
+  authLoading,
+  isAuthenticated,
+  currentView,
+  landingView,
+  publicView,
+  authPageProps,
+  aboutPageProps,
+  blogPageProps,
+  contactPageProps,
+  feedbackPageProps,
+  memoirQuestionsPageProps,
+  journalTemplatesPageProps,
+  legalPageProps,
+  verifyEmailPageProps,
+  completeSignUpPageProps,
+  resetPasswordPageProps,
+  unsubscribePageProps,
+  authenticatedLayoutProps,
+  authenticatedRoutesProps,
+  introPageProps,
+  sessionUnreachablePageProps,
+  addEmailPageProps,
+  diaries,
+  aiConsent,
+  visitorPreferences,
+  preferredLanguage,
+}: Readonly<AppShellModel>) {
   const renderPublic = (children: ReactNode, t: TranslationFunction) => (
-    <PublicAppLayout t={t} visitorPreferences={visitorPreferences}>{children}</PublicAppLayout>
+    <PublicAppLayout t={t} visitorPreferences={visitorPreferences} preferredLanguage={preferredLanguage}>{children}</PublicAppLayout>
   );
 
   if (authLoading) {
@@ -162,6 +162,15 @@ function AppShell() {
         />
       </AiConsentContext.Provider>
     </DiaryAiContext.Provider>,
+  );
+}
+
+function AppShell() {
+  const model = useAppShellModel();
+  return (
+    <DisplayLanguageContext.Provider value={model.displayLanguage}>
+      <AppShellScreens {...model} />
+    </DisplayLanguageContext.Provider>
   );
 }
 

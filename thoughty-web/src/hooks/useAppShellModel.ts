@@ -48,12 +48,13 @@ import {
   type AddEmailPageProps,
 } from '../utils/appShellProps';
 import type { Diary, Entry, PublicViewType, ViewType } from '../types';
+import type { Language } from '../utils/translations';
 import { landingViewFor } from '../utils/landingView';
 import { useEntryAiActions } from './useEntryAiActions';
 import { useAiConsentController } from '../components/DiaryAi/useAiConsentController';
 import type { AiConsentRequest, RequestAiConsent } from '../components/DiaryAi/aiConsent';
 
-interface AppShellModel {
+export interface AppShellModel {
   authLoading: boolean;
   isAuthenticated: boolean;
   currentView: ViewType | null;
@@ -83,6 +84,10 @@ interface AppShellModel {
   aiConsent: { request: AiConsentRequest | null; answer: (agreed: boolean) => void; requestConsent: RequestAiConsent };
   /** The language and theme switch of the public pages, for a visitor without a session; null otherwise. */
   visitorPreferences: VisitorPreferences | null;
+  /** The language the pages are read in, which the links to the localized public pages follow. */
+  displayLanguage: Language;
+  /** The language the English address of a localized public page sends the reader to; null until a writer's settings are read. */
+  preferredLanguage: Language | null;
 }
 
 export function useAppShellModel(): AppShellModel {
@@ -92,6 +97,7 @@ export function useAppShellModel(): AppShellModel {
     searchParams,
     currentView,
     publicView,
+    pageLanguage,
     routeDiaryId,
     routeEntryId,
     routePersonId,
@@ -113,9 +119,10 @@ export function useAppShellModel(): AppShellModel {
     updateConfig,
     downloadUserData,
     display,
+    preferredLanguage,
     visitor,
     t,
-  } = useConfig(isAuthenticated, offline);
+  } = useConfig(isAuthenticated, offline, pageLanguage);
   const appNotice = useAppNotice(t, display.language);
   const { notifier } = appNotice;
   // Settings the reader changes on purpose say so when they could not be saved
@@ -234,6 +241,7 @@ export function useAppShellModel(): AppShellModel {
     importExportFormat,
     importExportIncludeVisibility,
     importExportSection,
+    language: display.language,
     logout,
     navigate,
     searchParams,
@@ -474,5 +482,7 @@ export function useAppShellModel(): AppShellModel {
     aiConsent,
     // A visitor picks the language and theme on the public pages; a writer's settings decide them
     visitorPreferences: isAuthenticated || unreachable ? null : visitor,
+    displayLanguage: display.language,
+    preferredLanguage,
   };
 }

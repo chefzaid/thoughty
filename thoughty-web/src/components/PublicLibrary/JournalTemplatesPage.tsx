@@ -36,7 +36,7 @@ function JournalTemplatesPage({ theme, t, language, isAuthenticated, onSignUp, o
       closing={{
         title: t('templatesPageCtaTitle'),
         body: t('templatesPageCtaBody'),
-        linkHref: getPublicPathForView('memoirQuestions'),
+        linkHref: getPublicPathForView('memoirQuestions', language),
         linkLabel: t('templatesPageQuestionsLink'),
       }}
     >

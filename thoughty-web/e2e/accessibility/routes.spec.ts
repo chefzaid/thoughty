@@ -13,6 +13,8 @@ type RouteContent = (page: Page) => Locator[];
  */
 const PUBLIC_ROUTES: Record<string, RouteContent> = {
   '/': (page) => [page.getByRole('heading', { level: 1, name: 'A private journal that becomes your life story.' })],
+  // The French presentation page, read in French by this English browser
+  '/fr/': (page) => [page.getByRole('heading', { level: 1, name: 'Un journal privé qui devient l’histoire de votre vie.' })],
   '/login': (page) => [page.getByRole('textbox', { name: 'Email or Username' }), page.getByRole('button', { name: 'Sign In', exact: true })],
   '/register': (page) => [page.getByRole('textbox', { name: 'Confirm Password' })],
   '/complete-sign-up?token=sign-up-token': (page) => [page.getByRole('button', { name: 'Create my account' })],
@@ -109,7 +111,7 @@ test.describe('route accessibility', () => {
         await page.goto(path);
         for (const part of content(page)) await expect(part).toBeVisible();
         await expectPublicPageTheme(page, theme);
-        await expect(page.getByRole('group', { name: 'Language and theme' })).toBeVisible();
+        await expect(page.getByRole('group', { name: /^(Language and theme|Langue et thème)$/ })).toBeVisible();
 
         await expectNoAccessibilityViolations(page);
       });
