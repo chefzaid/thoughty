@@ -3,6 +3,7 @@ import type { ChangeEvent } from "react";
 import type { TranslationFunction, ProfileConfig } from "./types";
 import { useApiServices } from "../../hooks/useAppState";
 import AiCredentialPanel from "./AiCredentialPanel";
+import LocalModelPanel from "./LocalModelPanel";
 import "./AISection.css";
 
 interface AISectionProps {
@@ -272,6 +273,7 @@ function AISection({ localConfig, handleChange, t }: Readonly<AISectionProps>) {
             ))}
           </div>
         </div>
+        <LocalModelPanel theme={localConfig.theme === "light" ? "light" : "dark"} t={t} />
       </div>
     </div>
   );

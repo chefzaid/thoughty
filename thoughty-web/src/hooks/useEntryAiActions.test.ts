@@ -4,7 +4,7 @@ import type { Entry } from '../types';
 import { useEntryAiActions } from './useEntryAiActions';
 
 const entry = (diaryId: number) => ({ id: 44, content: 'A dream about the sea', diary_id: diaryId } as Entry);
-const diaries = [{ id: 1, aiMode: 'on' as const }, { id: 2, aiMode: 'ask' as const }];
+const diaries = [{ id: 1, aiMode: 'on' as const }, { id: 2, aiMode: 'ask' as const }, { id: 3, aiMode: 'local' as const }];
 
 function setup(requestConsent = vi.fn().mockResolvedValue(true)) {
   const aiService = {
@@ -12,8 +12,14 @@ function setup(requestConsent = vi.fn().mockResolvedValue(true)) {
     summarizeEntry: vi.fn().mockResolvedValue('A summary'),
     chat: vi.fn().mockResolvedValue('A reply'),
   };
+  const localAiService = {
+    fixWriting: vi.fn().mockResolvedValue({ data: 'Rewritten here', refusal: null }),
+    suggestTags: vi.fn(),
+    summarize: vi.fn().mockResolvedValue({ data: 'A summary from my model', refusal: null }),
+  };
   const options = {
     aiService,
+    localAiService,
     diaries,
     requestConsent,
     editWith: vi.fn(),
@@ -97,5 +103,41 @@ describe('useEntryAiActions', () => {
     await expect(result.current.handleChat(entry(1), messages)).resolves.toBe('A reply');
     expect(aiService.chat).toHaveBeenLastCalledWith(44, 'A dream about the sea', messages, undefined);
     expect(requestConsent).toHaveBeenCalledTimes(2);
+  });
+
+  it('rephrases and summarizes an entry of a diary on the writer’s own model there, unasked and never through the API', async () => {
+    const { result, aiService, localAiService, requestConsent, editWith } = setup();
+
+    await act(async () => result.current.handleRephrase(entry(3), 'rewrite'));
+    expect(localAiService.fixWriting).toHaveBeenCalledWith('A dream about the sea', 'rewrite');
+    expect(editWith).toHaveBeenCalledWith(entry(3), 'Rewritten here');
+
+    let summary: string | null | undefined;
+    await act(async () => {
+      summary = await result.current.handleSummarize(entry(3), { includeDetails: 'the sea' });
+    });
+    expect(summary).toBe('A summary from my model');
+    expect(localAiService.summarize).toHaveBeenCalledWith('A dream about the sea', { includeDetails: 'the sea' });
+    expect(aiService.fixWriting).not.toHaveBeenCalled();
+    expect(aiService.summarizeEntry).not.toHaveBeenCalled();
+    expect(requestConsent).not.toHaveBeenCalled();
+  });
+
+  it('says why the writer’s own model gave no rephrasing or summary', async () => {
+    const { result, localAiService, notify, editWith, reloadDiaries } = setup();
+    localAiService.fixWriting.mockResolvedValue({ data: null, refusal: 'localModelBlocked' });
+    localAiService.summarize.mockResolvedValue({ data: null, refusal: 'localModelUnreachable' });
+
+    await act(async () => result.current.handleRephrase(entry(3), 'grammar'));
+    expect(notify).toHaveBeenCalledWith('localModelBlocked');
+    expect(editWith).not.toHaveBeenCalled();
+    expect(reloadDiaries).not.toHaveBeenCalled();
+
+    let summary: string | null | undefined = 'unset';
+    await act(async () => {
+      summary = await result.current.handleSummarize(entry(3), {});
+    });
+    expect(summary).toBeUndefined();
+    expect(notify).toHaveBeenCalledWith('localModelUnreachable');
   });
 });

@@ -11,7 +11,7 @@ import { extractDate } from './EntriesList.utils';
 import { formatEntryDay } from '../ShareLinks/shareLinkText';
 import { IconActionButton } from './EntryActionPrimitives';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
-import { diaryAiMode } from '../../utils/diaryAi';
+import { diaryAiMode, diaryOffersAi } from '../../utils/diaryAi';
 import EntryRephraseButton from './EntryRephraseButton';
 import EntrySecondaryActionsMenu from './EntrySecondaryActionsMenu';
 import EntrySummaryDialog from './EntrySummaryDialog';
@@ -167,12 +167,13 @@ function OpenEntryViewMode({
     t,
 }: Readonly<EntryViewModeProps>) {
     // The AI actions are left out while AI is switched off, and in a diary with AI off. In one that asks each
-    // time, each of them (chat messages and transcriptions too) shows what it would send first
+    // time, each of them (chat messages and transcriptions too) shows what it would send first; one on the writer's
+    // own model offers only those that model takes
     const aiMode = diaryAiMode(diaries, entry.diary_id);
-    const aiOn = useFeatureFlag('ai') && aiMode !== 'off';
-    const onDiscuss = aiOn ? discuss : undefined;
-    const onRephrase = aiOn ? rephrase : undefined;
-    const onSummarize = aiOn ? summarize : undefined;
+    const aiOn = useFeatureFlag('ai');
+    const onDiscuss = aiOn && diaryOffersAi(aiMode, 'chat') ? discuss : undefined;
+    const onRephrase = aiOn && diaryOffersAi(aiMode, 'writing') ? rephrase : undefined;
+    const onSummarize = aiOn && diaryOffersAi(aiMode, 'summary') ? summarize : undefined;
     const publicSharing = useFeatureFlag('publicSharing');
     const [summaryOpen, setSummaryOpen] = useLocalState(false);
     const [shareImage, setShareImage] = useLocalState<{ excerpt?: string } | null>(null);

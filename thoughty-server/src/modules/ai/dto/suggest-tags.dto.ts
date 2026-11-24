@@ -27,8 +27,9 @@ export class SuggestTagsDto {
 
   @ApiPropertyOptional({
     description:
-      'Diary the text is written in; a diary with AI off refuses the request (`403 DIARY_AI_OFF`), and one that ' +
-      'asks before each AI request refuses it without `aiConsent` (`403 DIARY_AI_CONSENT_REQUIRED`)',
+      'Diary the text is written in; a diary with AI off refuses the request (`403 DIARY_AI_OFF`), one on the ' +
+      'writer’s own model refuses it too (`403 DIARY_AI_LOCAL`), and one that asks before each AI request refuses it ' +
+      'without `aiConsent` (`403 DIARY_AI_CONSENT_REQUIRED`)',
     minimum: 1,
   })
   @IsOptional()

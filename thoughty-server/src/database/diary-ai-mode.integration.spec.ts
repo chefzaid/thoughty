@@ -5,7 +5,7 @@ import {
   type PostgresTestDatabase,
 } from './postgres-test-database.test-helpers';
 
-describePostgres('DiaryAiMode1790035200000 and DiaryAiAskMode1790121600000 on PostgreSQL', () => {
+describePostgres('DiaryAiMode1790035200000, DiaryAiAskMode1790121600000 and DiaryAiLocalMode1790640000000 on PostgreSQL', () => {
   let database: PostgresTestDatabase;
   let writer = 0;
   let open = 0;
@@ -40,7 +40,7 @@ describePostgres('DiaryAiMode1790035200000 and DiaryAiAskMode1790121600000 on Po
   it('gives a new diary AI on and refuses a mode it does not know', async () => {
     const [{ ai_mode: mode }] = await database.dataSource.query('SELECT ai_mode FROM diaries WHERE id = $1', [open]);
     expect(mode).toBe('on');
-    await expect(database.dataSource.query(`UPDATE diaries SET ai_mode = 'local' WHERE id = $1`, [open])).rejects.toThrow(
+    await expect(database.dataSource.query(`UPDATE diaries SET ai_mode = 'cloud' WHERE id = $1`, [open])).rejects.toThrow(
       /chk_diaries_ai_mode/,
     );
   });
@@ -91,5 +91,33 @@ describePostgres('DiaryAiMode1790035200000 and DiaryAiAskMode1790121600000 on Po
     expect(await aiFlags(entryId)).toEqual([false, true]);
     await database.dataSource.query(`UPDATE diaries SET ai_mode = 'on' WHERE id = $1`, [asking]);
     expect(await aiFlags(entryId)).toEqual([false, false]);
+  });
+
+  it('marks an entry of a diary on the writer’s own model as AI off for the server, and as local, through moves and mode changes', async () => {
+    const localFlags = async (entryId: number): Promise<[boolean, boolean, boolean]> => {
+      const [row] = await database.dataSource.query(
+        'SELECT diary_ai_off, diary_ai_ask, diary_ai_local FROM entries WHERE id = $1',
+        [entryId],
+      );
+      return [row.diary_ai_off, row.diary_ai_ask, row.diary_ai_local];
+    };
+    const local = await insert(`INSERT INTO diaries (user_id, name, ai_mode) VALUES ($1, $2, 'local')`, [writer, 'Letters']);
+    const entryId = await entryIn(local);
+    expect(await localFlags(entryId)).toEqual([true, false, true]);
+
+    await database.dataSource.query('UPDATE entries SET diary_ai_local = false, diary_ai_off = false WHERE id = $1', [entryId]);
+    expect(await localFlags(entryId)).toEqual([true, false, true]);
+
+    await database.dataSource.query('UPDATE entries SET diary_id = $2 WHERE id = $1', [entryId, open]);
+    expect(await localFlags(entryId)).toEqual([false, false, false]);
+    await database.dataSource.query('UPDATE entries SET diary_id = $2 WHERE id = $1', [entryId, local]);
+    expect(await localFlags(entryId)).toEqual([true, false, true]);
+
+    await database.dataSource.query(`UPDATE diaries SET ai_mode = 'off' WHERE id = $1`, [local]);
+    expect(await localFlags(entryId)).toEqual([true, false, false]);
+    await database.dataSource.query(`UPDATE diaries SET ai_mode = 'local' WHERE id = $1`, [local]);
+    expect(await localFlags(entryId)).toEqual([true, false, true]);
+    await database.dataSource.query(`UPDATE diaries SET ai_mode = 'on' WHERE id = $1`, [local]);
+    expect(await localFlags(entryId)).toEqual([false, false, false]);
   });
 });

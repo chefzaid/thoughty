@@ -17,10 +17,11 @@ import { DiaryWritingReminder } from './diary-writing-reminder.entity';
 export type DiaryGoalType = 'entries_per_week' | 'words_per_day';
 
 /**
- * What the AI features may read of a diary: everything (`on`), nothing (`off`), or one entry or text at a time once
- * the writer agreed to that request (`ask`), which the journal-wide features leave out as they do `off`.
+ * What the AI features may read of a diary: everything (`on`), nothing (`off`), one entry or text at a time once
+ * the writer agreed to that request (`ask`), which the journal-wide features leave out as they do `off`, or nothing
+ * on this server while the writer's browser sends one entry or text at a time to the writer's own model (`local`).
  */
-export const DIARY_AI_MODES = ['on', 'off', 'ask'] as const;
+export const DIARY_AI_MODES = ['on', 'off', 'ask', 'local'] as const;
 export type DiaryAiMode = (typeof DIARY_AI_MODES)[number];
 
 /** Diary names are unique per writer, ignoring case and surrounding spaces. */
@@ -74,7 +75,10 @@ export class Diary {
   @Column({ name: 'is_locked', type: 'boolean', default: false })
   isLocked: boolean;
 
-  /** Whether the AI features may read the diary's entries; each entry copies it (`Entry.diaryAiOff`, `Entry.diaryAiAsk`). */
+  /**
+   * Whether the AI features may read the diary's entries; each entry copies it (`Entry.diaryAiOff`, `Entry.diaryAiAsk`,
+   * `Entry.diaryAiLocal`). With `local` the writer's browser sends them to the writer's own model, never this server.
+   */
   @Column({ name: 'ai_mode', type: 'varchar', length: 10, default: 'on' })
   aiMode: DiaryAiMode;
 

@@ -24,7 +24,8 @@ describe('web security headers', () => {
     expect(csp['base-uri']).toEqual(["'self'"]);
     expect(csp['frame-ancestors']).toEqual(["'none'"]);
     expect(csp['form-action']).toEqual(["'self'"]);
-    expect(csp['connect-src']).toEqual(["'self'"]);
+    // Besides the API, only this device's loopback addresses, where the writer's own model server runs
+    expect(csp['connect-src']).toEqual(["'self'", 'http://localhost:*', 'http://127.0.0.1:*']);
   });
 
   it('sends the headers from every NGINX block that sets its own headers', () => {

@@ -51,4 +51,20 @@ describe('diary AI mode', () => {
       'DIARY_AI_CONSENT_REQUIRED',
     );
   });
+
+  it('refuses Thoughty’s provider for a diary on the writer’s own model with 403 DIARY_AI_LOCAL, consent or not', async () => {
+    for (const consent of [undefined, true]) {
+      await expectApiError(
+        Promise.resolve().then(() => assertEntryAiAllowed({ diaryAiOff: true, diaryAiLocal: true }, consent)),
+        ForbiddenException,
+        'DIARY_AI_LOCAL',
+      );
+      await expectApiError(
+        Promise.resolve().then(() => assertDiaryAiAllowed({ aiMode: 'local' }, consent)),
+        ForbiddenException,
+        'DIARY_AI_LOCAL',
+      );
+    }
+    expect(() => assertEntryAiAllowed({ diaryAiOff: false, diaryAiAsk: false, diaryAiLocal: false })).not.toThrow();
+  });
 });

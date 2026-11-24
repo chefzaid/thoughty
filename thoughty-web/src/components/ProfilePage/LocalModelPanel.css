@@ -1,0 +1,83 @@
+.local-model-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding-top: 1.25rem;
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--border-color, rgba(148, 163, 184, 0.25));
+}
+
+.local-model-description,
+.local-model-hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+}
+
+.local-model-hint {
+  font-size: 0.75rem;
+}
+
+/* Muted text in the gray shades that reach WCAG AA in each theme, as the credential status does */
+.profile-page.dark .local-model-description,
+.profile-page.dark .local-model-hint {
+  color: #9ca3af;
+}
+
+.profile-page.light .local-model-description,
+.profile-page.light .local-model-hint {
+  color: #4b5563;
+}
+
+.local-model-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.local-model-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.local-model-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.local-model-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--border-color, #94a3b8);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.local-model-secondary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.local-model-message-line {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.local-model-message-line + .local-model-message-line {
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 700px) {
+  .local-model-fields {
+    grid-template-columns: 1fr;
+  }
+}

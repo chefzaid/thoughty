@@ -11,6 +11,7 @@ import { writeAboutState } from '../components/JournalView/composerFocusRoute';
 import { buildEntriesListProps } from './entriesListProps';
 import { createEntryTemplate, getEntryTemplates, parseCustomEntryTemplates, serializeCustomEntryTemplates, type EntryTemplateDraft } from './entryTemplates';
 import { listKnownTags, type TagMetadataMap } from './tagMetadata';
+import { diaryOffersAi } from './diaryAi';
 
 export {
   buildPublicShellProps,
@@ -402,9 +403,9 @@ export function buildAuthenticatedRoutesProps({
         suggestingTags: entryFormState.suggestingTags,
         // A diary with AI off offers no AI action in the composer; one that asks each time asks before Auto Tag and
         // Rephrase, and offers no Get Inspired, which reads the tags of many entries
-        onSuggestTags: entryFormState.diaryAiMode === 'off' ? undefined : entryFormState.handleSuggestTags,
+        onSuggestTags: diaryOffersAi(entryFormState.diaryAiMode, 'tag') ? entryFormState.handleSuggestTags : undefined,
         fixingWriting: entryFormState.fixingWriting,
-        onFixWriting: entryFormState.diaryAiMode === 'off' ? undefined : entryFormState.handleFixWriting,
+        onFixWriting: diaryOffersAi(entryFormState.diaryAiMode, 'writing') ? entryFormState.handleFixWriting : undefined,
         onGetInspiration: entryFormState.diaryAiMode === 'on' ? handleGetInspiration : undefined,
         promptCardsDrawn: config.promptCardsDrawn,
         // A card drawn before the settings arrive would be drawn from an empty deck history and saved over it

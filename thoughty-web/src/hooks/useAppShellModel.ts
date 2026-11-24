@@ -278,7 +278,7 @@ export function useAppShellModel(): AppShellModel {
     onSaved: refreshEntryViews,
   });
 
-  const { aiService } = useApiServices();
+  const { aiService, localAiService } = useApiServices();
 
   const handleDiscuss = useCallback((entry: Entry) => {
     setChatEntry(entry);
@@ -288,6 +288,7 @@ export function useAppShellModel(): AppShellModel {
   const { handleEdit: editEntry, setEditText } = entryEditState;
   const { handleRephrase, handleSummarize, handleChat: handleAiChat } = useEntryAiActions({
     aiService,
+    localAiService,
     diaries: diariesState.diaries,
     requestConsent: aiConsent.requestConsent,
     editWith: useCallback((entry: Entry, text: string) => {

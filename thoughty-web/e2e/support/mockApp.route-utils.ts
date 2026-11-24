@@ -152,8 +152,9 @@ export function toEntryMutationResponse(state: MockAppState, entryId: number): c
 }
 
 /**
- * What the API answers an AI request about the text of `diaryId`: `403 DIARY_AI_OFF` for a diary with AI off, and
- * `403 DIARY_AI_CONSENT_REQUIRED` for one that asks each time when the request carries no `aiConsent`.
+ * What the API answers an AI request about the text of `diaryId`: `403 DIARY_AI_OFF` for a diary with AI off,
+ * `403 DIARY_AI_LOCAL` for one on the writer's own model, and `403 DIARY_AI_CONSENT_REQUIRED` for one that asks each
+ * time when the request carries no `aiConsent`.
  */
 export async function refusedForDiary(
   { route, state }: RouteContext,
@@ -161,6 +162,10 @@ export async function refusedForDiary(
   aiConsent: boolean | undefined,
 ): Promise<boolean> {
   const mode = diaryId == null ? 'on' : state.diaries.find((diary) => diary.id === diaryId)?.aiMode;
+  if (mode === 'local') {
+    await fulfillApiError(route, 403, 'DIARY_AI_LOCAL', 'This diary uses only your own AI model: Thoughty does not send its text to its AI provider');
+    return true;
+  }
   if (mode === 'off') {
     await fulfillApiError(route, 403, 'DIARY_AI_OFF', 'AI is off in this diary');
     return true;

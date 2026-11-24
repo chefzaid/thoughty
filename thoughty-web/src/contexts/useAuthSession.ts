@@ -10,6 +10,7 @@ import {
   takeKeycloakSsoPreferencesQuery,
 } from '../utils/keycloakSso';
 import { forgetLocalComposerDrafts } from '../components/ComposerDraft/composerDraftStorage';
+import { forgetLocalModelKeys } from '../services/localModel/localModelSettings';
 import { openSessionChannel, type SessionChannel } from './sessionBroadcast';
 import {
   clearSignOutPending,
@@ -187,9 +188,11 @@ export function useAuthSession() {
   }, [setOfflineMode, setUnreachable]);
 
   // A sign-out the writer chose: this browser's draft copies go too, and so do the other tabs' sessions.
-  // A draft is private text: it stays on the server for the next sign-in, not in this browser.
+  // A draft is private text: it stays on the server for the next sign-in, not in this browser. So does the key
+  // of the writer's own model server (its address and model stay, being of this device).
   const signOutLocally = useCallback((): void => {
     forgetLocalComposerDrafts();
+    forgetLocalModelKeys();
     endSession();
     channelRef.current?.post({ type: 'signed-out' });
   }, [endSession]);

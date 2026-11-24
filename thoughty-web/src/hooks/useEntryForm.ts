@@ -3,6 +3,7 @@ import type { Attachment, Config, Diary } from '../types';
 import { getAutoTagLimit } from '../utils/autoTagLimit';
 import { composerDiaryId, diaryAiMode, isDiaryAiModeRefusal } from '../utils/diaryAi';
 import { confirmAiRequest, type AiRequestDiary, type RequestAiConsent } from '../components/DiaryAi/aiConsent';
+import { textAiForDiary } from '../services/localModel/localAiService';
 import { formatEntryDate } from '../utils/entryDate';
 import { cleanEntryTitle } from '../utils/entryTime';
 import { defaultTimeCapsule, isValidTimeCapsuleDate, type TimeCapsuleDraft } from '../utils/timeCapsule';
@@ -48,7 +49,7 @@ export const useEntryForm = (
   /** Shows what Rephrase or Auto Tag would send from a diary that asks each time, and resolves with the answer. */
   requestAiConsent?: RequestAiConsent,
 ) => {
-  const { entriesService, attachmentsService, aiService } = useApiServices();
+  const { entriesService, attachmentsService, aiService, localAiService } = useApiServices();
 
   const [newEntryText, setNewEntryText] = useState<string>('');
   const [title, setTitle] = useState<string>('');
@@ -84,7 +85,9 @@ export const useEntryForm = (
     () => ({ diaryId: aiDiaryId, mode: composerAiMode, requestConsent: requestAiConsent, onModeRefused: onDiaryAiOff }),
     [aiDiaryId, composerAiMode, onDiaryAiOff, requestAiConsent],
   );
-  const tagSuggestions = useEntryTagSuggestions(aiService, newEntryText, tags, setTags, autoTagLimit, setFormError, aiDiary);
+  // Rephrase and Auto Tag go to the writer's own model in a diary set to it, else to Thoughty's server
+  const textAi = useMemo(() => textAiForDiary(composerAiMode, aiService, localAiService), [aiService, composerAiMode, localAiService]);
+  const tagSuggestions = useEntryTagSuggestions(textAi, newEntryText, tags, setTags, autoTagLimit, setFormError, aiDiary);
 
   // The draft follows the writer to their other devices; the date, time, visibility, capsule and files stay here
   const applyDraft = useCallback((fields: ComposerDraftFields) => {
@@ -244,7 +247,7 @@ export const useEntryForm = (
     if (!consent.send) return false;
 
     setFixingWriting(true);
-    const { data: corrected, refusal } = await aiService.fixWriting(newEntryText, 'grammar', aiDiaryId, consent.aiConsent);
+    const { data: corrected, refusal } = await textAi.fixWriting(newEntryText, 'grammar', aiDiaryId, consent.aiConsent);
     setFixingWriting(false);
 
     if (corrected === null) {
@@ -259,7 +262,7 @@ export const useEntryForm = (
 
     setNewEntryText(corrected);
     return true;
-  }, [aiDiaryId, aiService, composerAiMode, newEntryText, onDiaryAiOff, requestAiConsent]);
+  }, [aiDiaryId, composerAiMode, newEntryText, onDiaryAiOff, requestAiConsent, textAi]);
 
   return {
     newEntryText,

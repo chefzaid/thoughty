@@ -102,6 +102,9 @@ export const API_ERROR_MESSAGES = {
   DIARY_AI_OFF: 'AI is off in this diary',
   // 403: an AI request about an entry or the text of a diary that asks before each AI request, sent without `aiConsent`.
   DIARY_AI_CONSENT_REQUIRED: 'This diary asks before each AI request: confirm what is sent first',
+  // 403: an AI request to Thoughty's provider about an entry or the text of a diary set to the writer's own model, whose
+  // AI actions go from the browser to that model only.
+  DIARY_AI_LOCAL: 'This diary uses only your own AI model: Thoughty does not send its text to its AI provider',
   SETTINGS_RESERVED: 'Settings cannot be changed here',
   // 400: `POST /api/config` with an `entryTemplates` setting that is not a JSON list of templates.
   ENTRY_TEMPLATES_INVALID: 'Custom entry templates must be a JSON list of templates',

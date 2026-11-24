@@ -303,7 +303,7 @@ describeContract('external', (context) => {
     // Left out, the mode is kept; a mode it does not know, or none, is refused
     const kept = await call('PUT /api/diaries/{id}', { as: alice, params: { id: diary.id }, json: form, status: 200 });
     expect(kept.body).toMatchObject({ aiMode: 'off' });
-    for (const aiMode of ['local', null]) {
+    for (const aiMode of ['cloud', null]) {
       await call('PUT /api/diaries/{id}', { as: alice, params: { id: diary.id }, json: { ...form, aiMode }, status: 400, code: 'VALIDATION_FAILED' });
     }
 
@@ -382,6 +382,45 @@ describeContract('external', (context) => {
     expect(scan.body).toMatchObject({ analyzedEntries: 0, totalEntries: 0 });
     const retag = { mode: 'add', assignments: [{ entryId, tags: ['ai'] }] };
     await call('POST /api/ai/journal-retag/apply', { as: alice, json: retag, status: 400, code: 'ENTRIES_NOT_FOUND' });
+    await call('DELETE /api/diaries/{id}', { as: alice, params: { id: diary.id }, status: 200 });
+  });
+
+  it('never sends a diary on the writer’s own model to Thoughty’s provider, and leaves it out of the whole journal', async () => {
+    const { alice } = context;
+    const created = await call('POST /api/diaries', { as: alice, json: { name: 'Letters', icon: '✉️', visibility: 'private', aiMode: 'local' }, status: 201 });
+    const diary = created.body as { id: number; aiMode: string };
+    expect(diary.aiMode).toBe('local');
+
+    const entryId = await createEntry(context, alice, { text: 'A letter to my sister', tags: ['family'], diaryId: diary.id });
+    // Consent changes nothing: the browser sends its text to the writer's own model, never through this server
+    const local = { status: 403, code: 'DIARY_AI_LOCAL' } as const;
+    const messages = [{ role: 'user', content: 'Why?' }];
+    const requests = [
+      ['POST /api/ai/summarize', { entryId }],
+      ['POST /api/ai/chat', { entryId, entryContent: 'A letter', messages }],
+      ['POST /api/ai/fix-writing', { content: 'A letter to my sister', mode: 'grammar', diaryId: diary.id }],
+      ['POST /api/ai/suggest-tags', { content: 'A letter to my sister', diaryId: diary.id }],
+    ] as const;
+    for (const [operation, json] of requests) {
+      await call(operation, { as: alice, json, ...local });
+      await call(operation, { as: alice, json: { ...json, aiConsent: true }, ...local });
+    }
+    const recording = await call('POST /api/attachments/upload', {
+      as: alice,
+      multipart: { files: [{ field: 'file', buffer: Buffer.from('ID3'), filename: 'letter.mp3', contentType: 'audio/mpeg' }] },
+      status: 201,
+    });
+    const transcribe = { as: alice, params: { id: (recording.body as { id: number }).id } };
+    await call('POST /api/attachments/{id}/transcribe', { ...transcribe, json: { diaryId: diary.id, aiConsent: true }, ...local });
+
+    const scan = await call('POST /api/ai/duplicates', { as: alice, json: { diaryId: diary.id }, status: 200 });
+    expect(scan.body).toMatchObject({ analyzedEntries: 0, totalEntries: 0 });
+    const retag = { mode: 'add', assignments: [{ entryId, tags: ['ai'] }] };
+    await call('POST /api/ai/journal-retag/apply', { as: alice, json: retag, status: 400, code: 'ENTRIES_NOT_FOUND' });
+
+    // Back on, the same requests reach the provider, which this writer has no key for
+    await call('PUT /api/diaries/{id}', { as: alice, params: { id: diary.id }, json: { name: 'Letters', icon: '✉️', visibility: 'private', aiMode: 'on' }, status: 200 });
+    await call('POST /api/ai/summarize', { as: alice, json: { entryId }, status: 400, code: 'AI_KEY_NOT_CONFIGURED' });
     await call('DELETE /api/diaries/{id}', { as: alice, params: { id: diary.id }, status: 200 });
   });
 });

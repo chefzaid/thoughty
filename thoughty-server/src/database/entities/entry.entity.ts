@@ -149,8 +149,9 @@ export class Entry {
   diaryLocked: boolean;
 
   /**
-   * Whether the entry's diary has AI off (`Diary.aiMode`), kept in step by database triggers as
-   * `diaryLocked` is; the application never writes it. No AI feature reads an entry while it is set.
+   * Whether the entry's diary has AI off, or uses only the writer's own model (`Diary.aiMode`), kept in step by
+   * database triggers as `diaryLocked` is; the application never writes it. No server AI feature reads an entry
+   * while it is set.
    */
   @Column({ name: 'diary_ai_off', type: 'boolean', default: false, insert: false, update: false })
   diaryAiOff: boolean;
@@ -161,6 +162,13 @@ export class Entry {
    */
   @Column({ name: 'diary_ai_ask', type: 'boolean', default: false, insert: false, update: false })
   diaryAiAsk: boolean;
+
+  /**
+   * Whether the entry's diary uses only the writer's own model (`Diary.aiMode` `local`), kept in step by the same
+   * triggers. `diaryAiOff` is set for such an entry too, so the server's AI never reads it; this only names why.
+   */
+  @Column({ name: 'diary_ai_local', type: 'boolean', default: false, insert: false, update: false })
+  diaryAiLocal: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

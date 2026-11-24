@@ -1,11 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_DIARIES_AI_ON, composerDiaryId, diaryAiMode, diaryAiScope, isDiaryAiModeRefusal, isDiaryAiOff } from './diaryAi';
+import {
+  ALL_DIARIES_AI_ON,
+  DIARY_AI_MODE_SUMMARIES,
+  composerDiaryId,
+  diaryAiMode,
+  diaryAiScope,
+  diaryOffersAi,
+  isDiaryAiModeRefusal,
+  isDiaryAiOff,
+  type DiaryAiTask,
+} from './diaryAi';
 
 const diaries = [
   { id: 1, aiMode: 'on' as const, isDefault: true },
   { id: 2, aiMode: 'off' as const, isDefault: false },
   { id: 3 },
   { id: 4, aiMode: 'ask' as const },
+  { id: 5, aiMode: 'local' as const },
 ];
 
 describe('diary AI mode', () => {
@@ -36,6 +47,8 @@ describe('diary AI mode', () => {
   it('tells the server’s refusals for a diary’s AI mode from any other', () => {
     expect(isDiaryAiModeRefusal('apiError_DIARY_AI_OFF')).toBe(true);
     expect(isDiaryAiModeRefusal('apiError_DIARY_AI_CONSENT_REQUIRED')).toBe(true);
+    expect(isDiaryAiModeRefusal('apiError_DIARY_AI_LOCAL')).toBe(true);
+    expect(isDiaryAiModeRefusal('localModelUnreachable')).toBe(false);
     expect(isDiaryAiModeRefusal('apiError_AI_KEY_NOT_CONFIGURED')).toBe(false);
     expect(isDiaryAiModeRefusal(null)).toBe(false);
   });
@@ -43,11 +56,27 @@ describe('diary AI mode', () => {
   it('says a journal-wide AI action on a diary with AI off or set to ask reads nothing, and one on all diaries leaves them out', () => {
     expect(diaryAiScope(diaries, 2)).toEqual({ aiOff: true, notice: 'diaryAiOffNotice', aiOffLeftOut: false });
     expect(diaryAiScope(diaries, 4)).toEqual({ aiOff: true, notice: 'diaryAiAskNotice', aiOffLeftOut: false });
+    expect(diaryAiScope(diaries, 5)).toEqual({ aiOff: true, notice: 'diaryAiLocalNotice', aiOffLeftOut: false });
+    expect(diaryAiScope([{ id: 1, aiMode: 'local' }], null)).toEqual({ ...ALL_DIARIES_AI_ON, aiOffLeftOut: true });
     expect(diaryAiScope(diaries, 1)).toEqual(ALL_DIARIES_AI_ON);
     expect(diaryAiScope(diaries, null)).toEqual({ ...ALL_DIARIES_AI_ON, aiOffLeftOut: true });
     expect(diaryAiScope(diaries, undefined)).toEqual({ ...ALL_DIARIES_AI_ON, aiOffLeftOut: true });
     expect(diaryAiScope([{ id: 1, aiMode: 'ask' }], null)).toEqual({ ...ALL_DIARIES_AI_ON, aiOffLeftOut: true });
     expect(diaryAiScope([{ id: 1, aiMode: 'on' }, { id: 2 }], null)).toEqual(ALL_DIARIES_AI_ON);
     expect(diaryAiScope([], null)).toEqual(ALL_DIARIES_AI_ON);
+  });
+
+  it('offers every AI action but with AI off, and in a diary on the writer’s own model only those it takes', () => {
+    const tasks: DiaryAiTask[] = ['writing', 'tag', 'summary', 'chat', 'prompt', 'transcription'];
+    const offered = (mode: 'on' | 'off' | 'ask' | 'local') => tasks.filter((task) => diaryOffersAi(mode, task));
+
+    expect(offered('on')).toEqual(tasks);
+    expect(offered('ask')).toEqual(tasks);
+    expect(offered('off')).toEqual([]);
+    expect(offered('local')).toEqual(['writing', 'tag', 'summary']);
+  });
+
+  it('names each mode that is not simply on in Manage Diaries', () => {
+    expect(DIARY_AI_MODE_SUMMARIES).toEqual({ off: 'diaryAiOffSummary', ask: 'diaryAiAskSummary', local: 'diaryAiLocalSummary' });
   });
 });

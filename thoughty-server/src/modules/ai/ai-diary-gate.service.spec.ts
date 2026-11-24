@@ -40,6 +40,13 @@ describe('AiDiaryGateService', () => {
     await expectApiError(gate.assertTextAiAllowed(1, 4, false), ForbiddenException, 'DIARY_AI_CONSENT_REQUIRED');
   });
 
+  it('refuses text of a diary on the writer’s own model with 403 DIARY_AI_LOCAL, consent or not', async () => {
+    const { gate } = setup({ id: 4, aiMode: 'local' });
+
+    await expectApiError(gate.assertTextAiAllowed(1, 4), ForbiddenException, 'DIARY_AI_LOCAL');
+    await expectApiError(gate.assertTextAiAllowed(1, 4, true), ForbiddenException, 'DIARY_AI_LOCAL');
+  });
+
   it('refuses a diary the writer does not own with 404 DIARY_NOT_FOUND', async () => {
     const { gate } = setup(null);
 

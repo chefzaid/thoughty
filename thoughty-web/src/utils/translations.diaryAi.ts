@@ -5,11 +5,14 @@ export type DiaryAiTranslationKey =
   | 'diaryAiModeOn'
   | 'diaryAiModeOff'
   | 'diaryAiModeAsk'
+  | 'diaryAiModeLocal'
   | 'diaryAiModeHint'
   | 'diaryAiOffSummary'
   | 'diaryAiAskSummary'
+  | 'diaryAiLocalSummary'
   | 'diaryAiOffNotice'
   | 'diaryAiAskNotice'
+  | 'diaryAiLocalNotice'
   | 'diaryAiOffLeftOut'
   | 'aiConsentTitle'
   | 'aiConsentIntro'
@@ -33,12 +36,15 @@ export const diaryAiTranslations: Record<Language, Record<DiaryAiTranslationKey,
     diaryAiModeOn: 'On',
     diaryAiModeOff: 'Off',
     diaryAiModeAsk: 'Ask each time',
-    diaryAiModeHint: 'With AI off, no AI feature reads this diary: its entries, their tags and files stay out of every AI action, chat, summary and analysis. Ask each time shows exactly what an AI action on one entry would send, and sends nothing until you confirm; the features that read the whole journal leave the diary out.',
+    diaryAiModeLocal: 'My own model only',
+    diaryAiModeHint: 'With AI off, no AI feature reads this diary: its entries, their tags and files stay out of every AI action, chat, summary and analysis. Ask each time shows exactly what an AI action on one entry would send, and sends nothing until you confirm; the features that read the whole journal leave the diary out. My own model only sends Rephrase, Auto Tag and Summarize from this browser to the model server you run (set it up in Profile › AI Configuration); Thoughty’s AI never reads the diary.',
     diaryAiOffSummary: 'AI off: no AI feature reads this diary',
     diaryAiAskSummary: 'AI asks first: each request shows what it sends',
+    diaryAiLocalSummary: 'Your own model only: Thoughty’s AI never reads this diary',
     diaryAiOffNotice: 'AI is off for this diary: no AI feature reads its entries.',
     diaryAiAskNotice: 'This diary asks before each AI request, so the AI features that read many entries at once leave it out.',
-    diaryAiOffLeftOut: 'Diaries with AI off or set to ask each time are left out.',
+    diaryAiLocalNotice: 'This diary uses only your own AI model, so Thoughty’s AI features that read many entries at once leave it out.',
+    diaryAiOffLeftOut: 'Diaries with AI off, asking each time or on your own model are left out.',
     aiConsentTitle: 'Send this to the AI?',
     aiConsentIntro: 'This diary asks before each AI request. This is exactly what will be sent, with Thoughty’s instructions for the task:',
     aiConsentProvider: 'It goes to OpenRouter, for the model {model}.',
@@ -59,12 +65,15 @@ export const diaryAiTranslations: Record<Language, Record<DiaryAiTranslationKey,
     diaryAiModeOn: 'Activée',
     diaryAiModeOff: 'Désactivée',
     diaryAiModeAsk: 'Demander à chaque fois',
-    diaryAiModeHint: "Avec l'IA désactivée, aucune fonction d'IA ne lit ce journal : ses entrées, leurs tags et leurs fichiers restent hors de toute action, discussion, résumé et analyse d'IA. Demander à chaque fois montre exactement ce qu'une action d'IA sur une entrée enverrait, et n'envoie rien avant votre confirmation ; les fonctions qui lisent tout le journal laissent ce journal de côté.",
+    diaryAiModeLocal: 'Mon propre modèle uniquement',
+    diaryAiModeHint: "Avec l'IA désactivée, aucune fonction d'IA ne lit ce journal : ses entrées, leurs tags et leurs fichiers restent hors de toute action, discussion, résumé et analyse d'IA. Demander à chaque fois montre exactement ce qu'une action d'IA sur une entrée enverrait, et n'envoie rien avant votre confirmation ; les fonctions qui lisent tout le journal laissent ce journal de côté. Mon propre modèle uniquement envoie Reformuler, Auto Tag et Résumer depuis ce navigateur vers le serveur de modèle que vous faites tourner (à configurer dans Profil › Configuration IA) ; l'IA de Thoughty ne lit jamais ce journal.",
     diaryAiOffSummary: "IA désactivée : aucune fonction d'IA ne lit ce journal",
     diaryAiAskSummary: "L'IA demande d'abord : chaque requête montre ce qu'elle envoie",
+    diaryAiLocalSummary: "Votre propre modèle uniquement : l'IA de Thoughty ne lit jamais ce journal",
     diaryAiOffNotice: "L'IA est désactivée pour ce journal : aucune fonction d'IA ne lit ses entrées.",
     diaryAiAskNotice: "Ce journal demande avant chaque requête d'IA : les fonctions d'IA qui lisent plusieurs entrées à la fois le laissent donc de côté.",
-    diaryAiOffLeftOut: "Les journaux dont l'IA est désactivée ou demande à chaque fois sont laissés de côté.",
+    diaryAiLocalNotice: "Ce journal n'utilise que votre propre modèle d'IA : les fonctions d'IA de Thoughty qui lisent plusieurs entrées à la fois le laissent donc de côté.",
+    diaryAiOffLeftOut: "Les journaux dont l'IA est désactivée, demande à chaque fois ou passe par votre propre modèle sont laissés de côté.",
     aiConsentTitle: "Envoyer ceci à l'IA ?",
     aiConsentIntro: "Ce journal demande avant chaque requête d'IA. Voici exactement ce qui sera envoyé, avec les instructions de Thoughty pour la tâche :",
     aiConsentProvider: 'Il part chez OpenRouter, pour le modèle {model}.',

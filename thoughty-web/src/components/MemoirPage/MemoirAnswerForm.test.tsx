@@ -266,4 +266,12 @@ describe('MemoirAnswerForm', () => {
     expect(screen.queryByRole('button', { name: 'memoirTranscribe' })).not.toBeInTheDocument();
     expect(screen.queryByRole('group', { name: 'memoirFollowUpsTitle' })).not.toBeInTheDocument();
   });
+
+  it('offers neither interview mode nor transcription when the memoir diary uses only the writer’s own model', () => {
+    render(<MemoirAnswerForm questionId="childhood-home" questionText="What was home like?" onSubmit={vi.fn()} onCancel={vi.fn()} aiMode="local" t={t} />);
+    chooseFile(new File(['voice'], 'story.m4a', { type: 'audio/mp4' }));
+
+    expect(screen.queryByRole('button', { name: 'memoirTranscribe' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'memoirFollowUpsTitle' })).not.toBeInTheDocument();
+  });
 });

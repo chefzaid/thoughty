@@ -246,6 +246,7 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 |  | `DIARY_DEFAULT_NOT_DELETABLE` | Cannot delete the default diary |
 |  | `DIARY_AI_OFF` | AI is off in this diary (403) |
 |  | `DIARY_AI_CONSENT_REQUIRED` | This diary asks before each AI request: confirm what is sent first (403) |
+|  | `DIARY_AI_LOCAL` | This diary uses only the writer's own AI model: Thoughty does not send its text to its AI provider (403) |
 |  | `SETTINGS_RESERVED` | Settings cannot be changed here |
 | Saved searches | `SAVED_SEARCH_NOT_FOUND` | Saved search not found |
 |  | `SAVED_SEARCH_NAME_TAKEN` | A saved search with this name already exists |

@@ -125,7 +125,9 @@ export class AiController {
   @ApiResponse({ status: 200, description: 'Suggested tags returned successfully', type: SuggestTagsResponseDto })
   @ApiResponse({
     status: 403,
-    description: 'The named diary has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)',
+    description:
+      'The named diary has AI off (`DIARY_AI_OFF`), uses only the writer’s own model (`DIARY_AI_LOCAL`), or asks each ' +
+      'time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)',
   })
   @ApiResponse({ status: 404, description: 'The named diary is not the writer’s (`DIARY_NOT_FOUND`)' })
   async suggestTags(
@@ -143,7 +145,9 @@ export class AiController {
   @ApiResponse({ status: 200, description: 'Corrected content returned successfully', type: FixWritingResponseDto })
   @ApiResponse({
     status: 403,
-    description: 'The named diary has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)',
+    description:
+      'The named diary has AI off (`DIARY_AI_OFF`), uses only the writer’s own model (`DIARY_AI_LOCAL`), or asks each ' +
+      'time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)',
   })
   @ApiResponse({ status: 404, description: 'The named diary is not the writer’s (`DIARY_NOT_FOUND`)' })
   async fixWriting(
@@ -165,7 +169,9 @@ export class AiController {
   })
   @ApiResponse({
     status: 403,
-    description: 'The entry’s diary has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)',
+    description:
+      'The entry’s diary has AI off (`DIARY_AI_OFF`), uses only the writer’s own model (`DIARY_AI_LOCAL`), or asks each ' +
+      'time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)',
   })
   async summarizeEntry(
     @CurrentUser() user: AuthenticatedUser,
@@ -262,7 +268,9 @@ export class AiController {
   })
   @ApiResponse({
     status: 403,
-    description: 'The entry’s diary has AI off (`DIARY_AI_OFF`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)',
+    description:
+      'The entry’s diary has AI off (`DIARY_AI_OFF`), uses only the writer’s own model (`DIARY_AI_LOCAL`), or asks each ' +
+      'time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)',
   })
   async chat(
     @CurrentUser() user: AuthenticatedUser,

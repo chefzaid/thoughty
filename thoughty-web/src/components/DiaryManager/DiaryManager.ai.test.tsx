@@ -9,6 +9,7 @@ const diaries = [
     makeDiary({ id: 1, name: 'Personal', isDefault: true }),
     makeDiary({ id: 2, name: 'Health', aiMode: 'off' }),
     makeDiary({ id: 3, name: 'Dreams', aiMode: 'ask' }),
+    makeDiary({ id: 4, name: 'Letters', aiMode: 'local' }),
 ];
 
 const renderManager = (language: Language = 'en') => {
@@ -55,6 +56,22 @@ describe('DiaryManager AI mode', () => {
         await user.selectOptions(screen.getByLabelText(language === 'en' ? 'AI' : 'IA'), option);
         await user.click(screen.getByRole('button', { name: language === 'en' ? 'Create Diary' : 'Créer un journal' }));
         expect(props.onCreateDiary).toHaveBeenCalledWith(expect.objectContaining({ name: 'Night', aiMode: 'ask' }));
+    });
+
+    it.each([
+        ['en', 'Your own model only: Thoughty’s AI never reads this diary', 'My own model only'],
+        ['fr', "Votre propre modèle uniquement : l'IA de Thoughty ne lit jamais ce journal", 'Mon propre modèle uniquement'],
+    ] as const)('says in %s which diaries use only the writer’s own model, and offers that mode', async (language, summary, option) => {
+        const user = userEvent.setup();
+        const props = renderManager(language);
+
+        expect(within(card('Letters')).getByText(summary)).toBeInTheDocument();
+        expect(within(card('Dreams')).queryByText(summary)).not.toBeInTheDocument();
+
+        await user.type(screen.getByPlaceholderText(language === 'en' ? 'Diary Name' : 'Nom du journal'), 'Notes');
+        await user.selectOptions(screen.getByLabelText(language === 'en' ? 'AI' : 'IA'), option);
+        await user.click(screen.getByRole('button', { name: language === 'en' ? 'Create Diary' : 'Créer un journal' }));
+        expect(props.onCreateDiary).toHaveBeenCalledWith(expect.objectContaining({ name: 'Notes', aiMode: 'local' }));
     });
 
     it('creates a diary with AI off, then resets the field to on', async () => {

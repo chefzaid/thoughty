@@ -17,7 +17,7 @@ export class EntryTaggingService {
     private readonly diaryRepository: Repository<Diary>,
   ) {}
 
-  /** The tags an entry saves with: those given, then the AI's up to the writer's limit, unless its diary (`diaryId`) has AI off or asks before each AI request (saving is not a request the writer saw). */
+  /** The tags an entry saves with: those given, then the AI's up to the writer's limit, unless its diary (`diaryId`) has AI off, asks before each AI request (saving is not a request the writer saw) or uses only the writer's own model. */
   async resolveSavedTags(userId: number, text: string, rawTags: string[], diaryId?: number | null): Promise<string[]> {
     const sanitizedTags = [...new Set(rawTags
       .map((tag: string) => sanitizeString(tag.trim()).substring(0, 50))
@@ -33,7 +33,7 @@ export class EntryTaggingService {
     if (!(await this.featureFlags.isEnabled('ai'))) {
       return sanitizedTags;
     }
-    if (diaryId && (await this.diaryRepository.exists({ where: { id: diaryId, userId, aiMode: In(['off', 'ask']) } }))) {
+    if (diaryId && (await this.diaryRepository.exists({ where: { id: diaryId, userId, aiMode: In(['off', 'ask', 'local']) } }))) {
       return sanitizedTags;
     }
 

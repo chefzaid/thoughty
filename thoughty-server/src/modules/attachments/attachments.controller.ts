@@ -148,8 +148,8 @@ export class AttachmentsController {
   @ApiResponse({
     status: 403,
     description:
-      'The attachment’s entry, or the diary the request names, has AI off (`DIARY_AI_OFF`), or asks each time and ' +
-      '`aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)',
+      'The attachment’s entry, or the diary the request names, has AI off (`DIARY_AI_OFF`), uses only the writer’s ' +
+      'own model (`DIARY_AI_LOCAL`), or asks each time and `aiConsent` is not true (`DIARY_AI_CONSENT_REQUIRED`)',
   })
   @ApiResponse({ status: 404, description: 'Attachment not found, or the named diary is not the writer’s (`DIARY_NOT_FOUND`)' })
   async transcribe(

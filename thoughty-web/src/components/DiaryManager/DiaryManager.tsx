@@ -16,6 +16,7 @@ import { resolveLanguage } from '../../utils/language';
 import { formatDeliveryHour } from '../../utils/timeZone';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import DiaryLockButton from '../ContentLock/DiaryLockButton';
+import { DIARY_AI_MODE_SUMMARIES } from '../../utils/diaryAi';
 
 /** The diary fields Manage Diaries reads. */
 type Diary = Pick<ApiDiary, 'id' | 'name' | 'icon' | 'color' | 'visibility' | 'isDefault' | 'goalType' | 'goalTarget' | 'defaultTemplateId'>
@@ -422,8 +423,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                                 {diary.defaultTemplateId && (
                                                     <span className="diary-goal-summary">{describeDiaryTemplate(diary.defaultTemplateId, entryTemplates, t)}</span>
                                                 )}
-                                                {diary.aiMode === 'off' && <span className="diary-goal-summary">{t('diaryAiOffSummary')}</span>}
-                                                {diary.aiMode === 'ask' && <span className="diary-goal-summary">{t('diaryAiAskSummary')}</span>}
+                                                {diary.aiMode && diary.aiMode !== 'on' && <span className="diary-goal-summary">{t(DIARY_AI_MODE_SUMMARIES[diary.aiMode])}</span>}
                                                 {reminderSummary(diary.id) && (
                                                     <span className="diary-goal-summary">{reminderSummary(diary.id)}</span>
                                                 )}

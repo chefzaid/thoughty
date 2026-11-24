@@ -20,6 +20,10 @@ vi.mock("./AiCredentialPanel", () => ({
   default: () => <div data-testid="ai-credential-panel" />,
 }));
 
+vi.mock("./LocalModelPanel", () => ({
+  default: () => <div data-testid="local-model-panel" />,
+}));
+
 const mockT = (key: string): string => key;
 const mockHandleChange = vi.fn();
 
@@ -49,6 +53,7 @@ describe("AISection", () => {
     });
 
     expect(screen.getByText("aiConfiguration")).toBeInTheDocument();
+    expect(screen.getByTestId("local-model-panel")).toBeInTheDocument();
     expect(screen.getByText("openRouterModel")).toBeInTheDocument();
     expect(screen.getByText("autoTagMaxTags")).toBeInTheDocument();
     expect(screen.getByText("openRouterTaskModels")).toBeInTheDocument();

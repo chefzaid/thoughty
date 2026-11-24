@@ -5,7 +5,7 @@ import { tintedTextClass } from "../../utils/tintedText";
 import { useFeatureFlag } from "../FeatureFlags/featureFlags";
 import { confirmAiRequest } from "../DiaryAi/aiConsent";
 import { useRequestAiConsent } from "../DiaryAi/aiConsentContext";
-import type { DiaryAiMode } from "../../utils/diaryAi";
+import { diaryOffersAi, type DiaryAiMode } from "../../utils/diaryAi";
 import { readAudioDuration } from "../../utils/audioDuration";
 
 interface AudioTranscriptProps {
@@ -30,7 +30,8 @@ function AudioTranscript({
   aiMode = "on",
   sourceUrl = null,
 }: AudioTranscriptProps) {
-  const aiOn = useFeatureFlag("ai") && aiMode !== "off";
+  // A diary on the writer's own model offers none: speech to text runs on Thoughty's provider only
+  const aiOn = useFeatureFlag("ai") && diaryOffersAi(aiMode, "transcription");
   const requestConsent = useRequestAiConsent();
   const [transcript, setTranscript] = useState(
     attachment.transcript?.trim() ?? "",

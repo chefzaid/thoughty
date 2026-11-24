@@ -12,7 +12,7 @@ import './MemoirAnswerForm.css';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import { confirmAiRequest } from '../DiaryAi/aiConsent';
 import { useRequestAiConsent } from '../DiaryAi/aiConsentContext';
-import type { DiaryAiMode } from '../../utils/diaryAi';
+import { diaryOffersAi, type DiaryAiMode } from '../../utils/diaryAi';
 
 const MAX_RECORDING_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_AUDIO = 'audio/mpeg,audio/mp4,audio/x-m4a,audio/aac,audio/ogg,audio/wav,audio/webm';
@@ -54,8 +54,9 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
   const [eraId, setEraId] = useState<number | null>(null);
   const [problem, setProblem] = useState<FormProblem>(null);
   const [busy, setBusy] = useState<'transcribing' | 'saving' | null>(null);
-  // Transcribing a recording is AI, left out while AI is switched off or off in the memoir diary
-  const aiOn = useFeatureFlag('ai') && aiMode !== 'off';
+  // Transcribing a recording and the follow-up questions are AI on Thoughty's provider, left out while AI is
+  // switched off, or off or on the writer's own model in the memoir diary
+  const aiOn = useFeatureFlag('ai') && diaryOffersAi(aiMode, 'transcription');
   const requestConsent = useRequestAiConsent();
   const fileInput = useRef<HTMLInputElement>(null);
   const answerField = useRef<HTMLTextAreaElement>(null);
