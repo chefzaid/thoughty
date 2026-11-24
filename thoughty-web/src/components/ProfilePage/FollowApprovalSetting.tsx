@@ -34,11 +34,18 @@ function FollowApprovalSetting({ isDark, language, t }: FollowApprovalSettingPro
 
   useEffect(() => {
     let active = true;
-    void feedService.fetchFollows().then(({ data }) => {
-      if (!active) return;
-      setState(data ? { required: data.approvalRequired, waiting: data.requests.length } : null);
-      setLoadError(!data);
-    });
+    void feedService
+      .fetchFollows()
+      .then(({ data }) => {
+        if (!active) return;
+        setState(
+          data ? { required: data.approvalRequired, waiting: data.requests?.length ?? 0 } : null,
+        );
+        setLoadError(!data);
+      })
+      .catch(() => {
+        if (active) setLoadError(true);
+      });
     return () => {
       active = false;
     };

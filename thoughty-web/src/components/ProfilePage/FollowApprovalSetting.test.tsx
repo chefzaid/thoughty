@@ -73,6 +73,20 @@ describe('FollowApprovalSetting', () => {
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
   });
 
+  it('treats a missing request list as none waiting, and a failed load as an error', async () => {
+    fetchFollows.mockResolvedValueOnce({ data: { approvalRequired: true }, error: null });
+    setFollowApproval.mockResolvedValue({ data: { required: false, approved: 0 }, error: null });
+    const { unmount } = renderSetting();
+    fireEvent.click(await screen.findByRole('switch', { name: 'Followers by approval' }));
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Followers by approval is off.'));
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    unmount();
+
+    fetchFollows.mockRejectedValueOnce(new Error('offline'));
+    renderSetting();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Followers by approval could not be loaded.');
+  });
+
   it('says when it cannot be loaded or saved', async () => {
     fetchFollows.mockResolvedValueOnce({ data: null, error: 'Failed' });
     const { unmount } = renderSetting();
