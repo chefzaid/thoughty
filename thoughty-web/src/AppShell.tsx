@@ -9,7 +9,7 @@ import NotificationsMenu from './components/Notifications/NotificationsMenu';
 import IntroPage from './components/IntroPage/IntroPage';
 import { useAppShellModel } from './hooks/useAppShellModel';
 import PublicAppLayout from './routes/PublicAppLayout';
-import { getPathForView, getPublicPathForView } from './types';
+import { getPathForView, getPublicPathForView, type TranslationFunction } from './types';
 
 const AboutPage = lazy(() => import('./components/AboutPage/AboutPage'));
 const AuthPage = lazy(() => import('./components/AuthPage/AuthPage'));
@@ -34,10 +34,6 @@ function renderLazy(children: ReactNode) {
       {children}
     </Suspense>
   );
-}
-
-function renderPublic(children: ReactNode, t: (key: string) => string) {
-  return <PublicAppLayout t={t}>{children}</PublicAppLayout>;
 }
 
 function AppShell() {
@@ -66,7 +62,12 @@ function AppShell() {
     addEmailPageProps,
     diaries,
     aiConsent,
+    visitorPreferences,
   } = useAppShellModel();
+
+  const renderPublic = (children: ReactNode, t: TranslationFunction) => (
+    <PublicAppLayout t={t} visitorPreferences={visitorPreferences}>{children}</PublicAppLayout>
+  );
 
   if (authLoading) {
     return <LoadingSpinner />;

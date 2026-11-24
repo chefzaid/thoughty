@@ -22,7 +22,7 @@ import {
   useEntryForm,
 } from './useAppState';
 import { useReportedConfigUpdate } from './useConfigState';
-import { resolveLanguage } from '../utils/language';
+import type { VisitorPreferences } from './useVisitorPreferences';
 import { buildBookConverterRoute } from '../utils/appRouting';
 import { parseTagMetadata, serializeTagMetadata } from '../utils/tagMetadata';
 import {
@@ -81,6 +81,8 @@ interface AppShellModel {
   diaries: Diary[];
   /** The consent dialog of a diary that asks before each AI request: the request waiting, its answer, and how to open it. */
   aiConsent: { request: AiConsentRequest | null; answer: (agreed: boolean) => void; requestConsent: RequestAiConsent };
+  /** The language and theme switch of the public pages, for a visitor without a session; null otherwise. */
+  visitorPreferences: VisitorPreferences | null;
 }
 
 export function useAppShellModel(): AppShellModel {
@@ -110,9 +112,11 @@ export function useAppShellModel(): AppShellModel {
     fetchProfileStats,
     updateConfig,
     downloadUserData,
+    display,
+    visitor,
     t,
   } = useConfig(isAuthenticated, offline);
-  const appNotice = useAppNotice(t, resolveLanguage(config.language));
+  const appNotice = useAppNotice(t, display.language);
   const { notifier } = appNotice;
   // Settings the reader changes on purpose say so when they could not be saved
   const saveConfig = useReportedConfigUpdate(updateConfig, notifier);
@@ -369,8 +373,8 @@ export function useAppShellModel(): AppShellModel {
     resetPasswordPageProps,
     unsubscribePageProps,
   } = buildPublicShellProps({
-    configTheme: config.theme,
-    configLanguage: config.language,
+    theme: display.theme,
+    language: display.language,
     isAuthenticated,
     landingView,
     publicView,
@@ -435,11 +439,11 @@ export function useAppShellModel(): AppShellModel {
   });
 
   const sessionUnreachablePageProps: SessionUnreachablePageProps | null = unreachable
-    ? { t, theme: config.theme || 'dark', onRetry: retrySession, onSignOut: logout }
+    ? { t, theme: display.theme, onRetry: retrySession, onSignOut: logout }
     : null;
   // An account without an email address gives one before anything else (offline, it waits for the connection)
   const addEmailPageProps: AddEmailPageProps | null = user?.emailMissing && !offline
-    ? { t, theme: config.theme || 'dark' }
+    ? { t, theme: display.theme }
     : null;
 
   return {
@@ -468,5 +472,7 @@ export function useAppShellModel(): AppShellModel {
     /** The diaries, for the AI actions of pages that read a diary's entries without receiving them. */
     diaries: diariesState.diaries,
     aiConsent,
+    // A visitor picks the language and theme on the public pages; a writer's settings decide them
+    visitorPreferences: isAuthenticated || unreachable ? null : visitor,
   };
 }

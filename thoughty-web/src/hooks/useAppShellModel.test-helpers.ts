@@ -136,6 +136,8 @@ export function stubShellModelHooks() {
     fetchProfileStats,
     updateConfig,
     downloadUserData,
+    display: { language: 'en', theme: 'dark' },
+    visitor: { language: 'en', theme: 'dark', chooseLanguage: vi.fn(), chooseTheme: vi.fn() },
     t,
   });
   mocks.useDiaries.mockReturnValue({

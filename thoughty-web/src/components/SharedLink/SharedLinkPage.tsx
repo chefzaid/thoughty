@@ -3,7 +3,8 @@ import { fetchSharedContent, type SharedContentResult } from '../../services/api
 import { getTranslation, type Language } from '../../utils/translations';
 import SharedBookView from './SharedBookView';
 import SharedEntryView from './SharedEntryView';
-import { readerLanguage, readerTheme, useSharedPageDocument } from './sharedPageDocument';
+import { useSharedPageDocument } from './sharedPageDocument';
+import { browserLanguage, systemTheme } from '../../utils/visitorPreferences';
 import { formatShareDate } from '../ShareLinks/shareLinkText';
 
 interface SharedLinkPageProps {
@@ -20,7 +21,7 @@ type PageState = SharedContentResult | { readonly status: 'loading' };
  * link shares, with none of the app around it and nothing loaded with a session. A link that does not
  * work says so the same way whatever the reason.
  */
-export default function SharedLinkPage({ token, language = readerLanguage(), theme = readerTheme(), fetchImpl }: SharedLinkPageProps) {
+export default function SharedLinkPage({ token, language = browserLanguage(), theme = systemTheme(), fetchImpl }: SharedLinkPageProps) {
     const t = useCallback((key: string, params?: Record<string, string | number>) => getTranslation(language, key, params), [language]);
     const [state, setState] = useState<PageState>({ status: 'loading' });
     const [attempt, setAttempt] = useState(0);

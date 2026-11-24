@@ -26,6 +26,10 @@ export default defineConfig({
     headless: true,
     browserName: 'chromium',
     channel: 'chromium',
+    // Signed-out pages follow the browser's language and the system theme: the specs run as an English
+    // browser on a dark system unless they ask for another
+    locale: 'en-US',
+    colorScheme: 'dark',
     // A failed test keeps its trace: DOM snapshots before and after each action, network, console and sources.
     // Not the screencast filmstrip, which costs each browser a frame stream for the whole test: with more
     // workers than cores a fresh worker's page load took 9.8s with it and 6.3s without (docs/testing.md).

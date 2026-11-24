@@ -16,7 +16,8 @@ import type VerifyEmailPage from '../components/VerifyEmailPage/VerifyEmailPage'
 import type SessionUnreachablePage from '../components/SessionUnreachable/SessionUnreachablePage';
 import type AddEmailPage from '../components/AddEmailPage/AddEmailPage';
 import type { PublicViewType, TranslationFunction, ViewType } from '../types';
-import { resolveLanguage } from './language';
+import type { Language } from './translations';
+import type { Theme } from './visitorPreferences';
 
 export type IntroPageProps = ComponentProps<typeof IntroPage>;
 export type AboutPageProps = ComponentProps<typeof AboutPage>;
@@ -37,8 +38,9 @@ export type AddEmailPageProps = ComponentProps<typeof AddEmailPage>;
 type AppShellRoutingState = ReturnType<typeof import('../hooks/useAppShellRouting').useAppShellRouting>;
 
 interface BuildPublicShellPropsParams {
-  configTheme?: 'light' | 'dark';
-  configLanguage?: string;
+  /** The writer's theme and language, or for a visitor the browser's (or what they picked on the public pages). */
+  theme: Theme;
+  language: Language;
   isAuthenticated?: boolean;
   /** Where a signed-in writer goes from the presentation page; the journal while the settings load. */
   landingView?: ViewType | null;
@@ -48,16 +50,14 @@ interface BuildPublicShellPropsParams {
 }
 
 export function buildPublicShellProps({
-  configTheme,
-  configLanguage,
+  theme,
+  language,
   isAuthenticated,
   landingView,
   publicView,
   routingState,
   t,
 }: Readonly<BuildPublicShellPropsParams>) {
-  const theme = configTheme || 'dark';
-
   const introPageProps: IntroPageProps = {
     theme,
     t,
@@ -97,7 +97,7 @@ export function buildPublicShellProps({
   const memoirQuestionsPageProps: MemoirQuestionsPageProps = {
     theme,
     t,
-    language: resolveLanguage(configLanguage),
+    language,
     isAuthenticated,
     onSignUp: () => routingState.handlePublicViewChange('register'),
     onOpenMemoir: () => routingState.handleViewChange('memoir'),
@@ -107,7 +107,7 @@ export function buildPublicShellProps({
   const journalTemplatesPageProps: JournalTemplatesPageProps = {
     theme,
     t,
-    language: resolveLanguage(configLanguage),
+    language,
     isAuthenticated,
     onSignUp: () => routingState.handlePublicViewChange('register'),
     onOpenJournal: () => routingState.handleViewChange('journal'),

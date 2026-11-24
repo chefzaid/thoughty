@@ -1,0 +1,65 @@
+.visitor-preferences {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem max(1rem, env(safe-area-inset-right)) 0.25rem 1rem;
+  border-bottom: 1px solid #1f2937;
+  background: #0b0f1a;
+  color: #e5e7eb;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.visitor-preferences.light {
+  border-bottom-color: #e5e7eb;
+  background: #f8fafc;
+  color: #1f2937;
+}
+
+.visitor-preferences-languages {
+  display: flex;
+  gap: 0.125rem;
+}
+
+.visitor-preferences button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  height: 1.75rem;
+  padding: 0 0.5rem;
+  border-radius: 9999px;
+  color: inherit;
+  background: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.visitor-preferences button:hover {
+  background: rgba(156, 163, 175, 0.2);
+}
+
+.visitor-preferences button[aria-pressed='true'] {
+  background: #6d28d9;
+  color: #fff;
+}
+
+.visitor-preferences button:focus-visible {
+  outline: 3px solid #facc15;
+  outline-offset: 2px;
+}
+
+.visitor-preferences.light button:focus-visible {
+  outline-color: #1d4ed8;
+}
+
+.visitor-preferences-theme svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+@media print {
+  .visitor-preferences {
+    display: none;
+  }
+}

@@ -7,14 +7,16 @@ describe('appShellProps', () => {
   it('builds public shell props for intro and register views', () => {
     const routingState = createRoutingState();
 
-    const { introPageProps, authPageProps, verifyEmailPageProps, contactPageProps } = buildPublicShellProps({
-      configTheme: 'light',
+    const { introPageProps, authPageProps, verifyEmailPageProps, contactPageProps, memoirQuestionsPageProps } = buildPublicShellProps({
+      theme: 'light',
+      language: 'fr',
       publicView: 'register',
       routingState,
       t: (key: string) => key,
     });
 
     expect(introPageProps.theme).toBe('light');
+    expect(memoirQuestionsPageProps.language).toBe('fr');
     expect(introPageProps.isAuthenticated).toBeUndefined();
     introPageProps.onSignIn();
     introPageProps.onSignUp();

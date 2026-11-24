@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SharedContent } from '../../services/api';
 import SharedLinkPage from './SharedLinkPage';
-import { readerLanguage } from './sharedPageDocument';
 
 const TOKEN = 'q3Jm0bX9vN2kR7sT1uW4yZ6aC8eG0iK2mO4qS6uW8yA';
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -113,11 +112,5 @@ describe('SharedLinkPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('This page could not be loaded');
     await user.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByRole('heading', { name: 'A walk by the sea' })).toBeInTheDocument();
-  });
-
-  it('reads the reader’s language from the browser', () => {
-    expect(readerLanguage(['fr-FR', 'en'])).toBe('fr');
-    expect(readerLanguage(['de-DE', 'en-GB'])).toBe('en');
-    expect(readerLanguage(['de-DE'])).toBe('en');
   });
 });

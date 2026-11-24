@@ -35,8 +35,8 @@ describe("useAppState Hooks", () => {
       expect(typeof result.current.t("save")).toBe("string");
     });
 
-    it("applies theme classes from config", async () => {
-      const { result } = renderHook(() => useConfig(false));
+    it("applies theme classes from a writer's config", async () => {
+      const { result } = renderHook(() => useConfig(true));
 
       act(() => {
         result.current.setConfig({ theme: "dark" });

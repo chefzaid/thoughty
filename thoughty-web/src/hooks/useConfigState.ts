@@ -5,6 +5,10 @@ import type { Notifier } from './useAppNotice';
 import { getTranslation } from '../utils/translations';
 import { useApiServices } from './useApiServices';
 import { readOfflineDisplay, rememberOfflineDisplay } from '../contexts/offlineSession';
+import { resolveLanguage } from '../utils/language';
+import type { Language } from '../utils/translations';
+import type { Theme } from '../utils/visitorPreferences';
+import { useVisitorPreferences } from './useVisitorPreferences';
 
 const CONFIG_QUERY_KEY = ['app', 'config'] as const;
 const PROFILE_STATS_QUERY_KEY = ['app', 'profile-stats'] as const;
@@ -79,21 +83,26 @@ export const useConfig = (isAuthenticated: boolean, offline = false) => {
     return success;
   }, [configService, queryClient]);
 
-  useEffect(() => {
-    if (config.theme === 'light') {
-      document.body.classList.add('light-mode');
-      document.body.classList.remove('dark-mode');
-    } else {
-      document.body.classList.add('dark-mode');
-      document.body.classList.remove('light-mode');
-    }
+  const visitor = useVisitorPreferences();
+  // A writer's pages follow their settings (English and dark until they load); a visitor's follow the
+  // browser's language and the system theme, or what they picked with the switch on the public pages
+  const language: Language = isAuthenticated ? resolveLanguage(config.language) : visitor.language;
+  const accountTheme: Theme = config.theme === 'light' ? 'light' : 'dark';
+  const theme = isAuthenticated ? accountTheme : visitor.theme;
 
+  useEffect(() => {
+    document.body.classList.toggle('light-mode', theme === 'light');
+    document.body.classList.toggle('dark-mode', theme !== 'light');
     document.body.classList.toggle('high-contrast-mode', config.highContrast === true || config.highContrast === 'true');
-  }, [config.highContrast, config.theme]);
+  }, [config.highContrast, theme]);
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
 
   const t = useCallback((key: string, params: Record<string, string | number> = {}): string => {
-    return getTranslation(config.language || 'en', key, params);
-  }, [config.language]);
+    return getTranslation(language, key, params);
+  }, [language]);
 
   const downloadUserData = useCallback(async () => {
     return configService.downloadUserData();
@@ -109,6 +118,9 @@ export const useConfig = (isAuthenticated: boolean, offline = false) => {
     fetchProfileStats,
     updateConfig,
     downloadUserData,
+    /** The language and theme the pages show in, for a writer or a visitor. */
+    display: { language, theme },
+    visitor,
     t,
   };
 };

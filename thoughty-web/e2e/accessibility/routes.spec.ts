@@ -29,13 +29,6 @@ const PUBLIC_ROUTES: Record<string, RouteContent> = {
   '/journal-templates': (page) => [page.getByRole('article', { name: 'Dream log' })],
 };
 
-/**
- * Public routes only a visitor without a session reaches: a signed-in writer opening them lands in the journal.
- * A visitor without a session sees the public pages in the dark theme, since the theme is a setting of the
- * account, so these routes have no light scan.
- */
-const SIGNED_OUT_ONLY_ROUTES = new Set(['/login', '/register']);
-
 const AUTHENTICATED_ROUTES: Record<string, RouteContent> = {
   '/welcome': (page) => [page.getByRole('list', { name: 'What brings you here?' }), page.getByRole('button', { name: 'Skip and open my journal' })],
   '/journal': (page) => [
@@ -107,28 +100,20 @@ async function expectNoAccessibilityViolations(page: Page, include?: string) {
 test.describe('route accessibility', () => {
   test.setTimeout(60_000);
 
-  for (const [path, content] of Object.entries(PUBLIC_ROUTES)) {
-    // The way a visitor without a session sees it
-    test(`dark public route ${path}`, async ({ page }) => {
-      await setupMockApp(page);
-      await page.goto(path);
-      for (const part of content(page)) await expect(part).toBeVisible();
-      await expectPublicPageTheme(page, 'dark');
+  for (const theme of THEMES) {
+    for (const [path, content] of Object.entries(PUBLIC_ROUTES)) {
+      // The way a visitor without a session sees it on a system set to this theme, with the language and theme switch
+      test(`${theme} public route ${path}`, async ({ page }) => {
+        await page.emulateMedia({ colorScheme: theme });
+        await setupMockApp(page);
+        await page.goto(path);
+        for (const part of content(page)) await expect(part).toBeVisible();
+        await expectPublicPageTheme(page, theme);
+        await expect(page.getByRole('group', { name: 'Language and theme' })).toBeVisible();
 
-      await expectNoAccessibilityViolations(page);
-    });
-
-    if (SIGNED_OUT_ONLY_ROUTES.has(path)) continue;
-
-    // The public pages follow the writer's theme, so a signed-in writer with the light theme sees them light
-    test(`light public route ${path}`, async ({ page }) => {
-      await setupMockApp(page, { startAuthenticated: true, config: { theme: 'light' } });
-      await page.goto(path);
-      for (const part of content(page)) await expect(part).toBeVisible();
-      await expectPublicPageTheme(page, 'light');
-
-      await expectNoAccessibilityViolations(page);
-    });
+        await expectNoAccessibilityViolations(page);
+      });
+    }
   }
 
   for (const theme of THEMES) {

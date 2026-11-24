@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import {
@@ -229,5 +229,33 @@ describe('AppShell public flows', () => {
     renderAppShell();
 
     expect(screen.getByRole('heading', { level: 1, name: 'A private journal that becomes your life story.' })).toBeInTheDocument();
+  });
+
+  it('lets a visitor switch the language and theme, which this browser remembers', async () => {
+    const user = userEvent.setup();
+    globalThis.history.replaceState({}, '', '/');
+    setMockAuthState({ user: null, isAuthenticated: false });
+
+    const { unmount } = renderAppShell();
+    const preferences = screen.getByRole('group', { name: 'Language and theme' });
+    await user.click(within(preferences).getByRole('button', { name: 'Français' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'Un journal privé qui devient l’histoire de votre vie.' })).toBeInTheDocument();
+    expect(document.documentElement.lang).toBe('fr');
+    await user.click(screen.getByRole('button', { name: 'Utiliser le thème clair' }));
+    expect(document.body).toHaveClass('light-mode');
+    unmount();
+
+    renderAppShell();
+    expect(screen.getByRole('heading', { level: 1, name: 'Un journal privé qui devient l’histoire de votre vie.' })).toBeInTheDocument();
+    expect(document.body).toHaveClass('light-mode');
+  });
+
+  it('offers no visitor switch to a signed-in writer, whose settings apply', async () => {
+    globalThis.history.replaceState({}, '', '/about');
+    setMockAuthState({ isAuthenticated: true });
+    renderAppShell();
+
+    expect(await screen.findByRole('heading', { name: 'A quieter home for the thoughts worth keeping.' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Language and theme' })).toBeNull();
   });
 });
