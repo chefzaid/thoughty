@@ -12,6 +12,7 @@ import { buildEntriesListProps } from './entriesListProps';
 import { createEntryTemplate, getEntryTemplates, parseCustomEntryTemplates, serializeCustomEntryTemplates, type EntryTemplateDraft } from './entryTemplates';
 import { listKnownTags, type TagMetadataMap } from './tagMetadata';
 import { diaryOffersAi } from './diaryAi';
+import type { GetInspiredMenuProps } from '../components/EntryForm/GetInspiredMenu';
 
 export {
   buildPublicShellProps,
@@ -53,8 +54,8 @@ interface BuildAuthenticatedLayoutPropsParams {
   currentView: ViewType | null;
   deleteModalState: Pick<DeleteModalState, 'cancelDelete' | 'confirmDelete' | 'deleteModalOpen'>;
   entryToast: TransientMessage;
-  handleAiChat: (entry: Entry, messages: { role: 'user' | 'assistant'; content: string }[]) => Promise<string | null | undefined>;
-  handleLoadAiChatHistory: (entryId: number) => Promise<Array<{ role: 'user' | 'assistant'; content: string }>>;
+  handleAiChat: AuthenticatedLayoutProps['onSendChat'];
+  handleLoadAiChatHistory: AuthenticatedLayoutProps['onLoadChatHistory'];
   isEmailVerified: boolean;
   offline: boolean;
   quickCapture?: AuthenticatedLayoutProps['quickCapture'];
@@ -84,7 +85,7 @@ export interface BuildAuthenticatedRoutesPropsParams {
   handleSummarize?: (entry: Entry, guidance: SummaryGuidance) => Promise<string | null | undefined>;
   /** Moves one entry to another diary; resolves `false` when it could not. */
   handleMoveToDiary?: (entry: Entry, diaryId: number, closeAsker?: () => void) => Promise<boolean>;
-  handleGetInspiration?: () => Promise<string | null>;
+  handleGetInspiration?: GetInspiredMenuProps['onGenerate'];
   handleFindDuplicateEntries: (diaryId?: number) => Promise<DuplicateEntryScan | null>;
   handleNavigateToFirst: AuthenticatedRoutesProps['journalRouteProps']['yearMonthNavigator']['onNavigate'];
   handleRenameTag: AuthenticatedRoutesProps['tagManagerRouteProps']['onRenameTag'];
@@ -406,7 +407,8 @@ export function buildAuthenticatedRoutesProps({
         onSuggestTags: diaryOffersAi(entryFormState.diaryAiMode, 'tag') ? entryFormState.handleSuggestTags : undefined,
         fixingWriting: entryFormState.fixingWriting,
         onFixWriting: diaryOffersAi(entryFormState.diaryAiMode, 'writing') ? entryFormState.handleFixWriting : undefined,
-        onGetInspiration: entryFormState.diaryAiMode === 'on' ? handleGetInspiration : undefined,
+        // Get Inspired reads many entries' tags, so a diary that asks each time leaves it out
+        onGetInspiration: ['on', 'local'].includes(entryFormState.diaryAiMode) ? handleGetInspiration : undefined,
         promptCardsDrawn: config.promptCardsDrawn,
         // A card drawn before the settings arrive would be drawn from an empty deck history and saved over it
         promptCardsReady: configLoaded,

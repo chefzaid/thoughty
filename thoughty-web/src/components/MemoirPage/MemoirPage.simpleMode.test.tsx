@@ -10,6 +10,8 @@ import MemoirPage, { type MemoirPageProps } from './MemoirPage';
 const memoirService = { fetchOverview: vi.fn(), leave: vi.fn() };
 const lifeErasService = { list: vi.fn() };
 vi.mock('../../hooks/useMemoirService', () => ({ useMemoirService: () => memoirService }));
+// Interview mode on the writer's own model is tested in MemoirFollowUps.test.tsx
+vi.mock('../../hooks/useLocalAiService', () => ({ useLocalAiService: () => ({}) }));
 vi.mock('../../hooks/useAuthenticatedService', () => ({ useAuthenticatedService: () => lifeErasService }));
 
 const t = (key: string) => key;

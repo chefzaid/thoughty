@@ -8,7 +8,8 @@ export const MAX_MEMOIR_FOLLOW_UPS = 3;
 export const MAX_MEMOIR_FOLLOW_UP_LENGTH = 200;
 /** An answer is read up to this many characters: its opening and, past that, its most recent part. */
 export const MAX_MEMOIR_FOLLOW_UP_ANSWER_LENGTH = 12_000;
-const ANSWER_OPENING_LENGTH = 4000;
+/** How much of the opening of a long answer the model reads, before its most recent part. */
+export const MEMOIR_FOLLOW_UP_ANSWER_OPENING_LENGTH = 4000;
 
 export interface MemoirFollowUpRequest {
   /** The memoir question, in the writer's language. */
@@ -41,8 +42,8 @@ function readableAnswer(answer: string): string {
   if (text.length <= MAX_MEMOIR_FOLLOW_UP_ANSWER_LENGTH) {
     return text;
   }
-  const recent = MAX_MEMOIR_FOLLOW_UP_ANSWER_LENGTH - ANSWER_OPENING_LENGTH;
-  return `${text.slice(0, ANSWER_OPENING_LENGTH).trimEnd()}\n…\n${text.slice(-recent).trimStart()}`;
+  const recent = MAX_MEMOIR_FOLLOW_UP_ANSWER_LENGTH - MEMOIR_FOLLOW_UP_ANSWER_OPENING_LENGTH;
+  return `${text.slice(0, MEMOIR_FOLLOW_UP_ANSWER_OPENING_LENGTH).trimEnd()}\n…\n${text.slice(-recent).trimStart()}`;
 }
 
 export function buildMemoirFollowUpsPrompt({ question, answer, asked }: MemoirFollowUpRequest): string {

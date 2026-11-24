@@ -38,12 +38,12 @@ describe('an entry in a diary with AI off', () => {
         expect(screen.getByRole('button', { name: 'transcribeAudio' })).toBeInTheDocument();
     });
 
-    it('offers Rephrase and Summarize in a diary on the writer’s own model, but no chat or transcription', () => {
+    it('offers Rephrase, Summarize and the chat in a diary on the writer’s own model, but no transcription yet', () => {
         const diaries = [makeDiary({ id: 1, name: 'Letters', aiMode: 'local' })];
         const entry = { ...createEntryViewModeProps().entry, attachments: [recording] };
         render(<EntryViewMode {...createEntryViewModeProps({ entry, diaries, onDiscuss: vi.fn(), onRephrase: vi.fn(), onSummarize: vi.fn() })} />);
 
-        expect(screen.queryByTitle('Discuss entry')).not.toBeInTheDocument();
+        expect(screen.getByTitle('Discuss entry')).toBeInTheDocument();
         expect(screen.getByTitle('Rephrase entry')).toBeInTheDocument();
         expect(screen.queryByRole('button', { name: 'transcribeAudio' })).not.toBeInTheDocument();
     });

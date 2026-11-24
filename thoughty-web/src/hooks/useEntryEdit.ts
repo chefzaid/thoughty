@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { Attachment, Config, Entry } from '../types';
+import type { Attachment, Config, Diary, Entry } from '../types';
 import { getAutoTagLimit } from '../utils/autoTagLimit';
 import { formatEntryDate } from '../utils/entryDate';
 import { cleanEntryTitle } from '../utils/entryTime';
@@ -9,13 +9,25 @@ import type { Notifier } from './useAppNotice';
 import type { MoveToDiary } from './useMoveToDiary';
 import { useFeatureFlag } from '../components/FeatureFlags/featureFlags';
 import { useLeaveWarning } from '../components/ComposerDraft/useLeaveWarning';
+import { autoTagWithLocalModel } from '../services/localModel/localAutoTag';
+import { diaryAiMode } from '../utils/diaryAi';
+
+const NO_DIARIES: readonly Pick<Diary, 'id' | 'aiMode'>[] = [];
 
 /**
  * The entry editor's state and save. `moveToDiary` moves the entry when the editor chose another diary for it,
  * after its changes are saved, through the same move as the entry's **Move to diary** (it says where it went).
+ * An entry of a diary on the writer's own model (among `diaries`) is tagged by that model from this browser once
+ * saved, as the server tags the others on save.
  */
-export const useEntryEdit = (config: Config, onSave: () => void, { notify, t }: Notifier, moveToDiary?: MoveToDiary) => {
-  const { entriesService, attachmentsService } = useApiServices();
+export const useEntryEdit = (
+  config: Config,
+  onSave: () => void,
+  { notify, t }: Notifier,
+  moveToDiary?: MoveToDiary,
+  diaries: readonly Pick<Diary, 'id' | 'aiMode'>[] = NO_DIARIES,
+) => {
+  const { entriesService, attachmentsService, localAiService } = useApiServices();
   // With AI switched off nothing adds tags on save, so an edited entry needs one of its own
   const autoTagLimit = useFeatureFlag('ai') ? getAutoTagLimit(config.autoTagMaxTags) : 0;
 
@@ -104,6 +116,13 @@ export const useEntryEdit = (config: Config, onSave: () => void, { notify, t }: 
       notify(t('entryUpdateFailed'));
       return;
     }
+    if (autoTagLimit > 0 && diaryAiMode(diaries, editingEntry.diary_id) === 'local') {
+      void autoTagWithLocalModel({ localAi: localAiService, entriesService, entryId, text: placed.text, tags: editTags, limit: autoTagLimit })
+        .then((outcome) => {
+          if (outcome === 'tagged') onSave();
+          if (outcome === 'failed') notify(t('localModelAutoTagFailed'));
+        });
+    }
 
     for (const file of placed.remaining) {
       await attachmentsService.uploadAttachment(file, editingEntry.id);
@@ -127,7 +146,7 @@ export const useEntryEdit = (config: Config, onSave: () => void, { notify, t }: 
 
     handleCancelEdit();
     onSave();
-  }, [attachmentsService, autoTagLimit, editDate, editDiaryId, editExistingAttachments, editFeelings, editFormat, editMood, editPendingFiles, editTags, editText, editTimeOfDay, editTitle, editVisibility, editingEntry, entriesService, handleCancelEdit, moveToDiary, notify, onSave, t]);
+  }, [attachmentsService, autoTagLimit, diaries, editDate, editDiaryId, editExistingAttachments, editFeelings, editFormat, editMood, editPendingFiles, editTags, editText, editTimeOfDay, editTitle, editVisibility, editingEntry, entriesService, handleCancelEdit, localAiService, moveToDiary, notify, onSave, t]);
 
   const addEditPendingFile = useCallback((file: File) => {
     setEditPendingFiles((prev) => [...prev, file]);

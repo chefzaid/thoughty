@@ -6,6 +6,8 @@ import { getTranslation } from '../../utils/translations';
 
 const memoirService = { followUps: vi.fn() };
 vi.mock('../../hooks/useMemoirService', () => ({ useMemoirService: () => memoirService }));
+const localAiService = { memoirFollowUps: vi.fn() };
+vi.mock('../../hooks/useLocalAiService', () => ({ useLocalAiService: () => localAiService }));
 
 const t = (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params);
 const answer = 'A narrow house with a fig tree, and my grandmother singing in the kitchen.';
@@ -125,5 +127,21 @@ describe('MemoirFollowUps', () => {
 
     expect(screen.getByRole('group', { name: 'Mode entretien' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Me poser des questions de relance' })).toBeInTheDocument();
+  });
+
+  it('asks the writer’s own model in a memoir diary set to it, never Thoughty’s server, and says why it gave none', async () => {
+    localAiService.memoirFollowUps
+      .mockResolvedValueOnce({ data: ['Which song?'], refusal: null })
+      .mockResolvedValueOnce({ data: null, refusal: 'localModelUnreadable' });
+    render(<MemoirFollowUps questionId="childhood-home" questionText="What was home like?" answer={answer} onUse={vi.fn()} aiMode="local" t={t} />);
+
+    await ask();
+    expect(localAiService.memoirFollowUps).toHaveBeenCalledWith({ question: 'What was home like?', answer, asked: [] });
+    expect(screen.getByRole('list', { name: 'To tell more' })).toHaveTextContent('Which song?');
+
+    await ask('Ask me other questions');
+    expect(localAiService.memoirFollowUps).toHaveBeenLastCalledWith({ question: 'What was home like?', answer, asked: ['Which song?'] });
+    expect(screen.getByRole('alert')).toHaveTextContent('Your model answered, but not in the form asked for.');
+    expect(memoirService.followUps).not.toHaveBeenCalled();
   });
 });

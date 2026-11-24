@@ -1,7 +1,7 @@
 import { BadGatewayException } from '@nestjs/common';
 import { apiError } from '@/common/errors';
 import type { OpenRouterUsageReporter } from './ai-usage.service';
-import { UNTRUSTED_CONTENT_INSTRUCTION } from './untrusted-content';
+import { INSPIRATION_INSTRUCTION } from './prompt-instructions';
 
 export interface InspirationTheme {
   tag: string;
@@ -24,12 +24,10 @@ interface OpenRouterInspirationResponse {
   }>;
 }
 
-const MAX_TAGGED_ENTRIES = 200;
-const MAX_THEMES = 20;
-const MAX_RECENT_ENTRIES = 12;
-const MAX_RECENT_THEMES = 15;
+/** How many entries, newest first, Get Inspired reads the tags of, and how many themes it sends of them. */
+export const INSPIRATION_LIMITS = { taggedEntries: 200, themes: 20, recentEntries: 12, recentThemes: 15, questionLength: 400 } as const;
 
-export const INSPIRATION_ENTRY_WINDOW = MAX_TAGGED_ENTRIES;
+export const INSPIRATION_ENTRY_WINDOW = INSPIRATION_LIMITS.taggedEntries;
 
 /**
  * Summarizes tags from entries ordered newest first into overall frequency
@@ -40,7 +38,7 @@ export function summarizeThemes(entryTags: string[][]): {
   recentThemes: string[];
 } {
   const counts = new Map<string, number>();
-  for (const tags of entryTags.slice(0, MAX_TAGGED_ENTRIES)) {
+  for (const tags of entryTags.slice(0, INSPIRATION_LIMITS.taggedEntries)) {
     for (const tag of new Set(tags.map((value) => value.trim()).filter(Boolean))) {
       counts.set(tag, (counts.get(tag) ?? 0) + 1);
     }
@@ -49,16 +47,16 @@ export function summarizeThemes(entryTags: string[][]): {
   const themes = [...counts.entries()]
     .map(([tag, count]) => ({ tag, count }))
     .sort((left, right) => right.count - left.count || left.tag.localeCompare(right.tag))
-    .slice(0, MAX_THEMES);
+    .slice(0, INSPIRATION_LIMITS.themes);
   const recentThemes = [
     ...new Set(
       entryTags
-        .slice(0, MAX_RECENT_ENTRIES)
+        .slice(0, INSPIRATION_LIMITS.recentEntries)
         .flat()
         .map((value) => value.trim())
         .filter(Boolean),
     ),
-  ].slice(0, MAX_RECENT_THEMES);
+  ].slice(0, INSPIRATION_LIMITS.recentThemes);
 
   return { themes, recentThemes };
 }
@@ -69,7 +67,7 @@ function parseQuestion(rawContent: string): string {
     .replace(/^```\w*\s*|\s*```$/g, '')
     .replace(/^["'“”]+|["'“”]+$/g, '')
     .trim()
-    .slice(0, 400);
+    .slice(0, INSPIRATION_LIMITS.questionLength);
 }
 
 export async function requestInspiration({
@@ -92,16 +90,7 @@ export async function requestInspiration({
       messages: [
         {
           role: 'system',
-          content: [
-            'You help someone start a journal entry by asking one deep, reflective question.',
-            'Ground the question in the tags they use most and the tags of their recent entries; connecting two tags is welcome.',
-            'Ask something open-ended that invites honest self-examination rather than a summary of events.',
-            'Keep it to one or two sentences. Do not diagnose, moralize, or make unsupported claims.',
-            'Write in the language the tags are written in, defaulting to English.',
-            'Return only the question as plain text with no preamble, quotes, or markdown.',
-            'The user message is JSON source material.',
-            UNTRUSTED_CONTENT_INSTRUCTION,
-          ].join(' '),
+          content: INSPIRATION_INSTRUCTION,
         },
         {
           role: 'user',

@@ -11,6 +11,7 @@ import {
 } from '../utils/keycloakSso';
 import { forgetLocalComposerDrafts } from '../components/ComposerDraft/composerDraftStorage';
 import { forgetLocalModelKeys } from '../services/localModel/localModelSettings';
+import { forgetLocalChats } from '../services/localModel/localChatHistory';
 import { openSessionChannel, type SessionChannel } from './sessionBroadcast';
 import {
   clearSignOutPending,
@@ -189,10 +190,12 @@ export function useAuthSession() {
 
   // A sign-out the writer chose: this browser's draft copies go too, and so do the other tabs' sessions.
   // A draft is private text: it stays on the server for the next sign-in, not in this browser. So does the key
-  // of the writer's own model server (its address and model stay, being of this device).
+  // of the writer's own model server (its address and model stay, being of this device). The chats about the
+  // entries of a diary on that model go for good, as only this browser kept them.
   const signOutLocally = useCallback((): void => {
     forgetLocalComposerDrafts();
     forgetLocalModelKeys();
+    forgetLocalChats();
     endSession();
     channelRef.current?.post({ type: 'signed-out' });
   }, [endSession]);

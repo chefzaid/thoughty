@@ -22,6 +22,8 @@ const memoirService = {
 const attachmentsService = { uploadAttachment: vi.fn(), transcribeAttachment: vi.fn(), list: vi.fn() };
 
 vi.mock('../../hooks/useMemoirService', () => ({ useMemoirService: () => memoirService }));
+// Interview mode on the writer's own model is tested in MemoirFollowUps.test.tsx
+vi.mock('../../hooks/useLocalAiService', () => ({ useLocalAiService: () => ({}) }));
 vi.mock('../../hooks/useAuthenticatedService', () => ({ useAuthenticatedService: () => attachmentsService }));
 
 const t = (key: string, params?: Record<string, string | number>) =>

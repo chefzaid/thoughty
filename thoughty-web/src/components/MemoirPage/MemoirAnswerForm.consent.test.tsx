@@ -9,6 +9,8 @@ const attachmentsService = { uploadAttachment: vi.fn(), transcribeAttachment: vi
 vi.mock('../../hooks/useAuthenticatedService', () => ({ useAuthenticatedService: () => attachmentsService }));
 const memoirService = { followUps: vi.fn() };
 vi.mock('../../hooks/useMemoirService', () => ({ useMemoirService: () => memoirService }));
+// Interview mode on the writer's own model is tested in MemoirFollowUps.test.tsx
+vi.mock('../../hooks/useLocalAiService', () => ({ useLocalAiService: () => ({}) }));
 
 const t = (key: string) => key;
 const QUESTION = 'What was home like?';

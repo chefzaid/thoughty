@@ -38,7 +38,7 @@ describe('LocalModelPanel', () => {
     expect(screen.getByLabelText('Model')).toHaveValue('');
   });
 
-  it('shows what is saved, and refuses an address elsewhere than this device or a missing model', () => {
+  it('shows what is saved, and refuses plain http to another device or a missing model', () => {
     writeLocalModelSettings(7, { baseUrl: 'http://127.0.0.1:1234/v1', model: 'qwen', apiKey: '' });
     renderPanel();
     expect(screen.getByLabelText('Server address')).toHaveValue('http://127.0.0.1:1234/v1');
@@ -46,7 +46,8 @@ describe('LocalModelPanel', () => {
 
     fill('Server address', 'http://192.168.1.4:11434/v1');
     fireEvent.click(screen.getByRole('button', { name: 'Save model server' }));
-    expect(screen.getByText(/Only a server on this device can be used/)).toBeInTheDocument();
+    expect(screen.getByText(/Plain http only works for a server on this device/)).toBeInTheDocument();
+    expect(readLocalModelSettings(7)?.baseUrl).toBe('http://127.0.0.1:1234/v1');
 
     fill('Server address', 'not an address');
     fireEvent.click(screen.getByRole('button', { name: 'Test connection' }));
@@ -69,6 +70,25 @@ describe('LocalModelPanel', () => {
 
     expect(await screen.findByText('Connected: llama3.2 is ready on your server.')).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith('http://localhost:11434/v1/models', expect.objectContaining({ credentials: 'omit' }));
+  });
+
+  it('saves and tests a server elsewhere behind https, with its key', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json({ data: [{ id: 'qwen2.5' }] }));
+    vi.stubGlobal('fetch', fetchMock);
+    renderPanel();
+    fill('Server address', 'https://models.home.example/v1/');
+    fill('Model', 'qwen2.5');
+    fill('API key (optional)', 'sk-home');
+    fireEvent.click(screen.getByRole('button', { name: 'Test connection' }));
+
+    expect(await screen.findByText('Connected: qwen2.5 is ready on your server.')).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith('https://models.home.example/v1/models', expect.objectContaining({
+      credentials: 'omit',
+      redirect: 'error',
+      headers: { Authorization: 'Bearer sk-home' },
+    }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save model server' }));
+    expect(readLocalModelSettings(7)).toEqual({ baseUrl: 'https://models.home.example/v1', model: 'qwen2.5', apiKey: 'sk-home' });
   });
 
   it('says how to allow this site when the server answers without allowing it, and lists the models it has', async () => {

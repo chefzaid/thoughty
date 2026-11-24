@@ -302,4 +302,15 @@ describe('appShellProps', () => {
     expect(entryForm.onFixWriting).toBe(ask.entryFormState.handleFixWriting);
     expect(entryForm.onGetInspiration).toBeUndefined();
   });
+
+  it('offers Auto Tag, Rephrase and Get Inspired in a composer whose diary is on the writer’s own model', () => {
+    const local = createRoutesParams();
+    const handleGetInspiration = vi.fn();
+    const { entryForm } = buildAuthenticatedRoutesProps({
+      ...local, handleGetInspiration, entryFormState: { ...local.entryFormState, diaryAiMode: 'local' },
+    }).journalRouteProps;
+    expect(entryForm.onSuggestTags).toBe(local.entryFormState.handleSuggestTags);
+    expect(entryForm.onFixWriting).toBe(local.entryFormState.handleFixWriting);
+    expect(entryForm.onGetInspiration).toBe(handleGetInspiration);
+  });
 });

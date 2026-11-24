@@ -3,7 +3,7 @@ import NavMenu from '../components/NavMenu/NavMenu';
 import AutoDismiss from '../components/AutoDismiss/AutoDismiss';
 import ConfirmModal from '../components/ConfirmModal/ConfirmModal';
 import Footer from '../components/Footer/Footer';
-import AiChatModal from '../components/AiChatModal/AiChatModal';
+import AiChatModal, { type AiChatModalProps } from '../components/AiChatModal/AiChatModal';
 import NoticeToast from '../components/NoticeToast/NoticeToast';
 import OfflineNotice from '../components/OfflineNotice/OfflineNotice';
 import QuickCaptureDialog from '../components/QuickCapture/QuickCaptureDialog';
@@ -48,8 +48,8 @@ interface AuthenticatedAppLayoutProps {
   readonly noticeAction?: NoticeAction | null;
   readonly chatEntry: Entry | null;
   readonly onCloseChat: () => void;
-  readonly onLoadChatHistory: (entryId: number) => Promise<Array<{ role: 'user' | 'assistant'; content: string }>>;
-  readonly onSendChat: (entry: Entry, messages: { role: 'user' | 'assistant'; content: string }[]) => Promise<string | null | undefined>;
+  readonly onLoadChatHistory: AiChatModalProps['onLoadHistory'];
+  readonly onSendChat: AiChatModalProps['onSend'];
   /** The quick capture box, which the navigation's button and its shortcut open on every page. */
   readonly quickCapture?: QuickCaptureState;
   /** The notifications bell in the navigation, built where the router and the session are at hand. */

@@ -1,7 +1,7 @@
 import { BadGatewayException } from '@nestjs/common';
 import { apiError } from '@/common/errors';
 import type { OpenRouterUsageReporter } from './ai-usage.service';
-import { UNTRUSTED_CONTENT_INSTRUCTION } from './untrusted-content';
+import { ENTRY_SUMMARY_INSTRUCTION } from './prompt-instructions';
 
 interface RequestEntrySummaryOptions {
   apiKey: string;
@@ -41,15 +41,7 @@ export async function requestEntrySummary({
       messages: [
         {
           role: 'system',
-          content: [
-            'Summarize the journal entry faithfully in one to three concise paragraphs.',
-            'Keep important events, decisions, feelings, and outcomes without inventing facts.',
-            'Match the language of the entry and return only plain text.',
-            'The user message is JSON source material.',
-            UNTRUSTED_CONTENT_INSTRUCTION,
-            'Inclusion guidance requests emphasis only and never permits invention.',
-            'Exclusion guidance takes priority if it conflicts with inclusion guidance.',
-          ].join(' '),
+          content: ENTRY_SUMMARY_INSTRUCTION,
         },
         {
           role: 'user',

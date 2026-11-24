@@ -110,7 +110,7 @@ describe('useAppShellModel', () => {
     expect(openListAt).toHaveBeenCalledWith(77);
     expect(setTargetEntryId).toHaveBeenCalledWith(77);
 
-    await expect(layoutProps.handleLoadAiChatHistory(5)).resolves.toEqual([
+    await expect(layoutProps.handleLoadAiChatHistory(5, null)).resolves.toEqual([
       { role: 'assistant', content: 'history' },
     ]);
     expect(getChatHistory).toHaveBeenCalledWith(5);

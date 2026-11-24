@@ -79,7 +79,7 @@ describe('AiChatModal', () => {
       render(<AiChatModal {...defaultProps} />);
 
       await waitFor(() => {
-        expect(defaultProps.onLoadHistory).toHaveBeenCalledWith(1);
+        expect(defaultProps.onLoadHistory).toHaveBeenCalledWith(1, defaultProps.entry.diary_id);
       });
     });
 

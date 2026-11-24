@@ -73,7 +73,7 @@ describe('diary AI mode', () => {
     expect(offered('on')).toEqual(tasks);
     expect(offered('ask')).toEqual(tasks);
     expect(offered('off')).toEqual([]);
-    expect(offered('local')).toEqual(['writing', 'tag', 'summary']);
+    expect(offered('local')).toEqual(['writing', 'tag', 'summary', 'chat', 'prompt']);
   });
 
   it('names each mode that is not simply on in Manage Diaries', () => {

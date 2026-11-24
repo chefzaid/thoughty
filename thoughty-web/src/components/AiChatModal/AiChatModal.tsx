@@ -1,6 +1,9 @@
-import { useState, useRef, useEffect, useCallback, useId } from 'react';
+import { useState, useRef, useEffect, useCallback, useContext, useId } from 'react';
 import { useDialogFocus } from '../../hooks/useDialogFocus';
+import { isAiProblem, type AiProblem } from '../../services/api/aiTypes';
 import type { Entry } from '../../types';
+import { diaryAiMode } from '../../utils/diaryAi';
+import { DiaryAiContext } from '../DiaryAi/diaryAiScope';
 import { hasCrisisSignal } from '../../utils/crisisSignals';
 import { downloadBlob } from '../../utils/downloadFile';
 import { scrollBehavior } from '../../utils/motion';
@@ -49,20 +52,25 @@ function downloadTranscript(entry: Entry, messages: ChatMessage[], t: Translate)
   downloadBlob(blob, `thoughty_ai_chat_${safeDate}_entry-${entry.id}.txt`);
 }
 
-interface AiChatModalProps {
+export interface AiChatModalProps {
   readonly entry: Entry;
   readonly isOpen: boolean;
   readonly onClose: () => void;
-  /** Resolves with the reply, null when it failed, or undefined when the writer did not send the message. */
-  readonly onSend: (entry: Entry, messages: ChatMessage[]) => Promise<string | null | undefined>;
-  readonly onLoadHistory: (entryId: number) => Promise<ChatMessage[]>;
+  /**
+   * Resolves with the reply, null when it failed, the reason to show when there is none (the writer's own model
+   * could not answer), or undefined when the writer did not send the message.
+   */
+  readonly onSend: (entry: Entry, messages: ChatMessage[]) => Promise<string | AiProblem | null | undefined>;
+  /** The entry's earlier chat, from the server or, in a diary on the writer's own model, from this browser. */
+  readonly onLoadHistory: (entryId: number, diaryId: number | null | undefined) => Promise<ChatMessage[]>;
   readonly theme?: 'light' | 'dark';
   readonly t: Translate;
 }
 
 /**
  * Chats with the AI about one entry in a modal dialog: focus starts in the message field, Tab
- * stays inside, Escape closes it from anywhere, and focus goes back to where it was.
+ * stays inside, Escape closes it from anywhere, and focus goes back to where it was. In a diary on the
+ * writer's own model it says that the chat goes to that model and stays in this browser.
  */
 function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'dark', t }: AiChatModalProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -76,6 +84,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
   const dialogRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const isLight = theme === 'light';
+  const keptInBrowser = diaryAiMode(useContext(DiaryAiContext), entry.diary_id) === 'local';
 
   useDialogFocus({ isOpen, dialogRef, initialFocusRef: inputRef, onClose });
 
@@ -95,7 +104,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
     setLoading(false);
     setHistoryLoading(true);
 
-    void onLoadHistory(entry.id)
+    void onLoadHistory(entry.id, entry.diary_id)
       .then((loadedMessages) => {
         if (!cancelled) {
           setMessages(loadedMessages);
@@ -110,7 +119,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
     return () => {
       cancelled = true;
     };
-  }, [entry.id, isOpen, onLoadHistory]);
+  }, [entry.id, entry.diary_id, isOpen, onLoadHistory]);
 
   // The writer's own words, never the AI's, call for the support resources
   const supportCalledFor = !supportClosed && hasCrisisSignal(
@@ -154,7 +163,9 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
       inputRef.current?.focus();
       return;
     }
-    if (reply) {
+    if (isAiProblem(reply)) {
+      setError(t(reply.problem));
+    } else if (reply) {
       setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
     } else {
       setError(t('aiChatError'));
@@ -242,6 +253,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
             <span className="ml-2 text-xs">#{entry.tags.join(' #')}</span>
           )}
           <p className="privacy-text mt-1 whitespace-pre-wrap line-clamp-3">{entryPreview}</p>
+          {keptInBrowser && <p className="mt-2 text-xs" role="note">{t('aiChatKeptInBrowser')}</p>}
         </div>
 
         {/* Messages */}

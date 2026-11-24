@@ -9,7 +9,7 @@ import { getVisibilityButtonClass } from '../../utils/entryVisibility';
 import { entryTextStyle, type LetterSpacingPreference, type LineSpacingPreference } from '../../types/config';
 import type { EntryTemplate, EntryTemplateDraft } from '../../utils/entryTemplates';
 import AiSparkleIcon from '../AiSparkleIcon/AiSparkleIcon';
-import GetInspiredMenu from './GetInspiredMenu';
+import GetInspiredMenu, { type GetInspiredMenuProps } from './GetInspiredMenu';
 import PromptCardsMenu from '../PromptCards/PromptCardsMenu';
 import { appendPrompt } from './appendPrompt';
 import { useAutoGrowTextarea } from '../../hooks/useAutoGrowTextarea';
@@ -65,7 +65,7 @@ interface EntryFormProps {
     readonly onSuggestTags?: () => Promise<boolean> | boolean;
     readonly fixingWriting?: boolean;
     readonly onFixWriting?: () => Promise<boolean> | boolean;
-    readonly onGetInspiration?: () => Promise<string | null>;
+    readonly onGetInspiration?: GetInspiredMenuProps['onGenerate'];
     /** The prompt cards drawn so far (the `promptCardsDrawn` setting), and saving them; Draw a card needs no AI. */
     readonly promptCardsDrawn?: string;
     readonly onPromptCardsDrawnChange?: (drawn: string) => void;

@@ -11,11 +11,14 @@ function setup(requestConsent = vi.fn().mockResolvedValue(true)) {
     fixWriting: vi.fn().mockResolvedValue({ data: 'Rewritten', refusal: null }),
     summarizeEntry: vi.fn().mockResolvedValue('A summary'),
     chat: vi.fn().mockResolvedValue('A reply'),
+    getChatHistory: vi.fn().mockResolvedValue([{ role: 'user', content: 'On the server' }]),
   };
   const localAiService = {
     fixWriting: vi.fn().mockResolvedValue({ data: 'Rewritten here', refusal: null }),
     suggestTags: vi.fn(),
     summarize: vi.fn().mockResolvedValue({ data: 'A summary from my model', refusal: null }),
+    chat: vi.fn().mockResolvedValue({ data: 'A reply from my model', refusal: null }),
+    loadChat: vi.fn().mockReturnValue([{ role: 'user', content: 'In this browser' }]),
   };
   const options = {
     aiService,
@@ -139,5 +142,34 @@ describe('useEntryAiActions', () => {
     });
     expect(summary).toBeUndefined();
     expect(notify).toHaveBeenCalledWith('localModelUnreachable');
+  });
+
+  it('chats about an entry of a diary on the writer’s own model there, unasked, with its history from this browser', async () => {
+    const { result, aiService, localAiService, requestConsent } = setup();
+    const messages = [{ role: 'user' as const, content: 'Why the sea?' }];
+
+    await expect(result.current.handleLoadChatHistory(44, 3)).resolves.toEqual([{ role: 'user', content: 'In this browser' }]);
+    expect(localAiService.loadChat).toHaveBeenCalledWith(44);
+    await expect(result.current.handleLoadChatHistory(44, 1)).resolves.toEqual([{ role: 'user', content: 'On the server' }]);
+    expect(aiService.getChatHistory).toHaveBeenCalledWith(44);
+
+    let reply: unknown;
+    await act(async () => {
+      reply = await result.current.handleChat(entry(3), messages);
+    });
+    expect(reply).toBe('A reply from my model');
+    expect(localAiService.chat).toHaveBeenCalledWith(44, 'A dream about the sea', messages);
+    expect(aiService.chat).not.toHaveBeenCalled();
+    expect(requestConsent).not.toHaveBeenCalled();
+
+    localAiService.chat.mockResolvedValueOnce({ data: null, refusal: 'localModelTimeout' }).mockResolvedValueOnce({ data: null, refusal: null });
+    await act(async () => {
+      reply = await result.current.handleChat(entry(3), messages);
+    });
+    expect(reply).toEqual({ problem: 'localModelTimeout' });
+    await act(async () => {
+      reply = await result.current.handleChat(entry(3), messages);
+    });
+    expect(reply).toEqual({ problem: 'aiChatError' });
   });
 });

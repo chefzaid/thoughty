@@ -25,9 +25,11 @@ function getAutoTagLimit(state: MockAppState): number {
   return Number.parseInt(String(state.config.autoTagMaxTags ?? '0'), 10);
 }
 
-function resolveTags(state: MockAppState, tags: string[]): string[] {
+/** The tags an entry saves with, auto-tagged as `EntryTaggingService` does: never in a diary off, asking or on the writer's own model. */
+function resolveTags(state: MockAppState, tags: string[], diaryId: number | null | undefined): string[] {
   const autoTagLimit = getAutoTagLimit(state);
-  if (tags.length === 0 && autoTagLimit > 0) {
+  const aiMode = state.diaries.find((diary) => diary.id === diaryId)?.aiMode ?? 'on';
+  if (tags.length === 0 && autoTagLimit > 0 && aiMode === 'on') {
     return ['focus', 'reflection'].slice(0, autoTagLimit);
   }
   return tags;
@@ -156,7 +158,7 @@ async function handleEntriesCollectionRoute({ route, request, pathname, state }:
     mood: payload.mood ?? null,
     feelings: payload.feelings ?? [],
     content: payload.text,
-    tags: resolveTags(state, payload.tags),
+    tags: resolveTags(state, payload.tags, payload.diaryId ?? state.diaries.find((diary) => diary.isDefault)?.id ?? 1),
     visibility: payload.visibility || 'private',
     format: payload.format || 'plain',
     // Without a diary the API writes to the default one, as quick capture relies on
@@ -331,7 +333,7 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
         ...(payload.mood === undefined ? {} : { mood: payload.mood }),
         ...(payload.feelings === undefined ? {} : { feelings: payload.feelings }),
         content: payload.text,
-        tags: resolveTags(state, payload.tags),
+        tags: resolveTags(state, payload.tags, entry.diaryId ?? 1),
         date: payload.date,
         visibility: payload.visibility,
         format: payload.format || 'plain',

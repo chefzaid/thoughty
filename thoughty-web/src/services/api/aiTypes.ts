@@ -41,3 +41,15 @@ export interface AiApiResult<T> {
 export type AiAnswer<T> = { data: T; refusal: null } | { data: null; refusal: ApiErrorTranslationKey | LocalModelProblem | null };
 
 export type AiAuthFetch = (url: string, options?: RequestInit) => Promise<Response>;
+
+/**
+ * Why an AI action gave no answer, when the screen should say it in place of its own message: the translation key
+ * of a refusal (`AiAnswer['refusal']`), such as what went wrong with the writer's own model.
+ */
+export interface AiProblem {
+  readonly problem: string;
+}
+
+/** Whether an AI action's result is the reason it gave no answer. */
+export const isAiProblem = (value: unknown): value is AiProblem =>
+  typeof value === 'object' && value !== null && typeof (value as { problem?: unknown }).problem === 'string';

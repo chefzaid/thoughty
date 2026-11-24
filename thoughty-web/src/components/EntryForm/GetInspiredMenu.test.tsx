@@ -12,6 +12,7 @@ const translations: Record<string, string> = {
     writeAboutThis: 'Write about this',
     inspirationError: 'Unable to find inspiration',
     retry: 'Retry',
+    localModelUnreachable: 'Your model server could not be reached.',
 };
 const t = (key: string) => translations[key] ?? key;
 
@@ -94,5 +95,18 @@ describe('GetInspiredMenu', () => {
         expect(await screen.findByText('Question from diary two')).toBeInTheDocument();
         expect(screen.queryByText('Question from diary one')).not.toBeInTheDocument();
         expect(secondGenerator).toHaveBeenCalledTimes(1);
+    });
+
+    it('says why the writer’s own model gave no question, and asks again', async () => {
+        const onGenerate = vi.fn()
+            .mockResolvedValueOnce({ problem: 'localModelUnreachable' })
+            .mockResolvedValueOnce('What do you miss most?');
+        const user = userEvent.setup();
+        render(<GetInspiredMenu onGenerate={onGenerate} onSelect={vi.fn()} theme="light" t={t} />);
+
+        await user.click(screen.getByRole('button', { name: 'Get Inspired' }));
+        expect(await screen.findByRole('alert')).toHaveTextContent('Your model server could not be reached.');
+        await user.click(screen.getByRole('button', { name: 'Retry' }));
+        expect(await screen.findByText('What do you miss most?')).toBeInTheDocument();
     });
 });

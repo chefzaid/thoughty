@@ -2,8 +2,12 @@ import type { Page, Route } from '@playwright/test';
 
 /** Where the specs' writer runs their own model: Ollama's address on this device. */
 export const LOCAL_MODEL_URL = 'http://localhost:11434/v1';
+/** A writer's model server elsewhere on their network, behind https. */
+export const HTTPS_MODEL_URL = 'https://models.home.example/v1';
 
 interface LocalModelServerOptions {
+  /** The server's OpenAI-compatible base address. */
+  readonly baseUrl?: string;
   /** The models `GET /models` lists. */
   readonly models?: readonly string[];
   /** Whether it allows the app's origin (Ollama without `OLLAMA_ORIGINS` does not). */
@@ -22,18 +26,25 @@ function answerFor({ messages }: ChatRequest): string {
   if (system.startsWith('You are a proofreader.')) return `<text>\nFixed locally: ${user.replace(/^<text>\n|\n<\/text>$/g, '')}\n</text>`;
   if (system.startsWith('Suggest tags')) return '["family", "letters"]';
   if (system.startsWith('Summarize')) return 'A letter to my sister, summarized on this device.';
+  if (system.startsWith('You are a thoughtful journal companion.')) return `My model hears you: ${messages.at(-1)?.content ?? ''}`;
+  if (system.startsWith('You help someone start a journal entry')) return '"What would you write to your sister today?"';
+  if (system.startsWith('You help a person write their memoir')) return '{"questions":["What did the kitchen smell like?","Who sang with her?"]}';
   return 'Hello';
 }
 
 /**
- * An OpenAI-compatible server the writer runs on their own device (Ollama, LM Studio), answering the browser
- * directly: `GET /models` and `POST /chat/completions`, allowing the app's origin unless told otherwise. The chat
- * requests it received are returned for the spec to read.
+ * An OpenAI-compatible server the writer runs on their own device (Ollama, LM Studio) or elsewhere behind https
+ * (`baseUrl`), answering the browser directly: `GET /models` and `POST /chat/completions`, allowing the app's
+ * origin unless told otherwise. The chat requests it received are returned for the spec to read.
  */
-export async function routeLocalModelServer(page: Page, { models = ['llama3.2:latest'], allowsApp = true }: LocalModelServerOptions = {}) {
+export async function routeLocalModelServer(
+  page: Page,
+  { baseUrl = LOCAL_MODEL_URL, models = ['llama3.2:latest'], allowsApp = true }: LocalModelServerOptions = {},
+) {
+  const basePath = new URL(baseUrl).pathname;
   const chatRequests: ChatRequest[] = [];
   const cors = { 'Access-Control-Allow-Origin': 'http://localhost:5173', 'Access-Control-Allow-Headers': 'content-type, authorization', 'Access-Control-Allow-Methods': 'GET, POST' };
-  await page.route(`${LOCAL_MODEL_URL}/**`, async (route: Route) => {
+  await page.route(`${baseUrl}/**`, async (route: Route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
     // A fulfilled route skips the browser's CORS check, so a server that does not allow the app is played by what
@@ -44,9 +55,9 @@ export async function routeLocalModelServer(page: Page, { models = ['llama3.2:la
       await (readable ? route.abort('failed') : route.fulfill({ status: 200, body: '' }));
     } else if (request.method() === 'OPTIONS') {
       await route.fulfill({ status: 204, headers: cors });
-    } else if (path === '/v1/models') {
+    } else if (path === `${basePath}/models`) {
       await route.fulfill({ status: 200, headers: cors, json: { object: 'list', data: models.map((id) => ({ id, object: 'model' })) } });
-    } else if (path === '/v1/chat/completions' && request.method() === 'POST') {
+    } else if (path === `${basePath}/chat/completions` && request.method() === 'POST') {
       const body = request.postDataJSON() as ChatRequest;
       chatRequests.push(body);
       await route.fulfill({ status: 200, headers: cors, json: { choices: [{ message: { role: 'assistant', content: answerFor(body) } }] } });

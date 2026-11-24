@@ -5,7 +5,7 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "api:sync": "npm --prefix thoughty-server run openapi:export && npm --prefix thoughty-web run api:types",
+    "api:sync": "npm --prefix thoughty-server run openapi:export && npm --prefix thoughty-server run prompts:export && npm --prefix thoughty-web run api:types",
     "migrate": "cd thoughty-server && npm run db:migrate",
     "seed": "cd thoughty-server && npm run db:seed",
     "check-db": "cd thoughty-server && npm run db:check",

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act } from '@testing-library/react';
+import { act, waitFor } from '@testing-library/react';
 import { renderHook } from './hookTestUtils';
 import { useEntryForm } from './useEntryActions';
 import { makeDiary } from '../test/diaryFixture';
@@ -17,6 +17,7 @@ const answer = (content: string) => new Response(JSON.stringify({ choices: [{ me
 
 describe('useEntryForm in a diary on the writer’s own model', () => {
   let serverAi: { fixWriting: ReturnType<typeof vi.fn>; suggestTags: ReturnType<typeof vi.fn> };
+  let entries: { createEntry: ReturnType<typeof vi.fn>; bulkOperation: ReturnType<typeof vi.fn> };
 
   beforeEach(async () => {
     localStorage.clear();
@@ -26,12 +27,18 @@ describe('useEntryForm in a diary on the writer’s own model', () => {
     const { createAiService } = await import('../services/api');
     serverAi = { fixWriting: vi.fn(), suggestTags: vi.fn() };
     vi.mocked(createAiService).mockReturnValue(serverAi as unknown as ReturnType<typeof createAiService>);
+    const { createEntriesService } = await import('../services/api');
+    entries = {
+      createEntry: vi.fn().mockResolvedValue({ success: true, entryId: 31 }),
+      bulkOperation: vi.fn().mockResolvedValue({ success: true, affectedCount: 1 }),
+    };
+    vi.mocked(createEntriesService).mockReturnValue(entries as unknown as ReturnType<typeof createEntriesService>);
   });
 
   afterEach(() => vi.unstubAllGlobals());
 
-  const renderForm = (requestConsent = vi.fn()) => {
-    const hook = renderHook(() => useEntryForm({ defaultVisibility: 'private', autoTagMaxTags: 3 }, 5, vi.fn(), diaries, undefined, requestConsent));
+  const renderForm = (requestConsent = vi.fn(), onSuccess = vi.fn()) => {
+    const hook = renderHook(() => useEntryForm({ defaultVisibility: 'private', autoTagMaxTags: 3 }, 5, onSuccess, diaries, undefined, requestConsent));
     act(() => {
       hook.result.current.setNewEntryText('dear sis, i miss you');
     });
@@ -74,5 +81,49 @@ describe('useEntryForm in a diary on the writer’s own model', () => {
     expect(result.current.formError).toBe('localModelNotConfigured');
     expect(result.current.newEntryText).toBe('dear sis, i miss you');
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('saves an entry without tags and has that model tag it from this browser once saved, never the server', async () => {
+    writeLocalModelSettings(7, { baseUrl: 'https://models.home.example/v1', model: 'qwen2.5', apiKey: '' });
+    const fetchMock = vi.fn().mockResolvedValue(answer('["family", "missing", "letters", "extra"]'));
+    vi.stubGlobal('fetch', fetchMock);
+    const onSuccess = vi.fn();
+    const { result } = renderForm(vi.fn(), onSuccess);
+
+    await act(async () => {
+      await result.current.handleSubmit({ preventDefault: vi.fn() });
+    });
+
+    expect(entries.createEntry).toHaveBeenCalledWith(expect.objectContaining({ text: 'dear sis, i miss you', tags: [], diaryId: 5 }));
+    await waitFor(() => expect(entries.bulkOperation).toHaveBeenCalledWith([31], 'tags', { tags: ['family', 'missing', 'letters'] }));
+    expect(fetchMock).toHaveBeenCalledWith('https://models.home.example/v1/chat/completions', expect.anything());
+    await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(2));
+    expect(serverAi.suggestTags).not.toHaveBeenCalled();
+    expect(result.current.formError).toBe('');
+  });
+
+  it('says the entry is saved without tags when that model gives none', async () => {
+    writeLocalModelSettings(7, { baseUrl: 'http://localhost:11434/v1', model: 'llama3.2', apiKey: '' });
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    const { result } = renderForm();
+
+    await act(async () => {
+      await result.current.handleSubmit({ preventDefault: vi.fn() });
+    });
+
+    await waitFor(() => expect(result.current.formError).toBe('localModelAutoTagFailed'));
+    expect(entries.createEntry).toHaveBeenCalled();
+    expect(entries.bulkOperation).not.toHaveBeenCalled();
+  });
+
+  it('needs a tag of the writer’s own while that model is not set up on this browser', async () => {
+    const { result } = renderForm();
+
+    await act(async () => {
+      await result.current.handleSubmit({ preventDefault: vi.fn() });
+    });
+
+    expect(result.current.formError).toBe('entryTagRequired');
+    expect(entries.createEntry).not.toHaveBeenCalled();
   });
 });

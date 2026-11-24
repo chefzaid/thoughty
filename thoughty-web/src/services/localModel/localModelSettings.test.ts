@@ -15,18 +15,20 @@ afterEach(() => {
 });
 
 describe('local model address', () => {
-  it('takes an http or https address on this device, without its trailing slash', () => {
+  it('takes an http address on this device or any https address, without its trailing slash', () => {
     expect(parseLocalModelAddress(' http://localhost:11434/v1/ ')).toEqual({ baseUrl: 'http://localhost:11434/v1', problem: null });
     expect(parseLocalModelAddress('https://127.0.0.1:8443')).toEqual({ baseUrl: 'https://127.0.0.1:8443', problem: null });
     expect(parseLocalModelAddress('http://LOCALHOST:1234/v1')).toEqual({ baseUrl: 'http://localhost:1234/v1', problem: null });
+    expect(parseLocalModelAddress('https://nas.home.example:8443/v1/')).toEqual({ baseUrl: 'https://nas.home.example:8443/v1', problem: null });
+    expect(parseLocalModelAddress('https://192.168.1.20/v1')).toEqual({ baseUrl: 'https://192.168.1.20/v1', problem: null });
   });
 
-  it('refuses what is not a plain web address, and a server elsewhere than this device', () => {
-    for (const input of ['', 'localhost:11434', 'ftp://localhost/v1', 'http://user:pass@localhost/v1', 'http://localhost/v1?x=1', 'http://localhost/v1#a']) {
+  it('refuses what is not a plain web address, and plain http to any other device', () => {
+    for (const input of ['', 'localhost:11434', 'ftp://localhost/v1', 'http://user:pass@localhost/v1', 'https://user@nas.example/v1', 'http://localhost/v1?x=1', 'https://nas.example/v1#a']) {
       expect(parseLocalModelAddress(input)).toEqual({ baseUrl: null, problem: 'localModelAddressInvalid' });
     }
-    for (const input of ['http://192.168.1.20:11434/v1', 'https://api.openai.com/v1', 'http://[::1]:11434/v1', 'http://localhost.example.com/v1']) {
-      expect(parseLocalModelAddress(input)).toEqual({ baseUrl: null, problem: 'localModelAddressNotLocal' });
+    for (const input of ['http://192.168.1.20:11434/v1', 'http://api.openai.com/v1', 'http://[::1]:11434/v1', 'http://localhost.example.com/v1']) {
+      expect(parseLocalModelAddress(input)).toEqual({ baseUrl: null, problem: 'localModelAddressNeedsHttps' });
     }
   });
 });
@@ -43,7 +45,7 @@ describe('local model settings', () => {
   });
 
   it('reads nothing from a stored value it does not recognise', () => {
-    for (const stored of ['not json', '{"baseUrl":"http://10.0.0.2/v1","model":"m","apiKey":""}', '{"baseUrl":"http://localhost/v1","model":" ","apiKey":""}', 'null']) {
+    for (const stored of ['not json', '{"baseUrl":"http://10.0.0.2/v1","model":"m","apiKey":""}', '{"baseUrl":"https://nas.example/v1/","model":"m","apiKey":""}', '{"baseUrl":"http://localhost/v1","model":" ","apiKey":""}', 'null']) {
       localStorage.setItem('thoughty.localModel.7', stored);
       expect(readLocalModelSettings(7)).toBeNull();
     }

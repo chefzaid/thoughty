@@ -4,9 +4,11 @@ import AiSparkleIcon from '../AiSparkleIcon/AiSparkleIcon';
 import { aiActionButtonClass } from './aiActionButton';
 import { useAnchoredPanel } from './useAnchoredPanel';
 import { tintedTextClass } from '../../utils/tintedText';
+import { isAiProblem, type AiProblem } from '../../services/api/aiTypes';
 
-interface GetInspiredMenuProps {
-    onGenerate: () => Promise<string | null>;
+export interface GetInspiredMenuProps {
+    /** The question, null when there is none, or the reason to show (the writer's own model gave none). */
+    onGenerate: () => Promise<string | AiProblem | null>;
     onSelect: (question: string) => void;
     theme?: 'light' | 'dark';
     t: (key: string) => string;
@@ -21,7 +23,8 @@ export default function GetInspiredMenu({
     const [open, setOpen] = useState(false);
     const [question, setQuestion] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(false);
+    /** The translation key of what went wrong, if anything. */
+    const [error, setError] = useState<string | null>(null);
     const requestIdRef = useRef(0);
     const close = useCallback(() => setOpen(false), []);
     const { anchorRef: menuRef, panelRef, buttonRef, position: menuPosition } = useAnchoredPanel(open, close);
@@ -35,9 +38,9 @@ export default function GetInspiredMenu({
         const requestId = requestIdRef.current + 1;
         requestIdRef.current = requestId;
         setLoading(true);
-        setError(false);
+        setError(null);
 
-        let result: string | null = null;
+        let result: string | AiProblem | null = null;
         try {
             result = await onGenerate();
         } catch {
@@ -49,8 +52,12 @@ export default function GetInspiredMenu({
         }
 
         setLoading(false);
+        if (isAiProblem(result)) {
+            setError(result.problem);
+            return;
+        }
         if (!result?.trim()) {
-            setError(true);
+            setError('inspirationError');
             return;
         }
         setQuestion(result.trim());
@@ -75,7 +82,7 @@ export default function GetInspiredMenu({
         setOpen(false);
         setQuestion(null);
         setLoading(false);
-        setError(false);
+        setError(null);
     }, [onGenerate]);
 
     useEffect(() => () => {
@@ -134,7 +141,7 @@ export default function GetInspiredMenu({
                     )}
                     {error && !loading && (
                         <div className="space-y-3 py-2">
-                            <p role="alert" className={`text-sm ${tintedTextClass('red', theme)}`}>{t('inspirationError')}</p>
+                            <p role="alert" className={`text-sm ${tintedTextClass('red', theme)}`}>{t(error)}</p>
                             <button
                                 type="button"
                                 onClick={() => void loadQuestion()}

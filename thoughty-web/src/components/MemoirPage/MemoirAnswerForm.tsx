@@ -54,9 +54,11 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
   const [eraId, setEraId] = useState<number | null>(null);
   const [problem, setProblem] = useState<FormProblem>(null);
   const [busy, setBusy] = useState<'transcribing' | 'saving' | null>(null);
-  // Transcribing a recording and the follow-up questions are AI on Thoughty's provider, left out while AI is
-  // switched off, or off or on the writer's own model in the memoir diary
-  const aiOn = useFeatureFlag('ai') && diaryOffersAi(aiMode, 'transcription');
+  // Transcribing a recording and the follow-up questions are AI, left out while AI is switched off or off in the
+  // memoir diary; on the writer's own model the follow-ups go there, and transcription is not offered yet
+  const aiFeature = useFeatureFlag('ai');
+  const followUpsOn = aiFeature && diaryOffersAi(aiMode, 'prompt');
+  const transcriptionOn = aiFeature && diaryOffersAi(aiMode, 'transcription');
   const requestConsent = useRequestAiConsent();
   const fileInput = useRef<HTMLInputElement>(null);
   const answerField = useRef<HTMLTextAreaElement>(null);
@@ -156,7 +158,7 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
         onChange={(event) => setText(event.target.value)}
       />
       <p id={`${fieldId}-note`} className="memoir-hint">{t('memoirPrivateNote')}</p>
-      {aiOn && (
+      {followUpsOn && (
         <MemoirFollowUps
           questionId={questionId}
           questionText={questionText}
@@ -202,7 +204,7 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
             <track kind="captions" src={EMPTY_CAPTIONS_TRACK_URL} srcLang={t('languageCode')} label={t('captionsUnavailable')} default />
           </audio>
           <div className="memoir-actions">
-            {aiOn && (
+            {transcriptionOn && (
               <button type="button" className="memoir-secondary" disabled={busy !== null} onClick={() => void handleTranscribe()}>
                 <span className="codicon codicon-symbol-text" aria-hidden="true" />
                 {busy === 'transcribing' ? t('memoirTranscribing') : t('memoirTranscribe')}

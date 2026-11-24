@@ -9,6 +9,8 @@ const attachmentsService = { uploadAttachment: vi.fn(), transcribeAttachment: vi
 vi.mock('../../hooks/useAuthenticatedService', () => ({ useAuthenticatedService: () => attachmentsService }));
 const memoirService = { followUps: vi.fn() };
 vi.mock('../../hooks/useMemoirService', () => ({ useMemoirService: () => memoirService }));
+// Interview mode on the writer's own model is tested in MemoirFollowUps.test.tsx
+vi.mock('../../hooks/useLocalAiService', () => ({ useLocalAiService: () => ({}) }));
 
 const t = (key: string, params?: Record<string, string | number>) =>
   params ? `${key} ${Object.values(params).join(' ')}` : key;
@@ -267,11 +269,11 @@ describe('MemoirAnswerForm', () => {
     expect(screen.queryByRole('group', { name: 'memoirFollowUpsTitle' })).not.toBeInTheDocument();
   });
 
-  it('offers neither interview mode nor transcription when the memoir diary uses only the writer’s own model', () => {
+  it('offers interview mode on the writer’s own model when the memoir diary uses only it, but no transcription yet', () => {
     render(<MemoirAnswerForm questionId="childhood-home" questionText="What was home like?" onSubmit={vi.fn()} onCancel={vi.fn()} aiMode="local" t={t} />);
     chooseFile(new File(['voice'], 'story.m4a', { type: 'audio/mp4' }));
 
     expect(screen.queryByRole('button', { name: 'memoirTranscribe' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('group', { name: 'memoirFollowUpsTitle' })).not.toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'memoirFollowUpsTitle' })).toBeInTheDocument();
   });
 });

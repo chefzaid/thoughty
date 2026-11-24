@@ -3,7 +3,8 @@ import type { LocalModelSettings } from './localModelSettings';
 /**
  * Why the writer's own model gave no answer, as the translation key the app shows. `localModelBlocked` is a server
  * that answered without allowing this site (CORS), told apart from one that cannot be reached by a second,
- * unreadable (`no-cors`) request that only says whether anything answers.
+ * unreadable (`no-cors`) request that only says whether anything answers. `localModelUnreadable` is an answer that
+ * is not in the form the action asked for (a question, or JSON).
  */
 export type LocalModelProblem =
   | 'localModelNotConfigured'
@@ -13,6 +14,7 @@ export type LocalModelProblem =
   | 'localModelModelNotFound'
   | 'localModelNotOpenAi'
   | 'localModelTimeout'
+  | 'localModelUnreadable'
   | 'localModelFailed';
 
 export type LocalModelResult<T> = { readonly data: T; readonly problem: null } | { readonly data: null; readonly problem: LocalModelProblem };
@@ -46,7 +48,9 @@ const isTimeout = (error: unknown) => {
 async function networkProblem(error: unknown, url: string): Promise<LocalModelProblem> {
   if (isTimeout(error)) return 'localModelTimeout';
   try {
-    await fetch(url, { mode: 'no-cors', signal: AbortSignal.timeout(TEST_TIMEOUT_MS) });
+    // A `no-cors` request must follow redirects (the Fetch standard fails it otherwise); it sends no body, key or
+    // cookie, and nothing of its answer can be read
+    await fetch(url, { mode: 'no-cors', signal: AbortSignal.timeout(TEST_TIMEOUT_MS), credentials: 'omit' });
     return 'localModelBlocked';
   } catch {
     return 'localModelUnreachable';

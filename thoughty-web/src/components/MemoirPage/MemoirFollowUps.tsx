@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 
+import { useLocalAiService } from '../../hooks/useLocalAiService';
 import { useMemoirService } from '../../hooks/useMemoirService';
 import type { TranslationFunction } from '../../types';
 import AiSparkleIcon from '../AiSparkleIcon/AiSparkleIcon';
@@ -22,7 +23,10 @@ interface MemoirFollowUpsProps {
   /** Puts a follow-up at the end of the answer for the writer to answer below it. */
   readonly onUse: (question: string) => void;
   readonly disabled?: boolean;
-  /** The memoir diary's AI mode; asking each time, each round shows the writer what it sends first. */
+  /**
+   * The memoir diary's AI mode: asking each time, each round shows the writer what it sends first; on the
+   * writer's own model, each round goes to that model from this browser.
+   */
   readonly aiMode?: DiaryAiMode;
   readonly t: TranslationFunction;
 }
@@ -33,6 +37,7 @@ interface MemoirFollowUpsProps {
  */
 function MemoirFollowUps({ questionId, questionText, answer, onUse, disabled = false, aiMode = 'on', t }: MemoirFollowUpsProps) {
   const service = useMemoirService();
+  const localAiService = useLocalAiService();
   const requestConsent = useRequestAiConsent();
   const [questions, setQuestions] = useState<readonly string[]>([]);
   const [asked, setAsked] = useState<readonly string[]>([]);
@@ -43,6 +48,21 @@ function MemoirFollowUps({ questionId, questionText, answer, onUse, disabled = f
   const listId = useId();
   const empty = !answer.trim();
   const asking = status === 'asking';
+
+  /** The questions, from the writer's own model in a memoir diary set to it, else from Thoughty's server. */
+  const requestFollowUps = async (sentAsked: readonly string[], aiConsent: true | undefined) => {
+    if (aiMode === 'local') {
+      const { data, refusal } = await localAiService.memoirFollowUps({ question: questionText, answer, asked: sentAsked });
+      return { questions: data, failure: refusal };
+    }
+    const { data, error: failure } = await service.followUps({
+      questionId,
+      text: answer,
+      asked: [...sentAsked],
+      ...(aiConsent ? { aiConsent: true } : {}),
+    });
+    return { questions: data?.questions ?? null, failure };
+  };
 
   const ask = async () => {
     if (empty || asking || disabled) return;
@@ -62,20 +82,15 @@ function MemoirFollowUps({ questionId, questionText, answer, onUse, disabled = f
       setStatus('idle');
       return;
     }
-    const { data, error: failure } = await service.followUps({
-      questionId,
-      text: answer,
-      asked: sentAsked,
-      ...(consent.aiConsent ? { aiConsent: true } : {}),
-    });
-    if (!data) {
+    const { questions: offered, failure } = await requestFollowUps(sentAsked, consent.aiConsent);
+    if (!offered) {
       setStatus('idle');
       setError(failure ?? 'memoirFollowUpsError');
       return;
     }
-    setQuestions(data.questions);
-    setAsked((previous) => [...previous, ...data.questions]);
-    setStatus(data.questions.length > 0 ? 'idle' : 'none');
+    setQuestions(offered);
+    setAsked((previous) => [...previous, ...offered]);
+    setStatus(offered.length > 0 ? 'idle' : 'none');
   };
 
   const use = (question: string) => {

@@ -1,33 +1,36 @@
 /**
  * The writer's own model server, for the diaries set to "My own model only": an OpenAI-compatible address (Ollama,
  * LM Studio, llama.cpp's server), the model to ask, and the key it may want. It lives in this browser only, per
- * writer: the address is on this device, Thoughty's server never learns it, and the key goes when the writer signs
- * out (`forgetLocalModelKeys`).
+ * writer: Thoughty's server never learns it, and the key goes when the writer signs out (`forgetLocalModelKeys`).
  */
 export interface LocalModelSettings {
-  /** The OpenAI-compatible base address, such as `http://localhost:11434/v1`, without a trailing slash. */
+  /**
+   * The OpenAI-compatible base address, such as `http://localhost:11434/v1` or `https://models.home.example/v1`,
+   * without a trailing slash.
+   */
   readonly baseUrl: string;
   readonly model: string;
   /** Sent as a bearer token when set; most local servers want none. */
   readonly apiKey: string;
 }
 
-/** Why an address cannot be used: not a web address, or not on this device. */
-export type LocalModelAddressProblem = 'localModelAddressInvalid' | 'localModelAddressNotLocal';
+/** Why an address cannot be used: not a web address, or plain http to another device. */
+export type LocalModelAddressProblem = 'localModelAddressInvalid' | 'localModelAddressNeedsHttps';
 
 export type LocalModelAddress = { readonly baseUrl: string; readonly problem: null } | { readonly baseUrl: null; readonly problem: LocalModelAddressProblem };
 
 const STORAGE_PREFIX = 'thoughty.localModel.';
 
 /**
- * The hosts the web app may call (`connect-src` in nginx-security-headers.conf allows exactly these, on any port):
- * this device's loopback names, which the browser lets an https page call over plain http.
+ * The hosts the web app may call over plain http (`connect-src` in nginx-security-headers.conf allows these on any
+ * port, beside any https address): this device's loopback names, which the browser lets an https page call over
+ * http. Plain http to any other host would cross the network in clear (and is mixed content for the browser).
  */
 const LOOPBACK_HOSTS: readonly string[] = ['localhost', '127.0.0.1'];
 
 /**
- * The base address of a model server, from what the writer typed: an http or https address on this device, with no
- * credentials, query or fragment, and without its trailing slash.
+ * The base address of a model server, from what the writer typed: any https address, or an http one on this
+ * device, with no credentials, query or fragment, and without its trailing slash.
  */
 export function parseLocalModelAddress(input: string): LocalModelAddress {
   let url: URL;
@@ -39,8 +42,8 @@ export function parseLocalModelAddress(input: string): LocalModelAddress {
   if ((url.protocol !== 'http:' && url.protocol !== 'https:') || url.username || url.password || url.search || url.hash) {
     return { baseUrl: null, problem: 'localModelAddressInvalid' };
   }
-  if (!LOOPBACK_HOSTS.includes(url.hostname)) {
-    return { baseUrl: null, problem: 'localModelAddressNotLocal' };
+  if (url.protocol === 'http:' && !LOOPBACK_HOSTS.includes(url.hostname)) {
+    return { baseUrl: null, problem: 'localModelAddressNeedsHttps' };
   }
   return { baseUrl: `${url.origin}${url.pathname.replace(/\/+$/, '')}`, problem: null };
 }

@@ -4,6 +4,7 @@ import { getAutoTagLimit } from '../utils/autoTagLimit';
 import { composerDiaryId, diaryAiMode, isDiaryAiModeRefusal } from '../utils/diaryAi';
 import { confirmAiRequest, type AiRequestDiary, type RequestAiConsent } from '../components/DiaryAi/aiConsent';
 import { textAiForDiary } from '../services/localModel/localAiService';
+import { autoTagWithLocalModel } from '../services/localModel/localAutoTag';
 import { formatEntryDate } from '../utils/entryDate';
 import { cleanEntryTitle } from '../utils/entryTime';
 import { defaultTimeCapsule, isValidTimeCapsuleDate, type TimeCapsuleDraft } from '../utils/timeCapsule';
@@ -77,10 +78,12 @@ export const useEntryForm = (
   const latestText = useRef(newEntryText);
   latestText.current = newEntryText;
   // With AI switched off, or not on in the composer's diary (saving is no request the writer saw), nothing adds
-  // tags, so an entry needs one of its own
+  // tags, so an entry needs one of its own; in a diary on the writer's own model this browser adds them once the
+  // entry is saved, when that model is set up here
   const aiDiaryId = composerDiaryId(diaries, currentDiaryId);
   const composerAiMode = diaryAiMode(diaries, aiDiaryId);
-  const autoTagLimit = useFeatureFlag('ai') && composerAiMode === 'on' ? getAutoTagLimit(config.autoTagMaxTags) : 0;
+  const tagsOnSave = composerAiMode === 'on' || (composerAiMode === 'local' && localAiService.isConfigured());
+  const autoTagLimit = useFeatureFlag('ai') && tagsOnSave ? getAutoTagLimit(config.autoTagMaxTags) : 0;
   const aiDiary = useMemo<AiRequestDiary>(
     () => ({ diaryId: aiDiaryId, mode: composerAiMode, requestConsent: requestAiConsent, onModeRefused: onDiaryAiOff }),
     [aiDiaryId, composerAiMode, onDiaryAiOff, requestAiConsent],
@@ -218,10 +221,24 @@ export const useEntryForm = (
       onDraftPublished();
       clearSavedEntry({ text: newEntryText, title, timeOfDay, mood, feelings, timeCapsule, tags, chosenVisibility, pendingFiles, uploadedAttachments });
       onSuccess();
+      if (composerAiMode === 'local' && autoTagLimit > 0) {
+        // The writer's own model tags the saved entry from here, as the server does for the other diaries
+        void autoTagWithLocalModel({
+          localAi: localAiService,
+          entriesService,
+          entryId: result.entryId,
+          text: placed.text,
+          tags,
+          limit: autoTagLimit,
+        }).then((outcome) => {
+          if (outcome === 'tagged') onSuccess();
+          if (outcome === 'failed') setFormError('localModelAutoTagFailed');
+        });
+      }
     } finally {
       saving.current = false;
     }
-  }, [attachmentsService, chosenVisibility, clearSavedEntry, currentDiaryId, entriesService, feelings, format, mood, newEntryText, onDraftPublished, onSuccess, pendingFiles, selectedDate, tags, timeCapsule, timeOfDay, title, uploadedAttachments, validateEntryForm, visibility]);
+  }, [attachmentsService, autoTagLimit, chosenVisibility, clearSavedEntry, composerAiMode, currentDiaryId, entriesService, feelings, format, localAiService, mood, newEntryText, onDraftPublished, onSuccess, pendingFiles, selectedDate, tags, timeCapsule, timeOfDay, title, uploadedAttachments, validateEntryForm, visibility]);
 
   const addPendingFile = useCallback((file: File) => {
     setPendingFiles((prev) => [...prev, file]);

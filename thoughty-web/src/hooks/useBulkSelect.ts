@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import type { Diary, Entry } from '../types';
 import { diaryAiMode, isDiaryAiModeRefusal } from '../utils/diaryAi';
 import type { AiAnswer, RephraseMode } from '../services/api/aiService';
+import { textAiForDiary } from '../services/localModel/localAiService';
 import { pluralPhrase } from '../utils/pluralPhrase';
 import { useApiServices } from './useApiServices';
 import type { Notifier } from './useAppNotice';
@@ -9,8 +10,12 @@ import type { Notifier } from './useAppNotice';
 type BulkAction = 'delete' | 'visibility' | 'tags' | 'move' | 'archive' | 'rephrase' | 'book';
 type BulkOptions = { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number; isArchived?: boolean; mode?: RephraseMode };
 
-/** `aiOff`: the server refused the entry's diary for AI off, so the entry stays unchanged. */
-type BulkRephraseOutcome = 'updated' | 'unchanged' | 'aiOff' | 'failed';
+/**
+ * `aiOff`: the server refused the entry's diary for AI off, so the entry stays unchanged. A failure carries the
+ * reason the writer's own model gave none, if it was that model.
+ */
+type BulkRephraseOutcome = 'updated' | 'unchanged' | 'aiOff' | { readonly failed: string | null };
+const FAILED: BulkRephraseOutcome = { failed: null };
 
 const normalizeStoredEntryDate = (entryDate: string): string => (
   entryDate.includes('T') ? (entryDate.split('T')[0] ?? entryDate) : entryDate
@@ -23,12 +28,13 @@ const rephraseSelectedEntry = async (
   updateEntry: (id: number, data: { text: string; tags: string[]; date: string; visibility: 'public' | 'private'; format: 'plain' | 'markdown' }) => Promise<boolean>,
 ): Promise<BulkRephraseOutcome> => {
   if (!entry.content.trim()) {
-    return 'failed';
+    return FAILED;
   }
 
   const { data: rewritten, refusal } = await aiFixWriting(entry.content, mode, entry.diary_id);
   if (rewritten === null) {
-    return isDiaryAiModeRefusal(refusal) ? 'aiOff' : 'failed';
+    if (isDiaryAiModeRefusal(refusal)) return 'aiOff';
+    return refusal?.startsWith('localModel') ? { failed: refusal } : FAILED;
   }
 
   if (rewritten === entry.content) {
@@ -43,7 +49,7 @@ const rephraseSelectedEntry = async (
     format: entry.format ?? 'plain',
   });
 
-  return success ? 'updated' : 'failed';
+  return success ? 'updated' : FAILED;
 };
 
 /**
@@ -67,8 +73,8 @@ const inDayOrder = (ids: number[], entries: Entry[]): number[] => {
  * The journal's bulk selection and its actions. `onMakeBook` receives the selected entries for the book
  * converter (Make a book); without it that action does nothing. `onDeleted` hears which entries went to the
  * recycle bin, oldest day first and in their order within the day. Rephrasing leaves the entries of a diary
- * with AI off (among `diaries`) as they are, and so those the server refuses for it, after which
- * `onDiaryAiOff` reloads the diaries.
+ * with AI off or asking each time (among `diaries`) as they are, and so those the server refuses for it, after
+ * which `onDiaryAiOff` reloads the diaries; it sends those of a diary on the writer's own model to that model.
  */
 export const useBulkSelect = (
   onComplete: () => void,
@@ -79,7 +85,7 @@ export const useBulkSelect = (
   diaries: readonly Pick<Diary, 'id' | 'aiMode'>[] = [],
   onDiaryAiOff?: () => void,
 ) => {
-  const { entriesService, aiService } = useApiServices();
+  const { entriesService, aiService, localAiService } = useApiServices();
 
   const [bulkMode, setBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -120,8 +126,9 @@ export const useBulkSelect = (
     const selectedEntries = ids
       .map((id) => entries.find((entry) => entry.id === id))
       .filter((entry): entry is Entry => Boolean(entry));
-    // Many entries at once have no single text to show, so an entry of a diary that asks each time is left out too
-    const rephrasable = selectedEntries.filter((entry) => diaryAiMode(diaries, entry.diary_id) === 'on');
+    // Many entries at once have no single text to show, so an entry of a diary that asks each time is left out too;
+    // one of a diary on the writer's own model goes to that model from this browser
+    const rephrasable = selectedEntries.filter((entry) => ['on', 'local'].includes(diaryAiMode(diaries, entry.diary_id)));
 
     if (rephrasable.length === 0) {
       notify(t('bulkRephraseNoEntries'));
@@ -134,14 +141,12 @@ export const useBulkSelect = (
     let failedCount = 0;
     // Entries the server refused because their diary's AI mode was changed elsewhere stay unchanged too
     let aiOffCount = 0;
+    // Why the writer's own model rephrased none of its entries, said when nothing was rephrased
+    let localProblem: string | null = null;
 
     for (const entry of rephrasable) {
-      const outcome = await rephraseSelectedEntry(
-        entry,
-        mode ?? 'grammar',
-        aiService.fixWriting,
-        entriesService.updateEntry,
-      );
+      const textAi = textAiForDiary(diaryAiMode(diaries, entry.diary_id), aiService, localAiService);
+      const outcome = await rephraseSelectedEntry(entry, mode ?? 'grammar', textAi.fixWriting, entriesService.updateEntry);
 
       if (outcome === 'updated') {
         updatedCount += 1;
@@ -150,6 +155,7 @@ export const useBulkSelect = (
         aiOffCount += Number(outcome === 'aiOff');
       } else {
         failedCount += 1;
+        localProblem = outcome.failed ?? localProblem;
       }
     }
 
@@ -181,8 +187,8 @@ export const useBulkSelect = (
       return;
     }
 
-    notify(t('bulkRephraseError'));
-  }, [aiService, diaries, entries, entriesService, language, notify, onComplete, onDiaryAiOff, selectedIds, t]);
+    notify(t(localProblem ?? 'bulkRephraseError'));
+  }, [aiService, diaries, entries, entriesService, language, localAiService, notify, onComplete, onDiaryAiOff, selectedIds, t]);
 
   const executeBulkAction = useCallback(async (action: Exclude<BulkAction, 'book'>, options?: BulkOptions) => {
     if (action === 'rephrase') {

@@ -51,6 +51,7 @@ import type { Diary, Entry, PublicViewType, ViewType } from '../types';
 import type { Language } from '../utils/translations';
 import { landingViewFor } from '../utils/landingView';
 import { useEntryAiActions } from './useEntryAiActions';
+import { useGetInspiration } from './useGetInspiration';
 import { useAiConsentController } from '../components/DiaryAi/useAiConsentController';
 import type { AiConsentRequest, RequestAiConsent } from '../components/DiaryAi/aiConsent';
 
@@ -265,7 +266,7 @@ export function useAppShellModel(): AppShellModel {
   const entryEditState = useEntryEdit(config, useCallback(() => {
     refreshBacklinks();
     void fetchEntries();
-  }, [fetchEntries, refreshBacklinks]), notifier, moveToDiary);
+  }, [fetchEntries, refreshBacklinks]), notifier, moveToDiary, diariesState.diaries);
 
   const quickCapture = useAppQuickCapture({
     entriesService: entriesState.entriesService,
@@ -286,7 +287,7 @@ export function useAppShellModel(): AppShellModel {
 
   // Kept the same between renders, so the entry cards that offer it are not drawn again with each batch
   const { handleEdit: editEntry, setEditText } = entryEditState;
-  const { handleRephrase, handleSummarize, handleChat: handleAiChat } = useEntryAiActions({
+  const { handleRephrase, handleSummarize, handleChat: handleAiChat, handleLoadChatHistory: handleLoadAiChatHistory } = useEntryAiActions({
     aiService,
     localAiService,
     diaries: diariesState.diaries,
@@ -300,16 +301,12 @@ export function useAppShellModel(): AppShellModel {
     t,
   });
 
-  const handleGetInspiration = useCallback(async () => {
-    return aiService.getInspiration(currentDiaryId ?? undefined);
-  }, [aiService, currentDiaryId]);
+  const handleGetInspiration = useGetInspiration({
+    aiService, localAiService, entriesService: entriesState.entriesService, diaries: diariesState.diaries, currentDiaryId,
+  });
 
   const handleFindDuplicateEntries = useCallback(async (diaryId?: number) => {
     return aiService.findDuplicateEntries(diaryId);
-  }, [aiService]);
-
-  const handleLoadAiChatHistory = useCallback(async (entryId: number) => {
-    return aiService.getChatHistory(entryId);
   }, [aiService]);
 
   const tagMetadata = useMemo(() => parseTagMetadata(config.tagMetadata), [config.tagMetadata]);

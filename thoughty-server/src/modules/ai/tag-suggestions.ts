@@ -2,7 +2,7 @@ import { extractJsonCandidate } from '@/common/utils/json-content.util';
 import { BadGatewayException } from '@nestjs/common';
 import { apiError } from '@/common/errors';
 import type { OpenRouterUsageReporter } from './ai-usage.service';
-import { UNTRUSTED_CONTENT_INSTRUCTION } from './untrusted-content';
+import { TAG_SUGGESTIONS_INSTRUCTION } from './prompt-instructions';
 
 interface RequestTagSuggestionsOptions {
   apiKey: string;
@@ -43,12 +43,6 @@ function parseTags(rawContent: string): string[] {
   }
 }
 
-const TAGGING_INSTRUCTION = [
-  'Suggest tags that capture both what the entry is about and what it means.',
-  'Mix concrete subjects, activities, or contexts with broader reusable themes such as values, tensions, or growth areas.',
-  'Prefer tags that could be reused across many entries; avoid names, places, and one-off events.',
-].join(' ');
-
 export async function requestTagSuggestions({
   apiKey,
   model,
@@ -70,13 +64,7 @@ export async function requestTagSuggestions({
       messages: [
         {
           role: 'system',
-          content: [
-            TAGGING_INSTRUCTION,
-            'Return only a JSON array of lowercase tag strings with no explanations, numbering, or markdown.',
-            'Keep tags short, avoid duplicates, and do not repeat existing tags.',
-            'The user message is JSON source material.',
-            UNTRUSTED_CONTENT_INSTRUCTION,
-          ].join(' '),
+          content: TAG_SUGGESTIONS_INSTRUCTION,
         },
         {
           role: 'user',
