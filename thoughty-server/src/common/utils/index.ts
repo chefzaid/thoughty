@@ -21,3 +21,4 @@ export * from './book-inline-image.util';
 export * from './book-pages.util';
 export * from './book-language.util';
 export * from './byte-range.util';
+export * from './placeholder-email.util';

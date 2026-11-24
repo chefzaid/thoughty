@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, LessThan, MoreThan, Repository } from 'typeorm';
 import { BackgroundTasks } from '@/common/utils/background-tasks.util';
+import { isPlaceholderEmail } from '@/common/utils/placeholder-email.util';
 import { AccountEvent, type AccountEventKind, Setting, type User } from '@/database/entities';
 import { describeEmailFailure, EmailService } from '../services/email.service';
 import { currentClientSoftware, type ClientSoftware } from './client-software';
@@ -178,7 +179,7 @@ export class AccountActivityService implements BeforeApplicationShutdown {
     signedInAt: Date,
   ): Promise<void> {
     try {
-      if (!user.email || !this.emailService.isConfigured()) return;
+      if (isPlaceholderEmail(user.email) || !this.emailService.isConfigured()) return;
       if (!(await this.newBrowserEmailEnabled(user.id))) return;
       const language = await this.settingRepository.findOne({
         where: { userId: user.id, key: 'language' },

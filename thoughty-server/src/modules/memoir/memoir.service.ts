@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { apiError } from '@/common/errors';
+import { canReceiveEmail } from '@/common/utils/placeholder-email.util';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Diary, MemoirAnswer, MemoirPhotoAnswer, MemoirProgram, MemoirSnooze, User } from '@/database/entities';
@@ -234,7 +235,7 @@ export class MemoirService {
       diaryId: program.diaryId,
       status: program.status,
       emailEnabled: program.emailEnabled,
-      emailAvailable: Boolean(user?.email && user.emailVerified && this.emailService.isConfigured()),
+      emailAvailable: canReceiveEmail(user?.email, user?.emailVerified) && this.emailService.isConfigured(),
       deliveryWeekday: program.deliveryWeekday,
       timeZone: program.timeZone,
       themes: [...program.themes],

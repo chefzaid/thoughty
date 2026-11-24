@@ -134,7 +134,7 @@ describe('YearReviewDeliveryService', () => {
     withBatches([
       row({ user_id: 1, last_sent_on: '2027-01-01' }),
       row({ user_id: 2, email_verified: false }),
-      row({ user_id: 5, email: null }),
+      row({ user_id: 5, email: 'user-5@invalid' }),
     ]);
     await expect(service.deliverDue(new Date('2027-01-03T08:00:00Z'))).resolves.toBe(0);
     expect(yearRecapService.build).not.toHaveBeenCalled();

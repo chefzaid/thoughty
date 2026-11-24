@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService as NestConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { isValidTimeZone } from '@/common/utils/time-zone.util';
+import { canReceiveEmail } from '@/common/utils/placeholder-email.util';
 import { type Entry, TimeCapsule } from '@/database/entities';
 import { describeEmailFailure, EmailService } from '@/modules/auth/services/email.service';
 import { ConfigService } from '@/modules/config';
@@ -14,7 +15,7 @@ const DELIVERY_BATCH_SIZE = 50;
 
 interface DueRow {
   id: number;
-  email: string | null;
+  email: string;
   email_verified: boolean;
 }
 
@@ -81,7 +82,7 @@ export class TimeCapsuleDeliveryService {
         const capsule = await manager.getRepository(TimeCapsule).findOneByOrFail({ id: row.id });
         const entry = await this.timeCapsuleService.openCapsule(manager, capsule, now);
         // A locked entry opens without an email: its text never leaves behind the PIN
-        if (canSend && row.email && row.email_verified && !isEntryLocked(entry)) {
+        if (canSend && canReceiveEmail(row.email, row.email_verified) && !isEntryLocked(entry)) {
           opened.push({ capsule, entry, email: row.email });
         }
       }

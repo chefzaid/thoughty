@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService as NestConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
+import { canReceiveEmail } from '@/common/utils/placeholder-email.util';
 import { MemoirProgram } from '@/database/entities';
 import { EmailService } from '@/modules/auth/services/email.service';
 import { ConfigService } from '@/modules/config';
@@ -19,7 +20,7 @@ interface DueProgramRow {
   time_zone: string;
   themes: string[];
   email_enabled: boolean;
-  email: string | null;
+  email: string;
   email_verified: boolean;
 }
 
@@ -100,7 +101,7 @@ export class MemoirDeliveryService {
           await manager.query('DELETE FROM memoir_snoozes WHERE program_id = $1 AND question_id = $2', [row.id, next.id]);
         }
 
-        if (next && row.email_enabled && row.email_verified && row.email) {
+        if (next && row.email_enabled && canReceiveEmail(row.email, row.email_verified)) {
           pending.push({ userId: row.user_id, email: row.email, question: next });
         }
       }

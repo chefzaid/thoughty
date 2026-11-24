@@ -29,9 +29,17 @@ export class User {
   @Column({ length: 100 })
   username: string;
 
-  /** Stored in lower case (`chk_users_email_lowercase`), so the unique key ignores case too. */
+  /**
+   * Stored in lower case (`chk_users_email_lowercase`), so the unique key ignores case too. An account
+   * that had none holds a placeholder on the reserved `.invalid` domain (`isPlaceholderEmail`), which
+   * counts as no address: nothing is sent to it, and the writer is asked for a real one.
+   */
   @Column({ length: 255, unique: true })
   email: string;
+
+  /** The address a writer gave in place of a placeholder, until they open the link sent to it. */
+  @Column({ name: 'pending_email', type: 'varchar', length: 255, nullable: true })
+  pendingEmail: string | null;
 
   @Column({ name: 'password_hash', type: 'varchar', length: 255, nullable: true })
   passwordHash: string | null;

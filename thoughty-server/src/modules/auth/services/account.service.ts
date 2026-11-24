@@ -12,6 +12,7 @@ import * as bcrypt from 'bcryptjs';
 import { PersonalAccessToken, RefreshToken, User } from '@/database/entities';
 import { UserResponseDto } from '../dto';
 import { EmailService } from './email.service';
+import { accountEmailFields } from './account-email';
 
 /** The signed-in user's own account: reading its profile and deleting it. */
 @Injectable()
@@ -42,6 +43,7 @@ export class AccountService {
       avatarUrl: user.avatarUrl || undefined,
       authProvider: user.authProvider,
       emailVerified: user.emailVerified,
+      ...accountEmailFields(user),
       twoFactorEnabled: Boolean(user.twoFactorEnabled),
       createdAt: user.createdAt,
     };

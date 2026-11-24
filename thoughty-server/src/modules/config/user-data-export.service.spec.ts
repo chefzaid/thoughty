@@ -400,6 +400,9 @@ describe('UserDataExportService', () => {
 
     expect(user.passwordHash).toBeUndefined();
     expect(user.resetToken).toBeUndefined();
+    // A placeholder stands for no address
+    userRepository.findOne.mockResolvedValue({ id: 1, username: 'testuser', email: 'user-1@invalid' });
+    expect(((await service.downloadData(1)).user as Record<string, unknown>).email).toBeNull();
   });
 
   it('should include all settings in export', async () => {

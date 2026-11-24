@@ -41,6 +41,7 @@ import { PERSON_DATES_JSON_SQL, toPersonDate, type PersonDateColumns } from '@/m
 import { isExportableSettingKey } from './config.service';
 import { ContentLockedException, holdsLockedContent, isContentUnlocked } from '@/common/content-lock';
 import { apiError } from '@/common/errors';
+import { isPlaceholderEmail } from '@/common/utils/placeholder-email.util';
 import { AccountActivityService } from '@/modules/auth/account-activity/account-activity.service';
 
 /** An opt-in email setting as the data download writes it, null when it was never saved. */
@@ -176,7 +177,8 @@ export class UserDataExportService {
       ? {
           id: user.id,
           username: user.username,
-          email: user.email,
+          // A placeholder stands for no address: the download says so rather than copy it
+          email: isPlaceholderEmail(user.email) ? null : user.email,
           authProvider: user.authProvider,
           avatarUrl: user.avatarUrl,
           emailVerified: user.emailVerified,

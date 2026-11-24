@@ -177,6 +177,7 @@ describe('AuthService Google and Keycloak sign-in', () => {
       ['a missing email_verified claim', googleCredential({ email_verified: undefined })],
       ['a string email_verified claim', googleCredential({ email_verified: 'true' })],
       ['a missing email', googleCredential({ email: undefined })],
+      ['an address no mail reaches, such as a placeholder', googleCredential({ email: 'user-7@invalid' })],
     ])('refuses a credential with %s', async (_case, credential) => {
       await expect(oauth(credential)).rejects.toThrow(UnauthorizedException);
       expect(userRepository.findOne).not.toHaveBeenCalled();
@@ -338,6 +339,15 @@ describe('AuthService Google and Keycloak sign-in', () => {
       await expect(service.keycloakLogin('signed-keycloak-token')).rejects.toThrow(
         UnauthorizedException,
       );
+    });
+
+    it('rejects a Keycloak identity whose address is a placeholder, so it never matches one', async () => {
+      mockVerifiedIdentity({ email: 'user-7@invalid' });
+
+      await expect(service.keycloakLogin('signed-keycloak-token')).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(userRepository.findOne).not.toHaveBeenCalled();
     });
 
     it('rejects a deleted account linked by Keycloak subject', async () => {

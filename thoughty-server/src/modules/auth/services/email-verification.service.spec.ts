@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -25,6 +25,7 @@ describe('EmailVerificationService', () => {
     userRepository = {
       findOne: jest.fn(),
       save: jest.fn(),
+      exists: jest.fn().mockResolvedValue(false),
     };
     emailService = {
       isConfigured: jest.fn().mockReturnValue(true),
@@ -160,5 +161,112 @@ describe('EmailVerificationService', () => {
     userRepository.findOne.mockResolvedValue(null);
 
     await expectApiError(service.verifyEmail('bad-token'), BadRequestException, 'AUTH_INVALID_VERIFICATION_TOKEN');
+  });
+
+  describe('an account with a placeholder address', () => {
+    const placeholder = { ...mockUser, email: 'user-1@invalid', pendingEmail: null };
+    const unique = Object.assign(new Error('duplicate key'), { code: '23505', constraint: 'users_email_key' });
+
+    beforeEach(() => {
+      userRepository.save.mockImplementation((user: any) => Promise.resolve(user));
+    });
+
+    it('has nothing to verify until it gives an address', async () => {
+      userRepository.findOne.mockResolvedValue({ ...placeholder });
+
+      await expectApiError(service.sendVerificationEmail(1, { requireDelivery: true }), BadRequestException, 'AUTH_EMAIL_MISSING');
+      expect(emailService.sendEmailVerificationEmail).not.toHaveBeenCalled();
+    });
+
+    it('keeps the address it gives waiting, in lower case, and emails its link there', async () => {
+      userRepository.findOne.mockResolvedValue({ ...placeholder });
+
+      await service.addEmail(1, ' Writer@Example.com ');
+
+      expect(userRepository.exists).toHaveBeenCalledWith({ where: { email: 'writer@example.com' } });
+      expect(userRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: 'user-1@invalid',
+          pendingEmail: 'writer@example.com',
+          emailVerificationToken: expect.any(String),
+        }),
+      );
+      expect(emailService.sendEmailVerificationEmail).toHaveBeenCalledWith(
+        'writer@example.com',
+        expect.stringContaining('https://thoughty.test/verify-email?token='),
+      );
+    });
+
+    it('sends a requested resend to the waiting address', async () => {
+      userRepository.findOne.mockResolvedValue({ ...placeholder, pendingEmail: 'writer@example.com' });
+
+      await service.sendVerificationEmail(1, { requireDelivery: true });
+
+      expect(emailService.sendEmailVerificationEmail).toHaveBeenCalledWith('writer@example.com', expect.any(String));
+    });
+
+    it('sets the waiting address, verified, when its link is opened', async () => {
+      userRepository.findOne.mockResolvedValue({ ...placeholder, pendingEmail: 'writer@example.com' });
+
+      await service.verifyEmail('raw-token');
+
+      expect(userRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ email: 'writer@example.com', pendingEmail: null, emailVerified: true }),
+      );
+    });
+
+    it('refuses as taken an address another account took before the link was opened', async () => {
+      userRepository.findOne.mockResolvedValue({ ...placeholder, pendingEmail: 'writer@example.com' });
+      userRepository.save.mockRejectedValue(unique);
+
+      await expectApiError(service.verifyEmail('raw-token'), ConflictException, 'AUTH_EMAIL_TAKEN');
+    });
+
+    it('lets any other failure through', async () => {
+      userRepository.findOne.mockResolvedValue({ ...placeholder, pendingEmail: 'writer@example.com' });
+      userRepository.save.mockRejectedValue(new Error('connection lost'));
+
+      await expect(service.verifyEmail('raw-token')).rejects.toThrow('connection lost');
+    });
+
+    it('refuses an address another account has, and an account that has one already', async () => {
+      userRepository.findOne.mockResolvedValue({ ...placeholder });
+      userRepository.exists.mockResolvedValue(true);
+      await expectApiError(service.addEmail(1, 'taken@example.com'), ConflictException, 'AUTH_EMAIL_TAKEN');
+
+      userRepository.findOne.mockResolvedValue({ ...mockUser });
+      await expectApiError(service.addEmail(1, 'other@example.com'), ConflictException, 'AUTH_EMAIL_ALREADY_SET');
+      expect(userRepository.save).not.toHaveBeenCalled();
+      expect(emailService.sendEmailVerificationEmail).not.toHaveBeenCalled();
+    });
+
+    it('sets the address at once, unverified, without a mail server outside production', async () => {
+      userRepository.findOne.mockResolvedValue({ ...placeholder, pendingEmail: 'old@example.com' });
+      emailService.isConfigured.mockReturnValue(false);
+
+      await service.addEmail(1, 'writer@example.com');
+
+      expect(userRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ email: 'writer@example.com', pendingEmail: null, emailVerified: false }),
+      );
+      expect(emailService.sendEmailVerificationEmail).not.toHaveBeenCalled();
+
+      userRepository.save.mockRejectedValue(unique);
+      userRepository.findOne.mockResolvedValue({ ...placeholder });
+      await expectApiError(service.addEmail(1, 'writer@example.com'), ConflictException, 'AUTH_EMAIL_TAKEN');
+    });
+
+    it('refuses without a mail server in production', async () => {
+      userRepository.findOne.mockResolvedValue({ ...placeholder });
+      emailService.isConfigured.mockReturnValue(false);
+      const environment = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      try {
+        await expectApiError(service.addEmail(1, 'writer@example.com'), ServiceUnavailableException, 'EMAIL_DELIVERY_NOT_CONFIGURED');
+      } finally {
+        process.env.NODE_ENV = environment;
+      }
+      expect(userRepository.save).not.toHaveBeenCalled();
+    });
   });
 });

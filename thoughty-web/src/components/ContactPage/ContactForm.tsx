@@ -1,6 +1,7 @@
 import { SubmitEvent, useMemo, useState } from 'react';
 
 import { useAuth } from '../../contexts/AuthContext';
+import { ownEmail } from '../../utils/accountEmail';
 import { createContactService } from '../../services/api/contactService';
 
 /** The API's limits (`ContactMessageDto`), so the browser stops a message it would refuse. */
@@ -76,7 +77,7 @@ function ContactForm({ t }: Readonly<ContactFormProps>) {
           autoComplete="email"
           required
           maxLength={EMAIL_MAX_LENGTH}
-          defaultValue={user?.email ?? ''}
+          defaultValue={ownEmail(user)}
         />
       </label>
       <label>

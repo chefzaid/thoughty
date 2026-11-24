@@ -5,6 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { apiError } from '@/common/errors';
+import { isPlaceholderEmail } from '@/common/utils/placeholder-email.util';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { JwksKeyStore } from './jwks-key-store';
@@ -99,7 +100,8 @@ export class IdentityVerificationService {
 
     const sub = typeof claims.sub === 'string' ? claims.sub : '';
     const email = typeof claims.email === 'string' ? claims.email.trim().toLowerCase() : '';
-    if (!sub || !email || claims.email_verified !== true) {
+    // An address no mail reaches (`.invalid`) proves nothing, and must never match an account's placeholder
+    if (!sub || isPlaceholderEmail(email) || claims.email_verified !== true) {
       throw apiError(UnauthorizedException, 'AUTH_GOOGLE_EMAIL_UNVERIFIED');
     }
 
@@ -141,7 +143,7 @@ export class IdentityVerificationService {
     const email = typeof claims.email === 'string' ? claims.email.toLowerCase() : '';
     const preferredUsername =
       typeof claims.preferred_username === 'string' ? claims.preferred_username : '';
-    if (!subject || !email || !preferredUsername || claims.email_verified !== true) {
+    if (!subject || isPlaceholderEmail(email) || !preferredUsername || claims.email_verified !== true) {
       throw apiError(UnauthorizedException, 'AUTH_KEYCLOAK_IDENTITY_INCOMPLETE');
     }
 

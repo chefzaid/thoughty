@@ -92,6 +92,19 @@ SELECT r.user_id, r.previous_username, r.username, u.email, r.renamed_at
 
 The same migration lower-cases every account's email. If two accounts have addresses that differ only in case, it stops with `N e-mail address(es) belong to more than one account when compared ignoring case` and changes nothing (the whole pending batch rolls back). No rule can pick the owner, so decide per address before deploying again: find them with `SELECT lower(email), array_agg(id ORDER BY id) FROM users GROUP BY lower(email) HAVING count(*) > 1`, then keep the address on the account its owner uses (usually the verified one, or the one signed in to last) and give the other an address its owner confirms, or, when it is an abandoned duplicate, soft-delete it and move its address aside so the worker purges it (`UPDATE users SET deleted_at = now(), deletion_reason = 'Duplicate address', email = 'duplicate-' || id || '@invalid' WHERE id = …`, after exporting anything worth keeping). Then run the migration again.
 
+### Accounts Without an Email Address
+
+Migration `1790380800000-required-user-email` makes `users.email` required. An account that had none (NULL or blank) gets the placeholder `user-<id>@invalid`, on the reserved `.invalid` domain no mail reaches, and is marked unverified ([Data model](data-model.md#accounts-without-an-address)); the migration never stops on them. Nothing is ever emailed to a placeholder, and at the next sign-in the writer is asked for a real address, which takes effect once they open the link sent to it (a Google or Keycloak account linked to its provider takes the provider's address on its own). Find the accounts still waiting, and those that gave an address not yet confirmed:
+
+```sql
+SELECT id, username, auth_provider, pending_email, two_factor_enabled, created_at, updated_at
+  FROM users
+ WHERE (email LIKE '%@invalid' OR email LIKE '%.invalid') AND deleted_at IS NULL
+ ORDER BY id;
+```
+
+An account with email two-factor sign-in on cannot receive its code until it has an address, so it cannot sign in: once its owner has proven who they are another way, turn two-factor off for it (`UPDATE users SET two_factor_enabled = false WHERE id = …`) so they can sign in and add one. Rolling the migration back turns the placeholders into NULL again.
+
 ## Canary Rollouts
 
 Read the [canary limits](./deployment.md#canary-infrak8soverlaysswirl-cloud-canary) first.

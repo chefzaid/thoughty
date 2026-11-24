@@ -10,10 +10,7 @@ import { findSchemaDrift } from './schema-drift.test-helpers';
  * Drift the migrations have not resolved yet, each with the `TODO.md` entry that tracks it. The list
  * must match exactly: fixing one fails the spec until its line is removed here.
  */
-const KNOWN_DRIFT: string[] = [
-  // Needs Input › May `users.email` become `NOT NULL`?
-  'users.email: nullable is false in the entity but true in the database',
-];
+const KNOWN_DRIFT: string[] = [];
 
 describePostgres('entities against the migrated schema on PostgreSQL', () => {
   let database: PostgresTestDatabase;

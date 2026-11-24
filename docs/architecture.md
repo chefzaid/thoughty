@@ -204,6 +204,9 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 |  | `AUTH_INVALID_RESET_TOKEN` | Invalid or expired reset token |
 |  | `AUTH_INVALID_VERIFICATION_TOKEN` | Invalid or expired verification token |
 |  | `AUTH_INVALID_SIGN_UP_TOKEN` | Invalid, expired, or already used sign-up link |
+|  | `AUTH_EMAIL_UNDELIVERABLE` | No email can reach this address. Enter an address you can read. |
+|  | `AUTH_EMAIL_ALREADY_SET` | This account already has an email address. |
+|  | `AUTH_EMAIL_MISSING` | Add an email address to your account first. |
 |  | `EMAIL_DELIVERY_NOT_CONFIGURED` | Email delivery is not configured. |
 | Two-factor authentication | `AUTH_2FA_PASSWORD_ACCOUNTS_ONLY` | Email two-factor authentication is available for password accounts only. |
 |  | `AUTH_2FA_EMAIL_NOT_VERIFIED` | Verify your email before enabling two-factor authentication. |

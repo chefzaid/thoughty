@@ -14,7 +14,7 @@ vi.mock('react-chartjs-2', () => ({
 }));
 
 export interface MockAuthState {
-  user: { id: string; username: string; email: string; avatarUrl?: string } | null;
+  user: { id: string; username: string; email: string; avatarUrl?: string; emailMissing?: boolean; pendingEmail?: string } | null;
   isAuthenticated: boolean;
   loading: boolean;
   sessionKey: number;
@@ -32,6 +32,8 @@ export interface MockAuthState {
   resetPassword: ReturnType<typeof vi.fn>;
   verifyEmail: ReturnType<typeof vi.fn>;
   resendVerificationEmail: ReturnType<typeof vi.fn>;
+  addEmail: ReturnType<typeof vi.fn>;
+  refreshAccountEmail: ReturnType<typeof vi.fn>;
   deleteAccount: ReturnType<typeof vi.fn>;
   authFetch: ReturnType<typeof vi.fn>;
   getAccessToken: () => string;
@@ -61,6 +63,8 @@ function createMockAuthState(overrides: Partial<MockAuthState> = {}): MockAuthSt
     resetPassword: vi.fn(),
     verifyEmail: vi.fn().mockResolvedValue({ success: true }),
     resendVerificationEmail: vi.fn().mockResolvedValue({ success: true }),
+    addEmail: vi.fn().mockResolvedValue({ success: true }),
+    refreshAccountEmail: vi.fn().mockResolvedValue(undefined),
     deleteAccount: vi.fn(),
     authFetch: vi.fn((input: string | URL | Request, init?: RequestInit) => mockFetch(input, init)),
     getAccessToken: () => 'mock-token',

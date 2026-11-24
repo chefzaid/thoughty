@@ -16,7 +16,7 @@ const tooManyRefreshes = (retryAfter?: string) => ({
     headers: new Headers(retryAfter === undefined ? {} : { 'Retry-After': retryAfter }),
 });
 
-const ADA = { id: 1, username: 'ada', email: 'ada@example.com', authProvider: 'local' as const, emailVerified: true, twoFactorEnabled: false };
+const ADA = { id: 1, username: 'ada', email: 'ada@example.com', authProvider: 'local' as const, emailVerified: true, emailMissing: false, twoFactorEnabled: false };
 
 type Answer = () => unknown;
 

@@ -46,6 +46,19 @@ describe('AccountService', () => {
       expect(result.emailVerified).toBe(false);
     });
 
+    it('says whether the account has a real address, and which one waits for its link', async () => {
+      userRepository.findOne.mockResolvedValue(mockUser);
+      expect(await service.getMe(1)).toMatchObject({ emailMissing: false });
+      expect(await service.getMe(1)).not.toHaveProperty('pendingEmail');
+
+      userRepository.findOne.mockResolvedValue({ ...mockUser, email: 'user-1@invalid', pendingEmail: 'writer@example.com' });
+      expect(await service.getMe(1)).toMatchObject({
+        email: 'user-1@invalid',
+        emailMissing: true,
+        pendingEmail: 'writer@example.com',
+      });
+    });
+
     it('should throw NotFoundException for non-existent user', async () => {
       userRepository.findOne.mockResolvedValue(null);
 

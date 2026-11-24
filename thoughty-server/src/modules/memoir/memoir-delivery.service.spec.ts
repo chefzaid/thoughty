@@ -124,7 +124,7 @@ describe('MemoirDeliveryService', () => {
       [
         row({ id: 1, user_id: 3, email_enabled: false }),
         row({ id: 2, user_id: 4, email_verified: false }),
-        row({ id: 3, user_id: 5, email: null }),
+        row({ id: 3, user_id: 5, email: 'user-5@invalid' }),
         row({ id: 4, user_id: 6 }),
       ],
       { 6: everyQuestion },

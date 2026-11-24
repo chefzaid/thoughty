@@ -71,6 +71,8 @@
                     "username": "writer",
                     "authProvider": "local",
                     "emailVerified": true,
+                    "emailMissing": true,
+                    "pendingEmail": "writer@example.com",
                     "twoFactorEnabled": true,
                     "isNewUser": true
                   },
@@ -138,6 +140,8 @@
                     "username": "writer",
                     "authProvider": "local",
                     "emailVerified": true,
+                    "emailMissing": true,
+                    "pendingEmail": "writer@example.com",
                     "twoFactorEnabled": true,
                     "isNewUser": true
                   },
@@ -409,6 +413,8 @@
                     "username": "writer",
                     "authProvider": "local",
                     "emailVerified": true,
+                    "emailMissing": true,
+                    "pendingEmail": "writer@example.com",
                     "twoFactorEnabled": true,
                     "isNewUser": true
                   },
@@ -532,6 +538,8 @@
                     "username": "writer",
                     "authProvider": "local",
                     "emailVerified": true,
+                    "emailMissing": true,
+                    "pendingEmail": "writer@example.com",
                     "twoFactorEnabled": true,
                     "isNewUser": true
                   },
@@ -881,6 +889,8 @@
                   "avatarUrl": "https://thoughty.example.com/callback",
                   "authProvider": "local",
                   "emailVerified": true,
+                  "emailMissing": true,
+                  "pendingEmail": "writer@example.com",
                   "twoFactorEnabled": true,
                   "createdAt": "2026-06-24T10:00:00.000Z"
                 }
@@ -1158,6 +1168,22 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "The address the link was sent to has since gone to another account (`AUTH_EMAIL_TAKEN`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "The address the link was sent to has since gone to another account (`AUTH_EMAIL_TAKEN`)",
+                  "error": "Conflict",
+                  "code": "CONFLICT"
+                }
+              }
+            }
           }
         },
         "summary": "Verify email with token",
@@ -1172,7 +1198,7 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Verification email sent if needed",
+            "description": "Verification email sent if needed, to the address waiting to replace a placeholder when there is one",
             "content": {
               "application/json": {
                 "schema": {
@@ -1181,6 +1207,22 @@
                 "example": {
                   "success": true,
                   "message": "example"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The account has no address yet (`AUTH_EMAIL_MISSING`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "The account has no address yet (`AUTH_EMAIL_MISSING`)",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
                 }
               }
             }
@@ -1208,6 +1250,107 @@
           }
         ],
         "summary": "Resend the current user email verification message",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/add-email": {
+      "post": {
+        "description": "Only for an account whose address is a placeholder (`emailMissing`). Where email can be sent, the address waits in `pendingEmail` until the link emailed to it is opened (`POST /api/auth/verify-email`), which sets it, verified; giving another address replaces it. Without a mail server it is set at once, unverified, outside production.",
+        "operationId": "AuthController_addEmail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddEmailDto"
+              },
+              "example": {
+                "email": "writer@example.com"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The account, with the address waiting or set",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponseDto"
+                },
+                "example": {
+                  "id": 1,
+                  "username": "Daily Journal",
+                  "email": "user@example.com",
+                  "avatarUrl": "https://thoughty.example.com/callback",
+                  "authProvider": "local",
+                  "emailVerified": true,
+                  "emailMissing": true,
+                  "pendingEmail": "writer@example.com",
+                  "twoFactorEnabled": true,
+                  "createdAt": "2026-06-24T10:00:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not an address, or one no mail reaches (`AUTH_EMAIL_UNDELIVERABLE`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Not an address, or one no mail reaches (`AUTH_EMAIL_UNDELIVERABLE`)",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The account already has an address (`AUTH_EMAIL_ALREADY_SET`), or another account has this one (`AUTH_EMAIL_TAKEN`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "The account already has an address (`AUTH_EMAIL_ALREADY_SET`), or another account has this one (`AUTH_EMAIL_TAKEN`)",
+                  "error": "Conflict",
+                  "code": "CONFLICT"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "No mail server is configured, in production (`EMAIL_DELIVERY_NOT_CONFIGURED`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "No mail server is configured, in production (`EMAIL_DELIVERY_NOT_CONFIGURED`)",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Give an address to an account that has none",
         "tags": [
           "Authentication"
         ]
@@ -1309,6 +1452,8 @@
                     "username": "writer",
                     "authProvider": "local",
                     "emailVerified": true,
+                    "emailMissing": true,
+                    "pendingEmail": "writer@example.com",
                     "twoFactorEnabled": true,
                     "isNewUser": true
                   },
@@ -1421,6 +1566,8 @@
                     "username": "writer",
                     "authProvider": "local",
                     "emailVerified": true,
+                    "emailMissing": true,
+                    "pendingEmail": "writer@example.com",
                     "twoFactorEnabled": true,
                     "isNewUser": true
                   },
@@ -19549,6 +19696,15 @@
           "emailVerified": {
             "type": "boolean"
           },
+          "emailMissing": {
+            "type": "boolean",
+            "description": "True when the account has no real address: `email` is then a placeholder on the reserved `.invalid` domain, no mail is ever sent to it, and the writer is asked for an address (`POST /api/auth/add-email`)."
+          },
+          "pendingEmail": {
+            "type": "string",
+            "description": "The address given in place of the placeholder, until the link sent to it is opened (`POST /api/auth/verify-email`).",
+            "example": "writer@example.com"
+          },
           "twoFactorEnabled": {
             "type": "boolean"
           },
@@ -19563,6 +19719,7 @@
           "username",
           "authProvider",
           "emailVerified",
+          "emailMissing",
           "twoFactorEnabled"
         ],
         "example": {
@@ -19571,6 +19728,8 @@
           "username": "writer",
           "authProvider": "local",
           "emailVerified": true,
+          "emailMissing": true,
+          "pendingEmail": "writer@example.com",
           "twoFactorEnabled": true,
           "isNewUser": true
         }
@@ -19597,6 +19756,8 @@
             "username": "writer",
             "authProvider": "local",
             "emailVerified": true,
+            "emailMissing": true,
+            "pendingEmail": "writer@example.com",
             "twoFactorEnabled": true,
             "isNewUser": true
           },
@@ -19846,6 +20007,15 @@
           "emailVerified": {
             "type": "boolean"
           },
+          "emailMissing": {
+            "type": "boolean",
+            "description": "True when the account has no real address: `email` is then a placeholder on the reserved `.invalid` domain, no mail is ever sent to it, and the writer is asked for an address (`POST /api/auth/add-email`)."
+          },
+          "pendingEmail": {
+            "type": "string",
+            "description": "The address given in place of the placeholder, until the link sent to it is opened (`POST /api/auth/verify-email`).",
+            "example": "writer@example.com"
+          },
           "twoFactorEnabled": {
             "type": "boolean"
           },
@@ -19860,6 +20030,7 @@
           "email",
           "authProvider",
           "emailVerified",
+          "emailMissing",
           "twoFactorEnabled",
           "createdAt"
         ],
@@ -19870,6 +20041,8 @@
           "avatarUrl": "https://thoughty.example.com/callback",
           "authProvider": "local",
           "emailVerified": true,
+          "emailMissing": true,
+          "pendingEmail": "writer@example.com",
           "twoFactorEnabled": true,
           "createdAt": "2026-06-24T10:00:00.000Z"
         }
@@ -19963,6 +20136,22 @@
           "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
         }
       },
+      "AddEmailDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "writer@example.com",
+            "description": "Up to 255 characters; an address on the reserved `.invalid` domain is refused with `AUTH_EMAIL_UNDELIVERABLE`."
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "example": {
+          "email": "writer@example.com"
+        }
+      },
       "DeleteAccountDto": {
         "type": "object",
         "properties": {
@@ -20001,7 +20190,8 @@
         "properties": {
           "email": {
             "type": "string",
-            "example": "user@example.com"
+            "example": "user@example.com",
+            "description": "Up to 255 characters; an address on the reserved `.invalid` domain is refused with `AUTH_EMAIL_UNDELIVERABLE`."
           },
           "password": {
             "type": "string",
@@ -34356,6 +34546,9 @@
           "AUTH_INVALID_RESET_TOKEN",
           "AUTH_INVALID_VERIFICATION_TOKEN",
           "AUTH_INVALID_SIGN_UP_TOKEN",
+          "AUTH_EMAIL_UNDELIVERABLE",
+          "AUTH_EMAIL_ALREADY_SET",
+          "AUTH_EMAIL_MISSING",
           "EMAIL_DELIVERY_NOT_CONFIGURED",
           "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY",
           "AUTH_2FA_EMAIL_NOT_VERIFIED",

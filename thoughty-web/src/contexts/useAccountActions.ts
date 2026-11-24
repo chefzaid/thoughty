@@ -6,6 +6,20 @@ import type { components } from '../generated/openapi';
 
 /** What the password, verification and deletion steps answer: done, with a sentence for the user. */
 type SuccessMessageResponse = components['schemas']['SuccessMessageResponseDto'];
+type UserResponse = components['schemas']['UserResponseDto'];
+
+/** The signed-in user with what the API now says of their address (another account's answer changes nothing). */
+function withAccountEmail(current: User | null, me: UserResponse): User | null {
+  if (current?.id !== me.id) return current;
+  const { pendingEmail: _waiting, ...rest } = current;
+  return {
+    ...rest,
+    email: me.email,
+    emailVerified: me.emailVerified,
+    emailMissing: me.emailMissing,
+    ...(me.pendingEmail ? { pendingEmail: me.pendingEmail } : {}),
+  };
+}
 
 interface AccountActionsOptions {
   authFetch: (url: string, options?: RequestInit) => Promise<Response>;
@@ -15,7 +29,7 @@ interface AccountActionsOptions {
   setUser: Dispatch<SetStateAction<User | null>>;
 }
 
-/** Password, email verification and account deletion actions. */
+/** Password, email address and verification, and account deletion actions. */
 export function useAccountActions({ authFetch, signOutLocally, setError, setUser }: AccountActionsOptions) {
   // Change password
   const changePassword = useCallback(async (
@@ -120,6 +134,38 @@ export function useAccountActions({ authFetch, signOutLocally, setError, setUser
     }
   }, [authFetch, setError]);
 
+  /** Gives an address to an account that has none; it waits for its link to be opened where mail can be sent. */
+  const addEmail = useCallback(async (email: string): Promise<AuthResult> => {
+    setError(null);
+    try {
+      const response = await authFetch(`${API_BASE}/add-email`, {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await readApiErrorMessage(response, 'addEmailFailed'));
+      }
+
+      const me = await safeJsonParse<UserResponse>(response);
+      if (me) setUser((current) => withAccountEmail(current, me));
+      return { success: true };
+    } catch (err) {
+      return authFailure(err, 'addEmailFailed', setError);
+    }
+  }, [authFetch, setError, setUser]);
+
+  /** Reads the account's address again (`/me`), as a link opened in another tab may have changed it. */
+  const refreshAccountEmail = useCallback(async (): Promise<void> => {
+    try {
+      const response = await authFetch(`${API_BASE}/me`);
+      const me = response.ok ? await safeJsonParse<UserResponse>(response) : null;
+      if (me) setUser((current) => withAccountEmail(current, me));
+    } catch {
+      // Not reachable now: it is read again on the next try
+    }
+  }, [authFetch, setUser]);
+
   // Delete account (flags for deletion)
   const deleteAccount = useCallback(async (password: string): Promise<AuthResult> => {
     setError(null);
@@ -149,6 +195,8 @@ export function useAccountActions({ authFetch, signOutLocally, setError, setUser
     resetPassword,
     verifyEmail,
     resendVerificationEmail,
+    addEmail,
+    refreshAccountEmail,
     deleteAccount,
   };
 }

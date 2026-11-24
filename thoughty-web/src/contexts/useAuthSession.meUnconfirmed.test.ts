@@ -15,7 +15,7 @@ const json = (body: unknown, status = 200, headers: Record<string, string> = {})
 const tokenFor = (userId: number, n = 1) =>
     `h.${btoa(JSON.stringify({ userId, n })).replace(/=+$/, '')}.s`;
 
-const ADA = { id: 1, username: 'ada', email: 'ada@example.com', authProvider: 'local' as const, emailVerified: true, twoFactorEnabled: false };
+const ADA = { id: 1, username: 'ada', email: 'ada@example.com', authProvider: 'local' as const, emailVerified: true, emailMissing: false, twoFactorEnabled: false };
 const tooManyReads = (retryAfter?: string) => json(
     { statusCode: 429, message: 'ThrottlerException: Too Many Requests', error: 'Too Many Requests', code: 'RATE_LIMITED' },
     429,

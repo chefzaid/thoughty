@@ -10,7 +10,7 @@ const json = (body: unknown, status = 200) => ({
     json: async () => body,
 });
 
-const ADA = { id: 1, username: 'ada', email: 'ada@example.com', authProvider: 'local' as const, emailVerified: true, twoFactorEnabled: false };
+const ADA = { id: 1, username: 'ada', email: 'ada@example.com', authProvider: 'local' as const, emailVerified: true, emailMissing: false, twoFactorEnabled: false };
 
 /** A signed-in tab: the refresh cookie gives a token and `/me` answers Ada; `refresh` answers the later refreshes. */
 async function renderSignedIn(refresh: () => unknown = () => json({ accessToken: 'access-token' })) {

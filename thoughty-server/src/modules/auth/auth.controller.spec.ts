@@ -53,7 +53,7 @@ describe('AuthController', () => {
     );
     passwordService = mockMethods('changePassword', 'forgotPassword', 'resetPassword');
     accountService = mockMethods('getMe', 'deleteAccount');
-    emailVerificationService = mockMethods('sendVerificationEmail', 'verifyEmail');
+    emailVerificationService = mockMethods('sendVerificationEmail', 'verifyEmail', 'addEmail');
     twoFactorService = mockMethods('resend', 'status', 'startSetup', 'enable', 'disable');
 
     const module: TestingModule = await Test.createTestingModule({
@@ -97,6 +97,7 @@ describe('AuthController', () => {
       ['resetPassword', RATE_LIMITS.passwordRecovery],
       ['verifyEmail', RATE_LIMITS.passwordRecovery],
       ['resendVerificationEmail', RATE_LIMITS.accountSecurity],
+      ['addEmail', RATE_LIMITS.accountSecurity],
       ['deleteAccount', RATE_LIMITS.accountSecurity],
     ] as const;
 
@@ -453,6 +454,16 @@ describe('AuthController', () => {
       const result = await controller.resendVerificationEmail(mockUser as any);
       expect(emailVerificationService.sendVerificationEmail).toHaveBeenCalledWith(1, { requireDelivery: true });
       expect(result).toBe(expected);
+    });
+  });
+
+  describe('addEmail', () => {
+    it('gives the address, then answers the account as it now is', async () => {
+      const me = { id: 1, email: 'user-1@invalid', emailMissing: true, pendingEmail: 'writer@example.com' };
+      accountService.getMe.mockResolvedValue(me);
+
+      await expect(controller.addEmail(mockUser as any, { email: 'writer@example.com' })).resolves.toBe(me);
+      expect(emailVerificationService.addEmail).toHaveBeenCalledWith(1, 'writer@example.com');
     });
   });
 

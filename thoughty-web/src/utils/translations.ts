@@ -31,6 +31,7 @@ import { personMentionsTranslations, type PersonMentionsTranslationKey } from ".
 import { focusModeTranslations, type FocusModeTranslationKey } from "./translations.focusMode";
 import { composerDraftTranslations, type ComposerDraftTranslationKey } from "./translations.composerDraft";
 import { signUpTranslations, type SignUpTranslationKey } from "./translations.signUp";
+import { addEmailTranslations, type AddEmailTranslationKey } from "./translations.addEmail";
 import { passwordResetTranslations, type PasswordResetTranslationKey } from "./translations.passwordReset";
 import { dictationTranslations, type DictationTranslationKey } from "./translations.dictation";
 import { readerTranslations, type ReaderTranslationKey } from "./translations.reader";
@@ -97,6 +98,7 @@ import { fillTranslationParams } from "./translationParams";
 
 /** Every key, merged from the feature files beside this one (translations.<feature>.ts). */
 export type TranslationKey =
+  | AddEmailTranslationKey
   | ApiErrorTranslationKey
   | AppImportTranslationKey
   | MemoirTranslationKey
@@ -234,6 +236,7 @@ export const translations: Translations = {
     ...focusModeTranslations.en,
     ...composerDraftTranslations.en,
     ...signUpTranslations.en,
+    ...addEmailTranslations.en,
     ...passwordResetTranslations.en,
     ...dictationTranslations.en,
     ...readerTranslations.en,
@@ -331,6 +334,7 @@ export const translations: Translations = {
     ...focusModeTranslations.fr,
     ...composerDraftTranslations.fr,
     ...signUpTranslations.fr,
+    ...addEmailTranslations.fr,
     ...passwordResetTranslations.fr,
     ...dictationTranslations.fr,
     ...readerTranslations.fr,

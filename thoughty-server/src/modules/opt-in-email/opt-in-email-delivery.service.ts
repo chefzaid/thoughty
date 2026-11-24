@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import type { ConfigService as NestConfigService } from '@nestjs/config';
 import type { DataSource } from 'typeorm';
 import { isValidTimeZone, localDateIn } from '@/common/utils/time-zone.util';
+import { canReceiveEmail } from '@/common/utils/placeholder-email.util';
 import { getUnsubscribeSecret } from '@/modules/auth/auth-secrets';
 import {
   describeEmailFailure,
@@ -22,7 +23,7 @@ interface DueRow {
   time_zone: string;
   diary_id: number | null;
   last_sent_on: string | null;
-  email: string | null;
+  email: string;
   email_verified: boolean;
 }
 
@@ -130,7 +131,7 @@ export abstract class OptInEmailDeliveryService<TContent> {
         const localDate = localDateIn(now, timeZone);
         const dueEmail: DueOptInEmail = { userId: row.user_id, diaryId: row.diary_id, timeZone, localDate };
         const content =
-          canSend && row.email && row.email_verified && !this.sentInPeriod(row.last_sent_on, localDate)
+          canSend && canReceiveEmail(row.email, row.email_verified) && !this.sentInPeriod(row.last_sent_on, localDate)
             ? await this.collect(dueEmail)
             : null;
         const sending = content !== null;
@@ -144,7 +145,7 @@ export abstract class OptInEmailDeliveryService<TContent> {
           [row[this.keyColumn], this.schedule.next(now, row.delivery_hour, timeZone), sending, localDate],
         );
         if (sending) {
-          emails.push({ due: dueEmail, email: row.email!, content });
+          emails.push({ due: dueEmail, email: row.email, content });
         }
       }
       return { claimed: due.length, emails };

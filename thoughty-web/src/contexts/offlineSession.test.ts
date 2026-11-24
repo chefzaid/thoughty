@@ -10,7 +10,7 @@ import {
   rememberOfflineUser,
 } from './offlineSession';
 
-const ADA = { id: 1, username: 'ada', email: 'ada@example.com', authProvider: 'local' as const, emailVerified: true, twoFactorEnabled: false };
+const ADA = { id: 1, username: 'ada', email: 'ada@example.com', authProvider: 'local' as const, emailVerified: true, emailMissing: false, twoFactorEnabled: false };
 
 describe('offlineSession', () => {
   beforeEach(() => localStorage.clear());
@@ -21,6 +21,14 @@ describe('offlineSession', () => {
 
     expect(readOfflineUser()).toEqual(ADA);
     expect(localStorage.getItem('thoughty.offlineUser')).not.toContain('avatar');
+  });
+
+  it('reads a writer remembered before accounts could lack an address as having one', () => {
+    const { emailMissing: _missing, ...remembered } = ADA;
+    localStorage.setItem('thoughty.offlineUser', JSON.stringify(remembered));
+    expect(readOfflineUser()).toEqual(ADA);
+    rememberOfflineUser({ ...ADA, emailMissing: true });
+    expect(readOfflineUser()).toEqual({ ...ADA, emailMissing: true });
   });
 
   it('reads nothing back from a missing, broken or foreign record', () => {

@@ -360,6 +360,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/add-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Give an address to an account that has none
+         * @description Only for an account whose address is a placeholder (`emailMissing`). Where email can be sent, the address waits in `pendingEmail` until the link emailed to it is opened (`POST /api/auth/verify-email`), which sets it, verified; giving another address replaces it. Without a mail server it is set at once, unverified, outside production.
+         */
+        post: operations["AuthController_addEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/delete-account": {
         parameters: {
             query?: never;
@@ -3311,6 +3331,8 @@ export interface components {
          *       "username": "writer",
          *       "authProvider": "local",
          *       "emailVerified": true,
+         *       "emailMissing": true,
+         *       "pendingEmail": "writer@example.com",
          *       "twoFactorEnabled": true,
          *       "isNewUser": true
          *     }
@@ -3325,6 +3347,13 @@ export interface components {
             /** @enum {string} */
             authProvider: "local" | "google" | "keycloak";
             emailVerified: boolean;
+            /** @description True when the account has no real address: `email` is then a placeholder on the reserved `.invalid` domain, no mail is ever sent to it, and the writer is asked for an address (`POST /api/auth/add-email`). */
+            emailMissing: boolean;
+            /**
+             * @description The address given in place of the placeholder, until the link sent to it is opened (`POST /api/auth/verify-email`).
+             * @example writer@example.com
+             */
+            pendingEmail?: string;
             twoFactorEnabled: boolean;
             /** @description Sent by sign-in flows that can create the account (OAuth); true when it did */
             isNewUser?: boolean;
@@ -3337,6 +3366,8 @@ export interface components {
          *         "username": "writer",
          *         "authProvider": "local",
          *         "emailVerified": true,
+         *         "emailMissing": true,
+         *         "pendingEmail": "writer@example.com",
          *         "twoFactorEnabled": true,
          *         "isNewUser": true
          *       },
@@ -3487,6 +3518,8 @@ export interface components {
          *       "avatarUrl": "https://thoughty.example.com/callback",
          *       "authProvider": "local",
          *       "emailVerified": true,
+         *       "emailMissing": true,
+         *       "pendingEmail": "writer@example.com",
          *       "twoFactorEnabled": true,
          *       "createdAt": "2026-06-24T10:00:00.000Z"
          *     }
@@ -3499,6 +3532,13 @@ export interface components {
             /** @enum {string} */
             authProvider: "local" | "google" | "keycloak";
             emailVerified: boolean;
+            /** @description True when the account has no real address: `email` is then a placeholder on the reserved `.invalid` domain, no mail is ever sent to it, and the writer is asked for an address (`POST /api/auth/add-email`). */
+            emailMissing: boolean;
+            /**
+             * @description The address given in place of the placeholder, until the link sent to it is opened (`POST /api/auth/verify-email`).
+             * @example writer@example.com
+             */
+            pendingEmail?: string;
             twoFactorEnabled: boolean;
             /** Format: date-time */
             createdAt: string;
@@ -3555,6 +3595,18 @@ export interface components {
         };
         /**
          * @example {
+         *       "email": "writer@example.com"
+         *     }
+         */
+        AddEmailDto: {
+            /**
+             * @description Up to 255 characters; an address on the reserved `.invalid` domain is refused with `AUTH_EMAIL_UNDELIVERABLE`.
+             * @example writer@example.com
+             */
+            email: string;
+        };
+        /**
+         * @example {
          *       "password": "Password123!"
          *     }
          */
@@ -3583,7 +3635,10 @@ export interface components {
          *     }
          */
         RegisterDto: {
-            /** @example user@example.com */
+            /**
+             * @description Up to 255 characters; an address on the reserved `.invalid` domain is refused with `AUTH_EMAIL_UNDELIVERABLE`.
+             * @example user@example.com
+             */
             email: string;
             /**
              * @description At least 8 characters, with an uppercase and a lowercase letter, a number and one of `!@#$%^&*(),.?":{}|<>`; a string that breaks only this rule is refused with `AUTH_WEAK_PASSWORD`.
@@ -12723,7 +12778,7 @@ export interface components {
          * @example VALIDATION_FAILED
          * @enum {string}
          */
-        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "FEATURE_DISABLED" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_WEAK_PASSWORD" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "AUTH_INVALID_SIGN_UP_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "ENTRY_CHAT_NO_MATCH" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "CONTENT_LOCKED" | "CONTENT_LOCKED_PRIVATE" | "CONTENT_PIN_NOT_SET" | "CONTENT_PIN_INCORRECT" | "CONTENT_PIN_BLOCKED" | "CONTENT_PIN_PROOF_REQUIRED" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "DIARY_AI_OFF" | "DIARY_AI_CONSENT_REQUIRED" | "SETTINGS_RESERVED" | "ENTRY_TEMPLATES_INVALID" | "ENTRY_TEMPLATE_NAME_TOO_LONG" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "COMPOSER_DRAFT_CONFLICT" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "ACCESS_TOKEN_NOT_FOUND" | "ACCESS_TOKEN_LIMIT_REACHED" | "ACCESS_TOKEN_INVALID" | "ACCESS_TOKEN_SCOPE_MISSING" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "CALENDAR_FILE_INVALID" | "CALENDAR_EVENT_LIMIT_REACHED" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "PERSON_DATE_BIRTHDAY_TWICE" | "PERSON_CONTACT_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_DIARY_OFF" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "MEMOIR_PHOTO_EMPTY" | "MEMOIR_PHOTO_NOT_IMAGE" | "MEMOIR_PHOTO_IN_USE" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "REVIEW_WEEK_EMPTY" | "REVIEW_REFLECTION_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "SOCIAL_CANNOT_SAVE_OWN_ENTRY" | "SOCIAL_CANNOT_MUTE_SELF" | "SOCIAL_CANNOT_BLOCK_SELF" | "COMMENT_NOT_FOUND" | "COMMENTS_CLOSED" | "COMMENTS_FOLLOWERS_ONLY" | "COMMENT_PIN_HIDDEN" | "FEATURE_REQUEST_NOT_FOUND" | "CONTACT_INVALID_REQUEST" | "CONTACT_NOT_CONFIGURED" | "CONTACT_NOT_SENT";
+        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "FEATURE_DISABLED" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_WEAK_PASSWORD" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "AUTH_INVALID_SIGN_UP_TOKEN" | "AUTH_EMAIL_UNDELIVERABLE" | "AUTH_EMAIL_ALREADY_SET" | "AUTH_EMAIL_MISSING" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "ENTRY_CHAT_NO_MATCH" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "CONTENT_LOCKED" | "CONTENT_LOCKED_PRIVATE" | "CONTENT_PIN_NOT_SET" | "CONTENT_PIN_INCORRECT" | "CONTENT_PIN_BLOCKED" | "CONTENT_PIN_PROOF_REQUIRED" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "DIARY_AI_OFF" | "DIARY_AI_CONSENT_REQUIRED" | "SETTINGS_RESERVED" | "ENTRY_TEMPLATES_INVALID" | "ENTRY_TEMPLATE_NAME_TOO_LONG" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "COMPOSER_DRAFT_CONFLICT" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "ACCESS_TOKEN_NOT_FOUND" | "ACCESS_TOKEN_LIMIT_REACHED" | "ACCESS_TOKEN_INVALID" | "ACCESS_TOKEN_SCOPE_MISSING" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "CALENDAR_FILE_INVALID" | "CALENDAR_EVENT_LIMIT_REACHED" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "PERSON_DATE_BIRTHDAY_TWICE" | "PERSON_CONTACT_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_DIARY_OFF" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "MEMOIR_PHOTO_EMPTY" | "MEMOIR_PHOTO_NOT_IMAGE" | "MEMOIR_PHOTO_IN_USE" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "REVIEW_WEEK_EMPTY" | "REVIEW_REFLECTION_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "SOCIAL_CANNOT_SAVE_OWN_ENTRY" | "SOCIAL_CANNOT_MUTE_SELF" | "SOCIAL_CANNOT_BLOCK_SELF" | "COMMENT_NOT_FOUND" | "COMMENTS_CLOSED" | "COMMENTS_FOLLOWERS_ONLY" | "COMMENT_PIN_HIDDEN" | "FEATURE_REQUEST_NOT_FOUND" | "CONTACT_INVALID_REQUEST" | "CONTACT_NOT_CONFIGURED" | "CONTACT_NOT_SENT";
         /**
          * @example {
          *       "statusCode": 401,
@@ -12820,6 +12875,8 @@ export interface operations {
                      *         "username": "writer",
                      *         "authProvider": "local",
                      *         "emailVerified": true,
+                     *         "emailMissing": true,
+                     *         "pendingEmail": "writer@example.com",
                      *         "twoFactorEnabled": true,
                      *         "isNewUser": true
                      *       },
@@ -12884,6 +12941,8 @@ export interface operations {
                      *         "username": "writer",
                      *         "authProvider": "local",
                      *         "emailVerified": true,
+                     *         "emailMissing": true,
+                     *         "pendingEmail": "writer@example.com",
                      *         "twoFactorEnabled": true,
                      *         "isNewUser": true
                      *       },
@@ -13121,6 +13180,8 @@ export interface operations {
                      *         "username": "writer",
                      *         "authProvider": "local",
                      *         "emailVerified": true,
+                     *         "emailMissing": true,
+                     *         "pendingEmail": "writer@example.com",
                      *         "twoFactorEnabled": true,
                      *         "isNewUser": true
                      *       },
@@ -13242,6 +13303,8 @@ export interface operations {
                      *         "username": "writer",
                      *         "authProvider": "local",
                      *         "emailVerified": true,
+                     *         "emailMissing": true,
+                     *         "pendingEmail": "writer@example.com",
                      *         "twoFactorEnabled": true,
                      *         "isNewUser": true
                      *       },
@@ -13546,6 +13609,8 @@ export interface operations {
                      *       "avatarUrl": "https://thoughty.example.com/callback",
                      *       "authProvider": "local",
                      *       "emailVerified": true,
+                     *       "emailMissing": true,
+                     *       "pendingEmail": "writer@example.com",
                      *       "twoFactorEnabled": true,
                      *       "createdAt": "2026-06-24T10:00:00.000Z"
                      *     }
@@ -13799,6 +13864,23 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
+            /** @description The address the link was sent to has since gone to another account (`AUTH_EMAIL_TAKEN`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 409,
+                     *       "message": "The address the link was sent to has since gone to another account (`AUTH_EMAIL_TAKEN`)",
+                     *       "error": "Conflict",
+                     *       "code": "CONFLICT"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     AuthController_resendVerificationEmail: {
@@ -13810,7 +13892,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Verification email sent if needed */
+            /** @description Verification email sent if needed, to the address waiting to replace a placeholder when there is one */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -13825,6 +13907,23 @@ export interface operations {
                     "application/json": components["schemas"]["SuccessMessageResponseDto"];
                 };
             };
+            /** @description The account has no address yet (`AUTH_EMAIL_MISSING`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "The account has no address yet (`AUTH_EMAIL_MISSING`)",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
             /** @description No mail server is configured (`EMAIL_DELIVERY_NOT_CONFIGURED`) */
             503: {
                 headers: {
@@ -13835,6 +13934,100 @@ export interface operations {
                      * @example {
                      *       "statusCode": 503,
                      *       "message": "No mail server is configured (`EMAIL_DELIVERY_NOT_CONFIGURED`)",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    AuthController_addEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "email": "writer@example.com"
+                 *     }
+                 */
+                "application/json": components["schemas"]["AddEmailDto"];
+            };
+        };
+        responses: {
+            /** @description The account, with the address waiting or set */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": 1,
+                     *       "username": "Daily Journal",
+                     *       "email": "user@example.com",
+                     *       "avatarUrl": "https://thoughty.example.com/callback",
+                     *       "authProvider": "local",
+                     *       "emailVerified": true,
+                     *       "emailMissing": true,
+                     *       "pendingEmail": "writer@example.com",
+                     *       "twoFactorEnabled": true,
+                     *       "createdAt": "2026-06-24T10:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["UserResponseDto"];
+                };
+            };
+            /** @description Not an address, or one no mail reaches (`AUTH_EMAIL_UNDELIVERABLE`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "Not an address, or one no mail reaches (`AUTH_EMAIL_UNDELIVERABLE`)",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The account already has an address (`AUTH_EMAIL_ALREADY_SET`), or another account has this one (`AUTH_EMAIL_TAKEN`) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 409,
+                     *       "message": "The account already has an address (`AUTH_EMAIL_ALREADY_SET`), or another account has this one (`AUTH_EMAIL_TAKEN`)",
+                     *       "error": "Conflict",
+                     *       "code": "CONFLICT"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description No mail server is configured, in production (`EMAIL_DELIVERY_NOT_CONFIGURED`) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "No mail server is configured, in production (`EMAIL_DELIVERY_NOT_CONFIGURED`)",
                      *       "error": "Service Unavailable",
                      *       "code": "SERVICE_UNAVAILABLE"
                      *     }
@@ -13931,6 +14124,8 @@ export interface operations {
                      *         "username": "writer",
                      *         "authProvider": "local",
                      *         "emailVerified": true,
+                     *         "emailMissing": true,
+                     *         "pendingEmail": "writer@example.com",
                      *         "twoFactorEnabled": true,
                      *         "isNewUser": true
                      *       },
@@ -14042,6 +14237,8 @@ export interface operations {
                      *         "username": "writer",
                      *         "authProvider": "local",
                      *         "emailVerified": true,
+                     *         "emailMissing": true,
+                     *         "pendingEmail": "writer@example.com",
                      *         "twoFactorEnabled": true,
                      *         "isNewUser": true
                      *       },

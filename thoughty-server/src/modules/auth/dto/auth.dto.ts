@@ -9,11 +9,11 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { STRONG_PASSWORD_DESCRIPTION, StrongPassword } from './strong-password.decorator';
+import { DELIVERABLE_EMAIL_DESCRIPTION, DeliverableEmail } from './deliverable-email.decorator';
 
 export class RegisterDto {
-  @ApiProperty({ example: 'user@example.com' })
-  @IsEmail({}, { message: 'Invalid email format' })
-  @MaxLength(255)
+  @ApiProperty({ example: 'user@example.com', description: DELIVERABLE_EMAIL_DESCRIPTION })
+  @DeliverableEmail()
   email: string;
 
   @ApiProperty({ example: 'Password123!', description: STRONG_PASSWORD_DESCRIPTION })
@@ -100,6 +100,13 @@ export class ResetPasswordDto {
   newPassword: string;
 }
 
+/** The address that replaces an account's placeholder (it had none). */
+export class AddEmailDto {
+  @ApiProperty({ example: 'writer@example.com', description: DELIVERABLE_EMAIL_DESCRIPTION })
+  @DeliverableEmail()
+  email: string;
+}
+
 export class VerifyEmailDto {
   @ApiProperty()
   @IsString()
@@ -112,6 +119,12 @@ export class DeleteAccountDto {
   @IsString()
   password?: string;
 }
+
+const EMAIL_MISSING_DESCRIPTION =
+  'True when the account has no real address: `email` is then a placeholder on the reserved `.invalid` domain, ' +
+  'no mail is ever sent to it, and the writer is asked for an address (`POST /api/auth/add-email`).';
+const PENDING_EMAIL_DESCRIPTION =
+  'The address given in place of the placeholder, until the link sent to it is opened (`POST /api/auth/verify-email`).';
 
 /** The signed-in user a new session reports. */
 export class AuthUserDto {
@@ -129,6 +142,12 @@ export class AuthUserDto {
 
   @ApiProperty()
   emailVerified: boolean;
+
+  @ApiProperty({ description: EMAIL_MISSING_DESCRIPTION })
+  emailMissing: boolean;
+
+  @ApiPropertyOptional({ description: PENDING_EMAIL_DESCRIPTION, example: 'writer@example.com' })
+  pendingEmail?: string;
 
   @ApiProperty()
   twoFactorEnabled: boolean;
@@ -217,6 +236,12 @@ export class UserResponseDto {
 
   @ApiProperty()
   emailVerified: boolean;
+
+  @ApiProperty({ description: EMAIL_MISSING_DESCRIPTION })
+  emailMissing: boolean;
+
+  @ApiPropertyOptional({ description: PENDING_EMAIL_DESCRIPTION, example: 'writer@example.com' })
+  pendingEmail?: string;
 
   @ApiProperty()
   twoFactorEnabled: boolean;

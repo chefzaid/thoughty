@@ -42,6 +42,7 @@ import {
   ForgotPasswordDto,
   ResetPasswordDto,
   VerifyEmailDto,
+  AddEmailDto,
   DeleteAccountDto,
   AuthResponseDto,
   SessionResponseDto,
@@ -420,6 +421,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Verify email with token' })
   @ApiResponse({ status: 200, description: 'Email verified successfully', type: SuccessMessageResponseDto })
   @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  @ApiResponse({ status: 409, description: 'The address the link was sent to has since gone to another account (`AUTH_EMAIL_TAKEN`)' })
   async verifyEmail(@Body() dto: VerifyEmailDto): Promise<SuccessMessageResponseDto> {
     return this.emailVerificationService.verifyEmail(dto.token);
   }
@@ -430,12 +432,41 @@ export class AuthController {
   @Throttle(throttleDefault(RATE_LIMITS.accountSecurity))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Resend the current user email verification message' })
-  @ApiResponse({ status: 200, description: 'Verification email sent if needed', type: SuccessMessageResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Verification email sent if needed, to the address waiting to replace a placeholder when there is one',
+    type: SuccessMessageResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'The account has no address yet (`AUTH_EMAIL_MISSING`)' })
   @ApiResponse({ status: 503, description: 'No mail server is configured (`EMAIL_DELIVERY_NOT_CONFIGURED`)' })
   async resendVerificationEmail(
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<SuccessMessageResponseDto> {
     return this.emailVerificationService.sendVerificationEmail(user.userId, { requireDelivery: true });
+  }
+
+  @Post('add-email')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Throttle(throttleDefault(RATE_LIMITS.accountSecurity))
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Give an address to an account that has none',
+    description:
+      'Only for an account whose address is a placeholder (`emailMissing`). Where email can be sent, the address ' +
+      'waits in `pendingEmail` until the link emailed to it is opened (`POST /api/auth/verify-email`), which sets it, ' +
+      'verified; giving another address replaces it. Without a mail server it is set at once, unverified, outside production.',
+  })
+  @ApiResponse({ status: 200, description: 'The account, with the address waiting or set', type: UserResponseDto })
+  @ApiResponse({ status: 400, description: 'Not an address, or one no mail reaches (`AUTH_EMAIL_UNDELIVERABLE`)' })
+  @ApiResponse({
+    status: 409,
+    description: 'The account already has an address (`AUTH_EMAIL_ALREADY_SET`), or another account has this one (`AUTH_EMAIL_TAKEN`)',
+  })
+  @ApiResponse({ status: 503, description: 'No mail server is configured, in production (`EMAIL_DELIVERY_NOT_CONFIGURED`)' })
+  async addEmail(@CurrentUser() user: AuthenticatedUser, @Body() dto: AddEmailDto): Promise<UserResponseDto> {
+    await this.emailVerificationService.addEmail(user.userId, dto.email);
+    return this.accountService.getMe(user.userId);
   }
 
   @Post('delete-account')

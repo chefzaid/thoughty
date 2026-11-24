@@ -85,9 +85,8 @@ type MockAuthValue = ReturnType<typeof useAuth>;
 
 function createAuthValue(overrides: Partial<MockAuthValue> = {}): MockAuthValue {
     return {
-        user: { id: 1, username: 'johndoe', email: 'john@example.com', authProvider: 'local', emailVerified: false, twoFactorEnabled: false },
-        loading: false,
-        error: null,
+        user: { id: 1, username: 'johndoe', email: 'john@example.com', authProvider: 'local', emailVerified: false, emailMissing: false, twoFactorEnabled: false },
+        loading: false, error: null,
         isAuthenticated: true, sessionKey: 0, offline: false, unreachable: false, retrySession: vi.fn(),
         register: vi.fn().mockResolvedValue({ success: true }),
         completeSignUp: vi.fn().mockResolvedValue({ success: true }),
@@ -101,6 +100,7 @@ function createAuthValue(overrides: Partial<MockAuthValue> = {}): MockAuthValue 
         resetPassword: vi.fn().mockResolvedValue({ success: true }),
         verifyEmail: vi.fn().mockResolvedValue({ success: true }),
         resendVerificationEmail: vi.fn().mockResolvedValue({ success: true }),
+        addEmail: vi.fn().mockResolvedValue({ success: true }), refreshAccountEmail: vi.fn().mockResolvedValue(undefined),
         deleteAccount: vi.fn().mockResolvedValue({ success: true }),
         authFetch: vi.fn().mockResolvedValue(new Response()),
         getAccessToken: vi.fn().mockReturnValue('token'),
@@ -221,7 +221,7 @@ describe('ProfilePage', () => {
 
         it('displays verified account status for verified users', () => {
             mockedUseAuth.mockReturnValue(createAuthValue({
-                user: { id: 1, username: 'johndoe', email: 'john@example.com', authProvider: 'local', emailVerified: true, twoFactorEnabled: false },
+                user: { id: 1, username: 'johndoe', email: 'john@example.com', authProvider: 'local', emailVerified: true, emailMissing: false, twoFactorEnabled: false },
             }));
 
             render(<ProfilePage {...defaultProps} />);

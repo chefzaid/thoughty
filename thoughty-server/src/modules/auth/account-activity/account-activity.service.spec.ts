@@ -100,9 +100,11 @@ describe('AccountActivityService', () => {
 
   it('sends nothing to an account without an address, and logs a failed send without the address', async () => {
     const { events, email, service } = setup();
-    events.exists.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
-    await service.recordSignIn({ id: 4, email: '' });
-    await service.emailsSettled();
+    for (const address of ['', 'user-4@invalid']) {
+      events.exists.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+      await service.recordSignIn({ id: 4, email: address });
+      await service.emailsSettled();
+    }
     expect(email.sendRenderedEmail).not.toHaveBeenCalled();
 
     const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);

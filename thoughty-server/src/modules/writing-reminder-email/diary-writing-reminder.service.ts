@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { apiError } from '@/common/errors';
 import { isValidTimeZone } from '@/common/utils/time-zone.util';
+import { canReceiveEmail } from '@/common/utils/placeholder-email.util';
 import { Diary, DiaryWritingReminder, User, WritingReminderEmail } from '@/database/entities';
 import { EmailService } from '@/modules/auth/services/email.service';
 import type { DiaryWritingRemindersDto, UpdateDiaryWritingReminderDto } from './dto';
@@ -39,7 +40,7 @@ export class DiaryWritingReminderService {
         timeZone: reminder.timeZone,
         nextSendAt: reminder.nextSendAt.toISOString(),
       })),
-      emailAvailable: Boolean(user?.email && user.emailVerified && this.emailService.isConfigured()),
+      emailAvailable: canReceiveEmail(user?.email, user?.emailVerified) && this.emailService.isConfigured(),
     };
   }
 

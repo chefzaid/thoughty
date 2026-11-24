@@ -28,6 +28,7 @@ export {
   type UnsubscribePageProps,
   type VerifyEmailPageProps,
   type SessionUnreachablePageProps,
+  type AddEmailPageProps,
 } from './publicShellProps';
 
 export type AuthenticatedLayoutProps = Omit<ComponentProps<typeof AuthenticatedAppLayout>, 'children'>;

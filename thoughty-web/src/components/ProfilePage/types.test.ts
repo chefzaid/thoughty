@@ -49,6 +49,11 @@ describe('ProfilePage types utilities', () => {
       expect(result.email).toBe('user@example.com');
     });
 
+    it('never takes a placeholder as the profile email', () => {
+      const user: ProfileUser = { email: 'user-1@invalid', emailMissing: true };
+      expect(mergeUserProfileDefaults({}, user).email).toBeUndefined();
+    });
+
     it('does not overwrite existing email', () => {
       const prev: ProfileConfig = { email: 'existing@example.com' };
       const user: ProfileUser = { email: 'user@example.com' };

@@ -50,6 +50,9 @@ export const API_ERROR_MESSAGES = {
   AUTH_INVALID_RESET_TOKEN: 'Invalid or expired reset token',
   AUTH_INVALID_VERIFICATION_TOKEN: 'Invalid or expired verification token',
   AUTH_INVALID_SIGN_UP_TOKEN: 'Invalid, expired, or already used sign-up link',
+  AUTH_EMAIL_UNDELIVERABLE: 'No email can reach this address. Enter an address you can read.',
+  AUTH_EMAIL_ALREADY_SET: 'This account already has an email address.',
+  AUTH_EMAIL_MISSING: 'Add an email address to your account first.',
   EMAIL_DELIVERY_NOT_CONFIGURED: 'Email delivery is not configured.',
 
   // Two-factor authentication.

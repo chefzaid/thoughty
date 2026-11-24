@@ -66,10 +66,10 @@ describe('TimeCapsuleDeliveryService', () => {
     expect(emailService.sendRenderedEmail.mock.calls[0][1].text).toContain('http://localhost:5173/journal?entry=11');
   });
 
-  it('opens capsules without emailing an unverified or missing address, or when this server cannot send email', async () => {
+  it('opens capsules without emailing an unverified address or a placeholder, or when this server cannot send email', async () => {
     withBatches([
       { id: 1, email: 'writer@example.com', email_verified: false },
-      { id: 2, email: null, email_verified: true },
+      { id: 2, email: 'user-2@invalid', email_verified: true },
     ]);
     await expect(service.deliverDue(now)).resolves.toBe(0);
     expect(timeCapsuleService.openCapsule).toHaveBeenCalledTimes(2);

@@ -36,6 +36,7 @@ import { checkWritersDaySent } from "./mockApp.writers-day";
 import { handleFeatureFlagRoutes } from "./mockApp.feature-flags";
 import { handleSignUpRoutes } from "./mockApp.sign-up";
 import { handlePasswordResetRoutes } from "./mockApp.password-reset";
+import { handleAccountEmailRoutes } from "./mockApp.account-email";
 import { handleContentLockRoutes, readMockUnlock } from "./mockApp.content-lock";
 import { handleAccountActivityRoutes } from "./mockApp.account-activity";
 import { handleContactRoutes } from "./mockApp.contact";
@@ -345,7 +346,7 @@ export async function registerMockAppRoutes(page: Page, state: MockAppState) {
     if (await handleSignUpRoutes(context) || await handlePasswordResetRoutes(context)) {
       return;
     }
-    if (await handleAccountActivityRoutes(context) || await handleAuthRoutes(context)) {
+    if (await handleAccountEmailRoutes(context) || await handleAccountActivityRoutes(context) || await handleAuthRoutes(context)) {
       return;
     }
     if (await handleFeatureFlagRoutes(context)) {

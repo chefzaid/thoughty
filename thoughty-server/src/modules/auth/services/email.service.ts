@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
-import { escapeHtml } from '@/common/utils';
+import { escapeHtml, isPlaceholderEmail } from '@/common/utils';
 
 /** Localized copy for the weekly guided-memoir question email. */
 export interface MemoirQuestionEmail {
@@ -88,17 +88,27 @@ export class EmailService {
     );
   }
 
-  async sendPasswordResetEmail(toEmail: string, resetUrl: string): Promise<void> {
+  /**
+   * Sends one email from `SMTP_FROM` (else `SMTP_USER`). An address on the reserved `.invalid` domain,
+   * such as the placeholder of an account that had none, is skipped: no mail can reach it.
+   */
+  private async deliver(toEmail: string, mail: Omit<nodemailer.SendMailOptions, 'from' | 'to'>): Promise<void> {
     if (!this.transporter) {
       throw new Error('Email service not configured');
     }
-
-    const fromAddress =
-      this.configService.get<string>('SMTP_FROM') || this.configService.get<string>('SMTP_USER');
-
+    if (isPlaceholderEmail(toEmail)) {
+      this.logger.debug('Email to a placeholder address skipped');
+      return;
+    }
     await this.transporter.sendMail({
-      from: fromAddress,
+      ...mail,
+      from: this.configService.get<string>('SMTP_FROM') || this.configService.get<string>('SMTP_USER'),
       to: toEmail,
+    });
+  }
+
+  async sendPasswordResetEmail(toEmail: string, resetUrl: string): Promise<void> {
+    await this.deliver(toEmail, {
       subject: 'Password Reset Request - Thoughty',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -141,16 +151,7 @@ export class EmailService {
   }
 
   async sendEmailVerificationEmail(toEmail: string, verificationUrl: string): Promise<void> {
-    if (!this.transporter) {
-      throw new Error('Email service not configured');
-    }
-
-    const fromAddress =
-      this.configService.get<string>('SMTP_FROM') || this.configService.get<string>('SMTP_USER');
-
-    await this.transporter.sendMail({
-      from: fromAddress,
-      to: toEmail,
+    await this.deliver(toEmail, {
       subject: 'Verify your Thoughty email',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -280,16 +281,7 @@ export class EmailService {
     code: string,
     expiresInMinutes: number,
   ): Promise<void> {
-    if (!this.transporter) {
-      throw new Error('Email service not configured');
-    }
-
-    const fromAddress =
-      this.configService.get<string>('SMTP_FROM') || this.configService.get<string>('SMTP_USER');
-
-    await this.transporter.sendMail({
-      from: fromAddress,
-      to: toEmail,
+    await this.deliver(toEmail, {
       subject: 'Your Thoughty security code',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -305,17 +297,9 @@ export class EmailService {
   }
 
   async sendMemoirQuestionEmail(toEmail: string, email: MemoirQuestionEmail): Promise<void> {
-    if (!this.transporter) {
-      throw new Error('Email service not configured');
-    }
-
-    const fromAddress =
-      this.configService.get<string>('SMTP_FROM') || this.configService.get<string>('SMTP_USER');
     const actionUrl = escapeHtml(email.actionUrl);
 
-    await this.transporter.sendMail({
-      from: fromAddress,
-      to: toEmail,
+    await this.deliver(toEmail, {
       subject: email.subject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -337,13 +321,7 @@ export class EmailService {
   }
 
   async sendRenderedEmail(toEmail: string, email: RenderedEmail): Promise<void> {
-    if (!this.transporter) {
-      throw new Error('Email service not configured');
-    }
-
-    await this.transporter.sendMail({
-      from: this.configService.get<string>('SMTP_FROM') || this.configService.get<string>('SMTP_USER'),
-      to: toEmail,
+    await this.deliver(toEmail, {
       subject: email.subject,
       html: email.html,
       text: email.text,
@@ -353,13 +331,7 @@ export class EmailService {
 
   /** Sends text only, no HTML, so nothing the sender wrote is ever rendered as markup. */
   async sendPlainTextEmail(toEmail: string, email: PlainTextEmail): Promise<void> {
-    if (!this.transporter) {
-      throw new Error('Email service not configured');
-    }
-
-    await this.transporter.sendMail({
-      from: this.configService.get<string>('SMTP_FROM') || this.configService.get<string>('SMTP_USER'),
-      to: toEmail,
+    await this.deliver(toEmail, {
       replyTo: email.replyTo,
       subject: email.subject,
       text: email.text,
@@ -367,16 +339,7 @@ export class EmailService {
   }
 
   async sendAccountDeletionEmail(toEmail: string): Promise<void> {
-    if (!this.transporter) {
-      throw new Error('Email service not configured');
-    }
-
-    const fromAddress =
-      this.configService.get<string>('SMTP_FROM') || this.configService.get<string>('SMTP_USER');
-
-    await this.transporter.sendMail({
-      from: fromAddress,
-      to: toEmail,
+    await this.deliver(toEmail, {
       subject: 'Account Deleted - Thoughty',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">

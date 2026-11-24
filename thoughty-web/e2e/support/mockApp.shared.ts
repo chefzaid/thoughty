@@ -376,6 +376,7 @@ export function createMockAppState(
       email: "test@example.com",
       authProvider: "local",
       emailVerified: false,
+      emailMissing: false,
       twoFactorEnabled: false,
       ...options.user,
     },

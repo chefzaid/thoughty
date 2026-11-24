@@ -2,7 +2,7 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { apiError } from '@/common/errors';
-import { sanitizeString } from '@/common/utils';
+import { isPlaceholderEmail, sanitizeString } from '@/common/utils';
 import { RefreshToken, Setting, SignUpRequest, User } from '@/database/entities';
 import { saveNewAccount } from './default-diary';
 import { freeUsername, takenConflict, uniqueViolationOf, USERNAME_MAX_LENGTH } from './free-username';
@@ -89,6 +89,9 @@ export class ProviderAccountService {
     if (!user) {
       return { user: await this.create(identity), isNewUser: true };
     }
+    if (linked && isPlaceholderEmail(linked.email)) {
+      return { user: await this.adoptAddress(linked, identity), isNewUser: false };
+    }
     if (linked && user.emailVerified) {
       return { user, isNewUser: false };
     }
@@ -110,6 +113,25 @@ export class ProviderAccountService {
   /** Links a verified account: its owner already proved the address, so nothing else changes. */
   private async link(user: User, identity: ProviderIdentity): Promise<User> {
     return this.userRepository.save(Object.assign(user, this.linkFields(user, identity)));
+  }
+
+  /**
+   * A linked account that had no address (a placeholder stands in) takes the one its provider has just
+   * proven, verified. When another account has that address, it keeps its placeholder and the writer is
+   * asked for one, as any other.
+   */
+  private async adoptAddress(user: User, identity: ProviderIdentity): Promise<User> {
+    if (await this.userRepository.exists({ where: { email: identity.email } })) {
+      return user;
+    }
+    return this.userRepository.save(
+      Object.assign(user, this.linkFields(user, identity), {
+        email: identity.email,
+        pendingEmail: null,
+        emailVerificationToken: null,
+        emailVerificationTokenExpires: null,
+      }),
+    );
   }
 
   /** Links an unverified account and drops every way in that its registrant set up. */

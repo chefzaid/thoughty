@@ -24,6 +24,7 @@ const CompleteSignUpPage = lazy(() => import('./components/CompleteSignUpPage/Co
 const ResetPasswordPage = lazy(() => import('./components/ResetPasswordPage/ResetPasswordPage'));
 const UnsubscribePage = lazy(() => import('./components/UnsubscribePage/UnsubscribePage'));
 const SessionUnreachablePage = lazy(() => import('./components/SessionUnreachable/SessionUnreachablePage'));
+const AddEmailPage = lazy(() => import('./components/AddEmailPage/AddEmailPage'));
 const AuthenticatedAppLayout = lazy(() => import('./routes/AuthenticatedAppLayout'));
 const AuthenticatedRoutes = lazy(() => import('./routes/AuthenticatedRoutes'));
 
@@ -62,6 +63,7 @@ function AppShell() {
     authenticatedRoutesProps,
     introPageProps,
     sessionUnreachablePageProps,
+    addEmailPageProps,
     diaries,
     aiConsent,
   } = useAppShellModel();
@@ -130,6 +132,11 @@ function AppShell() {
     }
 
     return renderPublic(renderLazy(<AuthPage {...authPageProps} />), authPageProps.t);
+  }
+
+  // An account without an email address gives one first
+  if (addEmailPageProps) {
+    return renderPublic(renderLazy(<AddEmailPage {...addEmailPageProps} />), addEmailPageProps.t);
   }
 
   // Signing in lands in the journal, or in simple memoir mode once the settings say so

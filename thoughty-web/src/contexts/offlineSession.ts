@@ -57,14 +57,17 @@ function write(key: string, value: unknown): void {
 }
 
 export function rememberOfflineUser(user: User): void {
-  const { id, email, username, authProvider, emailVerified, twoFactorEnabled } = user;
-  write(USER_KEY, { id, email, username, authProvider, emailVerified, twoFactorEnabled });
+  const { id, email, username, authProvider, emailVerified, emailMissing, twoFactorEnabled } = user;
+  write(USER_KEY, { id, email, username, authProvider, emailVerified, emailMissing, twoFactorEnabled });
 }
 
-/** The writer last signed in on this browser, or null when there is none or it cannot be read. */
+/**
+ * The writer last signed in on this browser, or null when there is none or it cannot be read. One remembered
+ * before accounts could lack an address has no `emailMissing`: it had one.
+ */
 export function readOfflineUser(): User | null {
   const stored = read(USER_KEY);
-  return isRememberedUser(stored) ? stored : null;
+  return isRememberedUser(stored) ? { ...stored, emailMissing: stored.emailMissing === true } : null;
 }
 
 export function rememberOfflineDisplay(config: Config): void {

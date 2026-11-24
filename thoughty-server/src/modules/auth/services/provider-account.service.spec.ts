@@ -70,6 +70,35 @@ describe('ProviderAccountService', () => {
     service = new ProviderAccountService(users as never, dataSource as never);
   });
 
+  it('gives a linked account that had no address the one its provider proved, verified', async () => {
+    const linked = account({ authProvider: 'google', providerId: 'google-sub', email: 'user-7@invalid', pendingEmail: 'typed@example.com' });
+    users.findOne.mockResolvedValueOnce(linked);
+
+    const { user } = await service.signIn(GOOGLE);
+
+    expect(users.exists).toHaveBeenCalledWith({ where: { email: 'victim@example.com' } });
+    expect(user).toMatchObject({
+      email: 'victim@example.com',
+      emailVerified: true,
+      pendingEmail: null,
+      emailVerificationToken: null,
+      // Its own subject proved the address: nothing it set up is dropped
+      passwordHash: '$2b$12$registrant',
+      twoFactorEnabled: true,
+    });
+    expect(dataSource.transaction).not.toHaveBeenCalled();
+  });
+
+  it('leaves the placeholder of a linked account when another account has the proven address', async () => {
+    const linked = account({ authProvider: 'google', providerId: 'google-sub', email: 'user-7@invalid' });
+    users.findOne.mockResolvedValueOnce(linked);
+    users.exists.mockResolvedValue(true);
+
+    await expect(service.signIn(GOOGLE)).resolves.toEqual({ user: linked, isNewUser: false });
+    expect(linked.email).toBe('user-7@invalid');
+    expect(users.save).not.toHaveBeenCalled();
+  });
+
   it('signs in the account linked to the subject, whatever its address now is', async () => {
     const linked = account({ authProvider: 'google', providerId: 'google-sub', email: 'old@example.com', emailVerified: true });
     users.findOne.mockResolvedValueOnce(linked);

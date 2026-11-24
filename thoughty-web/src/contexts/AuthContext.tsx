@@ -39,6 +39,10 @@ interface AuthContextValue {
   resetPassword: (token: string, newPassword: string) => Promise<AuthResult>;
   verifyEmail: (token: string) => Promise<AuthResult>;
   resendVerificationEmail: () => Promise<AuthResult>;
+  /** Gives an address to an account that has none (`user.emailMissing`). */
+  addEmail: (email: string) => Promise<AuthResult>;
+  /** Reads the account's address again, as a link opened in another tab may have set it. */
+  refreshAccountEmail: () => Promise<void>;
   deleteAccount: (password: string) => Promise<AuthResult>;
   authFetch: (url: string, options?: RequestInit) => Promise<Response>;
   getAccessToken: () => string | null;
@@ -84,6 +88,8 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     resetPassword,
     verifyEmail,
     resendVerificationEmail,
+    addEmail,
+    refreshAccountEmail,
     deleteAccount,
   } = useAccountActions({ authFetch, signOutLocally, setError, setUser });
 
@@ -108,6 +114,8 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     resetPassword,
     verifyEmail,
     resendVerificationEmail,
+    addEmail,
+    refreshAccountEmail,
     deleteAccount,
     authFetch,
     getAccessToken,
@@ -132,6 +140,8 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     resetPassword,
     verifyEmail,
     resendVerificationEmail,
+    addEmail,
+    refreshAccountEmail,
     deleteAccount,
     authFetch,
     getAccessToken,

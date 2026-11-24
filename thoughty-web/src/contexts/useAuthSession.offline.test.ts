@@ -9,7 +9,7 @@ const json = (body: unknown, status = 200) => ({
     json: async () => body,
 });
 
-const ADA = { id: 1, username: 'ada', email: 'ada@example.com', authProvider: 'local' as const, emailVerified: true, twoFactorEnabled: false };
+const ADA = { id: 1, username: 'ada', email: 'ada@example.com', authProvider: 'local' as const, emailVerified: true, emailMissing: false, twoFactorEnabled: false };
 
 type Answer = () => unknown;
 const unreachable: Answer = () => Promise.reject(new TypeError('Failed to fetch'));

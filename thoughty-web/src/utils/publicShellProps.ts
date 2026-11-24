@@ -14,6 +14,7 @@ import type LegalPage from '../components/LegalPage/LegalPage';
 import type UnsubscribePage from '../components/UnsubscribePage/UnsubscribePage';
 import type VerifyEmailPage from '../components/VerifyEmailPage/VerifyEmailPage';
 import type SessionUnreachablePage from '../components/SessionUnreachable/SessionUnreachablePage';
+import type AddEmailPage from '../components/AddEmailPage/AddEmailPage';
 import type { PublicViewType, TranslationFunction, ViewType } from '../types';
 import { resolveLanguage } from './language';
 
@@ -31,6 +32,7 @@ export type CompleteSignUpPageProps = ComponentProps<typeof CompleteSignUpPage>;
 export type ResetPasswordPageProps = ComponentProps<typeof ResetPasswordPage>;
 export type UnsubscribePageProps = ComponentProps<typeof UnsubscribePage>;
 export type SessionUnreachablePageProps = ComponentProps<typeof SessionUnreachablePage>;
+export type AddEmailPageProps = ComponentProps<typeof AddEmailPage>;
 
 type AppShellRoutingState = ReturnType<typeof import('../hooks/useAppShellRouting').useAppShellRouting>;
 

@@ -1,6 +1,7 @@
 import type { FontFamilyPreference, LetterSpacingPreference, LineSpacingPreference, TranslationFunction } from '../../types';
 import type { User } from '../../contexts/authTypes';
 import { formatEntryDate } from '../../utils/entryDate';
+import { ownEmail } from '../../utils/accountEmail';
 import { validateNewPassword } from '../AuthPage/types';
 
 export type { TranslationFunction };
@@ -43,7 +44,7 @@ export interface ProfileConfig {
 }
 
 /** The signed-in user's fields the profile page reads. */
-export type ProfileUser = Partial<Pick<User, 'username' | 'email' | 'avatarUrl' | 'authProvider' | 'emailVerified'>>;
+export type ProfileUser = Partial<Pick<User, 'username' | 'email' | 'emailMissing' | 'avatarUrl' | 'authProvider' | 'emailVerified'>>;
 
 export interface ProfileStats {
   firstEntryYear?: number;
@@ -63,8 +64,9 @@ export const mergeUserProfileDefaults = (prev: ProfileConfig, user: ProfileUser 
 
   const updates: Partial<ProfileConfig> = {};
 
-  if (user.email && !prev.email) {
-    updates.email = user.email;
+  const email = ownEmail(user);
+  if (email && !prev.email) {
+    updates.email = email;
   }
 
   if (user.username && (!prev.name || prev.name === 'User')) {

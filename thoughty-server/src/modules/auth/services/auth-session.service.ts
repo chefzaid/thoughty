@@ -16,6 +16,7 @@ import { AuthResponseDto, SessionResponseDto } from '../dto';
 import { getSigningSecret } from '../auth-secrets';
 import { REFRESH_TOKEN_TTL_MS } from '../refresh-token-cookie';
 import { AccountActivityService } from '../account-activity/account-activity.service';
+import { accountEmailFields } from './account-email';
 
 /** A newly issued session; the controller moves `refreshToken` into an httpOnly cookie. */
 export interface IssuedSession extends AuthResponseDto {
@@ -88,6 +89,7 @@ export class AuthSessionService {
         username: user.username,
         authProvider: user.authProvider,
         emailVerified: user.emailVerified,
+        ...accountEmailFields(user),
         twoFactorEnabled: Boolean(user.twoFactorEnabled),
         ...(isNewUser === undefined ? {} : { isNewUser }),
       },

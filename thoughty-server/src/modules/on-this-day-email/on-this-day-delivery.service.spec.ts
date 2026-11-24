@@ -111,7 +111,7 @@ describe('OnThisDayDeliveryService', () => {
     withBatches([
       row({ user_id: 1, last_sent_on: '2026-10-27' }),
       row({ user_id: 2, email_verified: false }),
-      row({ user_id: 4, email: null }),
+      row({ user_id: 4, email: 'user-4@invalid' }),
     ]);
     await expect(service.deliverDue(now)).resolves.toBe(0);
     expect(entriesQueryService.findOnThisDay).not.toHaveBeenCalled();

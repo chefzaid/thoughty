@@ -45,6 +45,7 @@ import {
   type UnsubscribePageProps,
   type VerifyEmailPageProps,
   type SessionUnreachablePageProps,
+  type AddEmailPageProps,
 } from '../utils/appShellProps';
 import type { Diary, Entry, PublicViewType, ViewType } from '../types';
 import { landingViewFor } from '../utils/landingView';
@@ -76,6 +77,7 @@ interface AppShellModel {
   introPageProps: IntroPageProps;
   /** Set while the session goes on but Thoughty could not say whose it is (and no writer here is theirs). */
   sessionUnreachablePageProps: SessionUnreachablePageProps | null;
+  addEmailPageProps: AddEmailPageProps | null;
   diaries: Diary[];
   /** The consent dialog of a diary that asks before each AI request: the request waiting, its answer, and how to open it. */
   aiConsent: { request: AiConsentRequest | null; answer: (agreed: boolean) => void; requestConsent: RequestAiConsent };
@@ -435,6 +437,10 @@ export function useAppShellModel(): AppShellModel {
   const sessionUnreachablePageProps: SessionUnreachablePageProps | null = unreachable
     ? { t, theme: config.theme || 'dark', onRetry: retrySession, onSignOut: logout }
     : null;
+  // An account without an email address gives one before anything else (offline, it waits for the connection)
+  const addEmailPageProps: AddEmailPageProps | null = user?.emailMissing && !offline
+    ? { t, theme: config.theme || 'dark' }
+    : null;
 
   return {
     authLoading,
@@ -458,6 +464,7 @@ export function useAppShellModel(): AppShellModel {
     authenticatedRoutesProps,
     introPageProps,
     sessionUnreachablePageProps,
+    addEmailPageProps,
     /** The diaries, for the AI actions of pages that read a diary's entries without receiving them. */
     diaries: diariesState.diaries,
     aiConsent,

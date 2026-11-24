@@ -2,6 +2,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { Repository } from 'typeorm';
 import { apiError } from '@/common/errors';
 import { isValidTimeZone } from '@/common/utils/time-zone.util';
+import { canReceiveEmail } from '@/common/utils/placeholder-email.util';
 import type { Diary, OptInEmailSetting, User } from '@/database/entities';
 import type { EmailService } from '@/modules/auth/services/email.service';
 import type { OptInEmailSettingsDto, UpdateOptInEmailDto } from './dto';
@@ -29,7 +30,7 @@ export abstract class OptInEmailSettingsService {
       timeZone: setting?.timeZone ?? null,
       diaryId: setting?.diaryId ?? null,
       nextSendAt: setting?.enabled ? setting.nextSendAt.toISOString() : null,
-      emailAvailable: Boolean(user?.email && user.emailVerified && this.emailService.isConfigured()),
+      emailAvailable: canReceiveEmail(user?.email, user?.emailVerified) && this.emailService.isConfigured(),
     };
   }
 
