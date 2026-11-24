@@ -6,6 +6,7 @@ import { BackgroundTasks } from '@/common/utils/background-tasks.util';
 import { isPlaceholderEmail } from '@/common/utils/placeholder-email.util';
 import { AccountEvent, type AccountEventKind, Setting, type User } from '@/database/entities';
 import { describeEmailFailure, EmailService } from '../services/email.service';
+import { findAccountLanguage } from '../services/account-language';
 import { currentClientSoftware, type ClientSoftware } from './client-software';
 import { renderNewSignInEmail } from './new-sign-in-email';
 import type { AccountActivityResponseDto, AccountEventDto } from './dto';
@@ -181,12 +182,8 @@ export class AccountActivityService implements BeforeApplicationShutdown {
     try {
       if (isPlaceholderEmail(user.email) || !this.emailService.isConfigured()) return;
       if (!(await this.newBrowserEmailEnabled(user.id))) return;
-      const language = await this.settingRepository.findOne({
-        where: { userId: user.id, key: 'language' },
-        select: { value: true },
-      });
       const email = renderNewSignInEmail({
-        language: language?.value,
+        language: await findAccountLanguage(this.settingRepository, user.id),
         software,
         signedInAt,
         frontendUrl: this.configService.get<string>('FRONTEND_URL', 'http://localhost:5173'),

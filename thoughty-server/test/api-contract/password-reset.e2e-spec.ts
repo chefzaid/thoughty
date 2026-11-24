@@ -15,7 +15,8 @@ const FORGOT_ANSWER = {
   message: 'If an account exists with this email, a reset link will be sent.',
 };
 const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
-const codeIn = (text: string) => /security code is (\d{6})/.exec(text)?.[1] ?? '';
+// The first line of a code email: "Your Thoughty security code is 123456.", or its French
+const codeIn = (text: string) => /(?:security code is|code de sécurité Thoughty est) (\d{6})\./.exec(text)?.[1] ?? '';
 
 // Forgot and reset password each allow 3 calls an hour from one address; sign-in allows 5 in 15
 // minutes. This suite uses all of them.
@@ -41,7 +42,8 @@ describeContract(
 
       // Her second email, after the sign-up link
       const email = await mailTo(alice.email, 2);
-      expect(email.subject).toBe('Password Reset Request - Thoughty');
+      expect(email.subject).toBe('Reset your Thoughty password');
+      expect(email.html).toContain('<div lang="en"');
       const token = linkToken(email.text, '/reset-password');
       const [stored] = (await context.api.dataSource.query(
         'SELECT reset_token FROM users WHERE id = $1',
@@ -79,20 +81,30 @@ describeContract(
 
     it('keeps two-factor sign-in on, and drops a code asked for with the old password', async () => {
       const { bob } = context;
+      // A French writer: every code and the reset link come in French
+      await call('POST /api/config', { as: bob, json: { language: 'fr' }, status: 200 });
       const setup = await call('POST /api/auth/two-factor/setup', { as: bob, status: 201 });
+      const setupEmail = await mailTo(bob.email, 2);
+      expect(setupEmail.subject).toBe('Votre code de sécurité Thoughty');
+      expect(setupEmail.text).toContain('activer la double authentification');
       await call('POST /api/auth/two-factor/enable', {
         as: bob,
         json: {
           challengeToken: (setup.body as { challengeToken: string }).challengeToken,
-          code: codeIn((await mailTo(bob.email, 2)).text),
+          code: codeIn(setupEmail.text),
         },
         status: 200,
       });
 
       const pending = await signIn(bob.email, CONTRACT_PASSWORD, 200);
-      const pendingCode = codeIn((await mailTo(bob.email, 3)).text);
+      const signInEmail = await mailTo(bob.email, 3);
+      expect(signInEmail.text).toContain('terminer votre connexion');
+      const pendingCode = codeIn(signInEmail.text);
       await call('POST /api/auth/forgot-password', { json: { email: bob.email }, status: 200 });
-      const token = linkToken((await mailTo(bob.email, 4)).text, '/reset-password');
+      const resetEmail = await mailTo(bob.email, 4);
+      expect(resetEmail.subject).toBe('Réinitialisez votre mot de passe Thoughty');
+      expect(resetEmail.html).toContain('<div lang="fr"');
+      const token = linkToken(resetEmail.text, '/reset-password');
       await call('POST /api/auth/reset-password', {
         json: { token, newPassword: NEW_PASSWORD },
         status: 200,

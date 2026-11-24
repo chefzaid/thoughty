@@ -3,6 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { escapeHtml, isPlaceholderEmail } from '@/common/utils';
 import { renderLinkEmail } from './account-link-emails';
+import {
+  renderAccountDeletionEmail,
+  renderTwoFactorCodeEmail,
+  type TwoFactorCodePurpose,
+} from './account-notice-emails';
 
 /** Localized copy for the weekly guided-memoir question email. */
 export interface MemoirQuestionEmail {
@@ -108,47 +113,9 @@ export class EmailService {
     });
   }
 
-  async sendPasswordResetEmail(toEmail: string, resetUrl: string): Promise<void> {
-    await this.deliver(toEmail, {
-      subject: 'Password Reset Request - Thoughty',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #333;">Password Reset Request</h2>
-          <p style="color: #666; font-size: 16px;">
-            You requested to reset your password for your Thoughty account.
-          </p>
-          <p style="color: #666; font-size: 16px;">
-            Click the button below to reset your password. This link will expire in 1 hour.
-          </p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${resetUrl}" 
-               style="background-color: #6366f1; color: white; padding: 12px 24px; 
-                      text-decoration: none; border-radius: 6px; font-size: 16px;">
-              Reset Password
-            </a>
-          </div>
-          <p style="color: #999; font-size: 14px;">
-            If you didn't request this, please ignore this email. Your password will remain unchanged.
-          </p>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-          <p style="color: #999; font-size: 12px;">
-            If the button doesn't work, copy and paste this link into your browser:<br>
-            <a href="${resetUrl}" style="color: #6366f1;">${resetUrl}</a>
-          </p>
-        </div>
-      `,
-      text: `
-        Password Reset Request - Thoughty
-        
-        You requested to reset your password for your Thoughty account.
-        
-        Click the link below to reset your password. This link will expire in 1 hour.
-        
-        ${resetUrl}
-        
-        If you didn't request this, please ignore this email. Your password will remain unchanged.
-      `,
-    });
+  /** The link that sets a new password, in the account's language (`en`, `fr`; English otherwise). */
+  async sendPasswordResetEmail(toEmail: string, resetUrl: string, language?: string): Promise<void> {
+    await this.sendRenderedEmail(toEmail, renderLinkEmail('passwordReset', resetUrl, language));
   }
 
   /** The link that proves a new address, in the account's language (`en`, `fr`; English otherwise). */
@@ -166,24 +133,15 @@ export class EmailService {
     await this.sendRenderedEmail(toEmail, renderLinkEmail('signUpNotice', signInUrl, language));
   }
 
+  /** The code that confirms `purpose`, in the account's language (`en`, `fr`; English otherwise). */
   async sendTwoFactorCodeEmail(
     toEmail: string,
     code: string,
     expiresInMinutes: number,
+    purpose: TwoFactorCodePurpose,
+    language?: string,
   ): Promise<void> {
-    await this.deliver(toEmail, {
-      subject: 'Your Thoughty security code',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #333;">Your security code</h2>
-          <p style="color: #666; font-size: 16px;">Use this code to finish signing in to Thoughty:</p>
-          <p style="color: #111; font-size: 32px; font-weight: 700; letter-spacing: 8px;">${code}</p>
-          <p style="color: #666; font-size: 14px;">This code expires in ${expiresInMinutes} minutes and can be used once.</p>
-          <p style="color: #999; font-size: 14px;">If you did not request this code, change your password.</p>
-        </div>
-      `,
-      text: `Your Thoughty security code is ${code}. It expires in ${expiresInMinutes} minutes and can be used once.`,
-    });
+    await this.sendRenderedEmail(toEmail, renderTwoFactorCodeEmail(code, expiresInMinutes, purpose, language));
   }
 
   async sendMemoirQuestionEmail(toEmail: string, email: MemoirQuestionEmail): Promise<void> {
@@ -228,42 +186,8 @@ export class EmailService {
     });
   }
 
-  async sendAccountDeletionEmail(toEmail: string): Promise<void> {
-    await this.deliver(toEmail, {
-      subject: 'Account Deleted - Thoughty',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #333;">Account Deletion Confirmation</h2>
-          <p style="color: #666; font-size: 16px;">
-            Your Thoughty account has been successfully deleted as per your request.
-          </p>
-          <p style="color: #666; font-size: 16px;">
-            You will no longer be able to access your account or any associated data.
-            Your journal and everything stored with your account will be permanently erased within 30 days.
-          </p>
-          <p style="color: #666; font-size: 16px;">
-            If you did not request this deletion, or if you believe this was done in error, 
-            please contact our support team immediately.
-          </p>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-          <p style="color: #999; font-size: 14px;">
-            We're sorry to see you go. Thank you for using Thoughty.
-          </p>
-        </div>
-      `,
-      text: `
-        Account Deletion Confirmation - Thoughty
-        
-        Your Thoughty account has been successfully deleted as per your request.
-        
-        You will no longer be able to access your account or any associated data.
-        Your journal and everything stored with your account will be permanently erased within 30 days.
-        
-        If you did not request this deletion, or if you believe this was done in error, 
-        please contact our support team immediately.
-        
-        We're sorry to see you go. Thank you for using Thoughty.
-      `,
-    });
+  /** The confirmation that the account is deleted, in its language (`en`, `fr`; English otherwise). */
+  async sendAccountDeletionEmail(toEmail: string, language?: string): Promise<void> {
+    await this.sendRenderedEmail(toEmail, renderAccountDeletionEmail(language));
   }
 }

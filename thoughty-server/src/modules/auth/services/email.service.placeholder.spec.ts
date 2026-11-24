@@ -26,7 +26,7 @@ describe('EmailService and placeholder addresses', () => {
     ['verification', (to) => service.sendEmailVerificationEmail(to, 'https://thoughty.test/verify')],
     ['sign-up link', (to) => service.sendSignUpLinkEmail(to, 'https://thoughty.test/complete')],
     ['sign-up notice', (to) => service.sendSignUpNoticeEmail(to, 'https://thoughty.test/login')],
-    ['two-factor code', (to) => service.sendTwoFactorCodeEmail(to, '123456', 10)],
+    ['two-factor code', (to) => service.sendTwoFactorCodeEmail(to, '123456', 10, 'login')],
     [
       'memoir question',
       (to) =>

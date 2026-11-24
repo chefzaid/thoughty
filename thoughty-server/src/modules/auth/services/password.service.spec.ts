@@ -26,11 +26,12 @@ describe('PasswordService', () => {
   let userRepository: any;
   let refreshTokenRepository: any;
   let emailService: any;
+  let settingRepository: ReturnType<typeof createAuthServiceMocks>['settingRepository'];
   let activity: ReturnType<typeof createAuthServiceMocks>['activity'];
 
   beforeEach(async () => {
     const mocks = createAuthServiceMocks();
-    ({ userRepository, refreshTokenRepository, emailService, activity } = mocks);
+    ({ userRepository, refreshTokenRepository, emailService, activity, settingRepository } = mocks);
     ({ passwords: service } = await createAuthServices(mocks));
   });
 
@@ -116,7 +117,19 @@ describe('PasswordService', () => {
       expect(emailService.sendPasswordResetEmail).toHaveBeenCalledWith(
         'test@example.com',
         expect.stringMatching(/\/reset-password\?token=[0-9a-f]{64}$/),
+        undefined,
       );
+    });
+
+    it('writes the reset email in the account’s language', async () => {
+      userRepository.findOne.mockResolvedValue(mockUser);
+      settingRepository.findOne.mockResolvedValue({ value: 'fr' });
+
+      await service.forgotPassword('test@example.com');
+      await flush();
+
+      expect(settingRepository.findOne).toHaveBeenCalledWith({ where: { userId: 1, key: 'language' }, select: { value: true } });
+      expect(emailService.sendPasswordResetEmail).toHaveBeenCalledWith('test@example.com', expect.any(String), 'fr');
     });
 
     it('lets the reset link in flight go out before shutting down', async () => {

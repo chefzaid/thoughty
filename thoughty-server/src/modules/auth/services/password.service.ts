@@ -13,9 +13,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'node:crypto';
-import { RefreshToken, User } from '@/database/entities';
+import { RefreshToken, Setting, User } from '@/database/entities';
 import { ChangePasswordDto } from '../dto';
 import { EmailService } from './email.service';
+import { findAccountLanguage } from './account-language';
 import { AccountActivityService } from '../account-activity/account-activity.service';
 
 const FORGOT_PASSWORD_MESSAGE = 'If an account exists with this email, a reset link will be sent.';
@@ -41,6 +42,8 @@ export class PasswordService implements BeforeApplicationShutdown {
     private readonly userRepository: Repository<User>,
     @InjectRepository(RefreshToken)
     private readonly refreshTokenRepository: Repository<RefreshToken>,
+    @InjectRepository(Setting)
+    private readonly settingRepository: Repository<Setting>,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
     private readonly activity: AccountActivityService,
@@ -105,7 +108,10 @@ export class PasswordService implements BeforeApplicationShutdown {
     return { success: true, message: FORGOT_PASSWORD_MESSAGE };
   }
 
-  /** Stores a new reset token for the account (replacing any earlier one) and emails its link. */
+  /**
+   * Stores a new reset token for the account (replacing any earlier one) and emails its link, in the
+   * account's language.
+   */
   private async sendResetLink(user: User): Promise<void> {
     const resetToken = crypto.randomBytes(32).toString('hex');
     await this.userRepository.update(
@@ -117,6 +123,7 @@ export class PasswordService implements BeforeApplicationShutdown {
     await this.emailService.sendPasswordResetEmail(
       user.email,
       `${frontendUrl}/reset-password?token=${resetToken}`,
+      await findAccountLanguage(this.settingRepository, user.id),
     );
   }
 

@@ -35,6 +35,34 @@ describe('renderLinkEmail', () => {
     expect(email.text).toContain('https://thoughty.example/verify-email?token=1');
   });
 
+  it('writes the password reset link in French, with the link escaped in HTML and whole in the text', () => {
+    const url = 'https://thoughty.example/reset-password?token=abc&x="1"';
+    const email = renderLinkEmail('passwordReset', url, 'fr');
+
+    expect(email.subject).toBe('Réinitialisez votre mot de passe Thoughty');
+    expect(email.html).toContain('<div lang="fr"');
+    expect(email.html).toContain('Réinitialiser mon mot de passe');
+    expect(email.html).toContain('expire dans 1 heure');
+    expect(email.html).toContain('href="https://thoughty.example/reset-password?token=abc&amp;x=&quot;1&quot;"');
+    expect(email.html).toContain('copiez ce lien dans votre navigateur');
+    expect(email.html).not.toContain('x="1"');
+    expect(email.text).toContain(url);
+    expect(email.text).toContain('votre mot de passe reste inchangé');
+    expect(email.text).not.toContain('Reset');
+  });
+
+  it('writes the password reset link in English', () => {
+    const email = renderLinkEmail('passwordReset', 'https://thoughty.example/reset-password?token=1', 'en');
+
+    expect(email.subject).toBe('Reset your Thoughty password');
+    expect(email.html).toContain('<div lang="en"');
+    expect(email.html).toContain('Reset my password');
+    expect(email.html).toContain('expires in 1 hour');
+    expect(email.html).toContain('If the button doesn&#39;t work');
+    expect(email.text).toContain('https://thoughty.example/reset-password?token=1');
+    expect(email.text).toContain('your password stays the same');
+  });
+
   it.each([undefined, 'en', 'de', ''])('writes English for %p', (language) => {
     const email = renderLinkEmail('signUpLink', 'https://thoughty.example/x', language);
 

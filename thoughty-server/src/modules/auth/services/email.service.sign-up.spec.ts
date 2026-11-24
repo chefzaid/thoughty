@@ -47,12 +47,19 @@ describe('EmailService sign-up emails', () => {
     await service.sendSignUpLinkEmail('new@example.com', 'https://x/complete-sign-up?token=1', 'fr');
     await service.sendSignUpNoticeEmail('writer@example.com', 'https://x/login', 'fr');
     await service.sendEmailVerificationEmail('writer@example.com', 'https://x/verify-email?token=2', 'fr');
+    await service.sendPasswordResetEmail('writer@example.com', 'https://x/reset-password?token=3', 'fr');
+    await service.sendTwoFactorCodeEmail('writer@example.com', '123456', 10, 'login', 'fr');
+    await service.sendAccountDeletionEmail('writer@example.com', 'fr');
 
     expect(sendMail.mock.calls.map(([mail]) => (mail as { subject: string }).subject)).toEqual([
       'Terminez la création de votre compte Thoughty',
       'Quelqu’un a tenté de s’inscrire à Thoughty avec votre adresse e-mail',
       'Vérifiez votre adresse e-mail Thoughty',
+      'Réinitialisez votre mot de passe Thoughty',
+      'Votre code de sécurité Thoughty',
+      'Votre compte Thoughty est supprimé',
     ]);
+    expect((sendMail.mock.calls[4][0] as { html: string }).html).toContain('<div lang="fr"');
   });
 
   it('needs a configured mail server', async () => {

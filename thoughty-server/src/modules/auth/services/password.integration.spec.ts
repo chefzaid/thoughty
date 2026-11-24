@@ -8,7 +8,7 @@ import {
   POSTGRES_SETUP_TIMEOUT_MS,
   type PostgresTestDatabase,
 } from '@/database/postgres-test-database.test-helpers';
-import { RefreshToken, User } from '@/database/entities';
+import { RefreshToken, Setting, User } from '@/database/entities';
 import { PasswordService } from './password.service';
 import { createAccountActivityMock } from '../account-activity/account-activity.test-helpers';
 
@@ -40,6 +40,7 @@ describePostgres('PostgreSQL password reset', () => {
     service = new PasswordService(
       dataSource.getRepository(User),
       dataSource.getRepository(RefreshToken),
+      dataSource.getRepository(Setting),
       { get: (_key: string, fallback: string) => fallback } as never,
       email as never,
       createAccountActivityMock() as never,

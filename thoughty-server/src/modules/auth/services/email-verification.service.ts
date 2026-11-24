@@ -14,6 +14,7 @@ import * as crypto from 'node:crypto';
 import { MoreThan, Repository } from 'typeorm';
 import { Setting, User } from '@/database/entities';
 import { EmailService } from './email.service';
+import { findAccountLanguage } from './account-language';
 import { uniqueViolationOf } from './free-username';
 
 const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
@@ -150,11 +151,8 @@ export class EmailVerificationService {
     const verificationUrl = `${frontendUrl}/verify-email?token=${token}`;
 
     try {
-      const language = await this.settingRepository.findOne({
-        where: { userId: user.id, key: 'language' },
-        select: { value: true },
-      });
-      await this.emailService.sendEmailVerificationEmail(address, verificationUrl, language?.value);
+      const language = await findAccountLanguage(this.settingRepository, user.id);
+      await this.emailService.sendEmailVerificationEmail(address, verificationUrl, language);
     } catch (error) {
       this.logger.warn('Email verification email not sent', {
         errorName: error instanceof Error ? error.name : 'UnknownError',

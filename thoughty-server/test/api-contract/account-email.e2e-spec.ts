@@ -68,6 +68,20 @@ describeContract(
       expect(mailsTo(placeholder)).toEqual([]);
       expect(sentMail.some((mail) => mail.to.endsWith('.invalid') || mail.to.endsWith('@invalid'))).toBe(false);
     });
+
+    // Last: alice's account is gone after it
+    it('confirms an account deletion in the account’s language', async () => {
+      const { alice } = context;
+      await call('POST /api/config', { as: alice, json: { language: 'fr' }, status: 200 });
+      const before = mailsTo(alice.email).length;
+
+      await call('POST /api/auth/delete-account', { as: alice, json: { password: CONTRACT_PASSWORD }, status: 200 });
+
+      const confirmation = await mailTo(alice.email, before + 1);
+      expect(confirmation.subject).toBe('Votre compte Thoughty est supprimé');
+      expect(confirmation.html).toContain('<div lang="fr"');
+      expect(confirmation.text).toContain('effacés sous 30 jours');
+    });
   },
   { env: CONTRACT_SMTP_ENV, signUp: signUpWithEmail },
 );

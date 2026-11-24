@@ -11,7 +11,7 @@ interface LinkEmailCopy {
   note: string;
 }
 
-type LinkEmailKind = 'signUpLink' | 'signUpNotice' | 'emailVerification';
+type LinkEmailKind = 'signUpLink' | 'signUpNotice' | 'emailVerification' | 'passwordReset';
 
 /** For the emails whose link carries a token: where to copy it when the button does not work. */
 const LINK_FALLBACK: Record<EmailLanguage, string> = {
@@ -51,6 +51,16 @@ const COPY: Record<EmailLanguage, Record<LinkEmailKind, LinkEmailCopy>> = {
       action: 'Verify Email',
       note: 'If you did not create a Thoughty account, please ignore this email.',
     },
+    passwordReset: {
+      subject: 'Reset your Thoughty password',
+      heading: 'Reset your password',
+      paragraphs: [
+        'You asked to reset the password of your Thoughty account. Open the link below to choose a new one.',
+        'This link works once and expires in 1 hour.',
+      ],
+      action: 'Reset my password',
+      note: 'If you did not ask for this, ignore this email: your password stays the same.',
+    },
   },
   fr: {
     signUpLink: {
@@ -83,6 +93,16 @@ const COPY: Record<EmailLanguage, Record<LinkEmailKind, LinkEmailCopy>> = {
       action: 'Vérifier mon adresse',
       note: 'Si vous n’avez pas créé de compte Thoughty, ignorez cet e-mail.',
     },
+    passwordReset: {
+      subject: 'Réinitialisez votre mot de passe Thoughty',
+      heading: 'Réinitialisez votre mot de passe',
+      paragraphs: [
+        'Vous avez demandé à réinitialiser le mot de passe de votre compte Thoughty. Ouvrez le lien ci-dessous pour en choisir un nouveau.',
+        'Ce lien ne fonctionne qu’une fois et expire dans 1 heure.',
+      ],
+      action: 'Réinitialiser mon mot de passe',
+      note: 'Si vous n’avez rien demandé, ignorez cet e-mail : votre mot de passe reste inchangé.',
+    },
   },
 };
 
@@ -91,20 +111,33 @@ const SHOWS_LINK: Record<LinkEmailKind, boolean> = {
   signUpLink: true,
   signUpNotice: false,
   emailVerification: true,
+  passwordReset: true,
 };
 
+/** One paragraph of an account email, its text escaped. */
+export function accountEmailParagraph(text: string, style = 'color: #666; font-size: 16px;'): string {
+  return `\n          <p style="${style}">${escapeHtml(text)}</p>`;
+}
+
+/** The frame every email about the account shares: its language, its heading, then `bodyHtml`. */
+export function renderAccountEmailHtml(lang: EmailLanguage, heading: string, bodyHtml: string): string {
+  return `
+        <div lang="${lang}" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #333;">${escapeHtml(heading)}</h2>${bodyHtml}
+        </div>
+      `;
+}
+
 /**
- * An email about the account itself (signing up, proving an address) in `language` (`en` or `fr`, English
- * for anything else): its heading and paragraphs, one button to `url`, and the link in full where it carries
- * a token. Nothing in it comes from the reader but the link, which is escaped.
+ * An email about the account itself (signing up, proving an address, resetting the password) in `language`
+ * (`en` or `fr`, English for anything else): its heading and paragraphs, one button to `url`, and the link
+ * in full where it carries a token. Nothing in it comes from the reader but the link, which is escaped.
  */
 export function renderLinkEmail(kind: LinkEmailKind, url: string, language: string | undefined): RenderedEmail {
   const lang = resolveEmailLanguage(language);
   const copy = COPY[lang][kind];
   const href = escapeHtml(url);
-  const paragraphsHtml = copy.paragraphs
-    .map((paragraph) => `\n          <p style="color: #666; font-size: 16px;">${escapeHtml(paragraph)}</p>`)
-    .join('');
+  const paragraphsHtml = copy.paragraphs.map((paragraph) => accountEmailParagraph(paragraph)).join('');
   const fallbackHtml = SHOWS_LINK[kind]
     ? `
           <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
@@ -115,19 +148,18 @@ export function renderLinkEmail(kind: LinkEmailKind, url: string, language: stri
     : '';
   return {
     subject: copy.subject,
-    html: `
-        <div lang="${lang}" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #333;">${escapeHtml(copy.heading)}</h2>${paragraphsHtml}
+    html: renderAccountEmailHtml(
+      lang,
+      copy.heading,
+      `${paragraphsHtml}
           <div style="text-align: center; margin: 30px 0;">
             <a href="${href}"
                style="background-color: #6366f1; color: white; padding: 12px 24px;
                       text-decoration: none; border-radius: 6px; font-size: 16px;">
               ${escapeHtml(copy.action)}
             </a>
-          </div>
-          <p style="color: #999; font-size: 14px;">${escapeHtml(copy.note)}</p>${fallbackHtml}
-        </div>
-      `,
+          </div>${accountEmailParagraph(copy.note, 'color: #999; font-size: 14px;')}${fallbackHtml}`,
+    ),
     text: [copy.subject, '', ...copy.paragraphs, '', url, '', copy.note, ''].join('\n'),
   };
 }

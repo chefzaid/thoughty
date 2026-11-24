@@ -9,9 +9,10 @@ import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { PersonalAccessToken, RefreshToken, User } from '@/database/entities';
+import { PersonalAccessToken, RefreshToken, Setting, User } from '@/database/entities';
 import { UserResponseDto } from '../dto';
 import { EmailService } from './email.service';
+import { findAccountLanguage } from './account-language';
 import { accountEmailFields } from './account-email';
 
 /** The signed-in user's own account: reading its profile and deleting it. */
@@ -26,6 +27,8 @@ export class AccountService {
     private readonly refreshTokenRepository: Repository<RefreshToken>,
     @InjectRepository(PersonalAccessToken)
     private readonly accessTokenRepository: Repository<PersonalAccessToken>,
+    @InjectRepository(Setting)
+    private readonly settingRepository: Repository<Setting>,
     private readonly emailService: EmailService,
   ) {}
 
@@ -80,9 +83,12 @@ export class AccountService {
     await this.refreshTokenRepository.delete({ userId });
     await this.accessTokenRepository.delete({ userId });
 
-    // Send deletion email
+    // The confirmation, in the account's language (its settings are erased with it later)
     try {
-      await this.emailService.sendAccountDeletionEmail(user.email);
+      await this.emailService.sendAccountDeletionEmail(
+        user.email,
+        await findAccountLanguage(this.settingRepository, userId),
+      );
     } catch (error) {
       this.logger.warn('Account deletion email not sent', {
         errorName: error instanceof Error ? error.name : 'UnknownError',

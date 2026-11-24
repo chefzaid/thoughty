@@ -23,10 +23,11 @@ describe('AccountService', () => {
   let refreshTokenRepository: any;
   let accessTokenRepository: any;
   let emailService: any;
+  let settingRepository: ReturnType<typeof createAuthServiceMocks>['settingRepository'];
 
   beforeEach(async () => {
     const mocks = createAuthServiceMocks();
-    ({ userRepository, refreshTokenRepository, accessTokenRepository, emailService } = mocks);
+    ({ userRepository, refreshTokenRepository, accessTokenRepository, emailService, settingRepository } = mocks);
     ({ account: service } = await createAuthServices(mocks));
   });
 
@@ -78,7 +79,18 @@ describe('AccountService', () => {
       expect(result.success).toBe(true);
       expect(refreshTokenRepository.delete).toHaveBeenCalledWith({ userId: 1 });
       expect(accessTokenRepository.delete).toHaveBeenCalledWith({ userId: 1 });
-      expect(emailService.sendAccountDeletionEmail).toHaveBeenCalled();
+      expect(emailService.sendAccountDeletionEmail).toHaveBeenCalledWith('test@example.com', undefined);
+    });
+
+    it('confirms the deletion in the account’s language', async () => {
+      userRepository.findOne.mockResolvedValue({ ...mockUser, authProvider: 'google' });
+      userRepository.save.mockResolvedValue({ ...mockUser, deletedAt: new Date() });
+      settingRepository.findOne.mockResolvedValue({ value: 'fr' });
+
+      await service.deleteAccount(1);
+
+      expect(settingRepository.findOne).toHaveBeenCalledWith({ where: { userId: 1, key: 'language' }, select: { value: true } });
+      expect(emailService.sendAccountDeletionEmail).toHaveBeenCalledWith('test@example.com', 'fr');
     });
 
     it('should throw NotFoundException for non-existent user', async () => {

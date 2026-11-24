@@ -206,7 +206,7 @@ describe('EmailService', () => {
         expect.objectContaining({
           from: 'noreply@example.com',
           to: 'recipient@example.com',
-          subject: 'Password Reset Request - Thoughty',
+          subject: 'Reset your Thoughty password',
         }),
       );
     });
@@ -324,7 +324,7 @@ describe('EmailService', () => {
     });
 
     it('sends the short-lived code in HTML and plain text', async () => {
-      await service.sendTwoFactorCodeEmail('recipient@example.com', '123456', 10);
+      await service.sendTwoFactorCodeEmail('recipient@example.com', '123456', 10, 'login');
 
       expect(mockTransporter.sendMail).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -341,7 +341,7 @@ describe('EmailService', () => {
       service = new EmailService(createConfigService({}) as ConfigService);
 
       await expect(
-        service.sendTwoFactorCodeEmail('recipient@example.com', '123456', 10),
+        service.sendTwoFactorCodeEmail('recipient@example.com', '123456', 10, 'login'),
       ).rejects.toThrow('Email service not configured');
     });
   });
@@ -365,7 +365,7 @@ describe('EmailService', () => {
         expect.objectContaining({
           from: 'noreply@example.com',
           to: 'recipient@example.com',
-          subject: 'Account Deleted - Thoughty',
+          subject: 'Your Thoughty account is deleted',
         }),
       );
     });

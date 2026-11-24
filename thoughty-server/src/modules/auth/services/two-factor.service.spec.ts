@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
-import { User } from '@/database/entities';
+import { Setting, User } from '@/database/entities';
 import { EmailService } from './email.service';
 import { TwoFactorService } from './two-factor.service';
 import { accountActivityProvider, createAccountActivityMock } from '../account-activity/account-activity.test-helpers';
@@ -15,6 +15,7 @@ describe('TwoFactorService', () => {
   let service: TwoFactorService;
   let userRepository: any;
   let emailService: any;
+  let settingRepository: { findOne: jest.Mock };
   let activity: ReturnType<typeof createAccountActivityMock>;
 
   const createUser = (overrides: Partial<User> = {}) =>
@@ -45,12 +46,14 @@ describe('TwoFactorService', () => {
       sendTwoFactorCodeEmail: jest.fn().mockResolvedValue(undefined),
     };
 
+    settingRepository = { findOne: jest.fn().mockResolvedValue(null) };
     activity = createAccountActivityMock();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TwoFactorService,
         accountActivityProvider(activity),
         { provide: getRepositoryToken(User), useValue: userRepository },
+        { provide: getRepositoryToken(Setting), useValue: settingRepository },
         {
           provide: ConfigService,
           useValue: {
@@ -91,7 +94,17 @@ describe('TwoFactorService', () => {
     expect(user.twoFactorChallengeCodeHash).not.toContain(code);
     expect(user.twoFactorChallengePurpose).toBe('enable');
     expect(user.twoFactorChallengeExpires!.getTime()).toBeGreaterThan(Date.now());
-    expect(emailService.sendTwoFactorCodeEmail).toHaveBeenCalledWith(user.email, code, 10);
+    expect(emailService.sendTwoFactorCodeEmail).toHaveBeenCalledWith(user.email, code, 10, 'enable', undefined);
+  });
+
+  it.each(['login', 'enable'] as const)('emails the %s code in the account’s language', async (purpose) => {
+    settingRepository.findOne.mockResolvedValue({ value: 'fr' });
+    const user = createUser({ twoFactorEnabled: purpose === 'login' });
+
+    const { code } = await issueChallenge(user, purpose);
+
+    expect(settingRepository.findOne).toHaveBeenCalledWith({ where: { userId: 7, key: 'language' }, select: { value: true } });
+    expect(emailService.sendTwoFactorCodeEmail).toHaveBeenCalledWith(user.email, code, 10, purpose, 'fr');
   });
 
   it.each([

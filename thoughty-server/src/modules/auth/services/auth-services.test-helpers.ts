@@ -19,6 +19,8 @@ export interface AuthServiceMocks {
   userRepository: Record<string, jest.Mock>;
   refreshTokenRepository: Record<string, jest.Mock>;
   accessTokenRepository: Record<string, jest.Mock>;
+  /** The settings: only the account's `language` is read, none stored unless a spec says so. */
+  settingRepository: Record<string, jest.Mock>;
   diaryRepository: Record<string, jest.Mock>;
   jwtService: Record<string, jest.Mock>;
   emailService: Record<string, jest.Mock>;
@@ -111,6 +113,7 @@ function createCollaboratorMocks() {
       createQueryBuilder: jest.fn(),
     },
     accessTokenRepository: { delete: jest.fn().mockResolvedValue({ affected: 0 }) },
+    settingRepository: { findOne: jest.fn().mockResolvedValue(null) },
     jwtService: {
       sign: jest.fn().mockReturnValue('mock_token'),
       verify: jest.fn(),
@@ -147,6 +150,7 @@ export async function createAuthServices(mocks: AuthServiceMocks): Promise<AuthS
       { provide: getRepositoryToken(RefreshToken), useValue: mocks.refreshTokenRepository },
       { provide: getRepositoryToken(Diary), useValue: mocks.diaryRepository },
       { provide: getRepositoryToken(PersonalAccessToken), useValue: mocks.accessTokenRepository },
+      { provide: getRepositoryToken(Setting), useValue: mocks.settingRepository },
       { provide: JwtService, useValue: mocks.jwtService },
       { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue('test-secret') } },
       { provide: EmailService, useValue: mocks.emailService },

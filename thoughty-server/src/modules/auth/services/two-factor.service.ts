@@ -10,18 +10,20 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThan, Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'node:crypto';
-import { User } from '@/database/entities';
+import { Setting, User } from '@/database/entities';
 import {
   TwoFactorChallengeResponseDto,
   TwoFactorCodeDto,
   TwoFactorStatusResponseDto,
 } from '../dto';
 import { EmailService } from './email.service';
+import { findAccountLanguage } from './account-language';
+import type { TwoFactorCodePurpose } from './account-notice-emails';
 import { getTwoFactorSecret } from '../auth-secrets';
 import { AccountActivityService } from '../account-activity/account-activity.service';
 
 /** `content-pin` confirms changing, removing or resetting the PIN of locked diaries and entries. */
-type TwoFactorPurpose = 'login' | 'enable' | 'content-pin';
+type TwoFactorPurpose = TwoFactorCodePurpose;
 
 const CHALLENGE_TTL_MS = 10 * 60 * 1000;
 const CHALLENGE_TTL_SECONDS = CHALLENGE_TTL_MS / 1000;
@@ -33,6 +35,8 @@ export class TwoFactorService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Setting)
+    private readonly settingRepository: Repository<Setting>,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
     private readonly activity: AccountActivityService,
@@ -89,7 +93,8 @@ export class TwoFactorService {
     await this.userRepository.save(user);
 
     try {
-      await this.emailService.sendTwoFactorCodeEmail(user.email, code, CHALLENGE_TTL_SECONDS / 60);
+      const language = await findAccountLanguage(this.settingRepository, user.id);
+      await this.emailService.sendTwoFactorCodeEmail(user.email, code, CHALLENGE_TTL_SECONDS / 60, purpose, language);
     } catch {
       await this.clearChallenge(user.id, user.twoFactorChallengeTokenHash);
       throw apiError(ServiceUnavailableException, 'AUTH_2FA_CODE_NOT_SENT');
