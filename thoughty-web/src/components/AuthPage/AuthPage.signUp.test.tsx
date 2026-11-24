@@ -47,7 +47,7 @@ describe('AuthPage verify-first sign-up', () => {
         fillSignUp();
 
         expect(await screen.findByText('signUpCheckEmailBody {"email":"new@example.com"}')).toBeInTheDocument();
-        expect(register).toHaveBeenCalledWith('new@example.com', 'Pass123!@', 'newbie', '');
+        expect(register).toHaveBeenCalledWith('new@example.com', 'Pass123!@', 'newbie', '', { theme: 'dark' });
         expect(onAuthSuccess).not.toHaveBeenCalled();
         expect(screen.getByText('signUpCheckEmailTitle', { selector: '.auth-subtitle' })).toBeInTheDocument();
         expect(screen.getByText('signUpCheckEmailPassword')).toBeInTheDocument();

@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { generateKeyPairSync } from 'node:crypto';
+import { Setting } from '@/database/entities';
 import { AuthService } from './auth.service';
 import type { AuthSessionService } from './auth-session.service';
 import type { IdentityVerificationService } from './identity-verification.service';
@@ -29,10 +30,11 @@ describe('AuthService Google and Keycloak sign-in', () => {
   let refreshTokenRepository: any;
   let diaryRepository: any;
   let jwtService: any;
+  let manager: Record<string, jest.Mock>;
 
   beforeEach(async () => {
     const mocks = createAuthServiceMocks();
-    ({ userRepository, refreshTokenRepository, diaryRepository, jwtService } = mocks);
+    ({ userRepository, refreshTokenRepository, diaryRepository, jwtService, manager } = mocks);
     ({ auth: service, sessions, identity } = await createAuthServices(mocks));
   });
 
@@ -170,6 +172,27 @@ describe('AuthService Google and Keycloak sign-in', () => {
           color: '#E76F51',
         }),
       );
+    });
+
+    it('starts a new Google account in the visitor’s language and theme, and leaves an existing one as it is', async () => {
+      userRepository.findOne.mockResolvedValue(null);
+      userRepository.save.mockImplementation((user: any) =>
+        Promise.resolve({ ...user, id: 1, deletedAt: null, twoFactorEnabled: false }),
+      );
+      diaryRepository.save.mockResolvedValue({ id: 1 });
+
+      await service.oauthLogin({ provider: 'google', credential: googleCredential(), language: 'fr', theme: 'light' });
+
+      expect(manager.save).toHaveBeenCalledWith(Setting, [
+        { userId: 1, key: 'language', value: 'fr' },
+        { userId: 1, key: 'theme', value: 'light' },
+      ]);
+
+      manager.save.mockClear();
+      userRepository.findOne.mockResolvedValue({ ...mockUser, authProvider: 'google', emailVerified: true });
+      await service.oauthLogin({ provider: 'google', credential: googleCredential(), language: 'fr', theme: 'light' });
+
+      expect(manager.save).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -331,6 +354,20 @@ describe('AuthService Google and Keycloak sign-in', () => {
       expect(diaryRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({ userId: 7, name: 'Thoughts', isDefault: true }),
       );
+    });
+
+    it('starts a new Keycloak account in the visitor’s language and theme', async () => {
+      mockVerifiedIdentity();
+      userRepository.findOne.mockResolvedValue(null);
+      userRepository.save.mockImplementation((user: any) =>
+        Promise.resolve({ ...user, id: 7, deletedAt: null, twoFactorEnabled: false }),
+      );
+      diaryRepository.save.mockResolvedValue({ id: 4 });
+      refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
+
+      await service.keycloakLogin('signed-keycloak-token', { language: 'fr' });
+
+      expect(manager.save).toHaveBeenCalledWith(Setting, [{ userId: 7, key: 'language', value: 'fr' }]);
     });
 
     it('rejects a Keycloak identity with incomplete verified claims', async () => {

@@ -1,7 +1,7 @@
 import { ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { expectApiError } from '@/common/errors/api-error.test-helpers';
-import { Diary, User } from '@/database/entities';
+import { Diary, Setting, User } from '@/database/entities';
 import { AuthService } from './auth.service';
 import { hashRefreshToken } from './auth-session.service';
 import {
@@ -62,6 +62,20 @@ describe('AuthService.register', () => {
     expect(mocks.refreshTokenRepository.save).toHaveBeenCalledWith(
       expect.objectContaining({ userId: 1, tokenHash: hashRefreshToken(result.refreshToken) }),
     );
+  });
+
+  it('starts the account in the language and theme the visitor sent, and in the defaults without them', async () => {
+    await service.register({ email: 'fr@example.com', password: 'Password123!', language: 'fr', theme: 'light' });
+
+    expect(mocks.manager.save).toHaveBeenNthCalledWith(3, Setting, [
+      { userId: 1, key: 'language', value: 'fr' },
+      { userId: 1, key: 'theme', value: 'light' },
+    ]);
+
+    mocks.manager.save.mockClear();
+    await service.register({ email: 'en@example.com', password: 'Password123!' });
+
+    expect(mocks.manager.save.mock.calls.map(([entity]) => entity)).toEqual([User, Diary]);
   });
 
   it('refuses an address that already has an account before any other work', async () => {

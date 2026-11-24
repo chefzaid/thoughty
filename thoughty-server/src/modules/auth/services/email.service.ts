@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { escapeHtml, isPlaceholderEmail } from '@/common/utils';
+import { renderLinkEmail } from './account-link-emails';
 
 /** Localized copy for the weekly guided-memoir question email. */
 export interface MemoirQuestionEmail {
@@ -150,130 +151,19 @@ export class EmailService {
     });
   }
 
-  async sendEmailVerificationEmail(toEmail: string, verificationUrl: string): Promise<void> {
-    await this.deliver(toEmail, {
-      subject: 'Verify your Thoughty email',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #333;">Verify your email</h2>
-          <p style="color: #666; font-size: 16px;">
-            Please verify this email address to finish securing your Thoughty account.
-          </p>
-          <p style="color: #666; font-size: 16px;">
-            This verification link will expire in 24 hours.
-          </p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verificationUrl}"
-               style="background-color: #6366f1; color: white; padding: 12px 24px;
-                      text-decoration: none; border-radius: 6px; font-size: 16px;">
-              Verify Email
-            </a>
-          </div>
-          <p style="color: #999; font-size: 14px;">
-            If you did not create a Thoughty account, please ignore this email.
-          </p>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-          <p style="color: #999; font-size: 12px;">
-            If the button doesn't work, copy and paste this link into your browser:<br>
-            <a href="${verificationUrl}" style="color: #6366f1;">${verificationUrl}</a>
-          </p>
-        </div>
-      `,
-      text: `
-        Verify your Thoughty email
-
-        Please verify this email address to finish securing your Thoughty account.
-        This verification link will expire in 24 hours.
-
-        ${verificationUrl}
-
-        If you did not create a Thoughty account, please ignore this email.
-      `,
-    });
+  /** The link that proves a new address, in the account's language (`en`, `fr`; English otherwise). */
+  async sendEmailVerificationEmail(toEmail: string, verificationUrl: string, language?: string): Promise<void> {
+    await this.sendRenderedEmail(toEmail, renderLinkEmail('emailVerification', verificationUrl, language));
   }
 
-  /** The link that creates the account for an address that has none yet. */
-  async sendSignUpLinkEmail(toEmail: string, signUpUrl: string): Promise<void> {
-    await this.sendRenderedEmail(toEmail, {
-      subject: 'Finish creating your Thoughty account',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #333;">Finish creating your account</h2>
-          <p style="color: #666; font-size: 16px;">
-            Someone, hopefully you, asked to create a Thoughty account with this email address.
-            Open the link below and enter the password you chose to finish.
-          </p>
-          <p style="color: #666; font-size: 16px;">This link works once and expires in 24 hours.</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${escapeHtml(signUpUrl)}"
-               style="background-color: #6366f1; color: white; padding: 12px 24px;
-                      text-decoration: none; border-radius: 6px; font-size: 16px;">
-              Create my account
-            </a>
-          </div>
-          <p style="color: #999; font-size: 14px;">
-            If you did not sign up, ignore this email: no account is created without it.
-          </p>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-          <p style="color: #999; font-size: 12px;">
-            If the button doesn't work, copy and paste this link into your browser:<br>
-            <a href="${escapeHtml(signUpUrl)}" style="color: #6366f1;">${escapeHtml(signUpUrl)}</a>
-          </p>
-        </div>
-      `,
-      text: [
-        'Finish creating your Thoughty account',
-        '',
-        'Someone, hopefully you, asked to create a Thoughty account with this email address.',
-        'Open the link below and enter the password you chose to finish.',
-        'This link works once and expires in 24 hours.',
-        '',
-        signUpUrl,
-        '',
-        'If you did not sign up, ignore this email: no account is created without it.',
-        '',
-      ].join('\n'),
-    });
+  /** The link that creates the account for an address that has none yet, in the visitor's language. */
+  async sendSignUpLinkEmail(toEmail: string, signUpUrl: string, language?: string): Promise<void> {
+    await this.sendRenderedEmail(toEmail, renderLinkEmail('signUpLink', signUpUrl, language));
   }
 
-  /** Sent instead of a sign-up link when the address already has an account. */
-  async sendSignUpNoticeEmail(toEmail: string, signInUrl: string): Promise<void> {
-    await this.sendRenderedEmail(toEmail, {
-      subject: 'Someone tried to sign up to Thoughty with your email',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2 style="color: #333;">You already have an account</h2>
-          <p style="color: #666; font-size: 16px;">
-            Someone tried to create a Thoughty account with this email address, which already has one.
-            Nothing was changed.
-          </p>
-          <p style="color: #666; font-size: 16px;">
-            If it was you, sign in instead. If you forgot your password, choose
-            <strong>Forgot password?</strong> on the sign-in page to reset it.
-          </p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${escapeHtml(signInUrl)}"
-               style="background-color: #6366f1; color: white; padding: 12px 24px;
-                      text-decoration: none; border-radius: 6px; font-size: 16px;">
-              Sign in
-            </a>
-          </div>
-          <p style="color: #999; font-size: 14px;">If it was not you, you can ignore this email.</p>
-        </div>
-      `,
-      text: [
-        'Someone tried to sign up to Thoughty with your email',
-        '',
-        'Someone tried to create a Thoughty account with this email address, which already has one.',
-        'Nothing was changed.',
-        'If it was you, sign in instead. If you forgot your password, choose "Forgot password?" on the sign-in page to reset it.',
-        '',
-        signInUrl,
-        '',
-        'If it was not you, you can ignore this email.',
-        '',
-      ].join('\n'),
-    });
+  /** Sent instead of a sign-up link when the address already has an account, in the visitor's language. */
+  async sendSignUpNoticeEmail(toEmail: string, signInUrl: string, language?: string): Promise<void> {
+    await this.sendRenderedEmail(toEmail, renderLinkEmail('signUpNotice', signInUrl, language));
   }
 
   async sendTwoFactorCodeEmail(

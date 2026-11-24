@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, type SubmitEvent } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import type { SignUpPreferences } from '../../contexts/authTypes';
+import type { Language } from '../../utils/translations';
 import { validateAuthForm, getAuthSubtitleText } from './types';
 import type { TranslationFunction, AuthResult } from './types';
 import AuthFormContent from './AuthFormContent';
@@ -13,13 +15,15 @@ import './AuthPage.css';
 interface AuthPageProps {
   readonly t: TranslationFunction;
   readonly theme?: 'light' | 'dark';
+  /** The language the page is shown in, sent with the theme when signing up, for the new account. */
+  readonly language?: Language;
   readonly onAuthSuccess?: () => void;
   readonly mode?: 'login' | 'register';
   readonly onModeChange?: (mode: 'login' | 'register') => void;
   readonly onBack?: () => void;
 }
 
-function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBack }: AuthPageProps) {
+function AuthPage({ t, theme, language, onAuthSuccess, mode = 'login', onModeChange, onBack }: AuthPageProps) {
   const [currentMode, setCurrentMode] = useState<'login' | 'register'>(mode);
   const [showForgotPassword, setShowForgotPassword] = useState<boolean>(false);
   const [identifier, setIdentifier] = useState<string>('');
@@ -50,6 +54,8 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
 
   const isDark = theme !== 'light';
   const isLogin = currentMode === 'login';
+  // What the visitor sees now: an account created from this page (a form, Google, Keycloak) starts with it
+  const signUpPreferences: SignUpPreferences = { ...(language ? { language } : {}), ...(theme ? { theme } : {}) };
 
   // Load Google SDK
   useEffect(() => {
@@ -143,7 +149,7 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
       if (isLogin) {
         result = await login(identifier, password, website);
       } else {
-        result = await register(email, password, username, website);
+        result = await register(email, password, username, website, signUpPreferences);
       }
 
       if (result.verificationRequired) {
@@ -170,7 +176,7 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
     setLoading(true);
 
     try {
-      const result = await signInWithGoogle();
+      const result = await signInWithGoogle(signUpPreferences);
       if (result.success) {
         onAuthSuccess?.();
       } else {
@@ -212,7 +218,7 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
     setLoading(true);
     setError('');
     setSuccessMessage('');
-    const result = await register(email, password, username, website);
+    const result = await register(email, password, username, website, signUpPreferences);
     setLoading(false);
     if (result.success) {
       setSignUpEmailSentAt(Date.now());
@@ -345,7 +351,7 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
           googleClientId={googleClientId}
           loading={loading}
           keycloakSsoEnabled={import.meta.env.PROD}
-          handleKeycloakSignIn={() => startKeycloakSso()}
+          handleKeycloakSignIn={() => startKeycloakSso(globalThis.location.href, signUpPreferences)}
           handleGoogleSignIn={handleGoogleSignIn}
           isLogin={isLogin}
           switchMode={switchMode}

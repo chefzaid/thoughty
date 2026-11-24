@@ -268,11 +268,11 @@ describe('AuthController', () => {
         .mockResolvedValue({ accessToken: 'token', refreshToken: 'rt', user: { id: 1 } });
       const res = mockResponse();
 
-      await expect(controller.sso(res, 'keycloak-token')).resolves.toEqual({
+      await expect(controller.sso(res, { language: 'fr', theme: 'light' }, 'keycloak-token')).resolves.toEqual({
         accessToken: 'token',
         user: { id: 1 },
       });
-      expect(authService.keycloakLogin).toHaveBeenCalledWith('keycloak-token');
+      expect(authService.keycloakLogin).toHaveBeenCalledWith('keycloak-token', { language: 'fr', theme: 'light' });
       expect(res.cookie).toHaveBeenCalledWith(COOKIE, 'rt', expect.any(Object));
     });
   });

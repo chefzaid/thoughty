@@ -6,7 +6,7 @@ import {
   useMemo,
   type ReactNode,
 } from 'react';
-import type { AuthResult, User } from './authTypes';
+import type { AuthResult, SignUpPreferences, User } from './authTypes';
 import { useAccountActions } from './useAccountActions';
 import { useAuthSession } from './useAuthSession';
 import { useSignInActions } from './useSignInActions';
@@ -27,13 +27,21 @@ interface AuthContextValue {
   unreachable: boolean;
   /** Tries to confirm an unconfirmed session now (a wait the API asked for still holds). */
   retrySession: () => Promise<unknown>;
-  register: (email: string, password: string, username: string, website?: string) => Promise<AuthResult>;
+  /** `preferences`: the language and theme shown to the visitor, which the new account starts with. */
+  register: (
+    email: string,
+    password: string,
+    username: string,
+    website?: string,
+    preferences?: SignUpPreferences,
+  ) => Promise<AuthResult>;
   completeSignUp: (token: string, password: string, username?: string) => Promise<AuthResult>;
   login: (identifier: string, password: string, website?: string) => Promise<AuthResult>;
   verifyTwoFactor: (challengeToken: string, code: string) => Promise<AuthResult>;
   resendTwoFactor: (challengeToken: string) => Promise<AuthResult>;
   logout: () => Promise<void>;
-  signInWithGoogle: () => Promise<AuthResult>;
+  /** `preferences` apply when the Google sign-in creates the account. */
+  signInWithGoogle: (preferences?: SignUpPreferences) => Promise<AuthResult>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<AuthResult>;
   forgotPassword: (email: string) => Promise<AuthResult>;
   resetPassword: (token: string, newPassword: string) => Promise<AuthResult>;

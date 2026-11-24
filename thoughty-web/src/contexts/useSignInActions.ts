@@ -9,7 +9,7 @@ import {
   resendTwoFactorChallenge,
   verifyTwoFactorLogin,
 } from './authRequests';
-import type { AuthResult, TokenResponse } from './authTypes';
+import type { AuthResult, SignUpPreferences, TokenResponse } from './authTypes';
 import { signInWithGoogleAccount } from './googleAuth';
 
 interface SignInActionsOptions {
@@ -21,7 +21,8 @@ interface SignInActionsOptions {
 /**
  * Ways to start a session: register (which, where the server can send email, only emails a link
  * that `completeSignUp` turns into the account), password login with optional two-factor step,
- * and Google.
+ * and Google. Registration and Google send the visitor's language and theme (`preferences`), which an
+ * account they create starts with.
  */
 export function useSignInActions({ googleClientId, setError, startSession }: SignInActionsOptions) {
   // Register with email/password
@@ -29,11 +30,12 @@ export function useSignInActions({ googleClientId, setError, startSession }: Sig
     email: string,
     password: string,
     username: string,
-    website = ''
+    website = '',
+    preferences: SignUpPreferences = {},
   ): Promise<AuthResult> => {
     setError(null);
     try {
-      const data = await registerWithPassword({ email, password, username, website });
+      const data = await registerWithPassword({ email, password, username, website, ...preferences });
 
       if ('verificationRequired' in data) {
         return { success: true, verificationRequired: true };
@@ -113,13 +115,16 @@ export function useSignInActions({ googleClientId, setError, startSession }: Sig
   }, [setError]);
 
   // Google login: the server verifies the raw Google ID token and reads the identity from it
-  const googleCredentialLogin = useCallback(async (credential: string): Promise<AuthResult> => {
+  const googleCredentialLogin = useCallback(async (
+    credential: string,
+    preferences: SignUpPreferences,
+  ): Promise<AuthResult> => {
     setError(null);
     try {
       const response = await fetch(`${API_BASE}/oauth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider: 'google', credential }),
+        body: JSON.stringify({ provider: 'google', credential, ...preferences }),
       });
 
       if (!response.ok) {
@@ -140,8 +145,8 @@ export function useSignInActions({ googleClientId, setError, startSession }: Sig
   }, [setError, startSession]);
 
   // Google Sign In
-  const signInWithGoogle = useCallback(async (): Promise<AuthResult> => {
-    return signInWithGoogleAccount(googleClientId, googleCredentialLogin);
+  const signInWithGoogle = useCallback(async (preferences: SignUpPreferences = {}): Promise<AuthResult> => {
+    return signInWithGoogleAccount(googleClientId, (credential) => googleCredentialLogin(credential, preferences));
   }, [googleClientId, googleCredentialLogin]);
 
   return { register, completeSignUp, login, verifyTwoFactor, resendTwoFactor, signInWithGoogle };

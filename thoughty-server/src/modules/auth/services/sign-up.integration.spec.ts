@@ -7,7 +7,7 @@ import {
   POSTGRES_SETUP_TIMEOUT_MS,
   type PostgresTestDatabase,
 } from '@/database/postgres-test-database.test-helpers';
-import { Diary, SignUpRequest, User } from '@/database/entities';
+import { Diary, Setting, SignUpRequest, User } from '@/database/entities';
 import { AccountPurgeService } from '@/modules/account-purge/account-purge.service';
 import { SignUpService } from './sign-up.service';
 
@@ -67,6 +67,20 @@ describePostgres('PostgreSQL verify-first sign-up', () => {
     await expect(dataSource.getRepository(Diary).findOneByOrFail({ userId: session.user.id })).resolves.toMatchObject({ name: 'Thoughts', isDefault: true });
     await expect(dataSource.getRepository(SignUpRequest).count()).resolves.toBe(0);
     await expectApiError(service.complete({ token: lastToken(), password: PASSWORD }), BadRequestException, 'AUTH_INVALID_SIGN_UP_TOKEN');
+  });
+
+  it('keeps the visitor’s language and theme with the request and starts the account in them', async () => {
+    await service.register({ email: 'fr@example.com', password: PASSWORD, language: 'fr', theme: 'light' });
+    await flush();
+    await expect(dataSource.getRepository(SignUpRequest).findOneByOrFail({ email: 'fr@example.com' })).resolves.toMatchObject({
+      language: 'fr',
+      theme: 'light',
+    });
+
+    const session = (await service.complete({ token: lastToken(), password: PASSWORD })) as unknown as { user: User };
+
+    const settings = await dataSource.getRepository(Setting).find({ where: { userId: session.user.id }, order: { key: 'ASC' } });
+    expect(settings.map(({ key, value }) => [key, value])).toEqual([['language', 'fr'], ['theme', 'light']]);
   });
 
   it('only notifies an address that already has an account, and creates nothing for it', async () => {

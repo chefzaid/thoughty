@@ -9,6 +9,9 @@ interface SignUpPayload {
   email?: string;
   password?: string;
   username?: string;
+  /** The language and theme shown to the visitor, which the new account starts with. */
+  language?: "en" | "fr";
+  theme?: "light" | "dark";
 }
 
 export interface MockSignUpOptions {
@@ -40,11 +43,14 @@ export function createMockSignUpState(options: MockSignUpOptions = {}): MockSign
   };
 }
 
-function signIn(state: MockAppState, email: string, username: string, emailVerified: boolean) {
+function signIn(state: MockAppState, registered: SignUpPayload, username: string, emailVerified: boolean) {
+  const email = registered.email || "new@example.com";
   state.authenticated = true;
   state.user = { id: 1, username, email, authProvider: "local", emailVerified, emailMissing: false, twoFactorEnabled: false, isNewUser: true };
-  // A new account has not seen the welcome page yet
+  // A new account has not seen the welcome page yet, and starts in the visitor's language and theme, as on the API
   state.config.onboardingDone = false;
+  if (registered.language) state.config.language = registered.language;
+  if (registered.theme) state.config.theme = registered.theme;
 }
 
 /** Registration, verify-first by default, and the link that creates the account. */
@@ -57,7 +63,7 @@ export async function handleSignUpRoutes({ route, request, pathname, state }: Ro
     if (await refuseWeakPassword(route, payload.password)) return true;
     signUp.lastRegisterPayload = payload;
     if (signUp.instant) {
-      signIn(state, payload.email || "new@example.com", payload.username || "NewUser", false);
+      signIn(state, payload, payload.username || "NewUser", false);
       await fulfillJson(route, { accessToken: state.accessToken, user: state.user }, { status: 201 });
       return true;
     }
@@ -89,7 +95,7 @@ export async function handleSignUpRoutes({ route, request, pathname, state }: Ro
       return true;
     }
     signUp.linkUsed = true;
-    signIn(state, registered.email || "new@example.com", username, true);
+    signIn(state, registered, username, true);
     await fulfillJson(route, { accessToken: state.accessToken, user: state.user }, { status: 201 });
     return true;
   }

@@ -95,6 +95,23 @@ describe('AuthContext', () => {
         expect(localStorage.getItem('accessToken')).toBeNull();
     });
 
+    it('sends the language and theme kept for the way back from Keycloak with the exchange, once', async () => {
+        vi.stubEnv('PROD', true);
+        sessionStorage.setItem('thoughty.keycloak-sso-attempt', 'pending');
+        sessionStorage.setItem('thoughty.keycloak-sso-preferences', JSON.stringify({ language: 'fr', theme: 'light' }));
+        routeFetch({
+            '/api/auth/sso?language=fr&theme=light': [json({
+                accessToken: 'sso-access',
+                user: { id: 8, email: 'camille@swirlit.dev', authProvider: 'keycloak', isNewUser: true }
+            })],
+        });
+
+        const auth = renderAuth();
+
+        await waitFor(() => expect(auth.current().user?.email).toBe('camille@swirlit.dev'));
+        expect(sessionStorage.getItem('thoughty.keycloak-sso-preferences')).toBeNull();
+    });
+
     it('never sends a production visitor to Keycloak unasked', async () => {
         vi.stubEnv('PROD', true);
         const assign = stubLocationAssign();

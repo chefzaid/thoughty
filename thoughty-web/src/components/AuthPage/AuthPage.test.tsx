@@ -187,7 +187,7 @@ describe('AuthPage', () => {
         fireEvent.click(submitBtn);
 
         await waitFor(() => {
-            expect(mockRegister).toHaveBeenCalledWith('user@test.com', 'Password123!', 'testuser', '');
+            expect(mockRegister).toHaveBeenCalledWith('user@test.com', 'Password123!', 'testuser', '', { theme: 'dark' });
             expect(onAuthSuccess).toHaveBeenCalled();
         });
     });

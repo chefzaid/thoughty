@@ -41,7 +41,7 @@ interface SignedIn {
   user: { id: number; username: string; email: string; authProvider: string; emailVerified: boolean; isNewUser?: boolean };
 }
 
-// Google sign-in allows 5 calls per 15 minutes from one address; this suite makes 4.
+// Google sign-in allows 5 calls per 15 minutes from one address; this suite makes 5.
 describeContract(
   'provider-sign-in',
   (context) => {
@@ -49,8 +49,15 @@ describeContract(
       context.client.call(operation, options);
     const withGoogle = async (credential: string, status = 200) =>
       call('POST /api/auth/oauth', { json: { provider: 'google', credential }, status });
-    const withKeycloak = async (token: string) =>
-      call('GET /api/auth/sso', { headers: { 'x-auth-request-access-token': token }, status: 200 });
+    const withKeycloak = async (token: string, query?: Record<string, string>) =>
+      call('GET /api/auth/sso', { headers: { 'x-auth-request-access-token': token }, query, status: 200 });
+    const settingsOf = async (userId: number) =>
+      Object.fromEntries(
+        ((await context.api.dataSource.query(
+          `SELECT key, value FROM settings WHERE user_id = $1 AND key IN ('language', 'theme')`,
+          [userId],
+        )) as Array<{ key: string; value: string }>).map(({ key, value }) => [key, value]),
+      );
 
     it('takes over an unverified account for the Google user who proves its address', async () => {
       // No mail server: registration signs the registrant in at once, with the address unproven
@@ -99,6 +106,39 @@ describeContract(
       expect((first.body as SignedIn).user).toMatchObject({ username: 'Jane Doe', isNewUser: true });
       expect((second.body as SignedIn).user).toMatchObject({ email: 'jane2@example.com', isNewUser: true });
       expect((second.body as SignedIn).user.username).toMatch(/^Jane Doe-\d{6}$/);
+    });
+
+    it('starts a new Google account in the visitor’s language and theme', async () => {
+      const created = await call('POST /api/auth/oauth', {
+        json: {
+          provider: 'google',
+          credential: googleCredential('google-fr', 'fr-google@example.com', 'Camille'),
+          language: 'fr',
+          theme: 'light',
+        },
+        status: 200,
+      });
+      const user = (created.body as SignedIn).user;
+      expect(user).toMatchObject({ isNewUser: true });
+      await expect(settingsOf(user.id)).resolves.toEqual({ language: 'fr', theme: 'light' });
+    });
+
+    it('starts a new Keycloak account in the visitor’s language and theme, and leaves an existing one as it is', async () => {
+      const created = await withKeycloak(keycloakToken('kc-fr', 'kc-fr@example.com', 'kc_fr'), { language: 'fr', theme: 'light' });
+      const user = (created.body as SignedIn).user;
+      expect(user).toMatchObject({ isNewUser: true });
+      await expect(settingsOf(user.id)).resolves.toEqual({ language: 'fr', theme: 'light' });
+
+      await context.api.dataSource.query(`UPDATE settings SET value = 'en' WHERE user_id = $1 AND key = 'language'`, [user.id]);
+      await withKeycloak(keycloakToken('kc-fr', 'kc-fr@example.com', 'kc_fr'), { language: 'fr', theme: 'dark' });
+      await expect(settingsOf(user.id)).resolves.toEqual({ language: 'en', theme: 'light' });
+
+      await call('GET /api/auth/sso', {
+        headers: { 'x-auth-request-access-token': keycloakToken('kc-fr', 'kc-fr@example.com', 'kc_fr') },
+        query: { language: 'de' },
+        status: 400,
+        code: 'VALIDATION_FAILED',
+      });
     });
 
     it('creates a Keycloak account under a free name and finds it by subject from then on', async () => {

@@ -44,8 +44,16 @@ describeContract(
         status: 200,
       });
       expect(added.body).toMatchObject({ email: placeholder, emailMissing: true, pendingEmail: 'bob.real@example.com' });
+      // The link is written in the account's language
+      expect((await mailTo('bob.real@example.com')).subject).toBe('Verify your Thoughty email');
+      await context.api.dataSource.query(
+        `INSERT INTO settings (user_id, key, value) VALUES ($1, 'language', 'fr')`,
+        [bob.id],
+      );
       await call('POST /api/auth/resend-verification-email', { as: writer, status: 200 });
-      const token = linkToken((await mailTo('bob.real@example.com', 2)).text, '/verify-email');
+      const resent = await mailTo('bob.real@example.com', 2);
+      expect(resent.subject).toBe('Vérifiez votre adresse e-mail Thoughty');
+      const token = linkToken(resent.text, '/verify-email');
 
       await call('POST /api/auth/verify-email', { json: { token }, status: 200 });
       const me = await call('GET /api/auth/me', { as: writer, status: 200 });

@@ -10,8 +10,9 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { STRONG_PASSWORD_DESCRIPTION, StrongPassword } from './strong-password.decorator';
 import { DELIVERABLE_EMAIL_DESCRIPTION, DeliverableEmail } from './deliverable-email.decorator';
+import { SignUpPreferencesDto } from './sign-up-preferences.dto';
 
-export class RegisterDto {
+export class RegisterDto extends SignUpPreferencesDto {
   @ApiProperty({ example: 'user@example.com', description: DELIVERABLE_EMAIL_DESCRIPTION })
   @DeliverableEmail()
   email: string;
@@ -52,7 +53,8 @@ export class LoginDto {
   website?: string;
 }
 
-export class OAuthDto {
+/** A Google sign-in; the preferences apply only when it creates the account. */
+export class OAuthDto extends SignUpPreferencesDto {
   @ApiProperty({ example: 'google', enum: ['google'] })
   @IsIn(['google'])
   provider: 'google';

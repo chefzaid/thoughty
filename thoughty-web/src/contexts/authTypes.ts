@@ -40,3 +40,9 @@ export type SignUpStartedResponse = Schemas['SignUpStartedResponseDto'];
 export type RegisterResponse = TokenResponse | SignUpStartedResponse;
 
 export type CompleteSignUpRequest = Schemas['CompleteSignUpDto'];
+
+/**
+ * The language and theme the pages are shown in to a visitor, sent when signing up: an account the
+ * sign-up creates starts with them, and its sign-up email is written in that language.
+ */
+export type SignUpPreferences = Pick<Schemas['RegisterDto'], 'language' | 'theme'>;

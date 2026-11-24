@@ -42,6 +42,19 @@ describe('EmailService sign-up emails', () => {
     expect(mail.text).not.toContain('token');
   });
 
+  it('writes each account email in the language it is given', async () => {
+    const service = createService();
+    await service.sendSignUpLinkEmail('new@example.com', 'https://x/complete-sign-up?token=1', 'fr');
+    await service.sendSignUpNoticeEmail('writer@example.com', 'https://x/login', 'fr');
+    await service.sendEmailVerificationEmail('writer@example.com', 'https://x/verify-email?token=2', 'fr');
+
+    expect(sendMail.mock.calls.map(([mail]) => (mail as { subject: string }).subject)).toEqual([
+      'Terminez la création de votre compte Thoughty',
+      'Quelqu’un a tenté de s’inscrire à Thoughty avec votre adresse e-mail',
+      'Vérifiez votre adresse e-mail Thoughty',
+    ]);
+  });
+
   it('needs a configured mail server', async () => {
     await expect(createService({}).sendSignUpLinkEmail('a@b.c', 'https://x')).rejects.toThrow('Email service not configured');
     await expect(createService({}).sendSignUpNoticeEmail('a@b.c', 'https://x')).rejects.toThrow('Email service not configured');

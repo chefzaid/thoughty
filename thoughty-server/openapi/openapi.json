@@ -382,6 +382,7 @@
     },
     "/api/auth/oauth": {
       "post": {
+        "description": "The optional `language` and `theme` are the visitor’s, for an account this sign-in creates; an existing account keeps its own.",
         "operationId": "AuthController_oauth",
         "parameters": [],
         "requestBody": {
@@ -392,6 +393,8 @@
                 "$ref": "#/components/schemas/OAuthDto"
               },
               "example": {
+                "language": "en",
+                "theme": "light",
                 "provider": "google",
                 "credential": "example"
               }
@@ -424,7 +427,7 @@
             }
           },
           "400": {
-            "description": "Missing required fields",
+            "description": "Missing required fields, or a language or theme the app does not offer",
             "content": {
               "application/json": {
                 "schema": {
@@ -432,7 +435,7 @@
                 },
                 "example": {
                   "statusCode": 400,
-                  "message": "Missing required fields",
+                  "message": "Missing required fields, or a language or theme the app does not offer",
                   "error": "Bad Request",
                   "code": "VALIDATION_FAILED"
                 }
@@ -512,8 +515,35 @@
     },
     "/api/auth/sso": {
       "get": {
+        "description": "The optional `language` and `theme` are the visitor’s, for an account this sign-in creates; an existing account keeps its own.",
         "operationId": "AuthController_sso",
         "parameters": [
+          {
+            "name": "language",
+            "required": false,
+            "in": "query",
+            "description": "The language the visitor reads the pages in: a new account starts in it, and the sign-up email is written in it",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "en",
+                "fr"
+              ]
+            }
+          },
+          {
+            "name": "theme",
+            "required": false,
+            "in": "query",
+            "description": "The color theme the visitor sees: a new account starts in it",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "light",
+                "dark"
+              ]
+            }
+          },
           {
             "name": "x-auth-request-access-token",
             "required": true,
@@ -544,6 +574,22 @@
                     "isNewUser": true
                   },
                   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A language or theme the app does not offer (`VALIDATION_FAILED`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "A language or theme the app does not offer (`VALIDATION_FAILED`)",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
                 }
               }
             }
@@ -1418,7 +1464,7 @@
     },
     "/api/auth/register": {
       "post": {
-        "description": "Where the server can send email, no account is created yet: every address gets the same `202` answer, a new one an email with a single-use link to `POST /api/auth/register/complete` and one that already has an account a notice to sign in instead. Only outside production and without a mail server is the account created and signed in at once (`201`).",
+        "description": "Where the server can send email, no account is created yet: every address gets the same `202` answer, a new one an email with a single-use link to `POST /api/auth/register/complete` and one that already has an account a notice to sign in instead. Only outside production and without a mail server is the account created and signed in at once (`201`). The optional `language` and `theme` are those the visitor reads the pages in: the email is written in that language, and the account starts with both (English and dark without them).",
         "operationId": "SignUpController_register",
         "parameters": [],
         "requestBody": {
@@ -1429,6 +1475,8 @@
                 "$ref": "#/components/schemas/RegisterDto"
               },
               "example": {
+                "language": "en",
+                "theme": "light",
                 "email": "user@example.com",
                 "password": "Password123!",
                 "username": "johndoe",
@@ -1477,7 +1525,7 @@
             }
           },
           "400": {
-            "description": "Validation error; a password too weak is `AUTH_WEAK_PASSWORD`",
+            "description": "Validation error (a language or theme the app does not offer is `VALIDATION_FAILED`); a password too weak is `AUTH_WEAK_PASSWORD`",
             "content": {
               "application/json": {
                 "schema": {
@@ -1485,7 +1533,7 @@
                 },
                 "example": {
                   "statusCode": 400,
-                  "message": "Validation error; a password too weak is `AUTH_WEAK_PASSWORD`",
+                  "message": "Validation error (a language or theme the app does not offer is `VALIDATION_FAILED`); a password too weak is `AUTH_WEAK_PASSWORD`",
                   "error": "Bad Request",
                   "code": "VALIDATION_FAILED"
                 }
@@ -19910,6 +19958,22 @@
       "OAuthDto": {
         "type": "object",
         "properties": {
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "fr"
+            ],
+            "description": "The language the visitor reads the pages in: a new account starts in it, and the sign-up email is written in it"
+          },
+          "theme": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark"
+            ],
+            "description": "The color theme the visitor sees: a new account starts in it"
+          },
           "provider": {
             "type": "string",
             "example": "google",
@@ -19927,6 +19991,8 @@
           "credential"
         ],
         "example": {
+          "language": "en",
+          "theme": "light",
           "provider": "google",
           "credential": "example"
         }
@@ -20188,6 +20254,22 @@
       "RegisterDto": {
         "type": "object",
         "properties": {
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "fr"
+            ],
+            "description": "The language the visitor reads the pages in: a new account starts in it, and the sign-up email is written in it"
+          },
+          "theme": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark"
+            ],
+            "description": "The color theme the visitor sees: a new account starts in it"
+          },
           "email": {
             "type": "string",
             "example": "user@example.com",
@@ -20212,6 +20294,8 @@
           "password"
         ],
         "example": {
+          "language": "en",
+          "theme": "light",
           "email": "user@example.com",
           "password": "Password123!",
           "username": "johndoe",

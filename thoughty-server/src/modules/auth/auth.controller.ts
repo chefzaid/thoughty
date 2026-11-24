@@ -10,6 +10,7 @@ import {
   Headers,
   Param,
   ParseIntPipe,
+  Query,
   Req,
   Res,
   UnauthorizedException,
@@ -52,6 +53,7 @@ import {
   TwoFactorResendDto,
   DisableTwoFactorDto,
   TwoFactorStatusResponseDto,
+  SignUpPreferencesDto,
 } from './dto';
 import {
   AccountService,
@@ -69,6 +71,8 @@ import { RATE_LIMITS, throttleDefault } from '@/common';
 
 const PROVIDER_SIGN_IN_RACE_NOTE =
   'Racing sign-ins kept taking the new account\'s username (AUTH_USERNAME_TAKEN) or email (AUTH_EMAIL_TAKEN); trying again works';
+const NEW_ACCOUNT_PREFERENCES_NOTE =
+  'The optional `language` and `theme` are the visitor’s, for an account this sign-in creates; an existing account keeps its own.';
 
 @ApiTags('Authentication')
 @ApiExtraModels(AuthResponseDto, TwoFactorChallengeResponseDto)
@@ -203,13 +207,13 @@ export class AuthController {
   @Post('oauth')
   @HttpCode(HttpStatus.OK)
   @Throttle(throttleDefault(RATE_LIMITS.authAttempt))
-  @ApiOperation({ summary: 'Sign in with a verified Google ID token' })
+  @ApiOperation({ summary: 'Sign in with a verified Google ID token', description: NEW_ACCOUNT_PREFERENCES_NOTE })
   @ApiResponse({
     status: 200,
     description: `Google sign-in successful. ${REFRESH_COOKIE_NOTE}`,
     type: AuthResponseDto,
   })
-  @ApiResponse({ status: 400, description: 'Missing required fields' })
+  @ApiResponse({ status: 400, description: 'Missing required fields, or a language or theme the app does not offer' })
   @ApiResponse({ status: 401, description: 'Invalid Google credential or unverified email' })
   @ApiResponse({ status: 403, description: 'The account with this Google identity or email was deleted' })
   @ApiResponse({ status: 409, description: PROVIDER_SIGN_IN_RACE_NOTE })
@@ -223,20 +227,25 @@ export class AuthController {
 
   @Public()
   @Get('sso')
-  @ApiOperation({ summary: 'Exchange the ingress-validated Keycloak identity for an app session' })
+  @ApiOperation({
+    summary: 'Exchange the ingress-validated Keycloak identity for an app session',
+    description: NEW_ACCOUNT_PREFERENCES_NOTE,
+  })
   @ApiResponse({
     status: 200,
     description: `SSO authentication successful. ${REFRESH_COOKIE_NOTE}`,
     type: AuthResponseDto,
   })
+  @ApiResponse({ status: 400, description: 'A language or theme the app does not offer (`VALIDATION_FAILED`)' })
   @ApiResponse({ status: 401, description: 'Missing or invalid Keycloak identity' })
   @ApiResponse({ status: 403, description: 'The account with this Keycloak identity or email was deleted' })
   @ApiResponse({ status: 409, description: PROVIDER_SIGN_IN_RACE_NOTE })
   async sso(
     @Res({ passthrough: true }) res: Response,
+    @Query() preferences: SignUpPreferencesDto,
     @Headers('x-auth-request-access-token') accessToken?: string,
   ): Promise<AuthResponseDto> {
-    return startSession(res, await this.authService.keycloakLogin(accessToken));
+    return startSession(res, await this.authService.keycloakLogin(accessToken, preferences));
   }
 
   @Public()

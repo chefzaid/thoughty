@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { MoreThan } from 'typeorm';
-import { User } from '@/database/entities';
+import { Setting, User } from '@/database/entities';
 import { EmailService } from './email.service';
 import { EmailVerificationService } from './email-verification.service';
 
@@ -12,6 +12,7 @@ describe('EmailVerificationService', () => {
   let service: EmailVerificationService;
   let userRepository: any;
   let emailService: any;
+  let settingRepository: { findOne: jest.Mock };
 
   const mockUser = {
     id: 1,
@@ -27,6 +28,7 @@ describe('EmailVerificationService', () => {
       save: jest.fn(),
       exists: jest.fn().mockResolvedValue(false),
     };
+    settingRepository = { findOne: jest.fn().mockResolvedValue(null) };
     emailService = {
       isConfigured: jest.fn().mockReturnValue(true),
       sendEmailVerificationEmail: jest.fn().mockResolvedValue(undefined),
@@ -36,6 +38,7 @@ describe('EmailVerificationService', () => {
       providers: [
         EmailVerificationService,
         { provide: getRepositoryToken(User), useValue: userRepository },
+        { provide: getRepositoryToken(Setting), useValue: settingRepository },
         { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue('https://thoughty.test') } },
         { provide: EmailService, useValue: emailService },
       ],
@@ -194,7 +197,21 @@ describe('EmailVerificationService', () => {
       expect(emailService.sendEmailVerificationEmail).toHaveBeenCalledWith(
         'writer@example.com',
         expect.stringContaining('https://thoughty.test/verify-email?token='),
+        undefined,
       );
+    });
+
+    it('writes the link in the account’s language', async () => {
+      userRepository.findOne.mockResolvedValue({ ...placeholder });
+      settingRepository.findOne.mockResolvedValue({ value: 'fr' });
+
+      await service.addEmail(1, 'writer@example.com');
+
+      expect(settingRepository.findOne).toHaveBeenCalledWith({
+        where: { userId: 1, key: 'language' },
+        select: { value: true },
+      });
+      expect(emailService.sendEmailVerificationEmail).toHaveBeenCalledWith('writer@example.com', expect.any(String), 'fr');
     });
 
     it('sends a requested resend to the waiting address', async () => {
@@ -202,7 +219,7 @@ describe('EmailVerificationService', () => {
 
       await service.sendVerificationEmail(1, { requireDelivery: true });
 
-      expect(emailService.sendEmailVerificationEmail).toHaveBeenCalledWith('writer@example.com', expect.any(String));
+      expect(emailService.sendEmailVerificationEmail).toHaveBeenCalledWith('writer@example.com', expect.any(String), undefined);
     });
 
     it('sets the waiting address, verified, when its link is opened', async () => {

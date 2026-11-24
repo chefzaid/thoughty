@@ -15,6 +15,7 @@ import { DataSource, MoreThan, Repository } from 'typeorm';
 import { apiError } from '@/common/errors';
 import { BackgroundTasks } from '@/common/utils/background-tasks.util';
 import { SignUpRequest, User } from '@/database/entities';
+import { APP_LANGUAGES, APP_THEMES, type AppLanguage, type AppTheme } from '@/modules/config/dto/config.dto';
 import { CompleteSignUpDto, RegisterDto, SignUpStartedResponseDto } from '../dto';
 import { assertHumanAuthAttempt } from './auth-bot-protection';
 import { AuthService } from './auth.service';
@@ -37,6 +38,15 @@ const SIGN_UP_STARTED: SignUpStartedResponseDto = {
 
 function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+/** A stored preference the app still offers, else none (the account default). */
+function readLanguage(value: string | null): AppLanguage | undefined {
+  return APP_LANGUAGES.find((language) => language === value);
+}
+
+function readTheme(value: string | null): AppTheme | undefined {
+  return APP_THEMES.find((theme) => theme === value);
 }
 
 function isProduction(): boolean {
@@ -125,6 +135,8 @@ export class SignUpService implements BeforeApplicationShutdown {
    * Records the sign-up and sends its email in the background. An address with an account gets a
    * row without a token, which only spaces out its notices. The password is hashed for every
    * address, so both kinds answer after the same work, and neither waits for the mail server.
+   * Either email is written in the language the visitor reads the pages in; a new address's row
+   * keeps that language and theme for the account its link creates.
    */
   private async requestSignUp(dto: RegisterDto): Promise<void> {
     const email = dto.email.toLowerCase();
@@ -146,6 +158,8 @@ export class SignUpService implements BeforeApplicationShutdown {
         tokenHash: token ? hashToken(token) : null,
         passwordHash: token ? passwordHash : null,
         username: token ? dto.username || null : null,
+        language: token ? (dto.language ?? null) : null,
+        theme: token ? (dto.theme ?? null) : null,
         sentCount: previous && previous.expiresAt > now ? previous.sentCount + 1 : 1,
         lastSentAt: now,
         expiresAt: new Date(now.getTime() + SIGN_UP_LINK_TTL_MS),
@@ -156,11 +170,11 @@ export class SignUpService implements BeforeApplicationShutdown {
     const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:5173');
     if (token) {
       this.sendInBackground('Sign-up link', () =>
-        this.emailService.sendSignUpLinkEmail(email, `${frontendUrl}/complete-sign-up?token=${token}`),
+        this.emailService.sendSignUpLinkEmail(email, `${frontendUrl}/complete-sign-up?token=${token}`, dto.language),
       );
     } else if (!account?.deletedAt) {
       this.sendInBackground('Sign-up notice', () =>
-        this.emailService.sendSignUpNoticeEmail(email, `${frontendUrl}/login`),
+        this.emailService.sendSignUpNoticeEmail(email, `${frontendUrl}/login`, dto.language),
       );
     }
   }
@@ -184,8 +198,8 @@ export class SignUpService implements BeforeApplicationShutdown {
   }
 
   /**
-   * Deletes the request and creates the verified account with its default diary in one
-   * transaction. Claiming the request first keeps the link single-use when two requests race; a
+   * Deletes the request and creates the verified account with its default diary, and the language
+   * and theme the visitor signed up in, in one transaction. Claiming the request first keeps the link single-use when two requests race; a
    * username or address taken in the meantime rolls everything back and keeps the link working.
    */
   private async createAccount(request: SignUpRequest, username: string): Promise<User> {
@@ -204,7 +218,7 @@ export class SignUpService implements BeforeApplicationShutdown {
           passwordHash: request.passwordHash,
           authProvider: 'local',
           emailVerified: true,
-        });
+        }, { language: readLanguage(request.language), theme: readTheme(request.theme) });
       });
     } catch (error) {
       const constraint = uniqueViolationOf(error);

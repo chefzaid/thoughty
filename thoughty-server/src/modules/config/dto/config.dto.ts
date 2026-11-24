@@ -16,6 +16,11 @@ const ToSettingText = () =>
   });
 
 export const BOOLEAN_TEXT = ['true', 'false'] as const;
+/** The interface languages and color themes a writer may choose (`language`, `theme`). */
+export const APP_LANGUAGES = ['en', 'fr'] as const;
+export const APP_THEMES = ['light', 'dark'] as const;
+export type AppLanguage = (typeof APP_LANGUAGES)[number];
+export type AppTheme = (typeof APP_THEMES)[number];
 export const FONT_FAMILIES = ['system', 'serif', 'modern', 'mono', 'legible'] as const;
 /** Named steps rather than numbers, so every value the web shows is one it can draw well. */
 export const LINE_SPACINGS = ['normal', 'relaxed', 'loose'] as const;
@@ -62,7 +67,7 @@ const MODEL_DESCRIPTION = 'OpenRouter model id, or empty for the default';
  * by its own endpoint, and the global validation pipe rejects it here with 400.
  */
 export class UpdateConfigDto {
-  @SettingChoice(['light', 'dark'], 'Color theme')
+  @SettingChoice(APP_THEMES, 'Color theme')
   theme?: string;
 
   @SettingText(200, 'Display name')
@@ -108,7 +113,7 @@ export class UpdateConfigDto {
   @SettingText(1000, 'Text-to-speech voice URI, or empty for the default')
   ttsVoiceUri?: string;
 
-  @SettingChoice(['en', 'fr'], 'Interface language')
+  @SettingChoice(APP_LANGUAGES, 'Interface language')
   language?: string;
 
   @SettingText(3, 'Maximum pinned entries', SMALL_NUMBER)

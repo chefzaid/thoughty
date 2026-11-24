@@ -3,7 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { DataSource, type FindOperator } from 'typeorm';
-import { User, RefreshToken, Diary, PersonalAccessToken } from '@/database/entities';
+import { User, RefreshToken, Diary, PersonalAccessToken, Setting } from '@/database/entities';
 import { AuthService } from './auth.service';
 import { AuthSessionService, hashRefreshToken } from './auth-session.service';
 import { IdentityVerificationService } from './identity-verification.service';
@@ -24,7 +24,7 @@ export interface AuthServiceMocks {
   emailService: Record<string, jest.Mock>;
   twoFactorService: Record<string, jest.Mock>;
   activity: AccountActivityMock;
-  /** The transaction's entity manager: saves reach the user or diary repository mock. */
+  /** The transaction's entity manager: saves reach the user or diary repository mock (settings rows resolve as given). */
   manager: Record<string, jest.Mock>;
   dataSource: { transaction: jest.Mock };
 }
@@ -87,7 +87,7 @@ export function createAuthServiceMocks(): AuthServiceMocks {
   const manager: Record<string, jest.Mock> = {
     create: jest.fn((_entity: unknown, value: unknown) => value),
     save: jest.fn((entity: unknown, value: unknown) =>
-      (entity === Diary ? diaryRepository : userRepository).save(value),
+      entity === Setting ? Promise.resolve(value) : (entity === Diary ? diaryRepository : userRepository).save(value),
     ),
     delete: jest.fn().mockResolvedValue({ affected: 0 }),
     createQueryBuilder: jest.fn(() => deleteQuery),

@@ -7,6 +7,7 @@ import {
   clearKeycloakSsoAttempt,
   hasPendingKeycloakSsoAttempt,
   markKeycloakSsoFailed,
+  takeKeycloakSsoPreferencesQuery,
 } from '../utils/keycloakSso';
 import { forgetLocalComposerDrafts } from '../components/ComposerDraft/composerDraftStorage';
 import { openSessionChannel, type SessionChannel } from './sessionBroadcast';
@@ -87,7 +88,9 @@ export async function exchangeKeycloakSession(
   onSession: (session: TokenResponse) => void,
 ): Promise<void> {
   try {
-    const response = await fetch(`${API_BASE}/sso`);
+    // The visitor's language and theme, for an account the exchange creates
+    const preferences = takeKeycloakSsoPreferencesQuery();
+    const response = await fetch(preferences ? `${API_BASE}/sso?${preferences}` : `${API_BASE}/sso`);
     if (!response.ok) {
       return;
     }

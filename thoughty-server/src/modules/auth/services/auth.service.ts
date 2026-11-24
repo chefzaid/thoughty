@@ -15,6 +15,7 @@ import {
   OAuthDto,
   TwoFactorChallengeResponseDto,
   TwoFactorCodeDto,
+  type SignUpPreferences,
 } from '../dto';
 import { assertHumanAuthAttempt } from './auth-bot-protection';
 import { TwoFactorService } from './two-factor.service';
@@ -75,13 +76,10 @@ export class AuthService {
     const username = chosen || (await freeUsername(this.userRepository, email.split('@')[0]));
     const passwordHash = await bcrypt.hash(dto.password, 12);
 
-    const user = await this.createAccount({
-      username,
-      email,
-      passwordHash,
-      authProvider: 'local',
-      emailVerified: false,
-    });
+    const user = await this.createAccount(
+      { username, email, passwordHash, authProvider: 'local', emailVerified: false },
+      { language: dto.language, theme: dto.theme },
+    );
     return this.sessionService.createSession(user);
   }
 
@@ -131,11 +129,12 @@ export class AuthService {
       email,
       suggestedUsername: name,
       avatarUrl: picture,
-    });
+    }, { language: dto.language, theme: dto.theme });
     return this.sessionService.createSession(user, isNewUser);
   }
 
-  async keycloakLogin(accessToken?: string): Promise<IssuedSession> {
+  /** `preferences` are the visitor's language and theme, for an account the sign-in creates. */
+  async keycloakLogin(accessToken?: string, preferences: SignUpPreferences = {}): Promise<IssuedSession> {
     const { subject, email, preferredUsername } =
       await this.identityVerification.verifyKeycloakAccessToken(accessToken);
     const { user, isNewUser } = await this.providerAccounts.signIn({
@@ -143,7 +142,7 @@ export class AuthService {
       subject,
       email,
       suggestedUsername: preferredUsername,
-    });
+    }, preferences);
     return this.sessionService.createSession(user, isNewUser);
   }
 
@@ -151,9 +150,9 @@ export class AuthService {
    * The checks above are only hints: a racing registration can take the address or username
    * before the insert, which then answers `409` like the checks instead of a `500`.
    */
-  private async createAccount(fields: Partial<User>): Promise<User> {
+  private async createAccount(fields: Partial<User>, preferences: SignUpPreferences): Promise<User> {
     try {
-      return await this.dataSource.transaction((manager) => saveNewAccount(manager, fields));
+      return await this.dataSource.transaction((manager) => saveNewAccount(manager, fields, preferences));
     } catch (error) {
       const constraint = uniqueViolationOf(error);
       throw constraint === undefined ? error : takenConflict(constraint);

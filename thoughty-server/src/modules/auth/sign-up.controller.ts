@@ -29,7 +29,9 @@ export class SignUpController {
       'Where the server can send email, no account is created yet: every address gets the same ' +
       '`202` answer, a new one an email with a single-use link to `POST /api/auth/register/complete` ' +
       'and one that already has an account a notice to sign in instead. Only outside production ' +
-      'and without a mail server is the account created and signed in at once (`201`).',
+      'and without a mail server is the account created and signed in at once (`201`). The optional ' +
+      '`language` and `theme` are those the visitor reads the pages in: the email is written in that ' +
+      'language, and the account starts with both (English and dark without them).',
   })
   @ApiResponse({
     status: 202,
@@ -41,7 +43,11 @@ export class SignUpController {
     description: `No mail server, outside production only: registered and signed in. ${REFRESH_COOKIE_NOTE}`,
     type: AuthResponseDto,
   })
-  @ApiResponse({ status: 400, description: 'Validation error; a password too weak is `AUTH_WEAK_PASSWORD`' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Validation error (a language or theme the app does not offer is `VALIDATION_FAILED`); a password too weak is `AUTH_WEAK_PASSWORD`',
+  })
   @ApiResponse({ status: 409, description: 'Email or username taken (only when signed in at once)' })
   @ApiResponse({
     status: 503,

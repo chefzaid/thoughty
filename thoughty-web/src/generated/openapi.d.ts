@@ -149,7 +149,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Sign in with a verified Google ID token */
+        /**
+         * Sign in with a verified Google ID token
+         * @description The optional `language` and `theme` are the visitor’s, for an account this sign-in creates; an existing account keeps its own.
+         */
         post: operations["AuthController_oauth"];
         delete?: never;
         options?: never;
@@ -164,7 +167,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Exchange the ingress-validated Keycloak identity for an app session */
+        /**
+         * Exchange the ingress-validated Keycloak identity for an app session
+         * @description The optional `language` and `theme` are the visitor’s, for an account this sign-in creates; an existing account keeps its own.
+         */
         get: operations["AuthController_sso"];
         put?: never;
         post?: never;
@@ -408,7 +414,7 @@ export interface paths {
         put?: never;
         /**
          * Start a sign-up
-         * @description Where the server can send email, no account is created yet: every address gets the same `202` answer, a new one an email with a single-use link to `POST /api/auth/register/complete` and one that already has an account a notice to sign in instead. Only outside production and without a mail server is the account created and signed in at once (`201`).
+         * @description Where the server can send email, no account is created yet: every address gets the same `202` answer, a new one an email with a single-use link to `POST /api/auth/register/complete` and one that already has an account a notice to sign in instead. Only outside production and without a mail server is the account created and signed in at once (`201`). The optional `language` and `theme` are those the visitor reads the pages in: the email is written in that language, and the account starts with both (English and dark without them).
          */
         post: operations["SignUpController_register"];
         delete?: never;
@@ -3464,11 +3470,23 @@ export interface components {
         };
         /**
          * @example {
+         *       "language": "en",
+         *       "theme": "light",
          *       "provider": "google",
          *       "credential": "example"
          *     }
          */
         OAuthDto: {
+            /**
+             * @description The language the visitor reads the pages in: a new account starts in it, and the sign-up email is written in it
+             * @enum {string}
+             */
+            language?: "en" | "fr";
+            /**
+             * @description The color theme the visitor sees: a new account starts in it
+             * @enum {string}
+             */
+            theme?: "light" | "dark";
             /**
              * @example google
              * @enum {string}
@@ -3628,6 +3646,8 @@ export interface components {
         };
         /**
          * @example {
+         *       "language": "en",
+         *       "theme": "light",
          *       "email": "user@example.com",
          *       "password": "Password123!",
          *       "username": "johndoe",
@@ -3635,6 +3655,16 @@ export interface components {
          *     }
          */
         RegisterDto: {
+            /**
+             * @description The language the visitor reads the pages in: a new account starts in it, and the sign-up email is written in it
+             * @enum {string}
+             */
+            language?: "en" | "fr";
+            /**
+             * @description The color theme the visitor sees: a new account starts in it
+             * @enum {string}
+             */
+            theme?: "light" | "dark";
             /**
              * @description Up to 255 characters; an address on the reserved `.invalid` domain is refused with `AUTH_EMAIL_UNDELIVERABLE`.
              * @example user@example.com
@@ -13158,6 +13188,8 @@ export interface operations {
             content: {
                 /**
                  * @example {
+                 *       "language": "en",
+                 *       "theme": "light",
                  *       "provider": "google",
                  *       "credential": "example"
                  *     }
@@ -13191,7 +13223,7 @@ export interface operations {
                     "application/json": components["schemas"]["AuthResponseDto"];
                 };
             };
-            /** @description Missing required fields */
+            /** @description Missing required fields, or a language or theme the app does not offer */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -13200,7 +13232,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "statusCode": 400,
-                     *       "message": "Missing required fields",
+                     *       "message": "Missing required fields, or a language or theme the app does not offer",
                      *       "error": "Bad Request",
                      *       "code": "VALIDATION_FAILED"
                      *     }
@@ -13280,7 +13312,12 @@ export interface operations {
     };
     AuthController_sso: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description The language the visitor reads the pages in: a new account starts in it, and the sign-up email is written in it */
+                language?: "en" | "fr";
+                /** @description The color theme the visitor sees: a new account starts in it */
+                theme?: "light" | "dark";
+            };
             header: {
                 "x-auth-request-access-token": string;
             };
@@ -13312,6 +13349,23 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["AuthResponseDto"];
+                };
+            };
+            /** @description A language or theme the app does not offer (`VALIDATION_FAILED`) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "A language or theme the app does not offer (`VALIDATION_FAILED`)",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
             /** @description Missing or invalid Keycloak identity */
@@ -14100,6 +14154,8 @@ export interface operations {
             content: {
                 /**
                  * @example {
+                 *       "language": "en",
+                 *       "theme": "light",
                  *       "email": "user@example.com",
                  *       "password": "Password123!",
                  *       "username": "johndoe",
@@ -14150,7 +14206,7 @@ export interface operations {
                     "application/json": components["schemas"]["SignUpStartedResponseDto"];
                 };
             };
-            /** @description Validation error; a password too weak is `AUTH_WEAK_PASSWORD` */
+            /** @description Validation error (a language or theme the app does not offer is `VALIDATION_FAILED`); a password too weak is `AUTH_WEAK_PASSWORD` */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -14159,7 +14215,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "statusCode": 400,
-                     *       "message": "Validation error; a password too weak is `AUTH_WEAK_PASSWORD`",
+                     *       "message": "Validation error (a language or theme the app does not offer is `VALIDATION_FAILED`); a password too weak is `AUTH_WEAK_PASSWORD`",
                      *       "error": "Bad Request",
                      *       "code": "VALIDATION_FAILED"
                      *     }

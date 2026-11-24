@@ -27,6 +27,8 @@ export const CONTRACT_SUITES = {
   'sign-up': ['POST /api/auth/register', 'POST /api/auth/register/complete'],
   // Registration without a mail server (racing sign-ups, case-insensitive names); its routes are listed above
   registration: [],
+  // The visitor's language and theme carried into a new account and its sign-up email; its routes are listed above
+  'sign-up-preferences': [],
   // The global rate limit per account and per address, on routes other suites cover
   'rate-limits': [],
   'provider-sign-in': ['POST /api/auth/oauth', 'GET /api/auth/sso'],

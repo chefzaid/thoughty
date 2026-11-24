@@ -4,6 +4,7 @@ import { DataSource, Repository } from 'typeorm';
 import { apiError } from '@/common/errors';
 import { isPlaceholderEmail, sanitizeString } from '@/common/utils';
 import { RefreshToken, Setting, SignUpRequest, User } from '@/database/entities';
+import type { SignUpPreferences } from '../dto/sign-up-preferences.dto';
 import { saveNewAccount } from './default-diary';
 import { freeUsername, takenConflict, uniqueViolationOf, USERNAME_MAX_LENGTH } from './free-username';
 
@@ -65,10 +66,11 @@ export class ProviderAccountService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async signIn(identity: ProviderIdentity): Promise<ProviderAccount> {
+  /** `preferences` (the visitor's language and theme) apply only to an account created here. */
+  async signIn(identity: ProviderIdentity, preferences: SignUpPreferences = {}): Promise<ProviderAccount> {
     for (let attempt = 1; ; attempt += 1) {
       try {
-        return await this.findLinkOrCreate(identity);
+        return await this.findLinkOrCreate(identity, preferences);
       } catch (error) {
         // Another request took the username, or created the account for this address: look again
         const constraint = uniqueViolationOf(error);
@@ -78,7 +80,7 @@ export class ProviderAccountService {
     }
   }
 
-  private async findLinkOrCreate(identity: ProviderIdentity): Promise<ProviderAccount> {
+  private async findLinkOrCreate(identity: ProviderIdentity, preferences: SignUpPreferences): Promise<ProviderAccount> {
     const linked = await this.userRepository.findOne({
       where: { authProvider: identity.provider, providerId: identity.subject },
     });
@@ -87,7 +89,7 @@ export class ProviderAccountService {
       throw apiError(ForbiddenException, 'AUTH_ACCOUNT_DELETED');
     }
     if (!user) {
-      return { user: await this.create(identity), isNewUser: true };
+      return { user: await this.create(identity, preferences), isNewUser: true };
     }
     if (linked && isPlaceholderEmail(linked.email)) {
       return { user: await this.adoptAddress(linked, identity), isNewUser: false };
@@ -156,7 +158,7 @@ export class ProviderAccountService {
   }
 
   /** A verified account with the default diary, named as the provider suggests when that is free. */
-  private async create(identity: ProviderIdentity): Promise<User> {
+  private async create(identity: ProviderIdentity, preferences: SignUpPreferences): Promise<User> {
     const suggested = sanitizeString((identity.suggestedUsername ?? '').trim());
     const base = suggested.substring(0, USERNAME_MAX_LENGTH) || identity.email.split('@')[0];
     const username = await freeUsername(this.userRepository, base);
@@ -168,7 +170,7 @@ export class ProviderAccountService {
         providerId: identity.subject,
         avatarUrl: identity.avatarUrl ?? null,
         emailVerified: true,
-      }),
+      }, preferences),
     );
   }
 }

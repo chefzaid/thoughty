@@ -26,6 +26,14 @@ export class SignUpRequest {
   @Column({ type: 'varchar', length: 50, nullable: true })
   username: string | null;
 
+  /** The language the visitor read the pages in (`en`, `fr`): the account starts in it. */
+  @Column({ type: 'varchar', length: 2, nullable: true })
+  language: string | null;
+
+  /** The theme the visitor saw (`light`, `dark`): the account starts in it. */
+  @Column({ type: 'varchar', length: 5, nullable: true })
+  theme: string | null;
+
   @Column({ name: 'sent_count', type: 'smallint', default: 1 })
   sentCount: number;
 

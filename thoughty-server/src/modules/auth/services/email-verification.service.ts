@@ -12,7 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as crypto from 'node:crypto';
 import { MoreThan, Repository } from 'typeorm';
-import { User } from '@/database/entities';
+import { Setting, User } from '@/database/entities';
 import { EmailService } from './email.service';
 import { uniqueViolationOf } from './free-username';
 
@@ -29,6 +29,8 @@ export class EmailVerificationService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Setting)
+    private readonly settingRepository: Repository<Setting>,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
   ) {}
@@ -134,7 +136,10 @@ export class EmailVerificationService {
     }
   }
 
-  /** Stores a new link token (with any change made to `user`) and emails the link; a failure is only logged. */
+  /**
+   * Stores a new link token (with any change made to `user`) and emails the link in the account's language;
+   * a failure is only logged.
+   */
   private async sendLink(user: User, address: string): Promise<void> {
     const token = crypto.randomBytes(32).toString('hex');
     user.emailVerificationToken = hashToken(token);
@@ -145,7 +150,11 @@ export class EmailVerificationService {
     const verificationUrl = `${frontendUrl}/verify-email?token=${token}`;
 
     try {
-      await this.emailService.sendEmailVerificationEmail(address, verificationUrl);
+      const language = await this.settingRepository.findOne({
+        where: { userId: user.id, key: 'language' },
+        select: { value: true },
+      });
+      await this.emailService.sendEmailVerificationEmail(address, verificationUrl, language?.value);
     } catch (error) {
       this.logger.warn('Email verification email not sent', {
         errorName: error instanceof Error ? error.name : 'UnknownError',

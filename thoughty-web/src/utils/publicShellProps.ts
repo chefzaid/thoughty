@@ -123,6 +123,7 @@ export function buildPublicShellProps({
   const authPageProps: AuthPageProps = {
     t,
     theme,
+    language,
     mode: publicView === 'register' ? 'register' : 'login',
     onAuthSuccess: routingState.handleAuthSuccess,
     onModeChange: routingState.handlePublicViewChange,

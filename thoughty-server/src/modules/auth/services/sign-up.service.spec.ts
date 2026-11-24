@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { createHash } from 'node:crypto';
-import { Diary, SignUpRequest, User } from '@/database/entities';
+import { Diary, Setting, SignUpRequest, User } from '@/database/entities';
 import {
   SIGN_UP_EMAIL_INTERVAL_MS,
   SIGN_UP_EMAILS_PER_ADDRESS,
@@ -136,8 +136,34 @@ describe('SignUpService', () => {
         passwordHash: null,
         username: null,
       });
-      expect(email.sendSignUpNoticeEmail).toHaveBeenCalledWith('new@example.com', 'http://localhost:5173/login');
+      expect(email.sendSignUpNoticeEmail).toHaveBeenCalledWith('new@example.com', 'http://localhost:5173/login', undefined);
       expect(email.sendSignUpLinkEmail).not.toHaveBeenCalled();
+    });
+
+    it('keeps the visitor’s language and theme with a new address’s request and writes its link in that language', async () => {
+      await createService().register({ ...DTO, language: 'fr', theme: 'light' });
+      await flush();
+
+      expect(requests.upsert.mock.calls[0][0]).toMatchObject({ language: 'fr', theme: 'light' });
+      expect(email.sendSignUpLinkEmail).toHaveBeenCalledWith('new@example.com', expect.any(String), 'fr');
+    });
+
+    it('keeps no language or theme when the visitor sent none', async () => {
+      await createService().register(DTO);
+      await flush();
+
+      expect(requests.upsert.mock.calls[0][0]).toMatchObject({ language: null, theme: null });
+      expect(email.sendSignUpLinkEmail).toHaveBeenCalledWith('new@example.com', expect.any(String), undefined);
+    });
+
+    it('writes the notice to an address with an account in the visitor’s language, and keeps nothing for it', async () => {
+      users.findOne.mockResolvedValue({ id: 3, deletedAt: null });
+
+      await createService().register({ ...DTO, language: 'fr', theme: 'light' });
+      await flush();
+
+      expect(requests.upsert.mock.calls[0][0]).toMatchObject({ language: null, theme: null });
+      expect(email.sendSignUpNoticeEmail).toHaveBeenCalledWith('new@example.com', 'http://localhost:5173/login', 'fr');
     });
 
     it('sends nothing to a deleted account waiting for its purge, and still answers the same', async () => {
@@ -272,7 +298,28 @@ describe('SignUpService', () => {
         emailVerified: true,
       });
       expect(manager.save).toHaveBeenNthCalledWith(2, Diary, expect.objectContaining({ userId: 7, name: 'Thoughts', isDefault: true }));
+      // No language or theme kept with the request: the account defaults apply
+      expect(manager.save).toHaveBeenCalledTimes(2);
       expect(sessions.createSession).toHaveBeenCalledWith(expect.objectContaining({ id: 7 }), true);
+    });
+
+    it('starts the account in the language and theme kept with the request', async () => {
+      requests.findOne.mockResolvedValue({ ...pending, language: 'fr', theme: 'light' });
+
+      await createService().complete({ token: 'link-token', password: 'Pass123!@' });
+
+      expect(manager.save).toHaveBeenNthCalledWith(3, Setting, [
+        { userId: 7, key: 'language', value: 'fr' },
+        { userId: 7, key: 'theme', value: 'light' },
+      ]);
+    });
+
+    it('keeps the account default for a kept value the app no longer offers', async () => {
+      requests.findOne.mockResolvedValue({ ...pending, language: 'de', theme: 'dark' });
+
+      await createService().complete({ token: 'link-token', password: 'Pass123!@' });
+
+      expect(manager.save).toHaveBeenNthCalledWith(3, Setting, [{ userId: 7, key: 'theme', value: 'dark' }]);
     });
 
     it('refuses an unknown, expired or used link', async () => {

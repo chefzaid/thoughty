@@ -4,13 +4,14 @@ import type {
   CompleteSignUpRequest,
   LoginResponse,
   RegisterResponse,
+  SignUpPreferences,
   TokenResponse,
   TwoFactorChallengeResponse,
 } from './authTypes';
 
 export const API_BASE = '/api/auth';
 
-interface RegisterRequest {
+interface RegisterRequest extends SignUpPreferences {
   email: string;
   password: string;
   username: string;
