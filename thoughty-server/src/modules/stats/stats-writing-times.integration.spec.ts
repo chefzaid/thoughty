@@ -57,6 +57,23 @@ describePostgres('PostgreSQL writing times', () => {
     await write(otherId, theirs.id, '2026-10-31', '2026-10-31T10:30:00Z', { timeOfDay: '06:00' });
   });
 
+  it('leaves out imported entries without a time and counts them, keeping imported ones with a time', async () => {
+    const importedAt = new Date('2026-11-02T12:00:00Z');
+    // Imported on Monday 2 November at noon UTC: without a time they say nothing about when they were written
+    await write(writerId, journal.id, '2019-05-04', '2026-11-02T12:00:00Z', { importedAt });
+    await write(writerId, work.id, '2019-05-05', '2026-11-02T12:00:00Z', { importedAt });
+    // One whose source app kept its time counts at that time, on Thursday 9 May 2019
+    await write(writerId, journal.id, '2019-05-09', '2026-11-02T12:00:00Z', { importedAt, timeOfDay: '07:45' });
+
+    const times = await service.analyze(writerId);
+    expect(times.untimedImports).toBe(2);
+    expect(counted(times)).toEqual({
+      hours: [[3, 1], [7, 1], [10, 1], [21, 1]],
+      weekdays: [[1, 1], [2, 1], [4, 1], [6, 1]],
+    });
+    expect((await service.analyze(writerId, work.id)).untimedImports).toBe(1);
+  });
+
   it('reads creation times in Kiritimati, a day ahead of UTC', async () => {
     expect(counted(await service.analyze(writerId, undefined, 'Pacific/Kiritimati'))).toEqual({
       hours: [[0, 1], [17, 1], [21, 1]],

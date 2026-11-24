@@ -240,6 +240,7 @@ export class UserDataExportService {
         deletedAt: entry.deletedAt,
         sealedUntil: entry.sealedUntil,
         rereadOn: entry.rereadOn,
+        importedAt: entry.importedAt,
         isLocked: entry.isLocked,
       })),
       revisions: revisions.map((revision) => ({

@@ -116,6 +116,13 @@ export class Entry {
   importRef: string | null;
 
   /**
+   * When an import (a file or an app) brought the entry in; null for an entry written here. Its `createdAt`
+   * is then the import's moment, so **When you write** leaves it out unless it has a time of day.
+   */
+  @Column({ name: 'imported_at', type: 'timestamptz', nullable: true })
+  importedAt: Date | null;
+
+  /**
    * While the entry is a sealed time capsule, when it opens; null otherwise. A sealed entry keeps no
    * title, text, tags, mood or feelings here (they wait in `time_capsules`) and stays private.
    */

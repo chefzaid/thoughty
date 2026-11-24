@@ -7105,7 +7105,8 @@
                       3,
                       6,
                       2
-                    ]
+                    ],
+                    "untimedImports": 12
                   },
                   "records": {
                     "longestEntry": {
@@ -25215,11 +25216,18 @@
             "items": {
               "type": "number"
             }
+          },
+          "untimedImports": {
+            "type": "number",
+            "example": 12,
+            "minimum": 0,
+            "description": "Imported entries without a time of day, left out of `hours` and `weekdays`: their creation time is the moment of the import, not when they were written"
           }
         },
         "required": [
           "hours",
-          "weekdays"
+          "weekdays",
+          "untimedImports"
         ],
         "example": {
           "hours": [
@@ -25256,7 +25264,8 @@
             3,
             6,
             2
-          ]
+          ],
+          "untimedImports": 12
         }
       },
       "StatsLongestEntryDto": {
@@ -25944,7 +25953,8 @@
               3,
               6,
               2
-            ]
+            ],
+            "untimedImports": 12
           },
           "records": {
             "longestEntry": {

@@ -83,6 +83,35 @@ test.describe('When you write', () => {
     });
   });
 
+  test.describe('in UTC', () => {
+    test.use({ timezoneId: 'UTC' });
+
+    test('leaves out imported entries without a time and says how many', async ({ page }) => {
+      const importedAt = '2026-11-02T12:00:00.000Z';
+      await setupMockApp(page, {
+        startAuthenticated: true,
+        initialEntries: [
+          ...entries,
+          // Imported at noon on Monday 2 November: without a time, they say nothing of when they were written
+          entry(805, '2019-05-04', { createdAt: importedAt, importedAt }),
+          entry(806, '2019-05-05', { createdAt: importedAt, importedAt }),
+          // One whose source kept its time counts at it, on Thursday 9 May 2019
+          entry(807, '2019-05-09', { time_of_day: '07:45', createdAt: importedAt, importedAt }),
+        ],
+      });
+
+      await page.goto('/stats?diary=all');
+      const times = card(page);
+      await expect(times.getByRole('img', { name: 'Entries by hour of the day: 3 AM: 1 entry; 7 AM: 1 entry; 10 AM: 1 entry; 9 PM: 2 entries' })).toBeVisible();
+      await expect(times.getByText('Thursday: 1 entry')).toBeAttached();
+      await expect(
+        times.getByText('2 imported entries have no time of day, so they are left out: they were saved when you imported them, not when you wrote them.'),
+      ).toBeVisible();
+      // Monday holds only the Work entry: the imports’ day is not counted
+      await expect(times.getByText('Monday: 1 entry')).toBeAttached();
+    });
+  });
+
   test('keeps its shape in quiet mode, in words without counts', async ({ page }) => {
     await setupMockApp(page, { startAuthenticated: true, initialEntries: entries, config: { quietMode: true } });
 

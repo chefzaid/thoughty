@@ -39,6 +39,7 @@ export const EMPTY_STATS: Omit<StatsData, 'topWords'> = {
     writingTimes: {
         hours: Array.from({ length: 24 }, () => 0),
         weekdays: [0, 0, 0, 0, 0, 0, 0],
+        untimedImports: 0,
     },
     records: {
         longestEntry: null,

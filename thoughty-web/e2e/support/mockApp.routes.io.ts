@@ -52,6 +52,7 @@ export async function handleIoRoutes({
     };
     state.lastImportPayload = payload;
     const importedEntries = parseImportedEntries(payload.content);
+    const importedAt = new Date().toISOString();
 
     for (const imported of importedEntries) {
       const sameDayEntries = state.entries.filter(
@@ -66,6 +67,7 @@ export async function handleIoRoutes({
         visibility: imported.visibility || "private",
         format: imported.format || "plain",
         diaryId: payload.diaryId ?? 1,
+        importedAt,
       });
     }
 

@@ -7,7 +7,7 @@ import { QuietModeOn } from '../../test/quietMode';
 const hoursWith = (counts: Record<number, number>) => Array.from({ length: 24 }, (_, hour) => counts[hour] ?? 0);
 
 // Nine entries: six at 9 PM, two at 7 AM, one at noon; five on Tuesdays, three on Saturdays, one on Sunday
-const writingTimes = { hours: hoursWith({ 7: 2, 12: 1, 21: 6 }), weekdays: [0, 5, 0, 0, 0, 3, 1] };
+const writingTimes = { hours: hoursWith({ 7: 2, 12: 1, 21: 6 }), weekdays: [0, 5, 0, 0, 0, 3, 1], untimedImports: 0 };
 
 const renderTimes = (options: { language?: Language; quiet?: boolean; times?: typeof writingTimes } = {}) => {
     const language = options.language ?? 'en';
@@ -99,11 +99,41 @@ describe('StatsWritingTimes', () => {
     });
 
     it('invites a writer without entries to write a few first', () => {
-        renderTimes({ times: { hours: hoursWith({}), weekdays: [0, 0, 0, 0, 0, 0, 0] } });
+        renderTimes({ times: { hours: hoursWith({}), weekdays: [0, 0, 0, 0, 0, 0, 0], untimedImports: 0 } });
 
         const card = screen.getByRole('region', { name: 'When you write' });
         expect(within(card).getByText('Once you have written a few entries, this shows the hours and days you write most.')).toBeInTheDocument();
         expect(within(card).queryByRole('button')).not.toBeInTheDocument();
         expect(within(card).queryByRole('img')).not.toBeInTheDocument();
+    });
+
+    it('says nothing of imports when none was left out', () => {
+        const { container } = renderTimes();
+
+        expect(container.querySelector('.writing-times-note')).not.toBeInTheDocument();
+    });
+
+    it('says how many imported entries without a time are left out, in words alone in quiet mode', () => {
+        const { unmount } = renderTimes({ times: { ...writingTimes, untimedImports: 1200 } });
+        expect(screen.getByText(
+            '1,200 imported entries have no time of day, so they are left out: they were saved when you imported them, not when you wrote them.',
+        )).toBeInTheDocument();
+        unmount();
+
+        renderTimes({ times: { ...writingTimes, untimedImports: 1 }, language: 'fr' });
+        expect(screen.getByText(
+            '1 entrée importée n’a pas d’heure, elle est donc laissée de côté : elle a été enregistrée à l’import, pas quand vous l’avez écrite.',
+        )).toBeInTheDocument();
+    });
+
+    it('keeps the count out of the note in quiet mode, and shows it beside the invitation when only imports were left out', () => {
+        renderTimes({ quiet: true, times: { hours: hoursWith({}), weekdays: [0, 0, 0, 0, 0, 0, 0], untimedImports: 40 } });
+
+        const card = screen.getByRole('region', { name: 'When you write' });
+        expect(within(card).getByText('Once you have written a few entries, this shows the hours and days you write most.')).toBeInTheDocument();
+        expect(within(card).getByText(
+            'Imported entries without a time of day are left out: they were saved when you imported them, not when you wrote them.',
+        )).toBeInTheDocument();
+        expect(card.textContent).not.toMatch(/\d/);
     });
 });

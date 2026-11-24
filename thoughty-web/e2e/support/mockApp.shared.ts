@@ -54,6 +54,8 @@ export interface MockEntry {
   /** Likes by other users, before the current user's own like. */
   likeCount?: number;
   createdAt?: string;
+  /** When an import brought it in (`mockApp.routes.io.ts`, `mockApp.routes.app-import.ts`); When you write leaves it out without a time. */
+  importedAt?: string;
   format?: "plain" | "markdown";
   diaryId?: number | null;
   /** A time capsule: sealed until `openAt` while `openedAt` is null (`mockApp.routes.time-capsules.ts`). */

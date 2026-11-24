@@ -105,6 +105,9 @@ describe('AppImportService', () => {
         expect.objectContaining({ date: '2024-03-05', index: 4, isFavorite: false, importRef: 'dayone:A2' }),
         expect.objectContaining({ date: '2024-03-06', index: 1, content: '', importRef: 'dayone:A3' }),
       ]);
+      // The batch is marked as imported, at one moment
+      expect(rows[0].importedAt).toBeInstanceOf(Date);
+      expect(rows.every((row: { importedAt: Date }) => row.importedAt === rows[0].importedAt)).toBe(true);
       expect(result).toEqual({
         entries: [
           { sourceId: 'A1', entryId: 100, alreadyImported: false, attachedFiles: [] },

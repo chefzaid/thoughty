@@ -158,6 +158,7 @@ describe('UserDataExportService', () => {
         isFavorite: false,
         createdAt: new Date('2024-01-16'),
         deletedAt: new Date('2024-02-01T08:00:00Z'),
+        importedAt: new Date('2024-01-16T09:00:00Z'),
       },
     ]);
     revisionRepository.find.mockResolvedValue([]);
@@ -208,7 +209,7 @@ describe('UserDataExportService', () => {
     expect(entryRepository.find).toHaveBeenCalledWith(expect.objectContaining({ where: { userId: 1 }, withDeleted: true }));
     expect(result.entries).toEqual([
       expect.objectContaining({ id: 1, deletedAt: null, rereadOn: '2026-11-07' }),
-      expect.objectContaining({ id: 2, deletedAt: new Date('2024-02-01T08:00:00Z') }),
+      expect.objectContaining({ id: 2, deletedAt: new Date('2024-02-01T08:00:00Z'), importedAt: new Date('2024-01-16T09:00:00Z') }),
     ]);
     expect(result.revisions).toHaveLength(0);
     expect(result.attachments).toEqual([

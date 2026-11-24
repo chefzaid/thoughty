@@ -78,6 +78,8 @@ export class AppImportService {
 
     const nextIndex = await this.countEntriesByDate(userId, [...pending.values()].map((entry) => entry.date));
     const pinSlots = await this.freePinSlots(userId, [...pending.values()].filter((entry) => entry.pinned === true).length);
+    // Marks the batch as imported, so When you write reads only the times the source app gave
+    const importedAt = new Date();
     const rows = [...pending.entries()].map(([importRef, entry]) => {
       const index = (nextIndex.get(entry.date) ?? 0) + 1;
       nextIndex.set(entry.date, index);
@@ -97,6 +99,7 @@ export class AppImportService {
         isArchived: entry.archived === true,
         isPinned: entry.pinned === true && pinSlots.take(),
         importRef,
+        importedAt,
       });
     });
 

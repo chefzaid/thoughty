@@ -313,6 +313,10 @@ Diary default
       for (const [saved] of bed.entryRepository.save.mock.calls) {
         expect(saved).toMatchObject({ visibility: 'private' });
       }
+      // Both entries are marked as imported, at the same moment
+      const [[first], [second]] = bed.entryRepository.save.mock.calls as Array<[{ importedAt: Date }]>;
+      expect(first.importedAt).toBeInstanceOf(Date);
+      expect(second.importedAt).toBe(first.importedAt);
     });
 
     it('should match diary by name when importing all diaries', async () => {

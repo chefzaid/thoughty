@@ -11,6 +11,7 @@ interface StatsEntry {
   feelings?: string[];
   time_of_day?: string | null;
   createdAt?: string;
+  importedAt?: string;
   capsule?: { openedAt: string | null };
 }
 
@@ -24,7 +25,13 @@ export function buildMockWritingTimes(entries: StatsEntry[], timeZone = "UTC") {
   const hours = Array.from({ length: 24 }, () => 0);
   const weekdays = Array.from({ length: 7 }, () => 0);
   const zoned = new Intl.DateTimeFormat("en-US", { timeZone, hourCycle: "h23", hour: "numeric", weekday: "short" });
+  let untimedImports = 0;
   for (const entry of entries) {
+    // An imported entry without a time was created at the import, so the server counts it apart
+    if (entry.importedAt && !entry.time_of_day) {
+      untimedImports++;
+      continue;
+    }
     if (entry.time_of_day) {
       hours[Number(entry.time_of_day.slice(0, 2))]++;
       weekdays[(new Date(`${entry.date}T00:00:00Z`).getUTCDay() + 6) % 7]++;
@@ -35,7 +42,7 @@ export function buildMockWritingTimes(entries: StatsEntry[], timeZone = "UTC") {
     hours[Number(parts.find((part) => part.type === "hour")?.value)]++;
     weekdays[WEEKDAYS.indexOf(parts.find((part) => part.type === "weekday")?.value ?? "")]++;
   }
-  return { hours, weekdays };
+  return { hours, weekdays, untimedImports };
 }
 
 const roundMood = (value: number) => Math.round(value * 10) / 10;

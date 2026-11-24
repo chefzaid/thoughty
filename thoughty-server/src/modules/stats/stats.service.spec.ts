@@ -68,7 +68,7 @@ describe('StatsService', () => {
 
     statsGoalService = { analyze: jest.fn().mockResolvedValue([]) };
     statsWritingTimesService = {
-      analyze: jest.fn().mockResolvedValue({ hours: Array.from({ length: 24 }, () => 0), weekdays: [0, 0, 0, 0, 0, 0, 0] }),
+      analyze: jest.fn().mockResolvedValue({ hours: Array.from({ length: 24 }, () => 0), weekdays: [0, 0, 0, 0, 0, 0, 0], untimedImports: 0 }),
     };
 
     statsRecordsService = {
@@ -334,7 +334,7 @@ describe('StatsService', () => {
     });
 
     it('reads the writing times in the diary and the writer’s time zone', async () => {
-      const writingTimes = { hours: Array.from({ length: 24 }, (_, hour) => (hour === 21 ? 2 : 0)), weekdays: [0, 2, 0, 0, 0, 0, 0] };
+      const writingTimes = { hours: Array.from({ length: 24 }, (_, hour) => (hour === 21 ? 2 : 0)), weekdays: [0, 2, 0, 0, 0, 0, 0], untimedImports: 1 };
       statsWritingTimesService.analyze.mockResolvedValue(writingTimes);
 
       await expect(service.getStats(1, 3, '2026-10-27', 'Pacific/Pago_Pago')).resolves.toEqual(expect.objectContaining({ writingTimes }));

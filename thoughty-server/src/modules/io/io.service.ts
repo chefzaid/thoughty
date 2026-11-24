@@ -192,7 +192,8 @@ export class IoService {
     userId: number,
     entry: ParsedEntry,
     visibility: 'public' | 'private',
-    diaryId?: number,
+    diaryId: number | undefined,
+    importedAt: Date,
   ): Promise<void> {
     const countResult = await this.entryRepository.count({
       where: { userId, date: entry.date },
@@ -213,6 +214,7 @@ export class IoService {
       format: entry.format || 'plain',
       visibility,
       diaryId,
+      importedAt,
     });
   }
 
@@ -461,6 +463,8 @@ export class IoService {
 
     let importedCount = 0;
     let skippedCount = 0;
+    // Every entry of one import shares its moment, which also tells When you write to read only typed times
+    const importedAt = new Date();
 
     for (let i = 0; i < parsedEntries.length; i++) {
       if (duplicatesToSkip.has(i)) {
@@ -471,7 +475,7 @@ export class IoService {
       const entry = parsedEntries[i];
       const entryDiaryId = this.resolveEntryDiaryId(entry, targetDiaryId, diaryNameMap);
       const visibility = mayPublish ? entry.visibility || defaultVisibility : 'private';
-      await this.saveImportedEntry(userId, entry, visibility, entryDiaryId);
+      await this.saveImportedEntry(userId, entry, visibility, entryDiaryId, importedAt);
 
       importedCount++;
     }

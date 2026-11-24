@@ -63,6 +63,7 @@ export async function handleAppImportRoutes({ route, request, pathname, state }:
     };
 
     let pinned = state.entries.filter((entry) => entry.is_pinned).length;
+    const importedAt = new Date().toISOString();
     const entries = payload.entries.map((item) => {
       const ref = `${payload.source}:${item.sourceId}`;
       const existingId = state.appImport.refs[ref];
@@ -95,6 +96,7 @@ export async function handleAppImportRoutes({ route, request, pathname, state }:
         is_pinned: isPinned,
         diaryId: diaryFor(item.journal),
         attachments: [],
+        importedAt,
       });
       importedCount++;
       return { sourceId: item.sourceId, entryId: id, alreadyImported: false, attachedFiles: [] };

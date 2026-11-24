@@ -6828,7 +6828,8 @@ export interface components {
          *         3,
          *         6,
          *         2
-         *       ]
+         *       ],
+         *       "untimedImports": 12
          *     }
          */
         StatsWritingTimesDto: {
@@ -6875,6 +6876,11 @@ export interface components {
              *     ]
              */
             weekdays: number[];
+            /**
+             * @description Imported entries without a time of day, left out of `hours` and `weekdays`: their creation time is the moment of the import, not when they were written
+             * @example 12
+             */
+            untimedImports: number;
         };
         /**
          * @example {
@@ -7263,7 +7269,8 @@ export interface components {
          *           3,
          *           6,
          *           2
-         *         ]
+         *         ],
+         *         "untimedImports": 12
          *       },
          *       "records": {
          *         "longestEntry": {
@@ -18449,7 +18456,8 @@ export interface operations {
                      *           3,
                      *           6,
                      *           2
-                     *         ]
+                     *         ],
+                     *         "untimedImports": 12
                      *       },
                      *       "records": {
                      *         "longestEntry": {

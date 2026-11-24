@@ -43,7 +43,8 @@ function busiest(slots: readonly Slot[]): Slot {
 /**
  * The hours of the day and days of the week the writer writes most, in their time zone. Bars are drawn
  * against the busiest hour or day, so they show the rhythm, not how much is written; quiet mode keeps
- * them and says how often in words instead of counts. A switch shows the same as two tables.
+ * them and says how often in words instead of counts. A switch shows the same as two tables. Imported
+ * entries without a time are left out by the API, which the card says under the bars.
  */
 function StatsWritingTimes({ writingTimes, timeZone, themeClass, language, t }: StatsWritingTimesProps) {
     const quiet = useQuietMode();
@@ -155,6 +156,13 @@ function StatsWritingTimes({ writingTimes, timeZone, themeClass, language, t }: 
                 </>
             ) : (
                 <p className="tone-mood-unavailable">{t('statsWritingTimesEmpty')}</p>
+            )}
+            {writingTimes.untimedImports > 0 && (
+                <p className="writing-times-note">
+                    {quiet
+                        ? t('statsWritingTimesUntimedImportsQuiet')
+                        : pluralPhrase(t, 'statsWritingTimesUntimedImports', writingTimes.untimedImports, language)}
+                </p>
             )}
         </section>
     );

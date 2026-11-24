@@ -1,6 +1,8 @@
 import { StatsWritingTimesService } from './stats-writing-times.service';
 
-function createService(rows: Array<{ hour: string | number; weekday: string | number; entries: string }>) {
+type Row = { hour: string | number; weekday: string | number; untimed_import?: boolean; entries: string };
+
+function createService(rows: Row[]) {
   const query = {
     select: jest.fn().mockReturnThis(),
     addSelect: jest.fn().mockReturnThis(),
@@ -32,6 +34,7 @@ describe('StatsWritingTimesService', () => {
     expect(times.hours[23]).toBe(1);
     expect(times.hours.reduce((sum, count) => sum + count, 0)).toBe(7);
     expect(times.weekdays).toEqual([2, 3, 0, 0, 0, 0, 2]);
+    expect(times.untimedImports).toBe(0);
     expect(query.where).toHaveBeenCalledWith('e.user_id = :userId', { userId: 4 });
     expect(query.setParameter).toHaveBeenCalledWith('timeZone', 'Pacific/Kiritimati');
     // Only the locked entries are left out, while the request is not unlocked
@@ -44,6 +47,7 @@ describe('StatsWritingTimesService', () => {
     await expect(service.analyze(4, 9)).resolves.toEqual({
       hours: Array.from({ length: 24 }, () => 0),
       weekdays: [0, 0, 0, 0, 0, 0, 0],
+      untimedImports: 0,
     });
     expect(query.setParameter).toHaveBeenCalledWith('timeZone', 'UTC');
     expect(query.andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 9 });
@@ -59,5 +63,22 @@ describe('StatsWritingTimesService', () => {
     expect(hourSql).toContain('ELSE e.time_of_day END');
     expect(hourSql).toContain('e.created_at::timestamptz AT TIME ZONE :timeZone');
     expect(weekdaySql).toContain('EXTRACT(ISODOW FROM e.date)');
+  });
+
+  it('counts imported entries without a time apart, out of the hours and weekdays', async () => {
+    const { service, query } = createService([
+      { hour: '14', weekday: '3', untimed_import: true, entries: '40' },
+      { hour: '14', weekday: '3', untimed_import: false, entries: '2' },
+      { hour: '8', weekday: '1', untimed_import: true, entries: '1' },
+    ]);
+
+    const times = await service.analyze(4);
+
+    expect(times.untimedImports).toBe(41);
+    expect(times.hours.reduce((sum, count) => sum + count, 0)).toBe(2);
+    expect(times.hours[14]).toBe(2);
+    expect(times.weekdays).toEqual([0, 0, 2, 0, 0, 0, 0]);
+    expect(query.addSelect).toHaveBeenCalledWith('(e.imported_at IS NOT NULL AND e.time_of_day IS NULL)', 'untimed_import');
+    expect(query.addGroupBy).toHaveBeenCalledWith('untimed_import');
   });
 });

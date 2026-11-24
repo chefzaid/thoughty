@@ -91,7 +91,7 @@ describeContract('writers-day', (context) => {
       const before = zonedParts(new Date(), timeZone);
       const response = await call('GET /api/stats', { as: carol, query: { today: utcDay(), timeZone }, status: 200 });
       const after = zonedParts(new Date(), timeZone);
-      const { writingTimes } = response.body as { writingTimes: { hours: number[]; weekdays: number[] } };
+      const { writingTimes } = response.body as { writingTimes: { hours: number[]; weekdays: number[]; untimedImports: number } };
       // The entry written now counts at the hour and weekday it is in that zone (read on either side of the call)
       const expected = [before, after].map((now) => {
         const hours = Array.from({ length: 24 }, () => 0);
@@ -100,7 +100,7 @@ describeContract('writers-day', (context) => {
         weekdays[1] += 1;
         hours[now.hour] += 1;
         weekdays[(now.weekday + 6) % 7] += 1;
-        return { hours, weekdays };
+        return { hours, weekdays, untimedImports: 0 };
       });
       expect(expected).toContainEqual(writingTimes);
     }
@@ -108,6 +108,42 @@ describeContract('writers-day', (context) => {
     for (const timeZone of ['Mars/Olympus', '+05:30', '']) {
       await call('GET /api/stats', { as: carol, query: { timeZone }, status: 400, code: 'VALIDATION_FAILED' });
     }
+  });
+
+  it('leaves imported entries without a time out of when the writer writes, and says how many', async () => {
+    const erin = await registerWriter(context.client, 'erin');
+    // A JSON file without times, and a Day One entry with one (Thursday 9 May 2019 at 07:45) and one without
+    await call('POST /api/io/import', {
+      as: erin,
+      json: {
+        content: JSON.stringify({
+          entries: [
+            { date: '2019-05-04', content: 'Old notebook', tags: [] },
+            { date: '2019-05-05', content: 'Another page', tags: [] },
+          ],
+        }),
+        skipDuplicates: false,
+        diaryId: null,
+      },
+      status: 200,
+    });
+    await call('POST /api/io/import/entries', {
+      as: erin,
+      json: {
+        source: 'dayone',
+        entries: [
+          { sourceId: 'TIMED', date: '2019-05-09', timeOfDay: '07:45', content: 'Kept its time', tags: [] },
+          { sourceId: 'UNTIMED', date: '2019-05-10', content: 'Lost its time', tags: [] },
+        ],
+      },
+      status: 200,
+    });
+
+    const response = await call('GET /api/stats', { as: erin, query: { today: utcDay(), timeZone: 'UTC' }, status: 200 });
+    const { writingTimes } = response.body as { writingTimes: { hours: number[]; weekdays: number[]; untimedImports: number } };
+    const hours = Array.from({ length: 24 }, () => 0);
+    hours[7] = 1;
+    expect(writingTimes).toEqual({ hours, weekdays: [0, 0, 0, 1, 0, 0, 0], untimedImports: 3 });
   });
 
   it('finds the personal records with links to their entries, the hours read in the writer’s time zone', async () => {
