@@ -41,3 +41,4 @@ Use layered rate limiting.
 - Rate-limit behavior is part of the external API contract for auth flows and should be considered when changing those endpoints.
 - Multi-replica deployments use Redis-backed throttler storage when `REDIS_URL` or `REDIS_HOST` is configured, so API replicas share counters for the same tracker keys.
 - If Redis is unavailable, the API falls back to process-local throttling to preserve availability while still keeping a baseline limit.
+- Amended 2026-11-24: the global guard is `AccountThrottlerGuard`, a `ThrottlerGuard` that counts a signed-in request (the account the global JWT guard verified) against its account and against a per-address ceiling of three times the route's limit, and a signed-out one against its address, so writers who share an address keep separate budgets ([Security](../security.md#abuse-controls)).

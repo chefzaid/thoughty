@@ -302,7 +302,7 @@ describeContract('auth', (context) => {
     const { alice, bob } = context;
     const readMe = () => request(context.api.http).get('/api/auth/me').set('Authorization', `Bearer ${alice.accessToken}`);
     let read = await readMe();
-    for (let sent = 1; read.status === 200 && sent <= RATE_LIMITS.sessionRead.limit; sent += 1) {
+    for (let sent = 1; read.status === 200 && sent <= RATE_LIMITS.default.limit; sent += 1) {
       read = await readMe();
     }
     expect(read.status).toBe(429);

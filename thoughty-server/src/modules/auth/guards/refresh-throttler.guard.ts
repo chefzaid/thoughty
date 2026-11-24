@@ -4,7 +4,7 @@ import type { Request } from 'express';
 import { RATE_LIMITS } from '@/common/rate-limit.constants';
 import { AuthSessionService } from '../services/auth-session.service';
 import { readRefreshTokenCookie } from '../refresh-token-cookie';
-import { countAgainst } from './throttle-key';
+import { countAgainst } from '@/common/rate-limiting/throttle-key';
 
 const THROTTLER_NAME = 'tokenRefresh';
 

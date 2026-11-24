@@ -62,7 +62,6 @@ import {
 } from './services';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RefreshThrottlerGuard } from './guards/refresh-throttler.guard';
-import { SessionReadThrottlerGuard } from './guards/session-read-throttler.guard';
 import { Public, CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { SuccessMessageResponseDto, SuccessResponseDto } from '@/common/dto';
 import { RATE_LIMITS, throttleDefault } from '@/common';
@@ -353,8 +352,7 @@ export class AuthController {
   }
 
   @Get('me')
-  @Throttle(throttleDefault(RATE_LIMITS.sessionReadAddress))
-  @UseGuards(JwtAuthGuard, SessionReadThrottlerGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get current user info',

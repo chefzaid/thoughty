@@ -2,9 +2,10 @@ import { Controller, Get, INestApplication } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import express from 'express';
 import request from 'supertest';
+import { AccountThrottlerGuard } from '../rate-limiting/account-throttler.guard';
 import { RedisThrottlerClient, RedisThrottlerStorage } from '../rate-limiting/redis-throttler.storage';
 import { getTrustProxySetting, TrustProxySetting, useTrustProxy } from './trust-proxy';
 
@@ -120,7 +121,7 @@ describe('throttling behind a proxy', () => {
         }),
       ],
       controllers: [PingController],
-      providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+      providers: [{ provide: APP_GUARD, useClass: AccountThrottlerGuard }],
     }).compile();
 
     app = moduleRef.createNestApplication<NestExpressApplication>();

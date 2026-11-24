@@ -1,7 +1,7 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { DatabaseModule } from './database';
 import { AuthModule, JwtAuthGuard } from './modules/auth';
 import { EntriesModule } from './modules/entries';
@@ -37,6 +37,7 @@ import { ContentLockModule } from './modules/content-lock';
 import { AccessTokensModule } from './modules/access-tokens';
 import { HealthController } from './health.controller';
 import {
+  AccountThrottlerGuard,
   createThrottlerModuleOptions,
   ApiErrorCodeFilter,
   DatabaseInputExceptionFilter,
@@ -104,10 +105,10 @@ import {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
-    // Global Rate Limiting Guard
+    // Global rate limits: per account once the JWT guard (above) verified one, per address otherwise
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: AccountThrottlerGuard,
     },
     // Refuses a `@RequireFeature` route while its feature flag is off (after auth and rate limits)
     {

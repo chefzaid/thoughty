@@ -1,6 +1,13 @@
 export const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
 export const ONE_HOUR_MS = 60 * 60 * 1000;
 
+/**
+ * A signed-in request counts against its account at a route's limit, and every signed-in request from one
+ * address against this many times that limit (`AccountThrottlerGuard`), so writers who share an address do
+ * not use up each other's budget, yet many accounts at one address cannot multiply the limits without end.
+ */
+export const ADDRESS_CEILING_FACTOR = 3;
+
 export const RATE_LIMITS = {
   default: { limit: 100, ttl: FIFTEEN_MINUTES_MS },
   authAttempt: { limit: 5, ttl: FIFTEEN_MINUTES_MS },
@@ -9,9 +16,6 @@ export const RATE_LIMITS = {
   tokenRefresh: { limit: 30, ttl: FIFTEEN_MINUTES_MS },
   // Every refresh from one address: the ceiling for writers who share it (one network, one NAT).
   tokenRefreshAddress: { limit: 300, ttl: FIFTEEN_MINUTES_MS },
-  // `GET /api/auth/me`, read on each load: per account (the default limit), under a ceiling per address.
-  sessionRead: { limit: 100, ttl: FIFTEEN_MINUTES_MS },
-  sessionReadAddress: { limit: 300, ttl: FIFTEEN_MINUTES_MS },
   passwordRecovery: { limit: 3, ttl: ONE_HOUR_MS },
   accountSecurity: { limit: 5, ttl: ONE_HOUR_MS },
   socialWrite: { limit: 30, ttl: FIFTEEN_MINUTES_MS },
