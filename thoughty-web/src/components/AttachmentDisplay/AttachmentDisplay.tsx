@@ -49,7 +49,7 @@ function StoredAttachmentResource({
 function AttachmentDisplay({ attachments, theme, t, aiMode = "on" }: AttachmentDisplayProps) {
   const [activePreview, setActivePreview] =
     useState<ActivePreviewAttachment | null>(null);
-  const { attachmentsService, localAiService } = useApiServices();
+  const { attachmentsService } = useApiServices();
   const isDark = theme !== "light";
 
   if (!attachments || attachments.length === 0) return null;
@@ -189,7 +189,6 @@ function AttachmentDisplay({ attachments, theme, t, aiMode = "on" }: AttachmentD
                     <AudioTranscript
                       attachment={file}
                       attachmentsService={attachmentsService}
-                      localAiService={localAiService}
                       isDark={isDark}
                       t={t}
                       aiMode={aiMode}

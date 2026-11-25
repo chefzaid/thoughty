@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createLocalAiService, textAiForDiary, type TextAiService } from './localAiService';
 import { parseTagAnswer, rephraseMessages, summaryMessages, tagMessages, untrustedBlock, unwrapBlock } from './localModelPrompts';
 
-const settings = { baseUrl: 'http://localhost:11434/v1', model: 'llama3.2', apiKey: '', transcriptionModel: '' };
+const settings = { baseUrl: 'http://localhost:11434/v1', model: 'llama3.2', apiKey: '' };
 
 function stubAnswer(content: string) {
   const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ choices: [{ message: { content } }] }), { status: 200 }));
@@ -85,28 +85,6 @@ describe('createLocalAiService', () => {
     const service = createLocalAiService(() => settings);
     await expect(service.fixWriting('x')).resolves.toEqual({ data: null, refusal: 'localModelUnauthorized' });
     await expect(service.suggestTags('x')).resolves.toEqual({ data: null, refusal: 'localModelUnauthorized' });
-  });
-});
-
-describe('transcribing a recording on the writer’s own model', () => {
-  const recording = new Blob(['voice'], { type: 'audio/webm' });
-  const stubText = (text: string) => vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ text }), { status: 200 })));
-
-  it('answers the text its speech-to-text model heard', async () => {
-    stubText('Dear sister.');
-    const service = createLocalAiService(() => ({ ...settings, transcriptionModel: 'whisper-1' }));
-    await expect(service.transcribe(recording, 'note.webm')).resolves.toEqual({ data: 'Dear sister.', refusal: null });
-  });
-
-  it('says when no server or speech-to-text model is set up, or the model heard no words', async () => {
-    await expect(createLocalAiService(() => null).transcribe(recording, 'note.webm')).resolves.toEqual({ data: null, refusal: 'localModelNotConfigured' });
-    await expect(createLocalAiService(() => settings).transcribe(recording, 'note.webm')).resolves.toEqual({
-      data: null,
-      refusal: 'localModelTranscriptionModelRequired',
-    });
-    stubText('  ');
-    const service = createLocalAiService(() => ({ ...settings, transcriptionModel: 'whisper-1' }));
-    await expect(service.transcribe(recording, 'note.webm')).resolves.toEqual({ data: null, refusal: 'localModelNoSpeech' });
   });
 });
 

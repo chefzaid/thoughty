@@ -5,10 +5,11 @@ import { isTranscribableAudio } from './audio-transcription.service';
 import type { AudioTranscriptionResponseDto } from './dto';
 
 /**
- * The transcript of a recording in a diary on the writer's own model. The writer's browser sends the recording to
- * that model and only its text here, kept where Thoughty's own transcripts are (`attachments.transcript`); no
- * provider is called and the server never reaches the writer's model. Any other recording is refused, so this never
- * stands in for a transcript Thoughty's provider would make, nor for one a diary with AI off keeps out.
+ * The transcript of a recording in a diary on the writer's own model. The writer's browser transcribes the recording
+ * on the device with a speech-recognition library and sends only its text here, kept where Thoughty's own
+ * transcripts are (`attachments.transcript`); no provider is called and the server never reaches the writer's model.
+ * Any other recording is refused, so this never stands in for a transcript Thoughty's provider would make, nor for
+ * one a diary with AI off keeps out.
  */
 @Injectable()
 export class LocalTranscriptService {

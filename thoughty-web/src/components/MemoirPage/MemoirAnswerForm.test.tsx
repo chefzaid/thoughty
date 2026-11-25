@@ -10,8 +10,9 @@ vi.mock('../../hooks/useAuthenticatedService', () => ({ useAuthenticatedService:
 const memoirService = { followUps: vi.fn() };
 vi.mock('../../hooks/useMemoirService', () => ({ useMemoirService: () => memoirService }));
 // Interview mode on the writer's own model is tested in MemoirFollowUps.test.tsx
-const localAiService = { transcribe: vi.fn() };
-vi.mock('../../hooks/useLocalAiService', () => ({ useLocalAiService: () => localAiService }));
+vi.mock('../../hooks/useLocalAiService', () => ({ useLocalAiService: () => ({}) }));
+const deviceTranscribe = vi.hoisted(() => vi.fn());
+vi.mock('../../services/speech/deviceTranscriber', () => ({ deviceTranscriber: { transcribe: deviceTranscribe } }));
 
 const t = (key: string, params?: Record<string, string | number>) =>
   params ? `${key} ${Object.values(params).join(' ')}` : key;
@@ -270,20 +271,56 @@ describe('MemoirAnswerForm', () => {
     expect(screen.queryByRole('group', { name: 'memoirFollowUpsTitle' })).not.toBeInTheDocument();
   });
 
-  it('offers interview mode and transcription on the writer’s own model when the memoir diary uses only it, uploading nothing to transcribe', async () => {
-    localAiService.transcribe.mockResolvedValueOnce({ data: null, refusal: 'localModelTranscriptionModelRequired' }).mockResolvedValueOnce({ data: 'We played marbles.', refusal: null });
-    render(<MemoirAnswerForm questionId="childhood-home" questionText="What was home like?" onSubmit={vi.fn()} onCancel={vi.fn()} aiMode="local" t={t} />);
+  it('transcribes a recording on this device as soon as it is chosen on the writer’s own model, uploading nothing for it', async () => {
+    let finish: (result: unknown) => void = () => undefined;
+    deviceTranscribe.mockImplementationOnce((_file: File, { onProgress }: { onProgress: (step: unknown) => void }) => {
+      onProgress({ phase: 'downloading', loaded: 20_000_000, total: 80_000_000 });
+      return new Promise((resolve) => {
+        finish = resolve;
+      });
+    });
+    render(<MemoirAnswerForm questionId="childhood-home" questionText="What was home like?" onSubmit={vi.fn()} onCancel={vi.fn()} aiMode="local" language="fr" t={t} />);
     const file = new File(['voice'], 'story.m4a', { type: 'audio/mp4' });
     chooseFile(file);
 
     expect(screen.getByRole('group', { name: 'memoirFollowUpsTitle' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'memoirTranscribe' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('localModelTranscriptionModelRequired');
-
-    fireEvent.click(screen.getByRole('button', { name: 'memoirTranscribe' }));
-    await waitFor(() => expect(screen.getByLabelText('memoirYourAnswer')).toHaveValue('We played marbles.'));
-    expect(localAiService.transcribe).toHaveBeenCalledWith(file, 'story.m4a');
+    expect(await screen.findByText('deviceSpeechDownloading 20 80')).toBeInTheDocument();
+    expect(screen.getByRole('progressbar', { name: 'deviceSpeechDownloadLabel' })).toHaveAttribute('value', '20000000');
+    expect(deviceTranscribe).toHaveBeenCalledWith(file, expect.objectContaining({ language: 'fr' }));
+    await act(async () => finish({ text: 'Nous jouions aux billes.', problem: null }));
+    await waitFor(() => expect(screen.getByLabelText('memoirYourAnswer')).toHaveValue('Nous jouions aux billes.'));
+    expect(screen.queryByText('deviceSpeechDownloading 20 80')).not.toBeInTheDocument();
+    expect(deviceTranscribe).toHaveBeenCalledTimes(1);
     expect(attachmentsService.uploadAttachment).not.toHaveBeenCalled();
     expect(attachmentsService.transcribeAttachment).not.toHaveBeenCalled();
+  });
+
+  it('says why a recording gave no text on this device, and transcribes it again on request', async () => {
+    deviceTranscribe
+      .mockResolvedValueOnce({ text: null, problem: 'deviceSpeechUnsupported' })
+      .mockResolvedValueOnce({ text: '', problem: null })
+      .mockResolvedValueOnce({ text: 'We played marbles.', problem: null });
+    render(<MemoirAnswerForm questionId="childhood-home" questionText="What was home like?" onSubmit={vi.fn()} onCancel={vi.fn()} aiMode="local" t={t} />);
+    chooseFile(new File(['voice'], 'story.m4a', { type: 'audio/mp4' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('deviceSpeechUnsupported');
+    fireEvent.click(screen.getByRole('button', { name: 'memoirTranscribe' }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('deviceSpeechNoWords'));
+    fireEvent.click(screen.getByRole('button', { name: 'memoirTranscribe' }));
+    await waitFor(() => expect(screen.getByLabelText('memoirYourAnswer')).toHaveValue('We played marbles.'));
+  });
+
+  it('adds nothing from a recording discarded while it was being transcribed', async () => {
+    let finish: (result: unknown) => void = () => undefined;
+    deviceTranscribe.mockImplementationOnce(() => new Promise((resolve) => {
+      finish = resolve;
+    }));
+    render(<MemoirAnswerForm questionId="childhood-home" questionText="What was home like?" onSubmit={vi.fn()} onCancel={vi.fn()} aiMode="local" t={t} />);
+    chooseFile(new File(['voice'], 'story.m4a', { type: 'audio/mp4' }));
+    await waitFor(() => expect(deviceTranscribe).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole('button', { name: 'memoirDiscardRecording' }));
+    await act(async () => finish({ text: 'Too late', problem: null }));
+    expect(screen.getByLabelText('memoirYourAnswer')).toHaveValue('');
   });
 });

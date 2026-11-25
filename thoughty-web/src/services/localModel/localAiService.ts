@@ -5,7 +5,6 @@ import { readLocalChat, writeLocalChat, type LocalChatMessage } from './localCha
 import { completeWithLocalModel, type LocalModelMessage, type LocalModelResult } from './localModelClient';
 import { chatMessages, parseTagAnswer, rephraseMessages, summaryMessages, tagMessages, unwrapBlock } from './localModelPrompts';
 import type { LocalModelSettings } from './localModelSettings';
-import { transcribeWithLocalModel } from './localModelTranscription';
 import {
   followUpMessages,
   inspirationMessages,
@@ -81,16 +80,7 @@ export function createLocalAiService(getSettings: () => LocalModelSettings | nul
     return questions ? answer(questions) : { data: null, refusal: 'localModelUnreadable' };
   };
 
-  /** The text of a recording, from the writer's speech-to-text model; a recording with no words in it gives none. */
-  const transcribe = async (audio: Blob, filename: string): Promise<AiAnswer<string>> => {
-    const settings = getSettings();
-    if (!settings) return { data: null, refusal: 'localModelNotConfigured' };
-    const result = await transcribeWithLocalModel(settings, audio, filename);
-    if (result.data === null) return { data: null, refusal: result.problem };
-    return result.data ? answer(result.data) : { data: null, refusal: 'localModelNoSpeech' };
-  };
-
-  return { isConfigured, fixWriting, suggestTags, summarize, loadChat, chat, inspire, memoirFollowUps, transcribe };
+  return { isConfigured, fixWriting, suggestTags, summarize, loadChat, chat, inspire, memoirFollowUps };
 }
 
 export type LocalAiService = ReturnType<typeof createLocalAiService>;

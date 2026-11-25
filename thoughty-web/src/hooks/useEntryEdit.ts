@@ -11,6 +11,8 @@ import { useFeatureFlag } from '../components/FeatureFlags/featureFlags';
 import { useLeaveWarning } from '../components/ComposerDraft/useLeaveWarning';
 import { autoTagWithLocalModel } from '../services/localModel/localAutoTag';
 import { diaryAiMode } from '../utils/diaryAi';
+import { recordingTranscriptions } from '../services/speech/recordingTranscriptions';
+import { speechLanguage } from '../services/speech/speechProtocol';
 
 const NO_DIARIES: readonly Pick<Diary, 'id' | 'aiMode'>[] = [];
 
@@ -18,7 +20,7 @@ const NO_DIARIES: readonly Pick<Diary, 'id' | 'aiMode'>[] = [];
  * The entry editor's state and save. `moveToDiary` moves the entry when the editor chose another diary for it,
  * after its changes are saved, through the same move as the entry's **Move to diary** (it says where it went).
  * An entry of a diary on the writer's own model (among `diaries`) is tagged by that model from this browser once
- * saved, as the server tags the others on save.
+ * saved, as the server tags the others on save, and the recordings added to it are transcribed on this device.
  */
 export const useEntryEdit = (
   config: Config,
@@ -29,7 +31,8 @@ export const useEntryEdit = (
 ) => {
   const { entriesService, attachmentsService, localAiService } = useApiServices();
   // With AI switched off nothing adds tags on save, so an edited entry needs one of its own
-  const autoTagLimit = useFeatureFlag('ai') ? getAutoTagLimit(config.autoTagMaxTags) : 0;
+  const aiFeature = useFeatureFlag('ai');
+  const autoTagLimit = aiFeature ? getAutoTagLimit(config.autoTagMaxTags) : 0;
 
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [editText, setEditText] = useState<string>('');
@@ -124,8 +127,10 @@ export const useEntryEdit = (
         });
     }
 
+    const added: Attachment[] = [];
     for (const file of placed.remaining) {
-      await attachmentsService.uploadAttachment(file, editingEntry.id);
+      const attachment = await attachmentsService.uploadAttachment(file, editingEntry.id);
+      if (attachment) added.push(attachment);
     }
 
     const originalIds = new Set((editingEntry.attachments || []).map((attachment) => attachment.id));
@@ -137,16 +142,23 @@ export const useEntryEdit = (
     }
 
     // The changes are saved whatever happens to the move, which says itself where the entry went
-    if (moveToDiary && editDiaryId !== null && editDiaryId !== (editingEntry.diary_id ?? null)) {
+    let diaryId = editingEntry.diary_id ?? null;
+    if (moveToDiary && editDiaryId !== null && editDiaryId !== diaryId) {
       const moved = await moveToDiary(entryId, editDiaryId);
-      if (!moved) {
+      if (moved) {
+        diaryId = editDiaryId;
+      } else {
         notify(t('entrySavedNotMoved'));
       }
+    }
+    // The recordings added to an entry of a diary on the writer's own model are transcribed on this device
+    if (aiFeature && diaryAiMode(diaries, diaryId) === 'local') {
+      recordingTranscriptions.transcribe({ attachments: added, attachmentsService, language: speechLanguage(config.language) });
     }
 
     handleCancelEdit();
     onSave();
-  }, [attachmentsService, autoTagLimit, diaries, editDate, editDiaryId, editExistingAttachments, editFeelings, editFormat, editMood, editPendingFiles, editTags, editText, editTimeOfDay, editTitle, editVisibility, editingEntry, entriesService, handleCancelEdit, localAiService, moveToDiary, notify, onSave, t]);
+  }, [aiFeature, attachmentsService, autoTagLimit, config.language, diaries, editDate, editDiaryId, editExistingAttachments, editFeelings, editFormat, editMood, editPendingFiles, editTags, editText, editTimeOfDay, editTitle, editVisibility, editingEntry, entriesService, handleCancelEdit, localAiService, moveToDiary, notify, onSave, t]);
 
   const addEditPendingFile = useCallback((file: File) => {
     setEditPendingFiles((prev) => [...prev, file]);

@@ -167,11 +167,12 @@ export class AttachmentsController {
   @Put(':id/transcript')
   @RequireFeature('ai')
   @ApiOperation({
-    summary: 'Store the transcript the writer’s own model made of a recording',
+    summary: 'Store the transcript the writer’s device made of a recording',
     description:
-      'For a recording on an entry of a diary set to the writer’s own model only: the browser sends the recording ' +
-      'to that model and this route keeps only the text it answered, as a transcript Thoughty made is kept. No AI ' +
-      'provider is called. It replaces any earlier transcript of the recording.',
+      'For a recording on an entry of a diary set to the writer’s own model only: the browser transcribes the ' +
+      'recording on the writer’s device with a speech-recognition library (the recording never leaves it for this) ' +
+      'and this route keeps only the text, as a transcript Thoughty made is kept. No AI provider is called, and the ' +
+      'writer’s model server is not either. It replaces any earlier transcript of the recording.',
   })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Transcript stored', type: AudioTranscriptionResponseDto })

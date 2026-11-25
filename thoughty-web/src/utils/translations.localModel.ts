@@ -12,9 +12,6 @@ export type LocalModelTranslationKey =
   | 'localModelModel'
   | 'localModelApiKey'
   | 'localModelApiKeyHint'
-  | 'localModelTranscriptionModel'
-  | 'localModelTranscriptionModelHint'
-  | 'localModelTranscriptionReady'
   | 'localModelSave'
   | 'localModelTest'
   | 'localModelTesting'
@@ -34,16 +31,12 @@ export const localModelTranslations: Record<Language, Record<LocalModelTranslati
   en: {
     localModelTitle: 'Your own model',
     localModelDescription:
-      'For the diaries set to “My own model only” in Manage Diaries: the AI features (Rephrase, Auto Tag and tagging on save, Summarize, Discuss with AI, Get Inspired, the memoir’s follow-up questions, and transcribing recordings with a speech-to-text model) go from this browser straight to a model server you run (Ollama, LM Studio, llama.cpp), never through Thoughty. These settings stay in this browser.',
+      'For the diaries set to “My own model only” in Manage Diaries: the AI features (Rephrase, Auto Tag and tagging on save, Summarize, Discuss with AI, Get Inspired, the memoir’s follow-up questions) go from this browser straight to a model server you run (Ollama, LM Studio, llama.cpp), never through Thoughty. These settings stay in this browser. Recordings in these diaries are not sent to it: they are transcribed on this device, automatically, by a speech-recognition model downloaded once.',
     localModelAddress: 'Server address',
     localModelAddressHint: 'An OpenAI-compatible address: on this device, such as http://localhost:11434/v1 for Ollama or http://localhost:1234/v1 for LM Studio, or any https address, such as a server elsewhere on your network.',
     localModelModel: 'Model',
     localModelApiKey: 'API key (optional)',
     localModelApiKeyHint: 'Only if your server asks for one. It stays in this browser and is forgotten when you sign out.',
-    localModelTranscriptionModel: 'Speech-to-text model (optional)',
-    localModelTranscriptionModelHint:
-      'To transcribe recordings, the model your server runs at /audio/transcriptions, such as whisper-1 or Systran/faster-whisper-small. Leave it empty and recordings in these diaries are not transcribed.',
-    localModelTranscriptionReady: 'Speech to text: {model} transcribes recordings on your server.',
     localModelSave: 'Save model server',
     localModelTest: 'Test connection',
     localModelTesting: 'Testing…',
@@ -69,31 +62,18 @@ export const localModelTranslations: Record<Language, Record<LocalModelTranslati
     localModelTimeout: 'Your model took too long to answer. Try again, or use a smaller model.',
     localModelUnreadable: 'Your model answered, but not in the form asked for. Try again, or use a larger model.',
     localModelFailed: 'Your model server could not answer. Try again.',
-    localModelTranscriptionModelRequired:
-      'To transcribe recordings in this diary, set a speech-to-text model under Your own model in Profile › AI Configuration.',
-    localModelNoTranscription:
-      'Your model server has no speech-to-text endpoint (/audio/transcriptions). Chat servers such as Ollama have none: run one that does at this address, such as speaches, LocalAI, or whisper.cpp’s server started with --inference-path /v1/audio/transcriptions.',
-    localModelTranscriptionModelNotFound:
-      'Your model server does not have this speech-to-text model. Check its name in Profile › AI Configuration, or download it on the server first.',
-    localModelRecordingTooLarge: 'Your model server refused this recording as too large. Raise its upload limit, or transcribe a shorter recording.',
-    localModelRecordingUnavailable: 'This recording could not be loaded from Thoughty to send it to your model. Try again.',
-    localModelNoSpeech: 'Your model heard no words in this recording.',
     localModelAutoTagFailed: 'The entry is saved, but your own model added no tags to it. Test the connection in Profile › AI Configuration to see why.',
     aiChatKeptInBrowser: 'This chat goes to your own model and is kept only in this browser, never on Thoughty’s server. It is deleted when you sign out.',
   },
   fr: {
     localModelTitle: 'Votre propre modèle',
     localModelDescription:
-      "Pour les journaux réglés sur « Mon propre modèle uniquement » dans Gérer les journaux : les fonctions d'IA (Reformuler, Auto Tag et les tags à l'enregistrement, Résumer, Discuter avec l'IA, S'inspirer, les questions de relance des mémoires, et la transcription des enregistrements par un modèle de reconnaissance vocale) vont directement de ce navigateur au serveur de modèle que vous faites tourner (Ollama, LM Studio, llama.cpp), sans jamais passer par Thoughty. Ces réglages restent dans ce navigateur.",
+      "Pour les journaux réglés sur « Mon propre modèle uniquement » dans Gérer les journaux : les fonctions d'IA (Reformuler, Auto Tag et les tags à l'enregistrement, Résumer, Discuter avec l'IA, S'inspirer, les questions de relance des mémoires) vont directement de ce navigateur au serveur de modèle que vous faites tourner (Ollama, LM Studio, llama.cpp), sans jamais passer par Thoughty. Ces réglages restent dans ce navigateur. Les enregistrements de ces journaux ne lui sont pas envoyés : ils sont transcrits sur cet appareil, automatiquement, par un modèle de reconnaissance vocale téléchargé une seule fois.",
     localModelAddress: 'Adresse du serveur',
     localModelAddressHint: "Une adresse compatible OpenAI : sur cet appareil, comme http://localhost:11434/v1 pour Ollama ou http://localhost:1234/v1 pour LM Studio, ou n'importe quelle adresse https, comme un serveur ailleurs sur votre réseau.",
     localModelModel: 'Modèle',
     localModelApiKey: "Clé d'API (facultative)",
     localModelApiKeyHint: "Seulement si votre serveur en demande une. Elle reste dans ce navigateur et est oubliée à la déconnexion.",
-    localModelTranscriptionModel: 'Modèle de reconnaissance vocale (facultatif)',
-    localModelTranscriptionModelHint:
-      "Pour transcrire les enregistrements, le modèle que votre serveur fait tourner sur /audio/transcriptions, comme whisper-1 ou Systran/faster-whisper-small. Laissé vide, les enregistrements de ces journaux ne sont pas transcrits.",
-    localModelTranscriptionReady: 'Reconnaissance vocale : {model} transcrit les enregistrements sur votre serveur.',
     localModelSave: 'Enregistrer le serveur',
     localModelTest: 'Tester la connexion',
     localModelTesting: 'Test en cours…',
@@ -119,15 +99,6 @@ export const localModelTranslations: Record<Language, Record<LocalModelTranslati
     localModelTimeout: 'Votre modèle a mis trop de temps à répondre. Réessayez, ou utilisez un modèle plus petit.',
     localModelUnreadable: "Votre modèle a répondu, mais pas sous la forme demandée. Réessayez, ou utilisez un modèle plus grand.",
     localModelFailed: "Votre serveur de modèle n'a pas pu répondre. Réessayez.",
-    localModelTranscriptionModelRequired:
-      "Pour transcrire les enregistrements de ce journal, indiquez un modèle de reconnaissance vocale sous Votre propre modèle dans Profil › Configuration IA.",
-    localModelNoTranscription:
-      "Votre serveur de modèle n'a pas de point d'accès de reconnaissance vocale (/audio/transcriptions). Les serveurs de discussion comme Ollama n'en ont pas : faites tourner à cette adresse un serveur qui en a un, comme speaches, LocalAI, ou le serveur de whisper.cpp lancé avec --inference-path /v1/audio/transcriptions.",
-    localModelTranscriptionModelNotFound:
-      "Votre serveur de modèle n'a pas ce modèle de reconnaissance vocale. Vérifiez son nom dans Profil › Configuration IA, ou téléchargez-le d'abord sur le serveur.",
-    localModelRecordingTooLarge: "Votre serveur de modèle a refusé cet enregistrement, trop volumineux. Augmentez sa limite d'envoi, ou transcrivez un enregistrement plus court.",
-    localModelRecordingUnavailable: "Cet enregistrement n'a pas pu être chargé depuis Thoughty pour l'envoyer à votre modèle. Réessayez.",
-    localModelNoSpeech: "Votre modèle n'a entendu aucun mot dans cet enregistrement.",
     localModelAutoTagFailed: "L'entrée est enregistrée, mais votre propre modèle n'y a ajouté aucun tag. Testez la connexion dans Profil › Configuration IA pour savoir pourquoi.",
     aiChatKeptInBrowser: "Cette discussion va à votre propre modèle et n'est gardée que dans ce navigateur, jamais sur le serveur de Thoughty. Elle est effacée à la déconnexion.",
   },

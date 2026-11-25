@@ -57,6 +57,7 @@ import { featureFlagsTranslations, type FeatureFlagsTranslationKey } from "./tra
 import { entryTemplatesTranslations, type EntryTemplatesTranslationKey } from "./translations.entryTemplates";
 import { diaryAiTranslations, type DiaryAiTranslationKey } from "./translations.diaryAi";
 import { localModelTranslations, type LocalModelTranslationKey } from "./translations.localModel";
+import { deviceSpeechTranslations, type DeviceSpeechTranslationKey } from "./translations.deviceSpeech";
 import { builtInTemplatesTranslations, type BuiltInTemplatesTranslationKey } from "./translations.builtInTemplates";
 import { markdownToolbarTranslations, type MarkdownToolbarTranslationKey } from "./translations.markdownToolbar";
 import { landingTranslations, type LandingTranslationKey } from "./translations.landing";
@@ -160,6 +161,7 @@ export type TranslationKey =
   | EntryTemplatesTranslationKey
   | DiaryAiTranslationKey
   | LocalModelTranslationKey
+  | DeviceSpeechTranslationKey
   | BuiltInTemplatesTranslationKey
   | MarkdownToolbarTranslationKey
   | LandingTranslationKey
@@ -268,6 +270,7 @@ export const translations: Translations = {
     ...entryTemplatesTranslations.en,
     ...diaryAiTranslations.en,
     ...localModelTranslations.en,
+    ...deviceSpeechTranslations.en,
     ...builtInTemplatesTranslations.en,
     ...markdownToolbarTranslations.en,
     ...landingTranslations.en,
@@ -369,6 +372,7 @@ export const translations: Translations = {
     ...entryTemplatesTranslations.fr,
     ...diaryAiTranslations.fr,
     ...localModelTranslations.fr,
+    ...deviceSpeechTranslations.fr,
     ...builtInTemplatesTranslations.fr,
     ...markdownToolbarTranslations.fr,
     ...landingTranslations.fr,

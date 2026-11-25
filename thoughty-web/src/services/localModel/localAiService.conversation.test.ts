@@ -3,7 +3,7 @@ import { createLocalAiService } from './localAiService';
 import { readLocalChat } from './localChatHistory';
 
 /** A writer's model server elsewhere on their network, behind https. */
-const settings = { baseUrl: 'https://models.home.example/v1', model: 'qwen2.5', apiKey: 'sk-home', transcriptionModel: '' };
+const settings = { baseUrl: 'https://models.home.example/v1', model: 'qwen2.5', apiKey: 'sk-home' };
 
 function stubAnswers(...contents: string[]) {
   const fetchMock = vi.fn();

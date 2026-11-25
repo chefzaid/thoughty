@@ -104,13 +104,13 @@ describe('with AI switched off', () => {
   it('offers no transcription for a recording, and still shows a transcript already made', () => {
     const recording: Attachment = { id: 3, original_filename: 'voice.mp3', stored_filename: 'voice.mp3', mimetype: 'audio/mpeg', size: 10 };
     const { container } = render(
-      <AudioTranscript attachment={recording} attachmentsService={{} as never} localAiService={{} as never} isDark t={t} />,
+      <AudioTranscript attachment={recording} attachmentsService={{} as never} isDark t={t} />,
       { wrapper: aiOff },
     );
     expect(container).toBeEmptyDOMElement();
 
     render(
-      <AudioTranscript attachment={{ ...recording, transcript: 'Said before' }} attachmentsService={{} as never} localAiService={{} as never} isDark t={t} />,
+      <AudioTranscript attachment={{ ...recording, transcript: 'Said before' }} attachmentsService={{} as never} isDark t={t} />,
       { wrapper: aiOff },
     );
     expect(screen.getByText('Said before')).toBeInTheDocument();

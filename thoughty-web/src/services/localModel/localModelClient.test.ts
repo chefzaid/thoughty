@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { completeWithLocalModel, testLocalModel } from './localModelClient';
 
-const settings = { baseUrl: 'http://localhost:11434/v1', model: 'llama3.2', apiKey: '', transcriptionModel: '' };
+const settings = { baseUrl: 'http://localhost:11434/v1', model: 'llama3.2', apiKey: '' };
 const messages = [{ role: 'user' as const, content: 'Hello' }];
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 

@@ -29,7 +29,8 @@
       "@components/*": ["./src/components/*"],
       "@contexts/*": ["./src/contexts/*"],
       "@utils/*": ["./src/utils/*"],
-      "@types/*": ["./src/types/*"]
+      "@types/*": ["./src/types/*"],
+      "@huggingface/transformers": ["./src/types/vendor/huggingface-transformers.d.ts"]
     }
   },
   "include": ["src"]

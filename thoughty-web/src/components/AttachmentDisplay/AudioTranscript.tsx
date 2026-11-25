@@ -7,31 +7,36 @@ import { confirmAiRequest } from "../DiaryAi/aiConsent";
 import { useRequestAiConsent } from "../DiaryAi/aiConsentContext";
 import { diaryOffersAi, type DiaryAiMode } from "../../utils/diaryAi";
 import { readAudioDuration } from "../../utils/audioDuration";
-import type { LocalAiService } from "../../services/localModel/localAiService";
-import { transcribeStoredRecording } from "../../services/localModel/localTranscript";
-import type { AiAnswer } from "../../services/api/aiTypes";
+import { recordingTranscriptions } from "../../services/speech/recordingTranscriptions";
+import { speechLanguage } from "../../services/speech/speechProtocol";
+import { useRecordingTranscription } from "../../hooks/useRecordingTranscription";
+import DeviceSpeechProgress from "../DeviceSpeech/DeviceSpeechProgress";
 
 interface AudioTranscriptProps {
   readonly attachment: Attachment;
   readonly attachmentsService: AttachmentsService;
-  /** The writer's own model, which a diary set to it transcribes with from this browser. */
-  readonly localAiService: Pick<LocalAiService, "transcribe">;
   readonly isDark: boolean;
-  readonly t: (key: string) => string;
+  readonly t: (key: string, params?: Record<string, string | number>) => string;
   /**
    * The AI mode of the entry's diary: with AI off a recording without a transcript offers none, a diary that asks
    * each time shows the writer the recording and where it goes before sending it, and one on the writer's own model
-   * sends it there from this browser, Thoughty's server keeping only the text.
+   * transcribes it on this device (`recordingTranscriptions`, started on its own when the entry is saved),
+   * Thoughty's server keeping only the text.
    */
   readonly aiMode?: DiaryAiMode;
   /** The recording's address in the page, to read its length for that preview. */
   readonly sourceUrl?: string | null;
 }
 
+/** The transcribe button's words: working, trying again after a failure on this device, or the first try. */
+function transcribeLabel(loading: boolean, retry: boolean, t: (key: string) => string): string {
+  if (loading) return t("transcribingAudio");
+  return retry ? t("deviceSpeechRetry") : t("transcribeAudio");
+}
+
 function AudioTranscript({
   attachment,
   attachmentsService,
-  localAiService,
   isDark,
   t,
   aiMode = "on",
@@ -47,50 +52,54 @@ function AudioTranscript({
   const [problem, setProblem] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  /** The transcript from Thoughty's provider, once a diary that asks each time has been asked; null when cancelled. */
-  const transcribeOnServer = async (): Promise<AiAnswer<string> | null> => {
+  // In a diary on the writer's own model the recording is transcribed on this device, in the background
+  const onDevice = aiMode === "local";
+  const device = useRecordingTranscription(attachment.id);
+  const shownTranscript = device?.phase === "done" ? device.transcript : transcript;
+
+  /** The transcript from Thoughty's provider, once a diary that asks each time has been asked. */
+  const transcribeOnServer = async () => {
+    setIsLoading(true);
+    setProblem(null);
     const seconds = aiMode === "ask" ? await readAudioDuration(sourceUrl) : null;
     const consent = await confirmAiRequest(aiMode, requestConsent, {
       task: "transcription",
       recording: { name: attachment.original_filename, seconds },
     });
-    if (!consent.send) return null;
-    const result = await attachmentsService.transcribeAttachment(attachment.id, null, consent.aiConsent);
-    return result ? { data: result.transcript, refusal: null } : { data: null, refusal: null };
+    const result = consent.send ? await attachmentsService.transcribeAttachment(attachment.id, null, consent.aiConsent) : null;
+    setIsLoading(false);
+    if (result) setTranscript(result.transcript);
+    else if (consent.send) setProblem("audioTranscriptionFailed");
   };
 
-  const transcribe = async () => {
-    setIsLoading(true);
-    setProblem(null);
-    const result = aiMode === "local"
-      ? await transcribeStoredRecording(attachment, attachmentsService, localAiService)
-      : await transcribeOnServer();
-    setIsLoading(false);
-    if (!result) return;
-    if (result.data === null) {
-      setProblem(result.refusal ?? "audioTranscriptionFailed");
-      return;
-    }
-    setTranscript(result.data);
+  const transcribe = () => {
+    if (!onDevice) return transcribeOnServer();
+    recordingTranscriptions.transcribe({ attachments: [attachment], attachmentsService, language: speechLanguage(t("languageCode")) });
   };
 
   const copyTranscript = async () => {
-    await navigator.clipboard.writeText(transcript);
+    await navigator.clipboard.writeText(shownTranscript);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1500);
   };
 
   // Transcribing is AI: while AI is switched off a recording without a transcript offers none
-  if (!transcript && !aiOn) {
+  if (!shownTranscript && !aiOn) {
     return null;
   }
 
-  if (!transcript) {
+  const deviceStep = onDevice && device && device.phase !== "done" && device.phase !== "failed" ? device : null;
+  if (deviceStep) {
+    return <DeviceSpeechProgress step={deviceStep} t={t} className="mt-3 border-t border-current/10 pt-3" />;
+  }
+
+  if (!shownTranscript) {
+    const failure = onDevice && device?.phase === "failed" ? device.problem : problem;
     return (
       <div className="mt-3 border-t border-current/10 pt-3">
         <button
           type="button"
-          onClick={transcribe}
+          onClick={() => void transcribe()}
           disabled={isLoading}
           className={`inline-flex min-h-8 items-center gap-2 text-xs font-medium disabled:cursor-wait disabled:opacity-60 ${
             isDark
@@ -102,11 +111,11 @@ function AudioTranscript({
             className={`codicon ${isLoading ? "codicon-loading codicon-modifier-spin" : "codicon-record"}`}
             aria-hidden="true"
           />
-          {isLoading ? t("transcribingAudio") : t("transcribeAudio")}
+          {transcribeLabel(isLoading, onDevice && failure !== null, t)}
         </button>
-        {problem && (
+        {failure && (
           <p className={`mt-1 text-xs ${tintedTextClass("red", isDark ? "dark" : "light")}`} role="alert">
-            {t(problem)}
+            {t(failure)}
           </p>
         )}
       </div>
@@ -135,7 +144,7 @@ function AudioTranscript({
         </button>
       </div>
       <p className="whitespace-pre-wrap break-words text-sm leading-6">
-        {transcript}
+        {shownTranscript}
       </p>
     </div>
   );

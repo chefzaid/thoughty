@@ -18,7 +18,9 @@ describe('web security headers', () => {
     const csp = cspDirectives();
 
     expect(csp['default-src']).toEqual(["'self'"]);
-    expect(csp['script-src']).toEqual(["'self'"]);
+    // WebAssembly for the speech-recognition worker, and no eval() of JavaScript
+    expect(csp['script-src']).toEqual(["'self'", "'wasm-unsafe-eval'"]);
+    expect(csp['script-src']).not.toContain("'unsafe-eval'");
     expect(csp['style-src']).toEqual(["'self'"]);
     expect(csp['object-src']).toEqual(["'none'"]);
     expect(csp['base-uri']).toEqual(["'self'"]);

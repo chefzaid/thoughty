@@ -3,6 +3,7 @@ import { test, expect, type Page } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
 import { mockDiary } from '../support/mockApp.diaries';
 import { HTTPS_MODEL_URL, LOCAL_MODEL_URL, routeLocalModelServer } from '../support/localModelServer';
+import { fakeSpeechRecognition, heardRecordings, releaseSpeech, toneWav } from '../support/fakeSpeechRecognition';
 
 const composer = (page: Page) => page.getByPlaceholder("What's on your mind?");
 const LOCAL_NOTE = 'This diary uses only your own AI model, so Thoughty’s AI features that read many entries at once leave it out.';
@@ -209,60 +210,74 @@ test.describe('A diary on the writer’s own model', () => {
     expect(state.memoir.lastFollowUpsPayload).toBeNull();
   });
 
-  test('transcribes an entry’s recording and a memoir recording on the writer’s speech-to-text model, Thoughty keeping only the text', async ({ page }) => {
-    const recording = { id: 77, original_filename: 'lake.webm', stored_filename: 'stored-lake.webm', mimetype: 'audio/webm', size: 68 };
-    const entries = initialEntries.map((entry) => (entry.id === 102 ? { ...entry, attachments: [recording] } : entry));
-    const { state } = await setupMockApp(page, { startAuthenticated: true, diaries: localDiaries, initialEntries: entries, memoirProgram: { diaryId: 2 } });
+  test('transcribes a recording saved in that diary on this device, on its own, Thoughty keeping only the text and the model server getting no audio', async ({ page }) => {
+    const { state } = await setupMockApp(page, {
+      startAuthenticated: true, diaries: localDiaries, initialEntries, memoirProgram: { diaryId: 2 }, config: { autoTagMaxTags: '2' },
+    });
+    await fakeSpeechRecognition(page, [
+      { text: 'Dear sister, I miss the lake.' },
+      { problem: 'deviceSpeechOutOfMemory' },
+      { text: 'The ducks are back.' },
+      { text: 'We played marbles in the yard.' },
+    ]);
+    await routeLocalModelServer(page);
+    const modelPaths: string[] = [];
     const thoughtyRequests: string[] = [];
     page.on('request', (request) => {
-      const { pathname } = new URL(request.url());
+      const { origin, pathname } = new URL(request.url());
+      if (origin === new URL(LOCAL_MODEL_URL).origin) modelPaths.push(pathname);
       if (/^\/api\/attachments\/(upload|\d+\/transcri)/.test(pathname)) thoughtyRequests.push(`${request.method()} ${pathname}`);
     });
-    // A chat server such as Ollama has no speech-to-text endpoint: the test says so, and what to run instead
-    await routeLocalModelServer(page);
     const panel = await setUpLocalModel(page);
-    await panel.getByLabel('Speech-to-text model (optional)').fill('whisper-1');
-    await panel.getByRole('button', { name: 'Test connection' }).click();
-    await expect(panel.getByText('Connected: llama3.2 is ready on your server.')).toBeVisible();
-    await expect(panel.getByText(/has no speech-to-text endpoint .*such as speaches, LocalAI/)).toBeVisible();
-
-    await page.unroute(`${LOCAL_MODEL_URL}/**`);
-    const { transcriptionRequests } = await routeLocalModelServer(page, { transcript: ' Dear sister, I miss the lake. ' });
-    await panel.getByLabel('Speech-to-text model (optional)').fill('');
     await panel.getByRole('button', { name: 'Save model server' }).click();
     await expect(panel.getByText('Saved in this browser.')).toBeVisible();
+    await expect(panel.getByText(/transcribed on this device, automatically/)).toBeVisible();
 
-    // Without a speech-to-text model the recording is not sent anywhere, and the entry says where to set one
+    // Saved with a recording, the entry's recording is transcribed in the background, the model downloaded once
     await page.goto('/journal?diary=2');
-    const entry = page.locator('#entry-102');
-    await entry.getByRole('button', { name: 'Transcribe audio' }).click();
-    await expect(entry.getByRole('alert')).toHaveText(/set a speech-to-text model under Your own model/);
-    expect(transcriptionRequests).toHaveLength(0);
+    await page.locator('input[type="file"]').first().setInputFiles([toneWav('lake.wav')]);
+    await composer(page).fill('A voice letter for my sister');
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    const letter = page.locator('[id^="entry-"]', { hasText: 'A voice letter for my sister' });
+    await expect(letter.getByRole('status')).toHaveText('Downloading the speech-recognition model to this device (first time only): 39 of 78 MB');
+    await expect(letter.getByRole('progressbar', { name: 'Speech-recognition model download' })).toHaveAttribute('value', '39000000');
+    const progressScan = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).include('[id^="entry-"]').analyze();
+    expect(progressScan.violations.map(({ id }) => id)).toEqual([]);
+    await releaseSpeech(page);
+    await expect(letter.getByText('Dear sister, I miss the lake.')).toBeVisible();
+    await expect.poll(() => state.entries.find((entry) => entry.content === 'A voice letter for my sister')?.attachments?.[0]?.transcript)
+      .toBe('Dear sister, I miss the lake.');
+    // Decoded on the device to 16 kHz mono: half a second is 8,000 samples
+    expect(await heardRecordings(page)).toEqual([{ language: 'en', samples: 8000 }]);
 
-    await setUpLocalModel(page);
-    await panel.getByLabel('Speech-to-text model (optional)').fill('whisper-1');
-    await panel.getByRole('button', { name: 'Test connection' }).click();
-    await expect(panel.getByText('Speech to text: whisper-1 transcribes recordings on your server.')).toBeVisible();
-    await panel.getByRole('button', { name: 'Save model server' }).click();
-    await expect(panel.getByText('Saved in this browser.')).toBeVisible();
+    // A recording the device cannot transcribe says why, and is tried again on request
+    await composer(page).fill('Ducks on the pond');
+    await page.locator('input[type="file"]').first().setInputFiles([toneWav('ducks.wav')]);
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    const ducks = page.locator('[id^="entry-"]', { hasText: 'Ducks on the pond' });
+    await releaseSpeech(page);
+    await expect(ducks.getByRole('alert')).toHaveText('This device ran out of memory transcribing the recording. Close other tabs or apps and try again, or try on a computer.');
+    await ducks.getByRole('button', { name: 'Try again' }).click();
+    await releaseSpeech(page);
+    await expect(ducks.getByText('The ducks are back.')).toBeVisible();
+    await expect(ducks.getByRole('alert')).toHaveCount(0);
 
-    await page.goto('/journal?diary=2');
-    await entry.getByRole('button', { name: 'Transcribe audio' }).click();
-    await expect(entry.getByText('Dear sister, I miss the lake.')).toBeVisible();
-    expect(transcriptionRequests.at(-1)).toEqual({ model: 'whisper-1', filename: 'lake.webm', bytes: expect.any(Number) });
-    expect(transcriptionRequests.at(-1)?.bytes).toBeGreaterThan(0);
-    expect(state.entries.find((candidate) => candidate.id === 102)?.attachments?.[0]?.transcript).toBe('Dear sister, I miss the lake.');
-    const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).include('#entry-102').analyze();
-    expect(results.violations.map(({ id }) => id)).toEqual([]);
-
-    // The memoir's recording goes from the recorder to the model, and its text into the answer: nothing is uploaded for it
+    // A memoir recording is transcribed as soon as it is chosen, its text put in the answer, nothing uploaded for it
     await page.goto('/memoir');
     const week = page.getByRole('region', { name: 'This week’s question' });
     await week.getByRole('button', { name: 'Answer', exact: true }).click();
-    await week.locator('input[type="file"]').setInputFiles({ name: 'story.webm', mimeType: 'audio/webm', buffer: Buffer.from('mock audio') });
-    await week.getByRole('button', { name: 'Turn the recording into text' }).click();
-    await expect(week.getByLabel('Your answer')).toHaveValue('Dear sister, I miss the lake.');
-    expect(transcriptionRequests.at(-1)).toEqual({ model: 'whisper-1', filename: 'story.webm', bytes: 10 });
-    expect(thoughtyRequests).toEqual(['PUT /api/attachments/77/transcript']);
+    await week.locator('input[type="file"]').setInputFiles(toneWav('story.wav'));
+    await expect(week.getByText('Downloading the speech-recognition model to this device (first time only): 39 of 78 MB')).toBeVisible();
+    await releaseSpeech(page);
+    await expect(week.getByLabel('Your answer')).toHaveValue('We played marbles in the yard.');
+
+    expect(thoughtyRequests.filter((request) => !request.startsWith('POST /api/attachments/upload'))).toEqual([
+      expect.stringMatching(/^PUT \/api\/attachments\/\d+\/transcript$/),
+      expect.stringMatching(/^PUT \/api\/attachments\/\d+\/transcript$/),
+    ]);
+    expect(thoughtyRequests.filter((request) => request.startsWith('POST /api/attachments/upload'))).toHaveLength(2);
+    // The writer's model server is for the chat model only: auto-tagging went there, no recording did
+    expect(modelPaths.length).toBeGreaterThan(0);
+    expect(modelPaths.every((path) => /\/(models|chat\/completions)$/.test(path))).toBe(true);
   });
 });

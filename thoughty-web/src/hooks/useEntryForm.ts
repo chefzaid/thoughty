@@ -5,6 +5,8 @@ import { composerDiaryId, diaryAiMode, isDiaryAiModeRefusal } from '../utils/dia
 import { confirmAiRequest, type AiRequestDiary, type RequestAiConsent } from '../components/DiaryAi/aiConsent';
 import { textAiForDiary } from '../services/localModel/localAiService';
 import { autoTagWithLocalModel } from '../services/localModel/localAutoTag';
+import { recordingTranscriptions } from '../services/speech/recordingTranscriptions';
+import { speechLanguage } from '../services/speech/speechProtocol';
 import { formatEntryDate } from '../utils/entryDate';
 import { cleanEntryTitle } from '../utils/entryTime';
 import { defaultTimeCapsule, isValidTimeCapsuleDate, type TimeCapsuleDraft } from '../utils/timeCapsule';
@@ -83,7 +85,8 @@ export const useEntryForm = (
   const aiDiaryId = composerDiaryId(diaries, currentDiaryId);
   const composerAiMode = diaryAiMode(diaries, aiDiaryId);
   const tagsOnSave = composerAiMode === 'on' || (composerAiMode === 'local' && localAiService.isConfigured());
-  const autoTagLimit = useFeatureFlag('ai') && tagsOnSave ? getAutoTagLimit(config.autoTagMaxTags) : 0;
+  const aiFeature = useFeatureFlag('ai');
+  const autoTagLimit = aiFeature && tagsOnSave ? getAutoTagLimit(config.autoTagMaxTags) : 0;
   const aiDiary = useMemo<AiRequestDiary>(
     () => ({ diaryId: aiDiaryId, mode: composerAiMode, requestConsent: requestAiConsent, onModeRefused: onDiaryAiOff }),
     [aiDiaryId, composerAiMode, onDiaryAiOff, requestAiConsent],
@@ -207,8 +210,10 @@ export const useEntryForm = (
         return;
       }
 
+      const stored: Attachment[] = [];
       for (const file of placed.remaining) {
-        await attachmentsService.uploadAttachment(file, result.entryId);
+        const attachment = await attachmentsService.uploadAttachment(file, result.entryId);
+        if (attachment) stored.push(attachment);
       }
 
       for (const attachment of uploadedAttachments) {
@@ -221,6 +226,10 @@ export const useEntryForm = (
       onDraftPublished();
       clearSavedEntry({ text: newEntryText, title, timeOfDay, mood, feelings, timeCapsule, tags, chosenVisibility, pendingFiles, uploadedAttachments });
       onSuccess();
+      if (composerAiMode === 'local' && aiFeature) {
+        // Its recordings are transcribed on this device, in the background, Thoughty keeping only the text
+        recordingTranscriptions.transcribe({ attachments: [...stored, ...uploadedAttachments], attachmentsService, language: speechLanguage(config.language) });
+      }
       if (composerAiMode === 'local' && autoTagLimit > 0) {
         // The writer's own model tags the saved entry from here, as the server does for the other diaries
         void autoTagWithLocalModel({
@@ -238,7 +247,7 @@ export const useEntryForm = (
     } finally {
       saving.current = false;
     }
-  }, [attachmentsService, autoTagLimit, chosenVisibility, clearSavedEntry, composerAiMode, currentDiaryId, entriesService, feelings, format, localAiService, mood, newEntryText, onDraftPublished, onSuccess, pendingFiles, selectedDate, tags, timeCapsule, timeOfDay, title, uploadedAttachments, validateEntryForm, visibility]);
+  }, [aiFeature, attachmentsService, autoTagLimit, chosenVisibility, clearSavedEntry, composerAiMode, config.language, currentDiaryId, entriesService, feelings, format, localAiService, mood, newEntryText, onDraftPublished, onSuccess, pendingFiles, selectedDate, tags, timeCapsule, timeOfDay, title, uploadedAttachments, validateEntryForm, visibility]);
 
   const addPendingFile = useCallback((file: File) => {
     setPendingFiles((prev) => [...prev, file]);

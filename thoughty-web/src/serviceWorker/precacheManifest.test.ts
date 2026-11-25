@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { selectPrecachePaths } from './precacheManifest';
 
 describe('selectPrecachePaths', () => {
-  it('keeps the scripts, styles, fonts, icons and manifest the app opens with, sorted', () => {
+  it('keeps the scripts, styles, fonts, icons and manifest the app opens with, sorted, leaving PDF.js and speech recognition out', () => {
     expect(selectPrecachePaths([
       'index.html',
       'sw.js',
@@ -20,6 +20,9 @@ describe('selectPrecachePaths', () => {
       'assets/pdf-DgMHKLtX.js',
       'assets/pdf.worker.min-92oBEpcp.js',
       'assets/pdfViewer-Ab12.js',
+      'assets/speechWorker-BPxKlecx.js',
+      'assets/transformers.web-Di67_usp.js',
+      'assets/ort-wasm-simd-threaded.asyncify-CxOG5pUO.wasm',
     ])).toEqual([
       '/assets/atkinson-hyperlegible-latin-400-normal-BrHNak5F.woff2',
       '/assets/codicon-DjkITdqj.ttf',

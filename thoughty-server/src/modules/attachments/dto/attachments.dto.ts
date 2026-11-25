@@ -35,7 +35,7 @@ export class TranscribeAttachmentDto {
   aiConsent?: boolean;
 }
 
-/** A transcript the writer's own model made in the browser, for a recording in a diary set to that model. */
+/** A transcript made on the writer's device by the browser, for a recording in a diary set to "My own model only". */
 export class StoreTranscriptDto {
   @ApiProperty({
     description:

@@ -15,8 +15,8 @@ export type DiaryAiMode = Diary['aiMode'];
 export type DiaryAiTask = 'tag' | 'writing' | 'summary' | 'chat' | 'prompt' | 'transcription';
 
 /**
- * The AI actions a diary on the writer's own model sends there from this browser: the text ones with the server's
- * prompts, and transcription to its speech-to-text endpoint (`/audio/transcriptions`). That is every one of them.
+ * The AI actions a diary on the writer's own model offers, all of them: the text ones go from this browser to that
+ * model with the server's prompts, and transcription runs on this device (`services/speech`), never on that model.
  */
 export const LOCAL_MODEL_TASKS: readonly DiaryAiTask[] = ['writing', 'tag', 'summary', 'chat', 'prompt', 'transcription'];
 

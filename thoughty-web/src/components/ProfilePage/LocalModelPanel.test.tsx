@@ -30,7 +30,7 @@ describe('LocalModelPanel', () => {
 
     expect(screen.getByText('Saved in this browser.')).toBeInTheDocument();
     expect(screen.getByLabelText('Server address')).toHaveValue('http://localhost:11434/v1');
-    expect(readLocalModelSettings(7)).toEqual({ baseUrl: 'http://localhost:11434/v1', model: 'llama3.2', apiKey: 'secret', transcriptionModel: '' });
+    expect(readLocalModelSettings(7)).toEqual({ baseUrl: 'http://localhost:11434/v1', model: 'llama3.2', apiKey: 'secret' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
     expect(screen.getByText('Removed from this browser.')).toBeInTheDocument();
@@ -39,7 +39,7 @@ describe('LocalModelPanel', () => {
   });
 
   it('shows what is saved, and refuses plain http to another device or a missing model', () => {
-    writeLocalModelSettings(7, { baseUrl: 'http://127.0.0.1:1234/v1', model: 'qwen', apiKey: '', transcriptionModel: '' });
+    writeLocalModelSettings(7, { baseUrl: 'http://127.0.0.1:1234/v1', model: 'qwen', apiKey: '' });
     renderPanel();
     expect(screen.getByLabelText('Server address')).toHaveValue('http://127.0.0.1:1234/v1');
     expect(screen.getByLabelText('Model')).toHaveValue('qwen');
@@ -88,7 +88,7 @@ describe('LocalModelPanel', () => {
       headers: { Authorization: 'Bearer sk-home' },
     }));
     fireEvent.click(screen.getByRole('button', { name: 'Save model server' }));
-    expect(readLocalModelSettings(7)).toEqual({ baseUrl: 'https://models.home.example/v1', model: 'qwen2.5', apiKey: 'sk-home', transcriptionModel: '' });
+    expect(readLocalModelSettings(7)).toEqual({ baseUrl: 'https://models.home.example/v1', model: 'qwen2.5', apiKey: 'sk-home' });
   });
 
   it('says how to allow this site when the server answers without allowing it, and lists the models it has', async () => {
@@ -105,43 +105,6 @@ describe('LocalModelPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Test connection' }));
     expect(await screen.findByText('Models on your server: mistral, phi3')).toBeInTheDocument();
     expect(screen.getByText(/does not have this model/)).toBeInTheDocument();
-  });
-
-  it('keeps a speech-to-text model, and tests its endpoint beside the chat model', async () => {
-    const fetchMock = vi.fn().mockResolvedValueOnce(json({ data: [{ id: 'llama3.2' }] })).mockResolvedValueOnce(json({ text: '' }));
-    vi.stubGlobal('fetch', fetchMock);
-    renderPanel();
-    fill('Server address', 'http://localhost:8080/v1');
-    fill('Model', 'llama3.2');
-    fill('Speech-to-text model (optional)', ' whisper-1 ');
-    fireEvent.click(screen.getByRole('button', { name: 'Test connection' }));
-
-    expect(await screen.findByText('Speech to text: whisper-1 transcribes recordings on your server.')).toBeInTheDocument();
-    expect(screen.getByText('Connected: llama3.2 is ready on your server.')).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenLastCalledWith('http://localhost:8080/v1/audio/transcriptions', expect.objectContaining({ method: 'POST', credentials: 'omit' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Save model server' }));
-    expect(readLocalModelSettings(7)?.transcriptionModel).toBe('whisper-1');
-
-    // A chat server without speech to text says so, and how to get one
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValueOnce(json({ data: [{ id: 'llama3.2' }] })).mockResolvedValueOnce(new Response('404 page not found', { status: 404 })));
-    fireEvent.click(screen.getByRole('button', { name: 'Test connection' }));
-    expect(await screen.findByText(/has no speech-to-text endpoint .*such as speaches, LocalAI/)).toBeInTheDocument();
-    expect(screen.getByText('Connected: llama3.2 is ready on your server.')).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
-    expect(screen.getByLabelText('Speech-to-text model (optional)')).toHaveValue('');
-  });
-
-  it('tests no speech to text while no model is named for it', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(json({ data: [{ id: 'llama3.2' }] }));
-    vi.stubGlobal('fetch', fetchMock);
-    renderPanel();
-    fill('Server address', 'http://localhost:11434/v1');
-    fill('Model', 'llama3.2');
-    fireEvent.click(screen.getByRole('button', { name: 'Test connection' }));
-
-    expect(await screen.findByText('Connected: llama3.2 is ready on your server.')).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('says when the browser cannot keep the settings', () => {

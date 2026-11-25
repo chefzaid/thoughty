@@ -7,7 +7,7 @@ import {
   writeLocalModelSettings,
 } from './localModelSettings';
 
-const ollama = { baseUrl: 'http://localhost:11434/v1', model: 'llama3.2', apiKey: '', transcriptionModel: '' };
+const ollama = { baseUrl: 'http://localhost:11434/v1', model: 'llama3.2', apiKey: '' };
 
 afterEach(() => {
   localStorage.clear();
@@ -44,16 +44,16 @@ describe('local model settings', () => {
     expect(readLocalModelSettings(7)).toBeNull();
   });
 
-  it('reads settings saved before the speech-to-text model was asked, as having none', () => {
-    localStorage.setItem('thoughty.localModel.7', '{"baseUrl":"http://localhost:11434/v1","model":"llama3.2","apiKey":""}');
-    expect(readLocalModelSettings(7)).toEqual(ollama);
+  it('reads settings saved with a speech-to-text model as the chat model alone, and forgets that model', () => {
+    localStorage.setItem('thoughty.localModel.7', '{"baseUrl":"http://localhost:11434/v1","model":"llama3.2","apiKey":"k","transcriptionModel":"whisper-1"}');
+    expect(readLocalModelSettings(7)).toEqual({ ...ollama, apiKey: 'k' });
 
-    writeLocalModelSettings(7, { ...ollama, transcriptionModel: 'whisper-1' });
-    expect(readLocalModelSettings(7)?.transcriptionModel).toBe('whisper-1');
+    forgetLocalModelKeys();
+    expect(JSON.parse(localStorage.getItem('thoughty.localModel.7') ?? 'null')).toEqual(ollama);
   });
 
   it('reads nothing from a stored value it does not recognise', () => {
-    for (const stored of ['not json', '{"baseUrl":"http://localhost/v1","model":"m","apiKey":"","transcriptionModel":5}', '{"baseUrl":"http://10.0.0.2/v1","model":"m","apiKey":""}', '{"baseUrl":"https://nas.example/v1/","model":"m","apiKey":""}', '{"baseUrl":"http://localhost/v1","model":" ","apiKey":""}', 'null']) {
+    for (const stored of ['not json', '{"baseUrl":"http://10.0.0.2/v1","model":"m","apiKey":""}', '{"baseUrl":"https://nas.example/v1/","model":"m","apiKey":""}', '{"baseUrl":"http://localhost/v1","model":" ","apiKey":""}', 'null']) {
       localStorage.setItem('thoughty.localModel.7', stored);
       expect(readLocalModelSettings(7)).toBeNull();
     }

@@ -33,6 +33,8 @@ export default defineConfig({
         'src/main.tsx',
         // The service worker's entry: only wires `serviceWorkerCore` to its global scope
         'src/serviceWorker/sw.ts',
+        // The speech-recognition worker's entry: only wires `speechWorkerCore` to the worker's messages
+        'src/services/speech/speechWorker.ts',
         'src/App.tsx',
         'src/contexts/AuthContext.tsx',
         'src/hooks/useAppState.ts',

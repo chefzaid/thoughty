@@ -19,7 +19,6 @@ function renderTranscript(requestConsent: RequestAiConsent | undefined, aiMode: 
       <AudioTranscript
         attachment={recording}
         attachmentsService={{ transcribeAttachment } as never}
-        localAiService={{ transcribe: vi.fn() }}
         isDark={false}
         t={t}
         aiMode={aiMode}

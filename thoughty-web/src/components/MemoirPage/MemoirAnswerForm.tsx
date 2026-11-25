@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 
 import type { AnswerMemoirRequest, LifeEra } from '../../services/api';
 import type { TranslationFunction } from '../../types';
@@ -7,14 +7,15 @@ import type { Language } from '../../utils/translations';
 import MemoirEraField from './MemoirEraField';
 import MemoirFollowUps from './MemoirFollowUps';
 import { useRecordingUpload } from './useRecordingUpload';
-import { formatRecordingTime, isVoiceRecordingSupported, useVoiceRecorder } from './useVoiceRecorder';
+import { formatRecordingTime, isVoiceRecordingSupported, useVoiceRecorder, type VoiceRecording } from './useVoiceRecorder';
 import './MemoirAnswerForm.css';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 import { confirmAiRequest } from '../DiaryAi/aiConsent';
 import { useRequestAiConsent } from '../DiaryAi/aiConsentContext';
 import { diaryOffersAi, type DiaryAiMode } from '../../utils/diaryAi';
-import { useLocalAiService } from '../../hooks/useLocalAiService';
-import type { AiAnswer } from '../../services/api/aiTypes';
+import { deviceTranscriber } from '../../services/speech/deviceTranscriber';
+import { speechLanguage, type DeviceSpeechProblem } from '../../services/speech/speechProtocol';
+import DeviceSpeechProgress, { type DeviceSpeechStep } from '../DeviceSpeech/DeviceSpeechProgress';
 
 const MAX_RECORDING_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_AUDIO = 'audio/mpeg,audio/mp4,audio/x-m4a,audio/aac,audio/ogg,audio/wav,audio/webm';
@@ -27,8 +28,8 @@ const PROBLEM_MESSAGES = {
   save: 'memoirAnswerError',
 } as const;
 
-/** What the form says went wrong: one of its own messages, or why the writer's own model gave no text. */
-type FormProblem = (typeof PROBLEM_MESSAGES)[keyof typeof PROBLEM_MESSAGES] | NonNullable<AiAnswer<never>['refusal']> | null;
+/** What the form says went wrong: one of its own messages, or why the recording gave no text on this device. */
+type FormProblem = (typeof PROBLEM_MESSAGES)[keyof typeof PROBLEM_MESSAGES] | DeviceSpeechProblem | null;
 
 /** A recording's text, or what the form says instead; null when the writer cancelled. */
 type Transcription = { readonly text: string } | { readonly problem: NonNullable<FormProblem> } | null;
@@ -45,7 +46,8 @@ interface MemoirAnswerFormProps {
   readonly language?: Language;
   /**
    * The memoir diary's AI mode: with AI off, no transcription and no follow-up questions; asking each time, each
-   * shows the writer what it sends first.
+   * shows the writer what it sends first; on the writer's own model, a recording is transcribed on this device as
+   * soon as it is made or chosen.
    */
   readonly aiMode?: DiaryAiMode;
   /** The memoir diary, which a transcription names so the server can refuse it when that diary has AI off. */
@@ -55,14 +57,15 @@ interface MemoirAnswerFormProps {
 
 function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras = [], answerDate = '', language = 'en', aiMode = 'on', diaryId = null, t }: MemoirAnswerFormProps) {
   const { upload, attachmentsService } = useRecordingUpload();
-  const localAiService = useLocalAiService();
   const recorder = useVoiceRecorder();
   const [text, setText] = useState('');
   const [eraId, setEraId] = useState<number | null>(null);
   const [problem, setProblem] = useState<FormProblem>(null);
   const [busy, setBusy] = useState<'transcribing' | 'saving' | null>(null);
+  /** How far the recording's transcription on this device has gone, while it runs. */
+  const [deviceStep, setDeviceStep] = useState<DeviceSpeechStep | null>(null);
   // Transcribing a recording and the follow-up questions are AI, left out while AI is switched off or off in the
-  // memoir diary; on the writer's own model both go there
+  // memoir diary; on the writer's own model the follow-ups go there and the recording is transcribed on this device
   const aiFeature = useFeatureFlag('ai');
   const followUpsOn = aiFeature && diaryOffersAi(aiMode, 'prompt');
   const transcriptionOn = aiFeature && diaryOffersAi(aiMode, 'transcription');
@@ -100,26 +103,45 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
     return transcription?.transcript ? { text: transcription.transcript } : { problem: PROBLEM_MESSAGES.transcribe };
   };
 
-  /** The recording's text from the writer's own model, sent there from this page; nothing is uploaded for it. */
-  const transcribeOnOwnModel = async (file: File): Promise<Transcription> => {
-    const { data, refusal } = await localAiService.transcribe(file, file.name);
-    return data === null ? { problem: refusal ?? PROBLEM_MESSAGES.transcribe } : { text: data };
+  /** The recording's text, heard on this device: it is not uploaded, nor sent anywhere, for it. */
+  const transcribeOnDevice = async (file: File): Promise<Transcription> => {
+    setDeviceStep({ phase: 'preparing' });
+    const { text: heard, problem: unheard } = await deviceTranscriber.transcribe(file, { language: speechLanguage(language), onProgress: setDeviceStep });
+    setDeviceStep(null);
+    if (heard === null) return { problem: unheard };
+    return heard ? { text: heard } : { problem: 'deviceSpeechNoWords' };
   };
 
-  const handleTranscribe = async () => {
-    const recording = recorder.recording;
-    if (!recording) return;
+  // The recording shown now: a transcription that ends after it was discarded or replaced adds nothing
+  const currentRecording = useRef<VoiceRecording | null>(null);
+  currentRecording.current = recorder.recording;
+
+  const transcribeRecording = async (recording: VoiceRecording) => {
     setBusy('transcribing');
     setProblem(null);
-    const result = aiMode === 'local' ? await transcribeOnOwnModel(recording.file) : await transcribeOnServer(recording);
+    const result = aiMode === 'local' ? await transcribeOnDevice(recording.file) : await transcribeOnServer(recording);
     setBusy(null);
-    if (!result) return;
+    if (!result || currentRecording.current !== recording) return;
     if ('problem' in result) {
       setProblem(result.problem);
       return;
     }
     setText((current) => (current.trim() ? `${current.trim()}\n\n${result.text}` : result.text));
   };
+  const transcribeLatest = useRef(transcribeRecording);
+  transcribeLatest.current = transcribeRecording;
+  const handleTranscribe = useCallback(() => {
+    if (currentRecording.current) void transcribeLatest.current(currentRecording.current);
+  }, []);
+
+  // On the writer's own model a recording is transcribed on its own as soon as it is made or chosen, once
+  const autoTranscribed = useRef<VoiceRecording | null>(null);
+  const transcribeOnItsOwn = transcriptionOn && aiMode === 'local';
+  useEffect(() => {
+    if (!transcribeOnItsOwn || !recorder.recording || autoTranscribed.current === recorder.recording) return;
+    autoTranscribed.current = recorder.recording;
+    handleTranscribe();
+  }, [handleTranscribe, recorder.recording, transcribeOnItsOwn]);
 
   // A follow-up goes at the end of the answer, in bold, with the caret below it to answer it
   const addFollowUp = (question: string) => {
@@ -219,16 +241,18 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras =
           </audio>
           <div className="memoir-actions">
             {transcriptionOn && (
-              <button type="button" className="memoir-secondary" disabled={busy !== null} onClick={() => void handleTranscribe()}>
+              <button type="button" className="memoir-secondary" disabled={busy !== null} onClick={handleTranscribe}>
                 <span className="codicon codicon-symbol-text" aria-hidden="true" />
                 {busy === 'transcribing' ? t('memoirTranscribing') : t('memoirTranscribe')}
               </button>
             )}
-            <button type="button" className="memoir-secondary" disabled={busy !== null} onClick={recorder.clear}>
+            {/* A recording being transcribed can still be discarded: its text is then left out */}
+            <button type="button" className="memoir-secondary" disabled={busy === 'saving'} onClick={recorder.clear}>
               <span className="codicon codicon-trash" aria-hidden="true" />
               {t('memoirDiscardRecording')}
             </button>
           </div>
+          {deviceStep && <DeviceSpeechProgress step={deviceStep} t={t} className="memoir-hint" />}
         </div>
       )}
 

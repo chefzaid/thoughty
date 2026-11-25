@@ -49,10 +49,10 @@ describe('an entry in a diary with AI off', () => {
     });
 
     it('offers no transcription for a recording, and still shows a transcript already made', () => {
-        const { container } = render(<AudioTranscript attachment={recording} attachmentsService={{} as never} localAiService={{} as never} isDark t={t} aiMode="off" />);
+        const { container } = render(<AudioTranscript attachment={recording} attachmentsService={{} as never} isDark t={t} aiMode="off" />);
         expect(container).toBeEmptyDOMElement();
 
-        render(<AudioTranscript attachment={{ ...recording, transcript: 'Said before' }} attachmentsService={{} as never} localAiService={{} as never} isDark t={t} aiMode="off" />);
+        render(<AudioTranscript attachment={{ ...recording, transcript: 'Said before' }} attachmentsService={{} as never} isDark t={t} aiMode="off" />);
         expect(screen.getByText('Said before')).toBeInTheDocument();
     });
 });

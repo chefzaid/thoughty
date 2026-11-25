@@ -18,7 +18,7 @@ const poolOf = (state: MockAppState) => {
 };
 let nextAttachmentId = 500;
 
-/** The bytes of uploaded videos and poster frames, served back as they were sent. */
+/** The bytes of uploaded videos, recordings and poster frames, served back as they were sent. */
 const storedFiles = new Map<string, { body: Buffer; contentType: string }>();
 
 /** The file part of a multipart upload body: its name, type and bytes. */
@@ -73,8 +73,8 @@ function record(attachment: MockAttachment, entryId: number | null) {
 const TRANSCRIPT_MAX_LENGTH = 50_000;
 
 /**
- * `PUT /api/attachments/{id}/transcript`: keeps the transcript the writer's own model made of a recording on an
- * entry of a diary set to that model, as the API does, refusing any other.
+ * `PUT /api/attachments/{id}/transcript`: keeps the transcript the writer's device made of a recording on an entry
+ * of a diary set to "My own model only", as the API does, refusing any other.
  */
 async function storeLocalTranscript({ route, request, state }: Pick<RouteContext, "route" | "request" | "state">, id: number): Promise<void> {
   const entry = state.entries.find((candidate) => candidate.attachments?.some((attachment) => attachment.id === id));
@@ -98,8 +98,8 @@ async function storeLocalTranscript({ route, request, state }: Pick<RouteContext
 }
 
 /**
- * `/api/attachments/*`: uploads, links, deletes, transcripts made by the writer's own model, and video poster frames; serves videos and poster
- * frames as they were sent and every other file as a small PNG.
+ * `/api/attachments/*`: uploads, links, deletes, transcripts made on the writer's device, and video poster frames;
+ * serves videos, recordings and poster frames as they were sent and every other file as a small PNG.
  */
 export async function handleAttachmentRoutes({ route, request, pathname, state }: RouteContext): Promise<boolean> {
   if (!pathname.startsWith("/api/attachments/")) return false;
@@ -115,9 +115,9 @@ export async function handleAttachmentRoutes({ route, request, pathname, state }
       original_filename: file?.name ?? "file",
       stored_filename: `stored-${id}`,
       mimetype: file?.type ?? "application/octet-stream",
-      size: file?.type.startsWith("video/") ? file.body.length : 68,
+      size: file && /^(video|audio)\//.test(file.type) ? file.body.length : 68,
     };
-    if (file?.type.startsWith("video/")) storedFiles.set(attachment.stored_filename, { body: file.body, contentType: file.type });
+    if (file && /^(video|audio)\//.test(file.type)) storedFiles.set(attachment.stored_filename, { body: file.body, contentType: file.type });
     const entry = entryId === null ? undefined : state.entries.find((candidate) => candidate.id === entryId);
     if (entry) entry.attachments = [...(entry.attachments ?? []), attachment];
     else poolOf(state).push(attachment);
