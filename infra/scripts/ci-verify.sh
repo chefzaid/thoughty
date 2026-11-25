@@ -8,7 +8,7 @@ phase="${1:-all}"
 suite="${2:-all}"
 
 usage() {
-  printf 'Usage: %s [build|test [server|web|all]|coverage|all]\n' "$0" >&2
+  printf 'Usage: %s [build|test [server|web|all]|postgres|coverage|all]\n' "$0" >&2
   exit 2
 }
 
@@ -70,6 +70,52 @@ test_web() {
   popd >/dev/null
 }
 
+# The job's PostgreSQL service can still be starting: wait for it to answer, then log what it runs.
+wait_for_postgres() {
+  local _
+  for _ in $(seq 1 60); do
+    # shellcheck disable=SC2016 # JavaScript, not shell: the template literal is for node.
+    if node -e '
+      const { Client } = require("pg");
+      const client = new Client({ connectionString: process.env.THOUGHTY_PG_TEST_URL });
+      client.connect()
+        .then(() => client.query("SELECT version() AS version, pg_encoding_to_char(encoding) AS encoding, datctype FROM pg_database WHERE datname = current_database()"))
+        .then(({ rows: [server] }) => console.log(`${server.version}; ${server.encoding}, LC_CTYPE ${server.datctype}`))
+        .then(() => client.end())
+        .catch(() => process.exit(1));
+    ' 2>/dev/null; then
+      return 0
+    fi
+    sleep 1
+  done
+  printf 'PostgreSQL did not answer at THOUGHTY_PG_TEST_URL within 60 seconds\n' >&2
+  return 1
+}
+
+# The specs that need a database: every suite wrapped in describePostgres (the *.integration.spec.ts
+# files and the migration specs), then the real-API contract specs. Both run even if the first fails.
+test_postgres() {
+  local workers status=0
+  local -a specs
+  : "${THOUGHTY_PG_TEST_URL:?Set THOUGHTY_PG_TEST_URL to the thoughty_ha_test database}"
+  workers="$(test_workers postgres)"
+  pushd thoughty-server >/dev/null
+  npm ci
+  wait_for_postgres
+  mapfile -t specs < <(grep -rl --include='*.spec.ts' 'describePostgres' src | sort)
+  if ((${#specs[@]} == 0)); then
+    printf 'No spec uses describePostgres under thoughty-server/src\n' >&2
+    return 1
+  fi
+  printf 'PostgreSQL specs: %s files\n' "${#specs[@]}" >&2
+  JEST_JUNIT_OUTPUT_FILE="$PWD/postgres-test-results.xml" npx jest --ci --maxWorkers="$workers" \
+    --reporters=default --reporters=jest-junit --runTestsByPath "${specs[@]}" || status=1
+  JEST_JUNIT_OUTPUT_FILE="$PWD/api-contract-test-results.xml" npm run test:e2e -- --ci \
+    --maxWorkers="$workers" --reporters=default --reporters=jest-junit || status=1
+  popd >/dev/null
+  return "$status"
+}
+
 check_coverage() {
   python3 infra/scripts/ci-coverage-check.py \
     thoughty-server/coverage/cobertura-coverage.xml \
@@ -93,6 +139,10 @@ case "$phase" in
         ;;
       *) usage ;;
     esac
+    ;;
+  postgres)
+    prepare_sources
+    test_postgres
     ;;
   coverage)
     check_coverage

@@ -48,11 +48,11 @@ A spec that checks work the code does in the background (a file deleted after th
 | `npm run test:e2e` | all Playwright specs |
 | `npx playwright test e2e/journal` | one directory; also takes a file or `--grep "<title>"` |
 
-CI tests the two apps in parallel jobs (`02-test: [server]` and `02-test: [web]`, each with one worker fewer than the job's CPUs), and `02-test-coverage` reports whether their combined line coverage reaches 80%, without blocking. Both suites write `coverage/lcov.info` for SonarQube.
+CI tests the two apps in parallel jobs (`02-test: [server]` and `02-test: [web]`, each with one worker fewer than the job's CPUs), and `02-test-coverage` reports whether their combined line coverage reaches 80%, without blocking. Both suites write `coverage/lcov.info` for SonarQube. The specs that need PostgreSQL run in a job of their own, `04-postgres` ([below](#postgresql-in-ci)).
 
 ## PostgreSQL Integration Specs
 
-The `*.integration.spec.ts` files run only when `THOUGHTY_PG_TEST_URL` is set, so `npm test` and CI skip them. The URL must name the database `thoughty_ha_test` on `localhost` or `127.0.0.1`; any other URL fails the run.
+The `*.integration.spec.ts` files, and the cases of the migration specs (`src/database/*-migration.spec.ts`) that run a migration up and down, run only when `THOUGHTY_PG_TEST_URL` is set (their suites are wrapped in `describePostgres`), so `npm test` and the `02-test` jobs skip them; `04-postgres` runs them. The URL must name the database `thoughty_ha_test` on `localhost` or `127.0.0.1`; any other URL fails the run.
 
 Each suite gets its own database. `createPostgresTestDatabase` (in `src/database/postgres-test-database.test-helpers.ts`) creates `thoughty_ha_test_<pid>_<random>` from the URL, applies the migrations, and drops the database when the suite calls `drop()`. Suites share no tables, so they run in parallel. The role needs `CREATEDB`. A killed run can leave a `thoughty_ha_test_*` database behind; drop it by hand.
 
@@ -69,6 +69,8 @@ docker compose -f infra/compose/compose.yaml exec db createdb -U postgres though
 cd thoughty-server
 THOUGHTY_PG_TEST_URL=postgresql://postgres:password@127.0.0.1:5432/thoughty_ha_test npm test -- integration.spec
 ```
+
+The fixture cluster must be UTF-8 with a UTF-8 character type, as the official PostgreSQL images make it (their default `en_US.utf8`, or `initdb --encoding=UTF8 --locale=C.UTF-8`) and as accent-blind search needs in production: `createPostgresTestDatabase` copies the cluster's default. On a `SQL_ASCII` cluster, or with `LC_CTYPE` `C`, the text search parser splits words differently, and `entry-search.integration.spec.ts` fails, whatever the PostgreSQL version: in `SQL_ASCII`, "été" is read as the letter "t" between two blanks, so "matches English and French word forms and ignores accents" and "returns the matched words and phrases as written in each entry" find nothing for `ete`; in UTF-8 with `LC_CTYPE` `C`, every non-ASCII character counts as a letter, so the emoji of "falls back to a literal match for searches without words" becomes a word. Check a cluster with `psql -c '\l'` (the Encoding and Ctype columns). All nine pass on PostgreSQL 16 in a UTF-8 database with `LC_CTYPE` `C.UTF-8`.
 
 A new spec wraps its suite in `describePostgres`, calls `createPostgresTestDatabase` in `beforeAll` (with `POSTGRES_SETUP_TIMEOUT_MS`), calls `drop()` in `afterAll`, and empties its tables in `beforeEach` (for example `TRUNCATE users RESTART IDENTITY CASCADE`). A test that runs work at the same time (`Promise.all`) must not assert which one finished first: PostgreSQL decides who takes a lock, so assert only what holds whatever the order (one person added, not whose spelling named it).
 
@@ -101,11 +103,18 @@ THOUGHTY_PG_TEST_URL=postgresql://postgres:password@127.0.0.1:5432/thoughty_ha_t
 # one suite: npm run test:e2e -- test/api-contract/entries
 ```
 
-`npm run test:e2e` runs Jest under `node --experimental-vm-modules`: the S3 client loads its HTTP handler with a dynamic `import()`, which Jest's sandbox only allows with that flag, and the specs stop with a message saying so when it is missing. The fifteen suites run in parallel, each on a database of its own.
+`npm run test:e2e` runs Jest under `node --experimental-vm-modules`: the S3 client loads its HTTP handler with a dynamic `import()`, which Jest's sandbox only allows with that flag, and the specs stop with a message saying so when it is missing. The suites run in parallel, each on a database of its own.
 
 A new route gets a case in the suite of its area (or a new suite added to `CONTRACT_SUITES`): call it as the web does, with a second writer where it takes an id, and with the values the web really sends for its flags and numbers. Add a fixture to `contract-fixtures.ts` when several suites need it (`contract-journal.ts` holds the small journal and the list query that `entries.e2e-spec.ts`, reading the journal, and `entry-changes.e2e-spec.ts`, changing it, both start from). A suite that nears 500 lines is split by topic into another suite with its own routes in `CONTRACT_SUITES`, as `app-import` was from `io` and `entry-changes` from `entries`. When the API and its documentation disagree, fix the API or its decorators and run `npm run api:sync`; do not loosen the check.
 
-CI does not run these specs yet: the pipeline has no PostgreSQL service (see Needs Input in `TODO.md`), so it runs only the coverage and route-documentation checks.
+`02-test` runs only their database-free checks (the coverage and route-documentation specs); `04-postgres` runs the specs themselves.
+
+## PostgreSQL in CI
+
+`04-postgres` (stage `verify`) runs every spec that needs a database against PostgreSQL 18, production's major version: the suites wrapped in `describePostgres` (the integration specs and the migration specs, found with `grep -l describePostgres`, so a new one is picked up without a list to update) and then `npm run test:e2e`, the real-API contract specs. Its service is the production PostgreSQL client image (`postgres:18.6-alpine3.24`, pinned by the multi-arch index digest in `infra/k8s/overlays/swirl-cloud/kustomization.yaml`; update both together), started with `POSTGRES_DB=thoughty_ha_test`, `POSTGRES_HOST_AUTH_METHOD=trust` (the server listens on `127.0.0.1` only, so nothing outside the job's pod reaches it, and it lives and dies with the pod holding only fixtures), `--encoding=UTF8 --locale=C.UTF-8` ([above](#postgresql-integration-specs)), and durability off (`fsync`, `synchronous_commit`, `full_page_writes`) with `max_connections=200` for the parallel suites' pools. The platform runner's Kubernetes executor runs services in the job's pod, so the specs reach it at `127.0.0.1:5432`, the only kind of host they accept.
+
+`infra/scripts/ci-verify.sh postgres` waits up to 60 seconds for the service, logs its version, encoding and character type, then runs both commands with one worker fewer than the job's CPUs, the second even when the first fails, and fails if either did. The job writes `thoughty-server/postgres-test-results.xml` and `api-contract-test-results.xml` as JUnit reports (no coverage: `02-test` measures it). It starts with the pipeline (`needs: []`), restores the npm cache `01-build` saves, and is allowed to fail: nothing waits for it, release included, and `SONAR_SCAN_ONLY` pipelines skip it. `test_postgres_specs_report_without_gating_release` in `infra/scripts/test-onboarding.py` (run by `01-build`) keeps it that way.
+
 
 ## Frontend Unit Tests
 

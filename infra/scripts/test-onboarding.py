@@ -259,6 +259,24 @@ class OnboardingTests(unittest.TestCase):
                 self.assertEqual(job_when(pipeline, job, **{**defaults, "CI_PIPELINE_SOURCE": source, "APP_ONBOARDING": "false"}), "manual")
             self.assertEqual(job_when(pipeline, job, **{**defaults, "CI_PIPELINE_SOURCE": "web", "APP_ONBOARDING": "false", "PIPELINE_MODE": "full"}), "on_success")
 
+    @unittest.skipIf(SWIRL_WEBSITE, "the website has no database specs")
+    def test_postgres_specs_report_without_gating_release(self):
+        pipeline = yaml.safe_load((ROOT / ".gitlab-ci.yml").read_text())
+        job = pipeline["04-postgres"]
+        self.assertIs(job["allow_failure"], True)
+        self.assertTrue(all("allow_failure" not in rule for rule in job["rules"]))
+        self.assertRegex(job["services"][0]["name"], r"^docker\.io/library/postgres:18\.[0-9.]+-[a-z0-9.]+@sha256:[0-9a-f]{64}$")
+        self.assertEqual(job["services"][0]["variables"]["POSTGRES_DB"], "thoughty_ha_test")
+        self.assertRegex(job["variables"]["THOUGHTY_PG_TEST_URL"], r"^postgresql://postgres@127\.0\.0\.1:5432/thoughty_ha_test$")
+        for name, settings in pipeline.items():
+            if isinstance(settings, dict) and "stage" in settings:
+                self.assertNotIn("04-postgres", [need["job"] if isinstance(need, dict) else need
+                                                 for need in settings.get("needs", [])], name)
+        defaults = dict(CI_DEFAULT_BRANCH="main", CI_COMMIT_BRANCH="main", CI_PIPELINE_SOURCE="push",
+                        SONAR_SCAN_ONLY="false", PIPELINE_MODE="standard")
+        self.assertEqual(job_when(pipeline, "04-postgres", **defaults), "on_success")
+        self.assertEqual(job_when(pipeline, "04-postgres", **{**defaults, "SONAR_SCAN_ONLY": "true"}), "never")
+
     def test_expected_revision_guards_before_publication_and_deployment(self):
         remote = self.directory / "remote.git"
         git(self.directory, "init", "--bare", str(remote))

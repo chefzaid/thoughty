@@ -46,6 +46,9 @@ test-results/
 quality-reports/
 package-output/
 coverage-policy-junit.xml
+test-results.xml
+postgres-test-results.xml
+api-contract-test-results.xml
 coverage-policy.env
 release.env
 
