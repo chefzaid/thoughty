@@ -150,7 +150,6 @@ Bugs, failing checks, security findings and code smells found while working on a
 
 Parts of tasks that cannot advance without the owner's decision or information. Only the part needing input is set aside here; the rest of the task keeps moving. Answer under the item, and the next agent run applies the answer and removes the entry.
 
-- [ ] May the gosu exception (docs/security.md › Container Images, until 2027-02-23) also cover CI? `04-postgres` uses the same pinned `postgres:18.6-alpine3.24` image as its service, and unlike the two production jobs a service runs the image's entrypoint, so gosu runs there once, as root, to start the server as `postgres`. The accepted findings are in Go's `crypto/tls`, which gosu never uses, and the pod holds only fixture data and no secrets; `docs/security.md` now names this use and asks for this confirmation. Options: (a) confirm the scope as written; (b) build a gosu-free helper image `FROM` the pinned one for CI (an image to publish and update); (c) drop the job until an upstream image ships a gosu built with a fixed Go. *(task: Bugs to fix › No test drives the real API the way the web calls it; asked by: Coding Agent)*
   - Answer:
 
 ## Core Journaling
