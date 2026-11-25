@@ -110,6 +110,7 @@ Production secrets live in Vault and reach the cluster through External Secrets 
 - `JWT_SECRET`, `REFRESH_SECRET`, `TWO_FACTOR_SECRET`, `UNSUBSCRIBE_SECRET` (signs email unsubscribe links; derived from `JWT_SECRET` if unset; one value across API and worker, and rotating it voids the links in emails already sent)
 - `CONFIG_ENCRYPTION_SECRET`: the most sensitive value. Leaking it exposes stored provider tokens and AI keys; losing it makes them unreadable.
 - PostgreSQL and backup credentials, S3 keys, the optional shared `OPENROUTER_API_KEY`, cloud-provider OAuth client secrets, and SMTP credentials
+- `FEATURE_FLAG_PROVIDER_TOKEN` (the Unleash backend token: it reads the toggles, it cannot change them) and Unleash's own database and first admin passwords (`apps/thoughty/unleash`)
 
 In production the API and worker refuse to start without `CONFIG_ENCRYPTION_SECRET`, or when `JWT_SECRET` or `REFRESH_SECRET` (and `TWO_FACTOR_SECRET` or `UNSUBSCRIBE_SECRET`, when set) is missing, an example value, or shorter than 32 characters (`auth/auth-secrets.ts`). Development keeps working defaults.
 
@@ -195,6 +196,8 @@ Trivy 0.74.0 (database of 2026-10-26, `--severity CRITICAL,HIGH`, amd64 and arm6
 - *Recheck:* at each upstream rebuild of the `18.6-alpine3.24` tag (or the next PostgreSQL 18 minor), and in any case before 2027-02-23, scan the new index digest as below. Move to it when its gosu is built with a fixed Go and has no other critical finding, then remove this exception. If the deadline passes with no fixed upstream image, decide again before then between renewing the exception and a helper image built `FROM` this one without gosu. A change that makes either job run the entrypoint, run as root or call gosu ends the exception at once.
 
 Recheck before moving the digest: `trivy image --severity CRITICAL,HIGH --platform linux/amd64 docker.io/library/postgres:<tag>@<index digest>` (and `linux/arm64`), or the platform's Grafana **Trivy Security Reports** dashboard. `mirror.gcr.io/library/postgres@<index digest>` serves the same content when Docker Hub's anonymous pull limit is reached.
+
+The Unleash image (`infra/k8s/overlays/swirl-cloud/unleash.yaml`) is `docker.io/unleashorg/unleash-server:8.3.1@sha256:025cd8b003a70cceb88427ca393c377ca6503a210d95fdee54d21610d51f7ed0` (index digest of 2026-10-29, amd64 and arm64), run as its `node` user (UID 1000) with a read-only root filesystem, no capabilities and no service account token. It has not been scanned yet: scan it as above before its first deploy (TODO.md › Needs Input). Unleash reaches only the platform PostgreSQL (version checks and telemetry are off), only the API, its canary and the worker can reach it, and its UI has no Ingress (a port-forward). It logs at `warn`, as it logs the first admin password at `info`. The backend token the API sends (`Authorization`, inside the cluster, in plain HTTP like the database connections) is never logged by the API.
 
 ## npm Dependencies
 

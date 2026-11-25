@@ -21,6 +21,8 @@
     "infra/k8s/overlays/swirl-cloud/sso-ingress.yaml",
     "infra/k8s/overlays/swirl-cloud/upload-ingress-patch.yaml",
     "infra/k8s/overlays/swirl-cloud/database-setup-job.yaml",
+    "infra/k8s/overlays/swirl-cloud/unleash.yaml",
+    "infra/k8s/overlays/swirl-cloud/unleash-database-setup-job.yaml",
     "infra/k8s/overlays/swirl-cloud/observability.yaml",
     "infra/k8s/overlays/swirl-cloud/ingress-middleware.yaml",
     "infra/k8s/overlays/swirl-cloud-canary/canary-ingress-patch.yaml",
@@ -174,6 +176,25 @@
         },
         "POSTGRES_BACKUP_SECRET_KEY": {
           "value": ""
+        }
+      }
+    },
+    {
+      "path": "apps/thoughty/unleash",
+      "fields": {
+        "DATABASE_USERNAME": {
+          "value": "thoughty_unleash"
+        },
+        "DATABASE_PASSWORD": {
+          "generate": 24,
+          "encoding": "hex"
+        },
+        "DATABASE_NAME": {
+          "value": "unleash"
+        },
+        "UNLEASH_DEFAULT_ADMIN_PASSWORD": {
+          "generate": 24,
+          "encoding": "hex"
         }
       }
     }

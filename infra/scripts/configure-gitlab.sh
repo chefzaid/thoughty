@@ -204,6 +204,30 @@ if ! { printf '%s\n' "$vault_token"; } | \
     '
 fi
 
+# The variables in this quoted program expand inside the Vault pod.
+# shellcheck disable=SC2016
+if ! { printf '%s\n' "$vault_token"; } | \
+  kubectl exec -i -n "$INFRA_NAMESPACE" "$VAULT_POD" -- sh -ceu '
+    IFS= read -r VAULT_TOKEN
+    export VAULT_TOKEN VAULT_ADDR=http://127.0.0.1:8200
+    vault kv get secret/apps/thoughty/unleash >/dev/null 2>&1
+  '; then
+  info "Creating the Unleash database and admin credentials in Vault"
+  unleash_database_password="$(openssl rand -hex 24)"
+  unleash_admin_password="$(openssl rand -hex 24)"
+  { printf '%s\n%s\n%s\n' "$vault_token" "$unleash_database_password" "$unleash_admin_password"; } | \
+    kubectl exec -i -n "$INFRA_NAMESPACE" "$VAULT_POD" -- sh -ceu '
+      IFS= read -r VAULT_TOKEN
+      IFS= read -r unleash_database_password
+      IFS= read -r unleash_admin_password
+      export VAULT_TOKEN VAULT_ADDR=http://127.0.0.1:8200
+      vault kv put secret/apps/thoughty/unleash \
+        DATABASE_USERNAME=thoughty_unleash DATABASE_PASSWORD="$unleash_database_password" \
+        DATABASE_NAME=unleash UNLEASH_DEFAULT_ADMIN_PASSWORD="$unleash_admin_password" >/dev/null
+    '
+  unset unleash_database_password unleash_admin_password
+fi
+
 git -C "$REPOSITORY_ROOT" show HEAD:.gitlab-ci.yml >/dev/null
 GITLAB_URL="$GITLAB_URL" "$SCRIPT_DIR/configure-code-quality.sh"
 GITLAB_URL="$GITLAB_URL" "$SCRIPT_DIR/configure-repository-sync.sh"

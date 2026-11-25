@@ -20,3 +20,7 @@ data:
   KEYCLOAK_ISSUER: https://keycloak.swirlit.dev/auth/realms/swirl
   KEYCLOAK_JWKS_URI: http://keycloak.swirl.internal:8080/auth/realms/swirl/protocol/openid-connect/certs
   KEYCLOAK_AUDIENCE: oauth2-proxy
+  # Runtime feature flags from the in-cluster Unleash (unleash.yaml); its client token is
+  # FEATURE_FLAG_PROVIDER_TOKEN in Vault apps/thoughty/app. Until it answers, every feature stays on.
+  FEATURE_FLAG_PROVIDER: unleash
+  FEATURE_FLAG_PROVIDER_URL: http://thoughty-unleash:4242/api

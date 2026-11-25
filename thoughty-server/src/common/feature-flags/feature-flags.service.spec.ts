@@ -1,4 +1,4 @@
-import { ServiceUnavailableException } from '@nestjs/common';
+import { Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FeatureFlagsService } from './feature-flags.service';
 import { featureFlagsWith } from './feature-flags.test-helpers';
@@ -112,6 +112,90 @@ describe('FeatureFlagsService', () => {
     await expect(service.isEnabled('ai')).resolves.toBe(false);
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  describe('with Unleash', () => {
+    const unleashConfig = (values: Record<string, string> = {}) => getConfig({
+      FEATURE_FLAG_PROVIDER: 'Unleash',
+      FEATURE_FLAG_PROVIDER_URL: 'http://thoughty-unleash:4242/api',
+      FEATURE_FLAG_PROVIDER_TOKEN: 'default:production.unleash-secret',
+      ...values,
+    });
+    const unleashAnswer = (features: unknown[]) => Response.json({ version: 2, features });
+
+    it('reads the toggles over the fallback flags, ignoring toggles of other names, with a timeout', async () => {
+      jest.spyOn(globalThis, 'fetch').mockResolvedValue(unleashAnswer([
+        { name: 'ai', enabled: false, strategies: [{ name: 'default' }] },
+        { name: 'betaFeed', enabled: true, strategies: [] },
+      ]));
+      const service = new FeatureFlagsService(unleashConfig({ FEATURE_FLAGS: 'cloudSync=false' }));
+
+      await expect(service.getFeatureFlags()).resolves.toEqual({
+        ai: false,
+        bookConverter: true,
+        cloudSync: false,
+        publicSharing: true,
+      });
+      expect(fetch).toHaveBeenCalledWith('http://thoughty-unleash:4242/api/client/features', expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'default:production.unleash-secret' }),
+        signal: expect.any(AbortSignal),
+      }));
+    });
+
+    it('lets a toggle turn back on a flag FEATURE_FLAGS turns off', async () => {
+      jest.spyOn(globalThis, 'fetch').mockResolvedValue(unleashAnswer([{ name: 'ai', enabled: true, strategies: [] }]));
+      const service = new FeatureFlagsService(unleashConfig({ FEATURE_FLAGS: 'ai=false' }));
+
+      await expect(service.isEnabled('ai')).resolves.toBe(true);
+    });
+
+    it('keeps the last toggles while Unleash is down or times out, and never logs the token', async () => {
+      jest.useFakeTimers({ now: 0 });
+      const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+      const fetchMock = jest.spyOn(globalThis, 'fetch')
+        .mockResolvedValueOnce(unleashAnswer([{ name: 'publicSharing', enabled: false, strategies: [] }]))
+        .mockRejectedValueOnce(Object.assign(new Error('The operation was aborted due to timeout'), { name: 'TimeoutError' }))
+        .mockResolvedValueOnce(new Response('{"error":"unauthorized"}', { status: 401 }));
+      const service = new FeatureFlagsService(unleashConfig({ FEATURE_FLAG_CACHE_TTL_MS: '1000' }));
+
+      await expect(service.isEnabled('publicSharing')).resolves.toBe(false);
+      jest.setSystemTime(1_001);
+      await expect(service.isEnabled('publicSharing')).resolves.toBe(false);
+      jest.setSystemTime(2_002);
+      await expect(service.isEnabled('publicSharing')).resolves.toBe(false);
+
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect(warn).toHaveBeenCalledWith('Feature flag provider unavailable', {
+        errorName: 'TimeoutError',
+        errorMessage: 'The operation was aborted due to timeout',
+      });
+      expect(warn).toHaveBeenCalledWith('Feature flag provider unavailable', {
+        errorName: 'Error',
+        errorMessage: 'Unleash returned 401',
+      });
+      expect(JSON.stringify(warn.mock.calls)).not.toContain('unleash-secret');
+    });
+
+    it('uses the fallback flags when Unleash answers no features list before any toggles were read', async () => {
+      jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+      jest.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json({ error: 'not a client answer' }));
+      const service = new FeatureFlagsService(unleashConfig({ FEATURE_FLAGS: 'bookConverter=false' }));
+
+      await expect(service.getFeatureFlags()).resolves.toMatchObject({ ai: true, bookConverter: false });
+    });
+
+    it('asks no provider for an unknown FEATURE_FLAG_PROVIDER and uses the fallback flags', async () => {
+      const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
+      const fetchMock = jest.spyOn(globalThis, 'fetch');
+      const service = new FeatureFlagsService(unleashConfig({ FEATURE_FLAG_PROVIDER: 'flagsmith', FEATURE_FLAGS: 'ai=false' }));
+
+      await expect(service.isEnabled('ai')).resolves.toBe(false);
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledWith('Feature flag provider unavailable', {
+        errorName: 'Error',
+        errorMessage: 'Unknown FEATURE_FLAG_PROVIDER "flagsmith", expected json or unleash',
+      });
+    });
   });
 
   it('refuses a switched-off feature with 503 FEATURE_DISABLED and lets one that is on through', async () => {

@@ -234,6 +234,8 @@ export const CONTRACT_SUITES = {
   notifications: ['GET /api/notifications', 'GET /api/notifications/unread', 'PUT /api/notifications/read'],
   calendar: ['GET /api/calendar', 'GET /api/calendar/events', 'GET /api/calendar/days', 'POST /api/calendar/import', 'DELETE /api/calendar'],
   featureFlags: ['GET /api/config/feature-flags'],
+  // The flags read from an Unleash client API instead of FEATURE_FLAGS; its route is listed above
+  'feature-flag-provider': [],
   account: [
     'GET /api/health',
     'GET /api/metrics',

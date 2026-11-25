@@ -10,6 +10,7 @@ Thoughty runs on the shared K3s platform [`swirl-cloud`](https://github.com/chef
 | `thoughty-server` | NestJS API on port `3001`; 2 replicas |
 | `thoughty-cloud-sync-worker` | same image as the API; runs cloud sync, memoir delivery, and the recycle-bin and account purges; always 1 replica |
 | `postgres-backup` | daily `pg_dump` CronJob; suspended in production until configured |
+| `thoughty-unleash` | Unleash feature flag server on port `4242`, swirl-cloud only, internal (no Ingress); 1 replica. See [Operations › Unleash](./operations.md#unleash) |
 
 | Profile | Use |
 |---|---|
@@ -32,7 +33,10 @@ Argo CD syncs `infra/k8s/overlays/swirl-cloud` from `main` of `swirl/thoughty` i
 2. Wave `-1`: `thoughty-db-setup` hook creates the `thoughty` role and database if missing.
 3. Wave `0`: `thoughty-db-migrate` hook runs `node dist/scripts/migrate.js` from the release image.
 4. Wave `1`: API, web, and worker Deployments.
-5. PostSync: `thoughty-kibana-bootstrap` imports the log dashboard.
+5. Waves `2` to `4`: Unleash, after the app so it never holds back an API rollout: its ExternalSecret and NetworkPolicy, the `thoughty-unleash-db-setup` hook (its role and database, as wave `-1` does for the app's), then its Deployment and Service.
+6. PostSync: `thoughty-kibana-bootstrap` imports the log dashboard.
+
+The sync, and so the release pipeline's wait for a Healthy application, still needs Unleash healthy: create Vault `apps/thoughty/unleash` before the first sync that includes it ([Operations › Unleash](./operations.md#unleash)). Unleash runs `docker.io/unleashorg/unleash-server:8.3.1`, pinned by its multi-arch index digest under `images:` like the PostgreSQL client.
 
 The setup hook and the `postgres-backup` CronJob run the PostgreSQL client image set under `images:` in the overlay's `kustomization.yaml`: `docker.io/library/postgres:18.6-alpine3.24`, pinned by its multi-arch index digest (amd64 and arm64 among others), not a single-platform manifest. Its major version must be at least the platform server's (PostgreSQL 18), or `pg_dump` refuses to dump. To update it, take the tag's index digest (the `Docker-Content-Digest` of the tag's manifest, or `digest` from `https://hub.docker.com/v2/repositories/library/postgres/tags/<tag>`), scan it as in [Security](./security.md#container-images), and change `newTag` and `digest` together.
 
@@ -42,17 +46,18 @@ The web NGINX answers every path without a file with the app (`try_files … /in
 
 ## Configuration and Secrets
 
-Non-secret settings are in `infra/k8s/base/configmap.yaml`, overridden by `infra/k8s/overlays/swirl-cloud/configmap-patch.yaml` (hosts, `CORS_ORIGIN`, `FRONTEND_URL`, `CONTACT_EMAIL`, `KEYCLOAK_*`). `CONTACT_EMAIL` is the inbox of the Contact page's messages ([Operations](./operations.md#email-delivery)). The S3 and backup endpoints are AWS placeholders; set them before enabling attachments or backups.
+Non-secret settings are in `infra/k8s/base/configmap.yaml`, overridden by `infra/k8s/overlays/swirl-cloud/configmap-patch.yaml` (hosts, `CORS_ORIGIN`, `FRONTEND_URL`, `CONTACT_EMAIL`, `KEYCLOAK_*`, and `FEATURE_FLAG_PROVIDER`/`FEATURE_FLAG_PROVIDER_URL` for Unleash). `CONTACT_EMAIL` is the inbox of the Contact page's messages ([Operations](./operations.md#email-delivery)). The S3 and backup endpoints are AWS placeholders; set them before enabling attachments or backups.
 
 | Vault KV path | Contents |
 |---|---|
 | `apps/thoughty/database` | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` |
-| `apps/thoughty/app` | signing, encryption, S3, AI, OAuth, and SMTP values |
+| `apps/thoughty/app` | signing, encryption, S3, AI, OAuth, and SMTP values; `FEATURE_FLAG_PROVIDER_TOKEN`, the Unleash backend token |
+| `apps/thoughty/unleash` | Unleash's `DATABASE_USERNAME`, `DATABASE_PASSWORD`, `DATABASE_NAME`, `UNLEASH_DEFAULT_ADMIN_PASSWORD` |
 | `apps/thoughty/backup` | backup bucket credentials |
 | `apps/thoughty/registry` | read-only registry pull credential |
-| `infra/postgres` | shared database admin, setup hook only |
+| `infra/postgres` | shared database admin, setup hooks only |
 
-Always set `CONFIG_ENCRYPTION_SECRET`: the API and worker do not start without it, and losing it makes stored provider tokens unreadable. Always set `JWT_SECRET` and `REFRESH_SECRET` (and `TWO_FACTOR_SECRET` and `UNSUBSCRIBE_SECRET`) to at least 32 random characters: in production the API and worker refuse to start when one is missing or an example value. `UNSUBSCRIBE_SECRET` signs the unsubscribe links in the "On this day", monthly recap, year in review and writing reminder emails; until it is in Vault both processes derive one from `JWT_SECRET` (the standalone Vault Agent templates export it only when the key exists), so an existing deployment keeps working, and adding it later only voids the links in emails already sent. Onboarding and `infra/scripts/configure-gitlab.sh` generate these and the database password when missing, and never overwrite them; re-run onboarding on an existing deployment to add `UNSUBSCRIBE_SECRET`. Other values start empty. `TRUST_PROXY` must match the proxies in front of the API (swirl-cloud sets `2` in its ConfigMap patch; see [Security](./security.md#abuse-controls)). Google sign-in needs `GOOGLE_CLIENT_ID` on the server, equal to the web's build-time `VITE_GOOGLE_CLIENT_ID`; production signs in through Keycloak and sets neither. Never commit secrets. Full list: [Security](./security.md#secrets).
+Always set `CONFIG_ENCRYPTION_SECRET`: the API and worker do not start without it, and losing it makes stored provider tokens unreadable. Always set `JWT_SECRET` and `REFRESH_SECRET` (and `TWO_FACTOR_SECRET` and `UNSUBSCRIBE_SECRET`) to at least 32 random characters: in production the API and worker refuse to start when one is missing or an example value. `UNSUBSCRIBE_SECRET` signs the unsubscribe links in the "On this day", monthly recap, year in review and writing reminder emails; until it is in Vault both processes derive one from `JWT_SECRET` (the standalone Vault Agent templates export it only when the key exists), so an existing deployment keeps working, and adding it later only voids the links in emails already sent. Onboarding and `infra/scripts/configure-gitlab.sh` generate these, the database password and the `apps/thoughty/unleash` passwords when missing, and never overwrite them; re-run onboarding on an existing deployment to add `UNSUBSCRIBE_SECRET`. Other values start empty. `FEATURE_FLAG_PROVIDER_TOKEN` is not generated: it is created in Unleash and added by hand ([Operations › Unleash](./operations.md#unleash)); until then the API keeps every feature on. `TRUST_PROXY` must match the proxies in front of the API (swirl-cloud sets `2` in its ConfigMap patch; see [Security](./security.md#abuse-controls)). Google sign-in needs `GOOGLE_CLIENT_ID` on the server, equal to the web's build-time `VITE_GOOGLE_CLIENT_ID`; production signs in through Keycloak and sets neither. Never commit secrets. Full list: [Security](./security.md#secrets).
 
 ## Delivery Pipeline
 

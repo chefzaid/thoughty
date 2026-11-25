@@ -11,6 +11,8 @@ resources:
   - registry-credentials.yaml
   - ingress-middleware.yaml
   - sso-ingress.yaml
+  - unleash.yaml
+  - unleash-database-setup-job.yaml
 components:
   - ../../components/worker
 patches:
@@ -45,3 +47,9 @@ images:
     newName: docker.io/library/postgres
     newTag: 18.6-alpine3.24
     digest: sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5
+  # The feature flag server (unleash.yaml): the multi-arch index digest of 8.3.1 (2026-10-29),
+  # amd64 and arm64; see docs/operations.md (Feature Flags) to update it.
+  - name: unleashorg/unleash-server
+    newName: docker.io/unleashorg/unleash-server
+    newTag: 8.3.1
+    digest: sha256:025cd8b003a70cceb88427ca393c377ca6503a210d95fdee54d21610d51f7ed0

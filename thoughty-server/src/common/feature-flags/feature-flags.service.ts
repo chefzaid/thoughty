@@ -1,6 +1,7 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { apiError } from '../errors/api-error';
+import { fetchUnleashToggles } from './unleash-feature-flags';
 
 /**
  * The features a flag can switch off without a redeploy, each on unless the provider or `FEATURE_FLAGS`
@@ -14,6 +15,16 @@ export const DEFAULT_FEATURE_FLAGS = {
 } as const satisfies Record<string, boolean>;
 
 export type FeatureFlag = keyof typeof DEFAULT_FEATURE_FLAGS;
+
+const KNOWN_FEATURE_FLAGS = Object.keys(DEFAULT_FEATURE_FLAGS);
+
+/**
+ * How `FEATURE_FLAG_PROVIDER_URL` answers: `json` (the default), a document of flags; `unleash`,
+ * Unleash's client API, its toggles named after the flags (`unleash-feature-flags.ts`).
+ */
+export const FEATURE_FLAG_PROVIDERS = ['json', 'unleash'] as const;
+
+export type FeatureFlagProvider = (typeof FEATURE_FLAG_PROVIDERS)[number];
 
 /** How long a provider request may take before the last known flags (or the defaults) are used. */
 export const FEATURE_FLAG_PROVIDER_TIMEOUT_MS = 3_000;
@@ -72,7 +83,8 @@ function parseInlineFlags(value?: string): Record<string, boolean> {
 
 /**
  * The runtime feature flags: the defaults, overridden by `FEATURE_FLAGS` (read on every call), overridden
- * by the provider at `FEATURE_FLAG_PROVIDER_URL` when one is set. The provider's answer is kept for
+ * by the provider at `FEATURE_FLAG_PROVIDER_URL` when one is set (`FEATURE_FLAG_PROVIDER`: a JSON document
+ * or Unleash, with `FEATURE_FLAG_PROVIDER_TOKEN`, which is never logged). The provider's answer is kept for
  * `FEATURE_FLAG_CACHE_TTL_MS` (60 s by default), so a change there applies within that time on every
  * API pod and worker. When the provider fails, the last flags it gave are kept (the defaults before any),
  * and it is asked again after the same delay rather than on every request.
@@ -97,11 +109,26 @@ export class FeatureFlagsService {
     return Number.isFinite(configured) && configured > 0 ? configured : 60_000;
   }
 
+  private getProvider(): FeatureFlagProvider {
+    const configured = this.configService.get<string>('FEATURE_FLAG_PROVIDER')?.trim().toLowerCase() || 'json';
+    const provider = FEATURE_FLAG_PROVIDERS.find((name) => name === configured);
+    if (!provider) {
+      throw new Error(`Unknown FEATURE_FLAG_PROVIDER "${configured}", expected json or unleash`);
+    }
+    return provider;
+  }
+
   private async fetchProviderFlags(providerUrl: string): Promise<Record<string, boolean>> {
-    const token = this.configService.get<string>('FEATURE_FLAG_PROVIDER_TOKEN');
+    const provider = this.getProvider();
+    const token = this.configService.get<string>('FEATURE_FLAG_PROVIDER_TOKEN')?.trim() || undefined;
+    const signal = AbortSignal.timeout(FEATURE_FLAG_PROVIDER_TIMEOUT_MS);
+    if (provider === 'unleash') {
+      return fetchUnleashToggles({ apiUrl: providerUrl, token, signal }, KNOWN_FEATURE_FLAGS);
+    }
+
     const response = await fetch(providerUrl, {
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-      signal: AbortSignal.timeout(FEATURE_FLAG_PROVIDER_TIMEOUT_MS),
+      signal,
     });
 
     if (!response.ok) {

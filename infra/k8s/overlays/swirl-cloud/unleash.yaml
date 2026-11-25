@@ -1,0 +1,169 @@
+# Unleash, the feature flag server the API and the worker read (FEATURE_FLAG_PROVIDER=unleash in
+# configmap-patch.yaml). Internal only: no Ingress; operators reach its UI with kubectl port-forward
+# (docs/operations.md, Feature Flags). It syncs after the app (waves 2 to 4), so a problem here
+# never holds back an API rollout, and the API keeps its last flags (or the defaults) while it is down.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: thoughty-unleash
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: thoughty-unleash
+    creationPolicy: Owner
+  # DATABASE_USERNAME, DATABASE_PASSWORD, DATABASE_NAME, UNLEASH_DEFAULT_ADMIN_PASSWORD
+  dataFrom:
+    - extract:
+        key: apps/thoughty/unleash
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thoughty-unleash
+  labels:
+    app: thoughty-unleash
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thoughty-unleash
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: thoughty-unleash
+    spec:
+      serviceAccountName: default
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        # The image's `node` user, named rather than numbered in its config
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: unleash
+          image: unleashorg/unleash-server:8.3.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 4242
+          env:
+            - name: DATABASE_HOST
+              value: postgres.swirl.internal
+            - name: DATABASE_PORT
+              value: "5432"
+            # The platform PostgreSQL takes plain connections, as the API's do; unset, Unleash tries TLS
+            - name: DATABASE_SSL
+              value: "false"
+            - name: UNLEASH_DEFAULT_ADMIN_USERNAME
+              value: admin
+            # Links in the UI, which operators open through a port-forward
+            - name: UNLEASH_URL
+              value: http://localhost:4242
+            # Above info: Unleash logs the first admin password at info level when it creates the user
+            - name: LOG_LEVEL
+              value: warn
+            # No calls out of the cluster
+            - name: CHECK_VERSION
+              value: "false"
+            - name: SEND_TELEMETRY
+              value: "false"
+          envFrom:
+            - secretRef:
+                name: thoughty-unleash
+          resources:
+            requests:
+              cpu: 50m
+              memory: 192Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          # Its own migrations run before it listens, the longest on the first start
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thoughty-unleash
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  type: ClusterIP
+  selector:
+    app: thoughty-unleash
+  ports:
+    - name: http
+      port: 4242
+      targetPort: http
+---
+# Only the API (and its canary) and the worker reach Unleash. A port-forward goes through the
+# kubelet into the pod, so it is not affected.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-thoughty-unleash-ingress
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  podSelector:
+    matchLabels:
+      app: thoughty-unleash
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values:
+                  - thoughty-server
+                  - thoughty-server-canary
+                  - thoughty-cloud-sync-worker
+      ports:
+        - protocol: TCP
+          port: 4242
