@@ -5,13 +5,14 @@ import { SITE_ORIGIN_PLACEHOLDER } from './utils/searchEngineFiles';
 
 // A JavaScript spec, like securityHeaders.test.js: the plugin runs in Node, whose types the app's type check leaves out
 describe('search engine files plugin', () => {
-  it('writes both files into the build with the placeholder NGINX fills in, and serves them in dev with the request’s address', () => {
+  it('writes the three files into the build with the placeholder NGINX fills in, and serves them in dev with the request’s address', () => {
     const plugin = searchEngineFilesPlugin();
     const emitFile = vi.fn();
     plugin.generateBundle.call({ emitFile });
     expect(emitFile.mock.calls.map(([file]) => [file.fileName, file.source.includes(`${SITE_ORIGIN_PLACEHOLDER}/`)])).toEqual([
       ['sitemap.xml', true],
       ['robots.txt', true],
+      ['.well-known/security.txt', true],
     ]);
 
     const use = vi.fn();
@@ -27,6 +28,10 @@ describe('search engine files plugin', () => {
 
     middleware({ url: '/sitemap.xml', headers: {} }, response, vi.fn());
     expect(response.end.mock.calls[1]?.[0]).toContain('<loc>http://localhost/</loc>');
+
+    middleware({ url: '/.well-known/security.txt', headers: { host: 'localhost:5173' } }, response, vi.fn());
+    expect(response.setHeader).toHaveBeenLastCalledWith('Content-Type', 'text/plain; charset=utf-8');
+    expect(response.end.mock.calls[2]?.[0]).toContain('Contact: http://localhost:5173/contact\n');
 
     const next = vi.fn();
     middleware({ url: '/about', headers: {} }, response, next);

@@ -72,6 +72,10 @@ A writer can share one entry or one saved book version with someone who has no a
 - **Rate limits:** opening a link and downloading a book are throttled at 60 per 15 minutes per IP, its files (pictures, video ranges) at 600; with 256-bit tokens, guessing is not a practical attack either way.
 - **Sharing switched off:** while the `publicSharing` [flag](./architecture.md#feature-flags) is off, every `/api/shared/…` request answers the same `503 FEATURE_DISABLED` whatever the token (so it tells nothing about one), no link is made, and a writer can still list and revoke theirs. Nothing is deleted: a link opens again, with its expiry and views, once the flag is on.
 
+### Vulnerability reports
+
+The web serves `/.well-known/security.txt` (RFC 9116, `thoughty-web/src/utils/securityTxt.ts`): `Contact` is the site's Contact page (`/contact`), whose messages reach the deployment's own inbox (`CONTACT_EMAIL`), with `Preferred-Languages: en, fr` and its own address as `Canonical`, both named by the address it was asked at, as for the sitemap. The build writes it, so `Expires` is 364 days after the day of the build (midnight UTC): each release renews it, and a deployment left a year without one says its contact details may be stale. There is no `Policy` field yet: a published vulnerability disclosure policy (what is in scope, response times, safe harbour) waits on the owner (TODO.md › Needs Input), as does the external penetration test before paid plans.
+
 ## Abuse Controls
 
 Rate limits (`thoughty-server/src/common/rate-limit.constants.ts`):

@@ -77,4 +77,20 @@ test.describe('Contact and support page', () => {
     await expect(page.getByRole('region', { name: "De l'aide est là pour vous" })).toContainText('Royaume-Uni et Irlande');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
   });
+
+  test('security.txt sends vulnerability reports to this page', async ({ page, baseURL }) => {
+    await setupMockApp(page);
+    const response = await page.request.get('/.well-known/security.txt');
+    expect(response.ok()).toBe(true);
+    expect(response.headers()['content-type']).toBe('text/plain; charset=utf-8');
+    const text = await response.text();
+    expect(text).toContain(`Canonical: ${baseURL}/.well-known/security.txt\n`);
+    expect(text).toContain('Preferred-Languages: en, fr\n');
+    expect(Date.parse(/^Expires: (.+)$/m.exec(text)?.[1] ?? '')).toBeGreaterThan(Date.now());
+
+    const contact = /^Contact: (.+)$/m.exec(text)?.[1] ?? '';
+    expect(contact).toBe(`${baseURL}/contact`);
+    await page.goto(contact);
+    await expect(page.getByRole('form', { name: 'Send a message' })).toBeVisible();
+  });
 });
