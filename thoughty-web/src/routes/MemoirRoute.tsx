@@ -1,8 +1,9 @@
-import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import MemoirPage, { type MemoirPageProps } from '../components/MemoirPage/MemoirPage';
 import { getPathForView } from '../types';
 import { buildDiaryRouteSearchParams, ENTRY_PERMALINK_PARAM, toSearchString } from '../utils/appRouting';
+import Redirect from './Redirect';
 
 type MemoirRouteProps = Omit<MemoirPageProps, 'initialQuestionId' | 'onOpenEntry' | 'onOpenBook' | 'onOpenSimpleMode'>;
 
@@ -16,7 +17,7 @@ function MemoirRoute(props: Readonly<MemoirRouteProps>) {
   const questionId = searchParams.get('question');
 
   if (props.simpleMode && questionId) {
-    return <Navigate to={`${getPathForView('memoirSimple')}${toSearchString(new URLSearchParams({ question: questionId }))}`} replace />;
+    return <Redirect to={`${getPathForView('memoirSimple')}${toSearchString(new URLSearchParams({ question: questionId }))}`} replace />;
   }
 
   return (

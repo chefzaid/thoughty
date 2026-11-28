@@ -1,5 +1,4 @@
 import { lazy, Suspense, type ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
 
 import LoadingSpinner from './components/LoadingSpinner/LoadingSpinner';
 import { DiaryAiContext } from './components/DiaryAi/diaryAiScope';
@@ -11,6 +10,7 @@ import IntroPage from './components/IntroPage/IntroPage';
 import { DisplayLanguageContext } from './contexts/displayLanguage';
 import { useAppShellModel, type AppShellModel } from './hooks/useAppShellModel';
 import PublicAppLayout from './routes/PublicAppLayout';
+import Redirect from './routes/Redirect';
 import { getPathForView, getPublicPathForView, type TranslationFunction } from './types';
 
 const AboutPage = lazy(() => import('./components/AboutPage/AboutPage'));
@@ -147,7 +147,7 @@ function AppShellScreens({
     }
 
     if (!publicView) {
-      return <Navigate to={getPublicPathForView('intro')} replace />;
+      return <Redirect to={getPublicPathForView('intro')} replace />;
     }
 
     return renderPublic(renderLazy(<AuthPage {...authPageProps} />), authPageProps.t);
@@ -160,7 +160,7 @@ function AppShellScreens({
 
   // Signing in lands in the journal, or in simple memoir mode once the settings say so
   if (!currentView) {
-    return landingView ? <Navigate to={getPathForView(landingView)} replace /> : <LoadingSpinner />;
+    return landingView ? <Redirect to={getPathForView(landingView)} replace /> : <LoadingSpinner />;
   }
 
   return renderLazy(

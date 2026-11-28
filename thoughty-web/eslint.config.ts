@@ -32,7 +32,18 @@ export default defineConfig([
       '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_' }],
       // Messages go through the app's notice toast or an inline error, confirmations through ConfirmModal
       'no-alert': 'error',
+      'no-restricted-imports': ['error', {
+        paths: [{
+          name: 'react-router-dom',
+          importNames: ['Navigate'],
+          message: 'Use routes/Redirect: it redirects again when another navigation brings the page back before its redirect shows.',
+        }],
+      }],
     },
+  },
+  {
+    files: ['src/routes/Redirect.tsx', 'src/routes/Redirect.test.tsx'],
+    rules: { 'no-restricted-imports': 'off' },
   },
   {
     files: ['src/**/*.test-helpers.tsx'],

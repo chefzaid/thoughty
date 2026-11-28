@@ -1,4 +1,4 @@
-import { Navigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 import FeedPage from '../components/FeedPage/FeedPage';
 import type { PublicFeedEntry, PublicFeedFilters } from '../services/api';
@@ -8,6 +8,7 @@ import { getPathForView } from '../types';
 import PageHeader from '../components/PageHeader/PageHeader';
 import FeatureOffNote from '../components/FeatureFlags/FeatureOffNote';
 import { useFeatureFlag } from '../components/FeatureFlags/featureFlags';
+import Redirect from './Redirect';
 
 interface FeedRouteProps {
   readonly theme?: 'light' | 'dark';
@@ -54,7 +55,7 @@ function FeedRoute({ language, readDates, ttsVoiceUri, ...props }: Readonly<Feed
   }
   if (searchParams.get('view') === 'leaderboard') {
     return quiet
-      ? <Navigate to={getPathForView('feed')} replace />
+      ? <Redirect to={getPathForView('feed')} replace />
       : <LeaderboardPage {...props} onBack={() => setSearchParams({})} />;
   }
   return (

@@ -1,5 +1,5 @@
 import { useRef, type ReactNode } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import VisitorPreferencesSwitch from '../components/VisitorPreferences/VisitorPreferencesSwitch';
 import { usePublicPageLinks } from '../hooks/usePublicPageLinks';
@@ -12,6 +12,7 @@ import {
   type TranslationFunction,
 } from '../types';
 import type { Language } from '../utils/translations';
+import Redirect from './Redirect';
 
 interface PublicAppLayoutProps {
   readonly children: ReactNode;
@@ -41,7 +42,7 @@ function PublicAppLayout({ children, t, visitorPreferences, preferredLanguage = 
   usePublicPageLinks(redirectTo ? null : page);
 
   if (redirectTo) {
-    return <Navigate to={{ pathname: redirectTo, search: location.search, hash: location.hash }} replace />;
+    return <Redirect to={{ pathname: redirectTo, search: location.search, hash: location.hash }} replace />;
   }
 
   // On a localized page the switch shows the path's language and opens the page's address in the other

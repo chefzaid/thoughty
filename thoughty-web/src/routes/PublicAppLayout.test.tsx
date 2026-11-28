@@ -1,8 +1,9 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
+import { MemoryRouter, unstable_HistoryRouter as HistoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
+import { historyWithLateNavigation } from '../test/lateNavigation';
 import PublicAppLayout from './PublicAppLayout';
 
 function RouteFixture() {
@@ -108,6 +109,20 @@ describe('PublicAppLayout', () => {
       renderAt('/about?ref=mail#team', visitorReading('fr'));
       expect(screen.getByTestId('path')).toHaveTextContent('/fr/about?ref=mail#team');
       expect(screen.getByText('Page')).toBeVisible();
+    });
+
+    it('sends them there even when a late navigation (a sign-out’s) brings them back before the French page shows', async () => {
+      const history = historyWithLateNavigation('/', '/fr/');
+      render(
+        <HistoryRouter history={history}>
+          <PublicAppLayout t={(key) => key} visitorPreferences={visitorReading('fr')} preferredLanguage="fr">
+            <main>Page</main>
+          </PublicAppLayout>
+        </HistoryRouter>,
+      );
+
+      expect(await screen.findByText('Page')).toBeVisible();
+      expect(history.location.pathname).toBe('/fr/');
     });
 
     it('sends a French writer there too, once their settings are read', () => {

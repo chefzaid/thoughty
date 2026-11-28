@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 
 import { getPathForView } from '../types';
 import DiariesRoute from './DiariesRoute';
@@ -17,6 +17,7 @@ import StatsRoute from './StatsRoute';
 import TagManagerRoute from './TagManagerRoute';
 import TasksRoute from './TasksRoute';
 import WelcomeRoute from './WelcomeRoute';
+import Redirect from './Redirect';
 
 interface AuthenticatedRoutesProps {
   diariesRouteProps: ComponentProps<typeof DiariesRoute>;
@@ -68,7 +69,7 @@ function AuthenticatedRoutes({
       <Route path={getPathForView('recycleBin')} element={<RecycleBinRoute {...recycleBinRouteProps} />} />
       <Route path={getPathForView('importExport')} element={<ImportExportRoute {...importExportRouteProps} />} />
       <Route path={getPathForView('journal')} element={<JournalRoute {...journalRouteProps} />} />
-      <Route path="*" element={<Navigate to={getPathForView('journal')} replace />} />
+      <Route path="*" element={<Redirect to={getPathForView('journal')} replace />} />
     </Routes>
   );
 }
