@@ -74,7 +74,7 @@ A writer can share one entry or one saved book version with someone who has no a
 
 ### Vulnerability reports
 
-The web serves `/.well-known/security.txt` (RFC 9116, `thoughty-web/src/utils/securityTxt.ts`): `Contact` is the site's Contact page (`/contact`), whose messages reach the deployment's own inbox (`CONTACT_EMAIL`), with `Preferred-Languages: en, fr` and its own address as `Canonical`, both named by the address it was asked at, as for the sitemap. The build writes it, so `Expires` is 364 days after the day of the build (midnight UTC): each release renews it, and a deployment left a year without one says its contact details may be stale. There is no `Policy` field yet: a published vulnerability disclosure policy (what is in scope, response times, safe harbour) waits on the owner (TODO.md › Needs Input), as does the external penetration test before paid plans.
+The web serves `/.well-known/security.txt` (RFC 9116, `thoughty-web/src/utils/securityTxt.ts`): `Contact` is the site's Contact page (`/contact`), whose messages reach the deployment's own inbox (`CONTACT_EMAIL`), with `Preferred-Languages: en, fr` and its own address as `Canonical`, both named by the address it was asked at, as for the sitemap. The build writes it, so `Expires` is 364 days after the day of the build (midnight UTC): each release renews it, and a deployment left a year without one says its contact details may be stale. It has no `Policy` field: no vulnerability disclosure policy is published (the owner's decision, 2026-11-28). The external penetration test before paid plans remains an owner step.
 
 ## Abuse Controls
 
