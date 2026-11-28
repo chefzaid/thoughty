@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ZipEntry } from '../../../utils/zipReader';
-import { cleanDayOneText, isDayOneJournal, parseDayOneJournal, splitDayOneTitle, unescapeDayOneMarkdown } from './dayOne';
+import { cleanDayOneText, dayOneLocation, isDayOneJournal, parseDayOneJournal, splitDayOneTitle, unescapeDayOneMarkdown } from './dayOne';
 
 const zipEntry = (name: string): ZipEntry => ({ name, size: 10, compressedSize: 10, method: 0, encrypted: false, localHeaderOffset: 0, symlink: false, utf8Name: true });
 
@@ -150,6 +150,25 @@ describe('parseDayOneJournal', () => {
       { title: undefined, timeOfDay: '20:00', content: 'No heading here' },
     ]);
     expect(entries[2]).not.toHaveProperty('title');
+  });
+
+  it('keeps the place Day One recorded, by place, town and country, with its coordinates', () => {
+    const { entries } = parseDayOneJournal(
+      {
+        entries: [
+          { uuid: 'P1', creationDate: '2024-05-02T08:00:00Z', location: { placeName: 'Café de Flore', localityName: 'Paris', country: 'France', administrativeArea: 'Île-de-France', latitude: 48.854, longitude: 2.3325 } },
+          { uuid: 'P2', creationDate: '2024-05-03T08:00:00Z' },
+        ],
+      },
+      'Journal',
+      lookup,
+    );
+
+    expect(entries[0]!.location).toEqual({ name: 'Café de Flore, Paris, France', latitude: 48.854, longitude: 2.3325 });
+    expect(entries[1]).not.toHaveProperty('location');
+    expect(dayOneLocation({ localityName: 'Paris', placeName: 'Paris', latitude: 200, longitude: 2 })).toEqual({ name: 'Paris' });
+    expect(dayOneLocation({ latitude: 48.854 })).toBeUndefined();
+    expect(dayOneLocation('Paris')).toBeUndefined();
   });
 
   it('skips entries without a usable date and falls back to the date for a missing ID', () => {

@@ -2,6 +2,7 @@ import type { ZipEntry } from '../../../utils/zipReader';
 import { attachmentTypeFor, cleanSourceId, cleanTags, cleanTitle, localDate, localTime } from './appImportMedia';
 import type { ImportedEntry, ImportedMedia } from './appImportTypes';
 import { htmlToMarkdown, looksLikeHtml } from './htmlToMarkdown';
+import { importedLocation } from './appImportLocation';
 
 interface JourneyEntry {
   id?: unknown;
@@ -14,6 +15,9 @@ interface JourneyEntry {
   favourite?: unknown;
   photos?: unknown;
   mood?: unknown;
+  lat?: unknown;
+  lon?: unknown;
+  address?: unknown;
 }
 
 /** Finds a photo by file name anywhere in the export. */
@@ -45,6 +49,7 @@ export function parseJourneyEntry(
   const timeZone = typeof data.timezone === 'string' ? data.timezone : undefined;
   const title = cleanTitle(data.title);
   const mood = journeyMood(data.mood);
+  const location = importedLocation([data.address], data.lat, data.lon);
   const text = data.text as string;
   const media: ImportedMedia[] = [];
   let skippedMedia = 0;
@@ -67,6 +72,7 @@ export function parseJourneyEntry(
       timestamp,
       ...(title ? { title } : {}),
       ...(mood ? { mood } : {}),
+      ...(location ? { location } : {}),
       content: data.type === 'html' || looksLikeHtml(text) ? htmlToMarkdown(text) : text.trim(),
       tags: cleanTags(data.tags),
       favorite: data.favourite === true,

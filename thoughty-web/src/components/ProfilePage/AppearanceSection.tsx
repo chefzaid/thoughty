@@ -356,6 +356,14 @@ function AppearanceSection({
         handleChange={handleChange}
       />
 
+      <SettingSwitch
+        name="entryLocation"
+        label={t('entryLocationSetting')}
+        description={t('entryLocationSettingDescription')}
+        enabled={localConfig.entryLocation === true}
+        handleChange={handleChange}
+      />
+
       <SpeechSettings
         handleChange={handleChange}
         isDark={isDark}

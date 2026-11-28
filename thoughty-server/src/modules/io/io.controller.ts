@@ -94,6 +94,7 @@ export class IoController {
       query.includeVisibility,
       query.format,
       writersDayOr(query.today),
+      query.includeLocation,
     );
     await this.activity.record(user.userId, 'journal_exported');
 

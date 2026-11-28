@@ -45,6 +45,16 @@ describe('entriesService', () => {
       expect(JSON.parse(String(mockAuthFetch.mock.calls[1]?.[1]?.body))).toEqual({ ...newEntry, format: 'plain' });
     });
 
+    it('sends the place only when there is one', async () => {
+      mockAuthFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ success: true, entryId: 45 }) });
+
+      await service.createEntry({ ...newEntry, location: { name: 'Annecy', latitude: 45.9, longitude: 6.13 } });
+      await service.createEntry({ ...newEntry, location: null });
+
+      expect(JSON.parse(String(mockAuthFetch.mock.calls[0]?.[1]?.body))).toEqual({ ...newEntry, location: { name: 'Annecy', latitude: 45.9, longitude: 6.13 }, format: 'plain' });
+      expect(JSON.parse(String(mockAuthFetch.mock.calls[1]?.[1]?.body))).toEqual({ ...newEntry, format: 'plain' });
+    });
+
     it('sends the title and time of day only when they are set', async () => {
       mockAuthFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ success: true, entryId: 43 }) });
 

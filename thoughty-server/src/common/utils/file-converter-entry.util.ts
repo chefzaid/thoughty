@@ -1,4 +1,5 @@
 import { normalizeFeelings, normalizeMood } from './entry-mood.util';
+import type { EntryLocation } from './entry-location.util';
 
 export interface ParsedEntry {
   date: string;
@@ -7,6 +8,8 @@ export interface ParsedEntry {
   timeOfDay?: string;
   mood?: number;
   feelings?: string[];
+  /** Only a JSON file carries a place. */
+  location?: EntryLocation;
   tags: string[];
   content: string;
   format: EntryFormat;
@@ -24,6 +27,9 @@ export interface EntryData {
   timeOfDay?: string | null;
   mood?: number | null;
   feelings?: string[] | null;
+  locationName?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   tags: string[];
   content: string;
   format?: EntryFormat;

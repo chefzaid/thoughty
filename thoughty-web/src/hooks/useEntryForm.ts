@@ -22,6 +22,7 @@ import type { ComposerDraftFields } from '../services/api/composerDraftService';
 import { draftKey, isEmptyDraft } from '../components/ComposerDraft/composerDraftPlan';
 import { diaryDefaultTemplate, getEntryTemplates, type EntryTemplate } from '../utils/entryTemplates';
 import { useDiaryTemplatePrefill } from '../components/EntryForm/useDiaryTemplatePrefill';
+import { locationPayload, NO_LOCATION, type EntryLocationDraft } from '../utils/entryLocation';
 
 const NO_DIARIES: readonly Diary[] = [];
 
@@ -32,6 +33,7 @@ interface SavedComposer {
   readonly timeOfDay: string;
   readonly mood: number | null;
   readonly feelings: string[];
+  readonly location: EntryLocationDraft;
   readonly timeCapsule: TimeCapsuleDraft | null;
   readonly tags: string[];
   readonly chosenVisibility: 'public' | 'private' | null;
@@ -59,6 +61,8 @@ export const useEntryForm = (
   const [timeOfDay, setTimeOfDay] = useState<string>('');
   const [mood, setMood] = useState<number | null>(null);
   const [feelings, setFeelings] = useState<string[]>([]);
+  /** The place it was written, which stays on this device until saved, like the date and time. */
+  const [location, setLocation] = useState<EntryLocationDraft>(NO_LOCATION);
   /** Set when the entry is sealed as a time capsule. */
   const [timeCapsule, setTimeCapsule] = useState<TimeCapsuleDraft | null>(null);
   const [tags, setTags] = useState<string[]>([]);
@@ -95,7 +99,7 @@ export const useEntryForm = (
   const textAi = useMemo(() => textAiForDiary(composerAiMode, aiService, localAiService), [aiService, composerAiMode, localAiService]);
   const tagSuggestions = useEntryTagSuggestions(textAi, newEntryText, tags, setTags, autoTagLimit, setFormError, aiDiary);
 
-  // The draft follows the writer to their other devices; the date, time, visibility, capsule and files stay here
+  // The draft follows the writer to their other devices; the date, time, place, visibility, capsule and files stay here
   const applyDraft = useCallback((fields: ComposerDraftFields) => {
     setNewEntryText(fields.text);
     setTitle(fields.title ?? '');
@@ -144,6 +148,7 @@ export const useEntryForm = (
     setTimeOfDay(unlessChanged(saved.timeOfDay, ''));
     setMood(unlessChanged(saved.mood, null));
     setFeelings(unlessChanged<string[]>(saved.feelings, []));
+    setLocation(unlessChanged(saved.location, NO_LOCATION));
     setTimeCapsule(unlessChanged(saved.timeCapsule, null));
     setTags(unlessChanged<string[]>(saved.tags, []));
     // The format belongs to the text: text written during the save keeps it
@@ -197,6 +202,7 @@ export const useEntryForm = (
         timeOfDay: timeOfDay || null,
         mood,
         feelings,
+        location: locationPayload(location),
         tags,
         date: formatEntryDate(selectedDate),
         visibility,
@@ -224,7 +230,7 @@ export const useEntryForm = (
 
       setSavedEntry({ id: result.entryId, mood, crisisSignal: hasCrisisSignal(title, newEntryText) });
       onDraftPublished();
-      clearSavedEntry({ text: newEntryText, title, timeOfDay, mood, feelings, timeCapsule, tags, chosenVisibility, pendingFiles, uploadedAttachments });
+      clearSavedEntry({ text: newEntryText, title, timeOfDay, mood, feelings, location, timeCapsule, tags, chosenVisibility, pendingFiles, uploadedAttachments });
       onSuccess();
       if (composerAiMode === 'local' && aiFeature) {
         // Its recordings are transcribed on this device, in the background, Thoughty keeping only the text
@@ -247,7 +253,7 @@ export const useEntryForm = (
     } finally {
       saving.current = false;
     }
-  }, [aiFeature, attachmentsService, autoTagLimit, chosenVisibility, clearSavedEntry, composerAiMode, config.language, currentDiaryId, entriesService, feelings, format, localAiService, mood, newEntryText, onDraftPublished, onSuccess, pendingFiles, selectedDate, tags, timeCapsule, timeOfDay, title, uploadedAttachments, validateEntryForm, visibility]);
+  }, [aiFeature, attachmentsService, autoTagLimit, chosenVisibility, clearSavedEntry, composerAiMode, config.language, currentDiaryId, entriesService, feelings, format, localAiService, location, mood, newEntryText, onDraftPublished, onSuccess, pendingFiles, selectedDate, tags, timeCapsule, timeOfDay, title, uploadedAttachments, validateEntryForm, visibility]);
 
   const addPendingFile = useCallback((file: File) => {
     setPendingFiles((prev) => [...prev, file]);
@@ -301,6 +307,8 @@ export const useEntryForm = (
     setMood,
     feelings,
     setFeelings,
+    location,
+    setLocation,
     timeCapsule,
     setTimeCapsule,
     tags,

@@ -42,6 +42,8 @@ export interface MockEntry {
   /** Optional mood from 1 (very low) to 5 (very good), and feeling words. */
   mood?: number | null;
   feelings?: string[];
+  /** Where it was written, as the API answers it. */
+  location?: components["schemas"]["EntryLocationResponseDto"] | null;
   content: string;
   tags: string[];
   visibility: "public" | "private";
@@ -189,6 +191,8 @@ export interface MockAppState {
     quietMode?: boolean;
     /** The comfort reads offer after a very low mood; offered unless false. */
     comfortReads?: boolean;
+    /** Places on entries: the composer's place field; off unless true. */
+    entryLocation?: boolean;
     /** Simple memoir mode: signing in and the weekly email link open the simple screen; off unless true. */
     memoirSimpleMode?: boolean;
     /** The welcome page was done; left out (the journal opens) unless a spec or a sign-up, a new account, sets it. */

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { buildAuthenticatedLayoutProps, buildAuthenticatedRoutesProps, buildPublicShellProps } from './appShellProps';
 import { createLayoutParams, createRoutesParams, createRoutingState } from './appShellProps.test-helpers';
 import { composerDraftSyncMock } from '../components/ComposerDraft/composerDraft.test-helpers';
+import { NO_LOCATION } from './entryLocation';
 
 describe('appShellProps', () => {
   it('builds public shell props for intro and register views', () => {
@@ -151,6 +152,7 @@ describe('appShellProps', () => {
         editFeelings: [],
         editFormat: 'plain',
         editMood: null,
+        editLocation: NO_LOCATION,
         editPendingFiles: [],
         editTags: [],
         editText: '',
@@ -168,6 +170,7 @@ describe('appShellProps', () => {
         setEditFeelings: vi.fn(),
         setEditFormat: vi.fn(),
         setEditMood: vi.fn(),
+        setEditLocation: vi.fn(),
         setEditTags: vi.fn(),
         setEditText: vi.fn(),
         setEditTimeOfDay: vi.fn(),
@@ -186,6 +189,7 @@ describe('appShellProps', () => {
         handleFixWriting: vi.fn().mockResolvedValue(undefined),
         handleSubmit: vi.fn().mockResolvedValue(undefined),
         handleSuggestTags: vi.fn().mockResolvedValue(undefined),
+        location: NO_LOCATION,
         mood: null,
         newEntryText: '',
         pendingFiles: [],
@@ -198,6 +202,7 @@ describe('appShellProps', () => {
         setTimeCapsule: vi.fn(),
         setFormat: vi.fn(),
         setMood: vi.fn(),
+        setLocation: vi.fn(),
         setNewEntryText: vi.fn(),
         setSelectedDate: vi.fn(),
         setTags: vi.fn(),

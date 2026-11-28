@@ -144,6 +144,13 @@ function isWholeNumber(value: unknown): boolean {
   return Number.isInteger(value) || (typeof value === 'string' && QUERY_INTEGER.test(value));
 }
 
+const DECIMAL_TEXT = /^-?\d+(?:\.\d+)?$/;
+
+/** A number as `@StrictNumber()` reads it: finite, or plain decimal digits. */
+function isDecimalNumber(value: unknown): boolean {
+  return (typeof value === 'number' && Number.isFinite(value)) || (typeof value === 'string' && DECIMAL_TEXT.test(value));
+}
+
 /** Every way a JSON request `value` breaks the types the API reads in `schema`, as `$.path: problem` lines. */
 function requestTypeProblems(schema: ContractSchema, value: unknown, path: string, schemas: Record<string, ContractSchema>): string[] {
   if (schema.$ref) {
@@ -163,6 +170,7 @@ function requestTypeProblems(schema: ContractSchema, value: unknown, path: strin
       return typeof value === 'string' ? [] : [`${path}: expected a string, got ${sent}`];
     case 'number':
     case 'integer':
+      if (schema.format === 'double') return isDecimalNumber(value) ? [] : [`${path}: expected a number, got ${sent}`];
       return isWholeNumber(value) ? [] : [`${path}: expected a whole number, got ${sent}`];
     case 'boolean':
       return JSON_BOOLEANS.includes(value) ? [] : [`${path}: expected true, false, 1 or 0, got ${sent}`];
@@ -184,8 +192,8 @@ function requestTypeProblems(schema: ContractSchema, value: unknown, path: strin
 /**
  * Why the API would refuse this JSON body for its types, or an empty list. Its global pipe converts nothing
  * (docs/development.md › Request validation), so a string must be sent as a string, a boolean as
- * `@StrictBoolean()` reads it and a number as `@StrictInt()` does (a whole number or plain digits), and a
- * property the DTO does not declare is refused. Ranges, formats and required fields are left to the mock.
+ * `@StrictBoolean()` reads it and a number as `@StrictInt()` does (a whole number or plain digits), or as
+ * `@StrictNumber()` does for one documented as a `double`, and a property the DTO does not declare is refused. Ranges, formats and required fields are left to the mock.
  */
 export function checkJsonRequestBody(method: string, pathname: string, body: unknown): string[] {
   const schema = findOperation(method, pathname)?.jsonRequest;

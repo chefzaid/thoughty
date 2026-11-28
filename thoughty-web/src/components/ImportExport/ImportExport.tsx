@@ -51,6 +51,7 @@ function ImportExport({
     const messageToast = useTransientMessage();
     const [skipDuplicates, setSkipDuplicates] = useState(true);
     const [includeVisibility, setIncludeVisibility] = useState(initialIncludeVisibility);
+    const [includeLocation, setIncludeLocation] = useState(false);
     const [exportFormat, setExportFormat] = useState<ImportExportFormat>(initialExportFormat);
     const [activeSection, setActiveSection] = useState<ImportExportSection>(initialSection);
     const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
@@ -180,6 +181,9 @@ function ImportExport({
             }
             if (includeVisibility) {
                 params.append('includeVisibility', 'true');
+            }
+            if (includeLocation && exportFormat === 'json') {
+                params.append('includeLocation', 'true');
             }
             if (exportFormat !== 'txt') {
                 params.append('format', exportFormat);
@@ -323,6 +327,7 @@ function ImportExport({
                     diaryName={diaryName}
                     exportFormat={exportFormat}
                     includeVisibility={includeVisibility}
+                    includeLocation={includeLocation}
                     onChangeExportFormat={(nextFormat) => {
                         setExportFormat(nextFormat);
                         emitRouteState({ exportFormat: nextFormat });
@@ -332,6 +337,7 @@ function ImportExport({
                         setIncludeVisibility(nextValue);
                         emitRouteState({ includeVisibility: nextValue });
                     }}
+                    onToggleIncludeLocation={() => setIncludeLocation((included) => !included)}
                     onExport={handleExport}
                     t={t}
                 />

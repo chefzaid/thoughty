@@ -2,7 +2,7 @@
 import { ApiProperty, ApiPropertyOptional, OmitType, PickType } from '@nestjs/swagger';
 import { ArrayMaxSize, IsArray, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { StrictInt } from '@/common/validation';
-import { CreateEntryDto, GetEntriesQueryDto } from '@/modules/entries/dto';
+import { CreateEntryDto, EntryLocationResponseDto, GetEntriesQueryDto } from '@/modules/entries/dto';
 
 /** Entries in one page of `GET /api/v1/entries`, at most. */
 export const PUBLIC_ENTRY_LIST_MAX_LIMIT = 50;
@@ -86,11 +86,14 @@ export class PublicEntryDto {
   @ApiProperty({ type: [String], example: ['calm'] })
   feelings!: string[];
 
+  @ApiProperty({ type: EntryLocationResponseDto, nullable: true, description: 'Where the entry was written, or null' })
+  location!: EntryLocationResponseDto | null;
+
   @ApiProperty({ enum: ['public', 'private'], example: 'private' })
   visibility!: 'public' | 'private';
 
   @ApiProperty({
-    description: 'Locked behind the writer’s PIN: the API never unlocks, so its text, tags, mood and feelings are left out',
+    description: 'Locked behind the writer’s PIN: the API never unlocks, so its text, tags, mood, feelings and place are left out',
     example: false,
   })
   withheld!: boolean;

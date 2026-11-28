@@ -109,6 +109,18 @@ describe('IoService', () => {
       expect(parsed.entries).toHaveLength(1);
     });
 
+    it('writes places into a JSON file only when asked to', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([{ ...mockEntry, locationName: 'Annecy', latitude: 45.8992, longitude: 6.1294 }]);
+
+      const withPlaces = JSON.parse(String((await service.export(1, undefined, false, 'json', '2026-11-28', true)).content));
+      const withoutPlaces = JSON.parse(String((await service.export(1, undefined, false, 'json', '2026-11-28')).content));
+
+      expect(withPlaces.entries[0].location).toEqual({ name: 'Annecy', latitude: 45.8992, longitude: 6.1294 });
+      expect(withoutPlaces.entries[0]).not.toHaveProperty('location');
+    });
+
     it('should export as Markdown format', async () => {
       settingRepository.find.mockResolvedValue([]);
       const mockQb = entryRepository.createQueryBuilder();

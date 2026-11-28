@@ -2,6 +2,7 @@ import type { ZipEntry } from '../../../utils/zipReader';
 import { inlineImageMarkdown } from '../../../utils/inlineImages';
 import { attachmentTypeFor, cleanSourceId, cleanTags, cleanTitle, fileExtension, localDate, localTime, storedMediaName } from './appImportMedia';
 import type { ImportedEntry, ImportedMedia } from './appImportTypes';
+import { importedLocation } from './appImportLocation';
 
 interface DayOneMedia {
   identifier?: unknown;
@@ -22,6 +23,15 @@ interface DayOneEntry {
   audios?: unknown;
   videos?: unknown;
   pdfAttachments?: unknown;
+  location?: unknown;
+}
+
+interface DayOneLocation {
+  placeName?: unknown;
+  localityName?: unknown;
+  country?: unknown;
+  latitude?: unknown;
+  longitude?: unknown;
 }
 
 /** Finds an export file by folder and MD5, e.g. `photos/5f2b…`, whatever its extension. */
@@ -127,6 +137,13 @@ function entryMedia(
   return { media, skipped, photos };
 }
 
+/** Day One's place for an entry: the place, town and country by name, with its coordinates. */
+export function dayOneLocation(value: unknown): ImportedEntry['location'] {
+  if (!value || typeof value !== 'object') return undefined;
+  const { placeName, localityName, country, latitude, longitude } = value as DayOneLocation;
+  return importedLocation([placeName, localityName, country], latitude, longitude);
+}
+
 /** Entries of one Day One journal; `journal` is the JSON file's name. */
 export function parseDayOneJournal(
   data: { entries: DayOneEntry[] },
@@ -148,12 +165,14 @@ export function parseDayOneJournal(
     const text = typeof entry.text === 'string' ? cleanDayOneText(entry.text, photos) : '';
     const explicitTitle = cleanTitle(entry.title);
     const { title, content } = explicitTitle ? { title: explicitTitle, content: text } : splitDayOneTitle(text);
+    const location = dayOneLocation(entry.location);
     entries.push({
       sourceId: cleanSourceId(sourceId),
       date: localDate(timestamp, timeZone),
       timeOfDay: localTime(timestamp, timeZone),
       timestamp,
       ...(title ? { title } : {}),
+      ...(location ? { location } : {}),
       content,
       tags: cleanTags(entry.tags),
       favorite: entry.starred === true,

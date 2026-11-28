@@ -52,6 +52,16 @@ describe('appShellProps', () => {
     expect(updateConfig).toHaveBeenCalledTimes(1);
   });
 
+  it('gives the composer its place field only with Places on entries on', () => {
+    const off = buildAuthenticatedRoutesProps(createRoutesParams()).journalRouteProps.entryForm;
+    const on = buildAuthenticatedRoutesProps(createRoutesParams({ config: { theme: 'dark', entryLocation: true } })).journalRouteProps.entryForm;
+
+    expect(off).not.toHaveProperty('setLocation');
+    expect(off).not.toHaveProperty('location');
+    expect(on.location).toEqual({ name: '', latitude: null, longitude: null });
+    expect(on.setLocation).toEqual(expect.any(Function));
+  });
+
   it('keeps the prompt cards drawn in user config, quietly', () => {
     const updateConfig = vi.fn().mockResolvedValue(false);
     const saveConfig = vi.fn();

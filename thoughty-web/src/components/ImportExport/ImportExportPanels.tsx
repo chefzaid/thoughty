@@ -51,8 +51,10 @@ export function ExportSection({
     diaryName,
     exportFormat,
     includeVisibility,
+    includeLocation,
     onChangeExportFormat,
     onToggleIncludeVisibility,
+    onToggleIncludeLocation,
     onExport,
     t,
 }: Readonly<{
@@ -61,8 +63,11 @@ export function ExportSection({
     diaryName?: string;
     exportFormat: ImportExportFormat;
     includeVisibility: boolean;
+    /** Places go only into a JSON file, so the option shows for that format. */
+    includeLocation: boolean;
     onChangeExportFormat: (format: ImportExportFormat) => void;
     onToggleIncludeVisibility: () => void;
+    onToggleIncludeLocation: () => void;
     onExport: () => void;
     t: TranslationFunction;
 }>) {
@@ -90,6 +95,12 @@ export function ExportSection({
                             <input type="checkbox" checked={includeVisibility} onChange={onToggleIncludeVisibility} />
                             {t('includeVisibilityShort')}
                         </label>
+                        {exportFormat === 'json' && (
+                            <label className="checkbox-label" title={t('includeLocationHint')}>
+                                <input type="checkbox" checked={includeLocation} onChange={onToggleIncludeLocation} />
+                                {t('includeLocationShort')}
+                            </label>
+                        )}
                     </div>
                     <button type="button" className="io-btn primary" onClick={onExport}>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">

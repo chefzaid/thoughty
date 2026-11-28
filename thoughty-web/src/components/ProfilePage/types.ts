@@ -29,6 +29,7 @@ export interface ProfileConfig {
   streakCard?: boolean;
   quietMode?: boolean;
   comfortReads?: boolean;
+  entryLocation?: boolean;
   openRouterModel?: string;
   openRouterTagModel?: string;
   openRouterWritingModel?: string;

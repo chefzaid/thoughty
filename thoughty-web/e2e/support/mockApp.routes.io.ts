@@ -88,6 +88,7 @@ export async function handleIoRoutes({
       state.entries,
       searchParams.get("format"),
       readQueryFlag(searchParams, "includeVisibility", false),
+      readQueryFlag(searchParams, "includeLocation", false),
     );
 
     await route.fulfill({

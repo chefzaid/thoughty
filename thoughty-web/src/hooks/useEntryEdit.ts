@@ -13,6 +13,7 @@ import { autoTagWithLocalModel } from '../services/localModel/localAutoTag';
 import { diaryAiMode } from '../utils/diaryAi';
 import { recordingTranscriptions } from '../services/speech/recordingTranscriptions';
 import { speechLanguage } from '../services/speech/speechProtocol';
+import { locationDraft, locationPayload, NO_LOCATION, type EntryLocationDraft } from '../utils/entryLocation';
 
 const NO_DIARIES: readonly Pick<Diary, 'id' | 'aiMode'>[] = [];
 
@@ -40,6 +41,7 @@ export const useEntryEdit = (
   const [editTimeOfDay, setEditTimeOfDay] = useState<string>('');
   const [editMood, setEditMood] = useState<number | null>(null);
   const [editFeelings, setEditFeelings] = useState<string[]>([]);
+  const [editLocation, setEditLocation] = useState<EntryLocationDraft>(NO_LOCATION);
   const [editTags, setEditTags] = useState<string[]>([]);
   const [editDate, setEditDate] = useState<Date | null>(null);
   const [editVisibility, setEditVisibility] = useState<'public' | 'private'>('private');
@@ -59,6 +61,7 @@ export const useEntryEdit = (
     setEditTimeOfDay(entry.time_of_day ?? '');
     setEditMood(entry.mood ?? null);
     setEditFeelings(entry.feelings ?? []);
+    setEditLocation(locationDraft(entry.location));
     setEditTags(entry.tags || []);
     setEditVisibility(entry.visibility || 'private');
     setEditFormat(entry.format || 'plain');
@@ -80,6 +83,7 @@ export const useEntryEdit = (
     setEditTimeOfDay('');
     setEditMood(null);
     setEditFeelings([]);
+    setEditLocation(NO_LOCATION);
     setEditTags([]);
     setEditDate(null);
     setEditVisibility('private');
@@ -109,6 +113,7 @@ export const useEntryEdit = (
       timeOfDay: editTimeOfDay || null,
       mood: editMood,
       feelings: editFeelings,
+      location: locationPayload(editLocation),
       tags: editTags,
       date: formatEntryDate(editDate),
       visibility: editVisibility,
@@ -158,7 +163,7 @@ export const useEntryEdit = (
 
     handleCancelEdit();
     onSave();
-  }, [aiFeature, attachmentsService, autoTagLimit, config.language, diaries, editDate, editDiaryId, editExistingAttachments, editFeelings, editFormat, editMood, editPendingFiles, editTags, editText, editTimeOfDay, editTitle, editVisibility, editingEntry, entriesService, handleCancelEdit, localAiService, moveToDiary, notify, onSave, t]);
+  }, [aiFeature, attachmentsService, autoTagLimit, config.language, diaries, editDate, editDiaryId, editExistingAttachments, editFeelings, editFormat, editLocation, editMood, editPendingFiles, editTags, editText, editTimeOfDay, editTitle, editVisibility, editingEntry, entriesService, handleCancelEdit, localAiService, moveToDiary, notify, onSave, t]);
 
   const addEditPendingFile = useCallback((file: File) => {
     setEditPendingFiles((prev) => [...prev, file]);
@@ -184,6 +189,8 @@ export const useEntryEdit = (
     setEditMood,
     editFeelings,
     setEditFeelings,
+    editLocation,
+    setEditLocation,
     editTags,
     setEditTags,
     editDate,

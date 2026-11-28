@@ -82,7 +82,7 @@ describe('IoController', () => {
 
       await controller.export(mockUser as any, query, mockRes);
 
-      expect(ioService.export).toHaveBeenCalledWith(1, 1, undefined, undefined, '2026-11-01');
+      expect(ioService.export).toHaveBeenCalledWith(1, 1, undefined, undefined, '2026-11-01', undefined);
       expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Type', 'text/plain; charset=utf-8');
       expect(mockRes.setHeader).toHaveBeenCalledWith(
         'Content-Disposition',

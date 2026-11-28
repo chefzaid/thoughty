@@ -8,13 +8,14 @@ import { TransformationType, Type } from 'class-transformer';
 import type { MetadataStorage } from 'class-transformer/types/MetadataStorage';
 import { IsInt, IsOptional, getMetadataStorage } from 'class-validator';
 import type { ValidationMetadata } from 'class-validator/types/metadata/ValidationMetadata';
-import { StrictBoolean, StrictInt, toStrictBoolean, toStrictInt, toStrictIntEach } from './strict-input.decorators';
+import { StrictBoolean, StrictInt, StrictNumber, toStrictBoolean, toStrictInt, toStrictIntEach, toStrictNumber } from './strict-input.decorators';
 
 /*
  * Guards the rule in docs/development.md (Request validation): the global pipe converts nothing on
  * its own, so
  *  - every boolean DTO property reads its raw value through @StrictBoolean(),
- *  - every number DTO property (query, form or JSON body) reads it through @StrictInt(), and
+ *  - every number DTO property (query, form or JSON body) reads it through @StrictInt() (or @StrictNumber()
+ *    for one with decimals), and
  *  - no property converts a value with @Type(() => Number | String | Boolean), which would turn
  *    `''` into `0` or `{}` into '[object Object]'.
  */
@@ -73,7 +74,7 @@ export function strictInputViolations(classes: Iterable<Constructor>): string[] 
       if (type === Boolean && !hasTransform(cls, property, [toStrictBoolean])) {
         violations.push(`${cls.name}.${property} (boolean without @StrictBoolean())`);
       }
-      if (isNumberProperty(cls, property, validations) && !hasTransform(cls, property, [toStrictInt, toStrictIntEach])) {
+      if (isNumberProperty(cls, property, validations) && !hasTransform(cls, property, [toStrictInt, toStrictIntEach, toStrictNumber])) {
         violations.push(`${cls.name}.${property} (number without @StrictInt())`);
       }
       if (convertsThroughType(cls, property)) {
@@ -147,6 +148,10 @@ describe('strict boolean and number inputs', () => {
       @IsOptional()
       @StrictInt({ each: true })
       fixedIds?: number[];
+
+      @IsOptional()
+      @StrictNumber()
+      fixedLatitude?: number;
     }
 
     expect(strictInputViolations([LegacyDto])).toEqual([

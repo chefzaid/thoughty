@@ -3819,6 +3819,29 @@ export interface components {
         };
         /**
          * @example {
+         *       "name": "Jardin du Luxembourg, Paris",
+         *       "latitude": 48.8462,
+         *       "longitude": 2.3372
+         *     }
+         */
+        EntryLocationResponseDto: {
+            /** @example Jardin du Luxembourg, Paris */
+            name: string | null;
+            /**
+             * Format: double
+             * @description Latitude in degrees, or null without coordinates
+             * @example 48.8462
+             */
+            latitude: number | null;
+            /**
+             * Format: double
+             * @description Longitude in degrees, or null without coordinates
+             * @example 2.3372
+             */
+            longitude: number | null;
+        };
+        /**
+         * @example {
          *       "id": 1,
          *       "original_filename": "Daily Journal",
          *       "stored_filename": "Daily Journal",
@@ -3855,6 +3878,11 @@ export interface components {
          *         "calm",
          *         "grateful"
          *       ],
+         *       "location": {
+         *         "name": "Jardin du Luxembourg, Paris",
+         *         "latitude": 48.8462,
+         *         "longitude": 2.3372
+         *       },
          *       "tags": [
          *         "reflection"
          *       ],
@@ -3917,6 +3945,8 @@ export interface components {
              *     ]
              */
             feelings: string[];
+            /** @description The place the entry was written, or null. Only the writer sees it; a sealed or withheld entry leaves it out. */
+            location: components["schemas"]["EntryLocationResponseDto"] | null;
             tags: string[];
             content: string;
             /** @enum {string} */
@@ -3983,6 +4013,11 @@ export interface components {
          *             "calm",
          *             "grateful"
          *           ],
+         *           "location": {
+         *             "name": "Jardin du Luxembourg, Paris",
+         *             "latitude": 48.8462,
+         *             "longitude": 2.3372
+         *           },
          *           "tags": [
          *             "reflection"
          *           ],
@@ -4299,6 +4334,11 @@ export interface components {
          *           "calm",
          *           "grateful"
          *         ],
+         *         "location": {
+         *           "name": "Jardin du Luxembourg, Paris",
+         *           "latitude": 48.8462,
+         *           "longitude": 2.3372
+         *         },
          *         "tags": [
          *           "reflection"
          *         ],
@@ -4398,6 +4438,11 @@ export interface components {
          *           "calm",
          *           "grateful"
          *         ],
+         *         "location": {
+         *           "name": "Jardin du Luxembourg, Paris",
+         *           "latitude": 48.8462,
+         *           "longitude": 2.3372
+         *         },
          *         "tags": [
          *           "reflection"
          *         ],
@@ -4473,6 +4518,11 @@ export interface components {
          *           "calm",
          *           "grateful"
          *         ],
+         *         "location": {
+         *           "name": "Jardin du Luxembourg, Paris",
+         *           "latitude": 48.8462,
+         *           "longitude": 2.3372
+         *         },
          *         "tags": [
          *           "reflection"
          *         ],
@@ -4593,6 +4643,11 @@ export interface components {
          *           "calm",
          *           "grateful"
          *         ],
+         *         "location": {
+         *           "name": "Jardin du Luxembourg, Paris",
+         *           "latitude": 48.8462,
+         *           "longitude": 2.3372
+         *         },
          *         "tags": [
          *           "reflection"
          *         ],
@@ -4703,6 +4758,11 @@ export interface components {
          *           "calm",
          *           "grateful"
          *         ],
+         *         "location": {
+         *           "name": "Jardin du Luxembourg, Paris",
+         *           "latitude": 48.8462,
+         *           "longitude": 2.3372
+         *         },
          *         "tags": [
          *           "reflection"
          *         ],
@@ -4761,6 +4821,11 @@ export interface components {
          *               "calm",
          *               "grateful"
          *             ],
+         *             "location": {
+         *               "name": "Jardin du Luxembourg, Paris",
+         *               "latitude": 48.8462,
+         *               "longitude": 2.3372
+         *             },
          *             "tags": [
          *               "reflection"
          *             ],
@@ -4815,6 +4880,11 @@ export interface components {
          *             "calm",
          *             "grateful"
          *           ],
+         *           "location": {
+         *             "name": "Jardin du Luxembourg, Paris",
+         *             "latitude": 48.8462,
+         *             "longitude": 2.3372
+         *           },
          *           "tags": [
          *             "reflection"
          *           ],
@@ -4877,6 +4947,11 @@ export interface components {
          *               "calm",
          *               "grateful"
          *             ],
+         *             "location": {
+         *               "name": "Jardin du Luxembourg, Paris",
+         *               "latitude": 48.8462,
+         *               "longitude": 2.3372
+         *             },
          *             "tags": [
          *               "reflection"
          *             ],
@@ -5046,6 +5121,32 @@ export interface components {
         };
         /**
          * @example {
+         *       "name": "Jardin du Luxembourg, Paris",
+         *       "latitude": 48.8462,
+         *       "longitude": 2.3372
+         *     }
+         */
+        EntryLocationDto: {
+            /**
+             * @description The place as the writer names it, on one line
+             * @example Jardin du Luxembourg, Paris
+             */
+            name?: string | null;
+            /**
+             * Format: double
+             * @description Latitude in degrees, with `longitude`
+             * @example 48.8462
+             */
+            latitude?: number | null;
+            /**
+             * Format: double
+             * @description Longitude in degrees, with `latitude`
+             * @example 2.3372
+             */
+            longitude?: number | null;
+        };
+        /**
+         * @example {
          *       "opensOn": "2031-10-27",
          *       "openHour": 9,
          *       "timeZone": "Europe/Paris"
@@ -5078,6 +5179,11 @@ export interface components {
          *         "calm",
          *         "grateful"
          *       ],
+         *       "location": {
+         *         "name": "Jardin du Luxembourg, Paris",
+         *         "latitude": 48.8462,
+         *         "longitude": 2.3372
+         *       },
          *       "text": "example",
          *       "tags": [
          *         "reflection"
@@ -5117,6 +5223,8 @@ export interface components {
              *     ]
              */
             feelings?: string[];
+            /** @description Optional place the entry was written: a name, coordinates, or both; null (or a place with neither) removes it. It is private: the public feed, share links and books never show it, and exports carry it only when asked to. */
+            location?: components["schemas"]["EntryLocationDto"] | null;
             /** @description Entry content. A Markdown entry places one of its attachments with `![alt text](attachment:<id>)`: a reference stays when the attachment is on this entry, is the writer's and on no entry yet (it then joins the entry), or was already in the saved text; any other becomes its alt text. */
             text: string;
             /** @description Tags for the entry */
@@ -5224,6 +5332,11 @@ export interface components {
          *         "calm",
          *         "grateful"
          *       ],
+         *       "location": {
+         *         "name": "Jardin du Luxembourg, Paris",
+         *         "latitude": 48.8462,
+         *         "longitude": 2.3372
+         *       },
          *       "text": "example",
          *       "tags": [
          *         "reflection"
@@ -5257,6 +5370,8 @@ export interface components {
              *     ]
              */
             feelings?: string[];
+            /** @description Optional place the entry was written: a name, coordinates, or both; null (or a place with neither) removes it. It is private: the public feed, share links and books never show it, and exports carry it only when asked to. */
+            location?: components["schemas"]["EntryLocationDto"] | null;
             /** @description Entry content. A Markdown entry places one of its attachments with `![alt text](attachment:<id>)`: a reference stays when the attachment is on this entry, is the writer's and on no entry yet (it then joins the entry), or was already in the saved text; any other becomes its alt text. */
             text: string;
             /** @description Tags for the entry */
@@ -5287,6 +5402,11 @@ export interface components {
          *           "calm",
          *           "grateful"
          *         ],
+         *         "location": {
+         *           "name": "Jardin du Luxembourg, Paris",
+         *           "latitude": 48.8462,
+         *           "longitude": 2.3372
+         *         },
          *         "tags": [
          *           "reflection"
          *         ],
@@ -5575,6 +5695,7 @@ export interface components {
          *       "streakCard": "true",
          *       "quietMode": "true",
          *       "comfortReads": "true",
+         *       "entryLocation": "true",
          *       "memoirSimpleMode": "true",
          *       "onboardingDone": "true"
          *     }
@@ -5692,6 +5813,11 @@ export interface components {
              */
             comfortReads?: "true" | "false";
             /**
+             * @description Places on entries: the composer offers a place field (typed, or from the browser's location when asked); off unless true
+             * @enum {string}
+             */
+            entryLocation?: "true" | "false";
+            /**
              * @description Simple memoir mode: signing in and the weekly question link open one large question with a record button; off unless true
              * @enum {string}
              */
@@ -5726,6 +5852,7 @@ export interface components {
          *       "streakCard": "true",
          *       "quietMode": "true",
          *       "comfortReads": "true",
+         *       "entryLocation": "true",
          *       "memoirSimpleMode": "true",
          *       "onboardingDone": "true",
          *       "openRouterModel": "example",
@@ -5810,6 +5937,8 @@ export interface components {
             quietMode?: ("true" | "false") | boolean;
             /** @description Offer a few favorite or gratitude entries to reread after a very low mood; offered unless false */
             comfortReads?: ("true" | "false") | boolean;
+            /** @description Places on entries: the composer offers a place field (typed, or from the browser's location when asked); off unless true */
+            entryLocation?: ("true" | "false") | boolean;
             /** @description Simple memoir mode: signing in and the weekly question link open one large question with a record button; off unless true */
             memoirSimpleMode?: ("true" | "false") | boolean;
             /** @description First-run onboarding answered or skipped: until true, signing in opens the welcome page that asks what the writer is here for */
@@ -7784,6 +7913,11 @@ export interface components {
          *       "feelings": [
          *         "example"
          *       ],
+         *       "location": {
+         *         "name": "Jardin du Luxembourg, Paris",
+         *         "latitude": 48.8462,
+         *         "longitude": 2.3372
+         *       },
          *       "tags": [
          *         "reflection"
          *       ],
@@ -7806,6 +7940,8 @@ export interface components {
             timeOfDay?: string;
             mood?: number;
             feelings?: string[];
+            /** @description The place a JSON file gives the entry */
+            location?: components["schemas"]["EntryLocationResponseDto"];
             tags: string[];
             content: string;
             /** @enum {string} */
@@ -7839,6 +7975,11 @@ export interface components {
          *           "feelings": [
          *             "example"
          *           ],
+         *           "location": {
+         *             "name": "Jardin du Luxembourg, Paris",
+         *             "latitude": 48.8462,
+         *             "longitude": 2.3372
+         *           },
          *           "tags": [
          *             "reflection"
          *           ],
@@ -7903,6 +8044,11 @@ export interface components {
          *       "timeOfDay": "08:30",
          *       "title": "Morning walk by the river",
          *       "mood": 4,
+         *       "location": {
+         *         "name": "Jardin du Luxembourg, Paris",
+         *         "latitude": 48.8462,
+         *         "longitude": 2.3372
+         *       },
          *       "content": "Today I wrote a thoughtful journal entry about focus and calm.",
          *       "tags": [
          *         "reflection"
@@ -7939,6 +8085,8 @@ export interface components {
              * @example 4
              */
             mood?: number;
+            /** @description Where the source app says the entry was written; it stays private to the writer like a place they add */
+            location?: components["schemas"]["EntryLocationDto"];
             /** @description Entry text as Markdown; may be empty when the entry holds only photos. An inline photo names the file sent next for this entry as `![alt text](attachment:<URL-encoded file name>)`, and becomes `attachment:<id>` when that file is stored; a reference to an attachment ID becomes its alt text. */
             content: string;
             tags: string[];
@@ -7960,6 +8108,11 @@ export interface components {
          *           "timeOfDay": "08:30",
          *           "title": "Morning walk by the river",
          *           "mood": 4,
+         *           "location": {
+         *             "name": "Jardin du Luxembourg, Paris",
+         *             "latitude": 48.8462,
+         *             "longitude": 2.3372
+         *           },
          *           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
          *           "tags": [
          *             "reflection"
@@ -12747,6 +12900,11 @@ export interface components {
          *       "feelings": [
          *         "calm"
          *       ],
+         *       "location": {
+         *         "name": "Jardin du Luxembourg, Paris",
+         *         "latitude": 48.8462,
+         *         "longitude": 2.3372
+         *       },
          *       "visibility": "private",
          *       "withheld": false,
          *       "sealedUntil": null,
@@ -12796,13 +12954,15 @@ export interface components {
              *     ]
              */
             feelings: string[];
+            /** @description Where the entry was written, or null */
+            location: components["schemas"]["EntryLocationResponseDto"] | null;
             /**
              * @example private
              * @enum {string}
              */
             visibility: "public" | "private";
             /**
-             * @description Locked behind the writer’s PIN: the API never unlocks, so its text, tags, mood and feelings are left out
+             * @description Locked behind the writer’s PIN: the API never unlocks, so its text, tags, mood, feelings and place are left out
              * @example false
              */
             withheld: boolean;
@@ -12837,6 +12997,11 @@ export interface components {
          *           "feelings": [
          *             "calm"
          *           ],
+         *           "location": {
+         *             "name": "Jardin du Luxembourg, Paris",
+         *             "latitude": 48.8462,
+         *             "longitude": 2.3372
+         *           },
          *           "visibility": "private",
          *           "withheld": false,
          *           "sealedUntil": null,
@@ -12864,6 +13029,11 @@ export interface components {
          *         "calm",
          *         "grateful"
          *       ],
+         *       "location": {
+         *         "name": "Jardin du Luxembourg, Paris",
+         *         "latitude": 48.8462,
+         *         "longitude": 2.3372
+         *       },
          *       "text": "example",
          *       "date": "2026-06-24",
          *       "diaryId": 1,
@@ -12897,6 +13067,8 @@ export interface components {
              *     ]
              */
             feelings?: string[];
+            /** @description Optional place the entry was written: a name, coordinates, or both; null (or a place with neither) removes it. It is private: the public feed, share links and books never show it, and exports carry it only when asked to. */
+            location?: components["schemas"]["EntryLocationDto"] | null;
             /** @description Entry content. A Markdown entry places one of its attachments with `![alt text](attachment:<id>)`: a reference stays when the attachment is on this entry, is the writer's and on no entry yet (it then joins the entry), or was already in the saved text; any other becomes its alt text. */
             text: string;
             /** @description Entry date (YYYY-MM-DD) */
@@ -14622,6 +14794,11 @@ export interface operations {
                      *             "calm",
                      *             "grateful"
                      *           ],
+                     *           "location": {
+                     *             "name": "Jardin du Luxembourg, Paris",
+                     *             "latitude": 48.8462,
+                     *             "longitude": 2.3372
+                     *           },
                      *           "tags": [
                      *             "reflection"
                      *           ],
@@ -14724,6 +14901,11 @@ export interface operations {
                  *         "calm",
                  *         "grateful"
                  *       ],
+                 *       "location": {
+                 *         "name": "Jardin du Luxembourg, Paris",
+                 *         "latitude": 48.8462,
+                 *         "longitude": 2.3372
+                 *       },
                  *       "text": "example",
                  *       "tags": [
                  *         "reflection"
@@ -15139,6 +15321,11 @@ export interface operations {
                      *           "calm",
                      *           "grateful"
                      *         ],
+                     *         "location": {
+                     *           "name": "Jardin du Luxembourg, Paris",
+                     *           "latitude": 48.8462,
+                     *           "longitude": 2.3372
+                     *         },
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -15313,6 +15500,11 @@ export interface operations {
                      *           "calm",
                      *           "grateful"
                      *         ],
+                     *         "location": {
+                     *           "name": "Jardin du Luxembourg, Paris",
+                     *           "latitude": 48.8462,
+                     *           "longitude": 2.3372
+                     *         },
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -15392,6 +15584,11 @@ export interface operations {
                      *           "calm",
                      *           "grateful"
                      *         ],
+                     *         "location": {
+                     *           "name": "Jardin du Luxembourg, Paris",
+                     *           "latitude": 48.8462,
+                     *           "longitude": 2.3372
+                     *         },
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -15450,6 +15647,11 @@ export interface operations {
                      *               "calm",
                      *               "grateful"
                      *             ],
+                     *             "location": {
+                     *               "name": "Jardin du Luxembourg, Paris",
+                     *               "latitude": 48.8462,
+                     *               "longitude": 2.3372
+                     *             },
                      *             "tags": [
                      *               "reflection"
                      *             ],
@@ -15504,6 +15706,11 @@ export interface operations {
                      *             "calm",
                      *             "grateful"
                      *           ],
+                     *           "location": {
+                     *             "name": "Jardin du Luxembourg, Paris",
+                     *             "latitude": 48.8462,
+                     *             "longitude": 2.3372
+                     *           },
                      *           "tags": [
                      *             "reflection"
                      *           ],
@@ -15566,6 +15773,11 @@ export interface operations {
                      *               "calm",
                      *               "grateful"
                      *             ],
+                     *             "location": {
+                     *               "name": "Jardin du Luxembourg, Paris",
+                     *               "latitude": 48.8462,
+                     *               "longitude": 2.3372
+                     *             },
                      *             "tags": [
                      *               "reflection"
                      *             ],
@@ -15880,6 +16092,11 @@ export interface operations {
                  *         "calm",
                  *         "grateful"
                  *       ],
+                 *       "location": {
+                 *         "name": "Jardin du Luxembourg, Paris",
+                 *         "latitude": 48.8462,
+                 *         "longitude": 2.3372
+                 *       },
                  *       "text": "example",
                  *       "tags": [
                  *         "reflection"
@@ -15915,6 +16132,11 @@ export interface operations {
                      *           "calm",
                      *           "grateful"
                      *         ],
+                     *         "location": {
+                     *           "name": "Jardin du Luxembourg, Paris",
+                     *           "latitude": 48.8462,
+                     *           "longitude": 2.3372
+                     *         },
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -16062,6 +16284,11 @@ export interface operations {
                      *           "calm",
                      *           "grateful"
                      *         ],
+                     *         "location": {
+                     *           "name": "Jardin du Luxembourg, Paris",
+                     *           "latitude": 48.8462,
+                     *           "longitude": 2.3372
+                     *         },
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -16188,6 +16415,11 @@ export interface operations {
                      *           "calm",
                      *           "grateful"
                      *         ],
+                     *         "location": {
+                     *           "name": "Jardin du Luxembourg, Paris",
+                     *           "latitude": 48.8462,
+                     *           "longitude": 2.3372
+                     *         },
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -16306,6 +16538,11 @@ export interface operations {
                      *           "calm",
                      *           "grateful"
                      *         ],
+                     *         "location": {
+                     *           "name": "Jardin du Luxembourg, Paris",
+                     *           "latitude": 48.8462,
+                     *           "longitude": 2.3372
+                     *         },
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -16424,6 +16661,11 @@ export interface operations {
                      *           "calm",
                      *           "grateful"
                      *         ],
+                     *         "location": {
+                     *           "name": "Jardin du Luxembourg, Paris",
+                     *           "latitude": 48.8462,
+                     *           "longitude": 2.3372
+                     *         },
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -16508,6 +16750,11 @@ export interface operations {
                      *           "calm",
                      *           "grateful"
                      *         ],
+                     *         "location": {
+                     *           "name": "Jardin du Luxembourg, Paris",
+                     *           "latitude": 48.8462,
+                     *           "longitude": 2.3372
+                     *         },
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -16592,6 +16839,11 @@ export interface operations {
                      *           "calm",
                      *           "grateful"
                      *         ],
+                     *         "location": {
+                     *           "name": "Jardin du Luxembourg, Paris",
+                     *           "latitude": 48.8462,
+                     *           "longitude": 2.3372
+                     *         },
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -16934,6 +17186,7 @@ export interface operations {
                      *       "streakCard": "true",
                      *       "quietMode": "true",
                      *       "comfortReads": "true",
+                     *       "entryLocation": "true",
                      *       "memoirSimpleMode": "true",
                      *       "onboardingDone": "true"
                      *     }
@@ -16976,6 +17229,7 @@ export interface operations {
                  *       "streakCard": "true",
                  *       "quietMode": "true",
                  *       "comfortReads": "true",
+                 *       "entryLocation": "true",
                  *       "memoirSimpleMode": "true",
                  *       "onboardingDone": "true",
                  *       "openRouterModel": "example",
@@ -18038,6 +18292,11 @@ export interface operations {
                      *           "calm",
                      *           "grateful"
                      *         ],
+                     *         "location": {
+                     *           "name": "Jardin du Luxembourg, Paris",
+                     *           "latitude": 48.8462,
+                     *           "longitude": 2.3372
+                     *         },
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -18164,6 +18423,11 @@ export interface operations {
                      *           "calm",
                      *           "grateful"
                      *         ],
+                     *         "location": {
+                     *           "name": "Jardin du Luxembourg, Paris",
+                     *           "latitude": 48.8462,
+                     *           "longitude": 2.3372
+                     *         },
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -19087,6 +19351,8 @@ export interface operations {
                 diaryId?: number;
                 /** @description Include visibility field in export */
                 includeVisibility?: boolean;
+                /** @description Include each entry's place (name and coordinates) in a JSON export; every other format leaves places out */
+                includeLocation?: boolean;
                 /** @description Export file format; `zip` is a Markdown folder with one file per entry and its attachments */
                 format?: "txt" | "json" | "md" | "csv" | "pdf" | "html" | "epub" | "zip";
                 /** @description The writer’s own day (the UTC day or the one before or after it), which names the file; the server’s UTC day when left out */
@@ -19144,6 +19410,11 @@ export interface operations {
                      *           "feelings": [
                      *             "example"
                      *           ],
+                     *           "location": {
+                     *             "name": "Jardin du Luxembourg, Paris",
+                     *             "latitude": 48.8462,
+                     *             "longitude": 2.3372
+                     *           },
                      *           "tags": [
                      *             "reflection"
                      *           ],
@@ -19226,6 +19497,11 @@ export interface operations {
                  *           "timeOfDay": "08:30",
                  *           "title": "Morning walk by the river",
                  *           "mood": 4,
+                 *           "location": {
+                 *             "name": "Jardin du Luxembourg, Paris",
+                 *             "latitude": 48.8462,
+                 *             "longitude": 2.3372
+                 *           },
                  *           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
                  *           "tags": [
                  *             "reflection"
@@ -28237,6 +28513,11 @@ export interface operations {
                      *           "calm",
                      *           "grateful"
                      *         ],
+                     *         "location": {
+                     *           "name": "Jardin du Luxembourg, Paris",
+                     *           "latitude": 48.8462,
+                     *           "longitude": 2.3372
+                     *         },
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -28687,6 +28968,11 @@ export interface operations {
                      *           "feelings": [
                      *             "calm"
                      *           ],
+                     *           "location": {
+                     *             "name": "Jardin du Luxembourg, Paris",
+                     *             "latitude": 48.8462,
+                     *             "longitude": 2.3372
+                     *           },
                      *           "visibility": "private",
                      *           "withheld": false,
                      *           "sealedUntil": null,
@@ -28770,6 +29056,11 @@ export interface operations {
                  *         "calm",
                  *         "grateful"
                  *       ],
+                 *       "location": {
+                 *         "name": "Jardin du Luxembourg, Paris",
+                 *         "latitude": 48.8462,
+                 *         "longitude": 2.3372
+                 *       },
                  *       "text": "example",
                  *       "date": "2026-06-24",
                  *       "diaryId": 1,

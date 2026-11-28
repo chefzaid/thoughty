@@ -47,6 +47,8 @@ export function buildEntriesListProps({
     setEditMood: entryEditState.setEditMood,
     editFeelings: entryEditState.editFeelings,
     setEditFeelings: entryEditState.setEditFeelings,
+    editLocation: entryEditState.editLocation,
+    setEditLocation: entryEditState.setEditLocation,
     editTags: entryEditState.editTags,
     setEditTags: entryEditState.setEditTags,
     editDate: entryEditState.editDate,

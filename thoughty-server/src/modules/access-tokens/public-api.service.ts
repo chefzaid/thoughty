@@ -31,6 +31,7 @@ function toPublicEntry(entry: EntryResponseDto): PublicEntryDto {
     tags: entry.tags,
     mood: entry.mood,
     feelings: entry.feelings,
+    location: entry.location,
     visibility: entry.visibility,
     withheld: entry.withheld,
     sealedUntil: entry.sealed_until,

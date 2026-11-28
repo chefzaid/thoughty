@@ -2,6 +2,7 @@ import { vi } from 'vitest';
 
 import type { buildAuthenticatedLayoutProps, buildAuthenticatedRoutesProps } from './appShellProps';
 import { composerDraftSyncMock } from '../components/ComposerDraft/composerDraft.test-helpers';
+import { NO_LOCATION } from './entryLocation';
 
 type BuildAuthenticatedLayoutPropsParams = Parameters<typeof buildAuthenticatedLayoutProps>[0];
 type BuildAuthenticatedRoutesPropsParams = Parameters<typeof buildAuthenticatedRoutesProps>[0];
@@ -152,6 +153,7 @@ export function createRoutesParams(
       editFeelings: [],
       editFormat: 'plain',
       editMood: null,
+      editLocation: NO_LOCATION,
       editPendingFiles: [],
       editTags: [],
       editText: '',
@@ -169,6 +171,7 @@ export function createRoutesParams(
       setEditFeelings: vi.fn(),
       setEditFormat: vi.fn(),
       setEditMood: vi.fn(),
+      setEditLocation: vi.fn(),
       setEditTags: vi.fn(),
       setEditText: vi.fn(),
       setEditTimeOfDay: vi.fn(),
@@ -187,6 +190,7 @@ export function createRoutesParams(
       handleFixWriting: vi.fn().mockResolvedValue(undefined),
       handleSubmit: vi.fn().mockResolvedValue(undefined),
       handleSuggestTags: vi.fn().mockResolvedValue(undefined),
+      location: NO_LOCATION,
       mood: null,
       newEntryText: '',
       pendingFiles: [],
@@ -199,6 +203,7 @@ export function createRoutesParams(
       setTimeCapsule: vi.fn(),
       setFormat: vi.fn(),
       setMood: vi.fn(),
+      setLocation: vi.fn(),
       setNewEntryText: vi.fn(),
       setSelectedDate: vi.fn(),
       setTags: vi.fn(),

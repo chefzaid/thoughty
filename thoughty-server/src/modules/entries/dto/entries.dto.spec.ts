@@ -39,6 +39,29 @@ describe('entry title and time of day', () => {
   });
 });
 
+describe('entry place', () => {
+  const base = { text: 'Text', tags: ['tag'], date: '2024-01-15' };
+
+  it('accepts a name, a pair of coordinates, both, or null to remove it', async () => {
+    await expect(invalidProperties(CreateEntryDto, { ...base, location: { name: 'Lake Annecy' } })).resolves.toEqual([]);
+    await expect(invalidProperties(CreateEntryDto, { ...base, location: { latitude: 45.8992, longitude: 6.1294 } })).resolves.toEqual([]);
+    await expect(invalidProperties(UpdateEntryDto, { ...base, location: { name: 'Annecy', latitude: -45, longitude: '-6.5' } })).resolves.toEqual([]);
+    await expect(invalidProperties(UpdateEntryDto, { ...base, location: null })).resolves.toEqual([]);
+    await expect(invalidProperties(UpdateEntryDto, { ...base, location: { name: null, latitude: null, longitude: null } })).resolves.toEqual([]);
+  });
+
+  it('rejects a lone coordinate, one out of range, a name over 200 characters or on two lines, and anything but an object', async () => {
+    await expect(invalidProperties(CreateEntryDto, { ...base, location: { latitude: 45 } })).resolves.toEqual(['location.longitude']);
+    await expect(invalidProperties(CreateEntryDto, { ...base, location: { latitude: 91, longitude: 0 } })).resolves.toEqual(['location.latitude']);
+    await expect(invalidProperties(CreateEntryDto, { ...base, location: { latitude: 0, longitude: 180.5 } })).resolves.toEqual(['location.longitude']);
+    await expect(invalidProperties(CreateEntryDto, { ...base, location: { latitude: 'north', longitude: 0 } })).resolves.toEqual(['location.latitude']);
+    await expect(invalidProperties(UpdateEntryDto, { ...base, location: { name: 'a'.repeat(201) } })).resolves.toEqual(['location.name']);
+    await expect(invalidProperties(UpdateEntryDto, { ...base, location: { name: 'one\ntwo' } })).resolves.toEqual(['location.name']);
+    await expect(invalidProperties(UpdateEntryDto, { ...base, location: 'Annecy' })).resolves.toEqual(['location']);
+    await expect(invalidProperties(UpdateEntryDto, { ...base, location: { city: 'Annecy' } })).resolves.toEqual(['location.city']);
+  });
+});
+
 describe('entry mood check-in', () => {
   const base = { text: 'Text', tags: ['tag'], date: '2024-01-15' };
 

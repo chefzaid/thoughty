@@ -28,6 +28,7 @@ import {
     getEntryDiaryBadgeStyle,
 } from './EntriesList.utils';
 import { IconActionButton } from './EntryActionPrimitives';
+import EntryLocationBadge from '../EntryLocation/EntryLocationBadge';
 
 
 export function EntryHistorySection({
@@ -198,6 +199,7 @@ export function EntryHeaderBadges({
                 </time>
             )}
             <EntryMoodBadge entry={entry} isDark={isDark} t={t} />
+            <EntryLocationBadge entry={entry} isDark={isDark} language={language ?? 'en'} t={t} />
             {showDiaryLabel && entry.diary_name && (
                 <span
                     className="inline-flex items-center gap-2 text-xs px-2.5 py-1 rounded-full border font-medium"

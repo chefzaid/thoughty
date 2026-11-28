@@ -32,6 +32,13 @@ export interface ImportedMedia {
   readonly convert: boolean;
 }
 
+/** Where the source app says an entry was written: a name, coordinates, or both. */
+export interface ImportedLocation {
+  readonly name?: string;
+  readonly latitude?: number;
+  readonly longitude?: number;
+}
+
 export interface ImportedEntry {
   readonly sourceId: string;
   readonly date: string;
@@ -41,6 +48,8 @@ export interface ImportedEntry {
   readonly title?: string;
   /** Mood from 1 (very low) to 5 (very good), when the source app recorded one. */
   readonly mood?: number;
+  /** The place the source app recorded (Day One, Journey). */
+  readonly location?: ImportedLocation;
   readonly content: string;
   readonly tags: string[];
   readonly favorite: boolean;

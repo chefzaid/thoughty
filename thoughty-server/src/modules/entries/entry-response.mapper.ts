@@ -1,12 +1,13 @@
 import type { Entry } from '@/database/entities';
 import { isEntryWithheld } from '@/common/content-lock';
+import { entryLocationOf } from '@/common/utils/entry-location.util';
 import type { EntryResponseDto } from './dto';
 
 /**
  * An entry as the entries API sends it: snake_case, with its diary's name, icon and color when the
  * diary was joined, and its attachments when they were. A sealed time capsule shows only its date,
  * diary, flags and when it opens: whatever its row holds, its text is empty and its title, tags, mood,
- * feelings and attachments are left out. A locked entry, unless the request is unlocked, keeps only its
+ * feelings, place and attachments are left out. A locked entry, unless the request is unlocked, keeps only its
  * title (as the privacy blur does) beside its date, diary and flags, and says it was `withheld`.
  */
 export function toEntryResponse(entry: Entry): EntryResponseDto {
@@ -20,6 +21,7 @@ function withheldEntryResponse(response: EntryResponseDto): EntryResponseDto {
     ...response,
     mood: null,
     feelings: [],
+    location: null,
     tags: [],
     content: '',
     withheld: true,
@@ -33,6 +35,7 @@ function sealedEntryResponse(response: EntryResponseDto, sealedUntil: Date): Ent
     title: null,
     mood: null,
     feelings: [],
+    location: null,
     tags: [],
     content: '',
     sealed_until: sealedUntil,
@@ -52,6 +55,7 @@ function openEntryResponse(entry: Entry): EntryResponseDto {
     time_of_day: entry.timeOfDay ?? null,
     mood: entry.mood ?? null,
     feelings: entry.feelings ?? [],
+    location: entryLocationOf(entry),
     tags: entry.tags,
     content: entry.content,
     format: entry.format,

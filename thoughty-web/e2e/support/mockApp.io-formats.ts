@@ -42,6 +42,7 @@ export function buildExportBody(
   entries: MockEntry[],
   format: string | null,
   includeVisibility = false,
+  includeLocation = false,
 ): { contentType: string; body: string; extension: string } {
   if (format === "zip") {
     return { contentType: "application/zip", extension: "zip", body: "PK mock archive" };
@@ -58,6 +59,7 @@ export function buildExportBody(
           tags: entry.tags,
           content: entry.content,
           ...(includeVisibility ? { visibility: entry.visibility } : {}),
+          ...(includeLocation && entry.location ? { location: entry.location } : {}),
           format: entry.format || "plain",
         })),
       }),

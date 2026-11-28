@@ -3,10 +3,11 @@ import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Entry, EntryRevision, Diary } from '@/database/entities';
-import { normalizeEntryTitle, normalizeFeelings, normalizeMood, normalizeTimeOfDay, sanitizeString } from '@/common/utils';
+import { sanitizeString } from '@/common/utils';
 import { ConfigService } from '@/modules/config';
 import { CreateEntryDto, UpdateEntryDto, BulkOperationDto } from './dto';
 import { EntryTaggingService } from './entry-tagging.service';
+import { applyEntryDetails, writtenEntryDetails } from './entry-details';
 import { EntryMentionsService } from './entry-mentions.service';
 import { EntryInlineImagesService } from './entry-inline-images.service';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
@@ -88,10 +89,7 @@ export class EntriesCommandService {
       userId,
       date: dateStr,
       index: nextIndex,
-      title: normalizeEntryTitle(dto.title),
-      timeOfDay: normalizeTimeOfDay(dto.timeOfDay),
-      mood: normalizeMood(dto.mood),
-      feelings: normalizeFeelings(dto.feelings),
+      ...writtenEntryDetails(dto),
       tags: resolvedTags,
       content,
       format,
@@ -158,18 +156,7 @@ export class EntriesCommandService {
       previousContent: entry.content,
     });
     entry.content = content;
-    if (dto.title !== undefined) {
-      entry.title = normalizeEntryTitle(dto.title);
-    }
-    if (dto.timeOfDay !== undefined) {
-      entry.timeOfDay = normalizeTimeOfDay(dto.timeOfDay);
-    }
-    if (dto.mood !== undefined) {
-      entry.mood = normalizeMood(dto.mood);
-    }
-    if (dto.feelings !== undefined) {
-      entry.feelings = normalizeFeelings(dto.feelings);
-    }
+    applyEntryDetails(entry, dto);
     entry.tags = resolvedTags;
     entry.date = dto.date;
     entry.format = format;

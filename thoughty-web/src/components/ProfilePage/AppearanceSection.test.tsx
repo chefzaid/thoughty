@@ -202,6 +202,21 @@ describe('AppearanceSection', () => {
     expect(defaultProps.handleChange).toHaveBeenLastCalledWith({ target: { name: 'comfortReads', value: 'true' } });
   });
 
+  it('turns places on entries on and off, off by default', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<AppearanceSection {...defaultProps} />);
+
+    const toggle = screen.getByRole('switch', { name: 'entryLocationSetting' });
+    expect(toggle).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByText('entryLocationSettingDescription')).toBeInTheDocument();
+    await user.click(toggle);
+    expect(defaultProps.handleChange).toHaveBeenLastCalledWith({ target: { name: 'entryLocation', value: 'true' } });
+
+    rerender(<AppearanceSection {...defaultProps} localConfig={{ ...defaultProps.localConfig, entryLocation: true }} />);
+    await user.click(screen.getByRole('switch', { name: 'entryLocationSetting' }));
+    expect(defaultProps.handleChange).toHaveBeenLastCalledWith({ target: { name: 'entryLocation', value: 'false' } });
+  });
+
   it('calls handleChange to toggle high contrast mode', async () => {
     const user = userEvent.setup();
     render(<AppearanceSection {...defaultProps} />);

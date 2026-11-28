@@ -17,6 +17,7 @@ import { Type } from 'class-transformer';
 import { MAX_ENTRY_TITLE_LENGTH, TIME_OF_DAY_PATTERN } from '@/common/utils/entry-order.util';
 import { MAX_MOOD, MIN_MOOD } from '@/common/utils/entry-mood.util';
 import { StrictBoolean, StrictInt } from '@/common/validation';
+import { EntryLocationDto } from '@/modules/entries/dto/entry-location.dto';
 
 export const APP_IMPORT_SOURCES = ['dayone', 'journey', 'daily-notes', 'keep', 'reading-notes'] as const;
 export type AppImportSource = (typeof APP_IMPORT_SOURCES)[number];
@@ -62,6 +63,15 @@ export class AppImportEntryDto {
   @Min(MIN_MOOD)
   @Max(MAX_MOOD)
   mood?: number;
+
+  @ApiPropertyOptional({
+    type: EntryLocationDto,
+    description: 'Where the source app says the entry was written; it stays private to the writer like a place they add',
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EntryLocationDto)
+  location?: EntryLocationDto;
 
   @ApiProperty({
     description:

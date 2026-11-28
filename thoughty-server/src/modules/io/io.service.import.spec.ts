@@ -54,6 +54,19 @@ Test entry content
       }));
     });
 
+    it('keeps the place a JSON file gives an entry', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      diaryRepository.findOne.mockResolvedValue(mockDiary);
+      entryRepository.count.mockResolvedValue(0);
+      entryRepository.save.mockResolvedValue(mockEntry);
+      entryRepository.createQueryBuilder().getMany.mockResolvedValue([]);
+      const location = { name: 'Annecy', latitude: 45.8992, longitude: 6.1294 };
+
+      await service.import(1, { content: JSON.stringify({ entries: [{ date: '2024-01-15', content: 'Lake day', tags: ['trip'], location }] }) });
+
+      expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({ locationName: 'Annecy', latitude: 45.8992, longitude: 6.1294 }));
+    });
+
     it('should throw BadRequestException for empty content', async () => {
       await expect(service.preview(1, { content: '' })).rejects.toThrow(BadRequestException);
     });

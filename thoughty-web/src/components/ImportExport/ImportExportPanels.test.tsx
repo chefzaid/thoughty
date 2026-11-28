@@ -43,13 +43,17 @@ describe('ImportExportPanels', () => {
                 diaryName="Personal"
                 exportFormat="txt"
                 includeVisibility={false}
+                includeLocation={false}
                 onChangeExportFormat={onChangeExportFormat}
                 onToggleIncludeVisibility={onToggleIncludeVisibility}
+                onToggleIncludeLocation={vi.fn()}
                 onExport={onExport}
                 t={mockT}
             />,
         );
 
+        // Only a JSON file carries places, so the option waits for that format
+        expect(screen.queryByText('includeLocationShort')).not.toBeInTheDocument();
         fireEvent.change(screen.getByDisplayValue('formatTxt'), { target: { value: 'md' } });
         fireEvent.click(screen.getByText('includeVisibilityShort'));
         fireEvent.click(screen.getByText('downloadExport'));
@@ -58,6 +62,29 @@ describe('ImportExportPanels', () => {
         expect(onChangeExportFormat).toHaveBeenCalledWith('md');
         expect(onToggleIncludeVisibility).toHaveBeenCalledTimes(1);
         expect(onExport).toHaveBeenCalledTimes(1);
+    });
+
+    it('ExportSection offers places for a JSON file', () => {
+        const onToggleIncludeLocation = vi.fn();
+        render(
+            <ExportSection
+                activeSection="export"
+                sectionRef={sectionRef}
+                exportFormat="json"
+                includeVisibility={false}
+                includeLocation={true}
+                onChangeExportFormat={vi.fn()}
+                onToggleIncludeVisibility={vi.fn()}
+                onToggleIncludeLocation={onToggleIncludeLocation}
+                onExport={vi.fn()}
+                t={mockT}
+            />,
+        );
+
+        const option = screen.getByRole('checkbox', { name: 'includeLocationShort' });
+        expect(option).toBeChecked();
+        fireEvent.click(option);
+        expect(onToggleIncludeLocation).toHaveBeenCalledTimes(1);
     });
 
     it('ImportSection renders preview controls and import actions', () => {

@@ -146,6 +146,15 @@ describe('AppImportService', () => {
       expect(rows[1]).toEqual(expect.objectContaining({ mood: null }));
     });
 
+    it('keeps the place the source app recorded', async () => {
+      const location = { name: 'Café de Flore, Paris', latitude: 48.854, longitude: 2.3325 };
+      await service.importEntries(7, batch([entry({ sourceId: 'P1', location }), entry({ sourceId: 'P2' })]));
+
+      const [rows] = entryRepository.save.mock.calls[0];
+      expect(rows[0]).toEqual(expect.objectContaining({ locationName: 'Café de Flore, Paris', latitude: 48.854, longitude: 2.3325 }));
+      expect(rows[1]).toEqual(expect.objectContaining({ locationName: null, latitude: null, longitude: null }));
+    });
+
     it('skips entries an earlier import brought in and lists the files they already have', async () => {
       entryRepository.find.mockResolvedValue([{ id: 40, importRef: 'journey:J1' }]);
       attachmentRepository.find.mockResolvedValue([

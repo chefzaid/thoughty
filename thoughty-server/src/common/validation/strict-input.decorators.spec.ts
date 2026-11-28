@@ -1,8 +1,8 @@
 import { plainToInstance } from 'class-transformer';
-import { IsArray, IsOptional, Min, validate } from 'class-validator';
+import { IsArray, IsOptional, Max, Min, validate } from 'class-validator';
 import { BadRequestException } from '@nestjs/common';
 import { GLOBAL_VALIDATION_PIPE_OPTIONS, createGlobalValidationPipe } from './global-validation-pipe';
-import { StrictBoolean, StrictInt, parseStrictBoolean, parseStrictInt } from './strict-input.decorators';
+import { StrictBoolean, StrictInt, StrictNumber, parseStrictBoolean, parseStrictInt, parseStrictNumber } from './strict-input.decorators';
 
 class FlagsDto {
   @IsOptional()
@@ -34,6 +34,14 @@ class CountsDto {
   line?: number;
 }
 
+class CoordinateDto {
+  @IsOptional()
+  @StrictNumber()
+  @Min(-90)
+  @Max(90)
+  latitude?: number;
+}
+
 /** What the API's global pipe turns the raw input into, before validation. */
 const convert = <T extends object>(cls: new () => T, plain: object): T =>
   plainToInstance(cls, plain, GLOBAL_VALIDATION_PIPE_OPTIONS.transformOptions);
@@ -55,6 +63,15 @@ describe('parseStrictInt', () => {
   it.each(['', ' ', '1.5', '1e3', '0x10', ' 5', '5 ', '12abc', '99999999999999999999', ['3'], 1.5, NaN, null, undefined, true])(
     'leaves %j as it came',
     (raw) => expect(parseStrictInt(raw)).toBe(raw),
+  );
+});
+
+describe('parseStrictNumber', () => {
+  it.each([['0', 0], ['48.8566', 48.8566], ['-3.5', -3.5], ['7', 7], [2.35, 2.35], [-90, -90]])('reads %j as %d', (raw, expected) =>
+    expect(parseStrictNumber(raw)).toBe(expected));
+  it.each(['', ' ', '1.', '.5', '1e3', '0x10', ' 5', '12abc', ['3'], NaN, null, undefined, true])(
+    'leaves %j as it came',
+    (raw) => expect(parseStrictNumber(raw)).toBe(raw),
   );
 });
 
@@ -152,5 +169,27 @@ describe('StrictInt under the global pipe options', () => {
     expect((error as BadRequestException).getResponse()).toMatchObject({
       message: expect.arrayContaining(['each value in ids must be a whole number']),
     });
+  });
+});
+
+describe('StrictNumber under the global pipe options', () => {
+  it('reads decimal numbers and decimal text, and applies the range beside it', async () => {
+    const dto = convert(CoordinateDto, { latitude: '48.8566' });
+
+    expect(dto.latitude).toBe(48.8566);
+    await expect(invalid(dto)).resolves.toEqual([]);
+    await expect(invalid(convert(CoordinateDto, { latitude: 91 }))).resolves.toEqual(['latitude']);
+  });
+
+  it.each(['', 'north', true, NaN, Infinity, ['1']])('rejects %j instead of reading it as a number', async (raw) => {
+    await expect(invalid(convert(CoordinateDto, { latitude: raw }))).resolves.toEqual(['latitude']);
+  });
+
+  it('answers a refused number with a message saying it must be a number', async () => {
+    const error = await createGlobalValidationPipe()
+      .transform({ latitude: 'north' }, { type: 'body', metatype: CoordinateDto })
+      .catch((caught: unknown) => caught);
+
+    expect((error as BadRequestException).getResponse()).toMatchObject({ message: expect.arrayContaining(['latitude must be a number']) });
   });
 });

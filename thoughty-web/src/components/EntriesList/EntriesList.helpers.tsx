@@ -1,4 +1,4 @@
-import { type Dispatch, type KeyboardEvent, type PointerEvent, type SetStateAction } from 'react';
+import { useState, type Dispatch, type KeyboardEvent, type PointerEvent, type SetStateAction } from 'react';
 import TagPicker from '../TagPicker/TagPicker';
 import AttachmentUpload from '../AttachmentUpload/AttachmentUpload';
 import TypedDatePicker from '../TypedDatePicker/TypedDatePicker';
@@ -10,6 +10,8 @@ import { entryTextStyle } from '../../types/config';
 import { useAutoGrowTextarea } from '../../hooks/useAutoGrowTextarea';
 import EntryTimeField from '../EntryForm/EntryTimeField';
 import EntryMoodField from '../EntryForm/EntryMoodField';
+import EntryLocationField from '../EntryLocation/EntryLocationField';
+import { isLocationSet, type EntryLocationDraft } from '../../utils/entryLocation';
 import { MAX_ENTRY_TITLE_LENGTH } from '../../utils/entryTime';
 import LazyMarkdownField from '../MarkdownEditor/LazyMarkdownField';
 import FocusModeLauncher from '../FocusMode/FocusModeLauncher';
@@ -146,6 +148,9 @@ interface EditFormProps {
     setEditMood?: Dispatch<SetStateAction<number | null>>;
     editFeelings?: string[];
     setEditFeelings?: Dispatch<SetStateAction<string[]>>;
+    /** The entry's place; its field shows with Places on entries on, or for an entry that already has one. */
+    editLocation?: EntryLocationDraft;
+    setEditLocation?: Dispatch<SetStateAction<EntryLocationDraft>>;
     editDate: Date | null;
     setEditDate: Dispatch<SetStateAction<Date | null>>;
     allTags: string[];
@@ -183,6 +188,8 @@ export function EditForm({
     setEditMood,
     editFeelings = [],
     setEditFeelings,
+    editLocation,
+    setEditLocation,
     editDate,
     setEditDate,
     allTags,
@@ -231,6 +238,8 @@ export function EditForm({
     );
 
     const fieldId = `edit-entry-${entryId ?? 'draft'}`;
+    // Decided when the editor opens, so clearing the place of an imported entry keeps its field until saved
+    const [locationShown] = useState(() => config.entryLocation === true || (editLocation !== undefined && isLocationSet(editLocation)));
 
     return (
         <div className="space-y-4" data-focus-mode-scope="">
@@ -301,6 +310,17 @@ export function EditForm({
                     feelings={editFeelings}
                     onFeelingsChange={setEditFeelings}
                     theme={config.theme}
+                    t={t}
+                />
+            )}
+            {locationShown && editLocation && setEditLocation && (
+                <EntryLocationField
+                    id={`${fieldId}-location`}
+                    value={editLocation}
+                    onChange={setEditLocation}
+                    inputClass={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${inputClass}`}
+                    theme={config.theme}
+                    language={config.language ?? 'en'}
                     t={t}
                 />
             )}

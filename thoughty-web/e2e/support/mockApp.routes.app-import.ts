@@ -1,5 +1,6 @@
 import { sortEntries } from "./mockApp.shared";
-import { fulfillApiError, fulfillJson, type RouteContext } from "./mockApp.route-utils";
+import { fulfillApiError, fulfillJson, mockLocation, type RouteContext } from "./mockApp.route-utils";
+import type { components } from "../../src/generated/openapi";
 import { mockDiary } from "./mockApp.diaries";
 
 interface AppImportPayload {
@@ -11,6 +12,7 @@ interface AppImportPayload {
     date: string;
     timeOfDay?: string;
     title?: string;
+    location?: components["schemas"]["EntryLocationDto"];
     content: string;
     tags: string[];
     favorite?: boolean;
@@ -87,6 +89,7 @@ export async function handleAppImportRoutes({ route, request, pathname, state }:
         index: state.entries.filter((entry) => entry.date === item.date).length + 1,
         title: item.title ?? null,
         time_of_day: item.timeOfDay ?? null,
+        location: mockLocation(item.location),
         content: item.content,
         tags: item.tags,
         visibility: "private",

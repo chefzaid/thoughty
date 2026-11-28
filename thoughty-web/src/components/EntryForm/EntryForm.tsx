@@ -17,6 +17,8 @@ import { aiActionButtonClass } from './aiActionButton';
 import { tintedTextClass } from '../../utils/tintedText';
 import EntryTimeField from './EntryTimeField';
 import EntryMoodField from './EntryMoodField';
+import EntryLocationField from '../EntryLocation/EntryLocationField';
+import type { EntryLocationDraft } from '../../utils/entryLocation';
 import { MAX_ENTRY_TITLE_LENGTH } from '../../utils/entryTime';
 import LazyMarkdownField from '../MarkdownEditor/LazyMarkdownField';
 import FocusModeLauncher from '../FocusMode/FocusModeLauncher';
@@ -47,6 +49,9 @@ interface EntryFormProps {
     readonly setMood?: Dispatch<SetStateAction<number | null>>;
     readonly feelings?: string[];
     readonly setFeelings?: Dispatch<SetStateAction<string[]>>;
+    /** The place it is written; its field shows only when given (the writer turned Places on entries on). */
+    readonly location?: EntryLocationDraft;
+    readonly setLocation?: Dispatch<SetStateAction<EntryLocationDraft>>;
     /** The time capsule the entry is sealed as, or null; sealing keeps it private. */
     readonly timeCapsule?: TimeCapsuleDraft | null;
     readonly setTimeCapsule?: (value: TimeCapsuleDraft | null) => void;
@@ -139,6 +144,8 @@ function EntryForm({
     setMood,
     feelings = [],
     setFeelings,
+    location,
+    setLocation,
     timeCapsule = null,
     setTimeCapsule,
     selectedDate,
@@ -329,6 +336,9 @@ function EntryForm({
                         theme={theme}
                         t={t}
                     />
+                )}
+                {location && setLocation && (
+                    <EntryLocationField id="composer-location" value={location} onChange={setLocation} inputClass={inputClass} theme={theme} language={language ?? 'en'} t={t} />
                 )}
                 {setTimeCapsule && (
                     <TimeCapsuleField id="composer-capsule" value={timeCapsule} onChange={changeTimeCapsule} inputClass={inputClass} theme={theme} t={t} />

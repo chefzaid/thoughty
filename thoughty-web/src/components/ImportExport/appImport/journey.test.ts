@@ -98,6 +98,16 @@ describe('parseJourneyEntry', () => {
     expect(journeyMood(0)).toBeUndefined();
   });
 
+  it('keeps the Journey address and coordinates, and reads its largest double as no place', () => {
+    const parse = (fields: object) => parseJourneyEntry({ id: 'p', date_journal: 0, text: 'Hi', ...fields } as never, 'p', () => undefined).entry;
+    const none = 1.797_693_134_862_315_7e308;
+
+    expect(parse({ lat: 45.9, lon: 6.13, address: ' Annecy,  France ' }).location).toEqual({ name: 'Annecy, France', latitude: 45.9, longitude: 6.13 });
+    expect(parse({ lat: none, lon: none, address: 'Home' }).location).toEqual({ name: 'Home' });
+    expect(parse({ lat: 45.9, lon: 6.13, address: '' }).location).toEqual({ latitude: 45.9, longitude: 6.13 });
+    expect(parse({ lat: none, lon: none, address: '' })).not.toHaveProperty('location');
+  });
+
   it('recognizes Journey entries', () => {
     expect(isJourneyEntry({ date_journal: 1, text: '' })).toBe(true);
     expect(isJourneyEntry({ date_journal: '1', text: '' })).toBe(false);

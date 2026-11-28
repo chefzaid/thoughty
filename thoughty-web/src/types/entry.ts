@@ -9,6 +9,9 @@ import type { components } from '../generated/openapi';
 export type Attachment = components['schemas']['AttachmentResponseDto']
   & Partial<Pick<components['schemas']['AttachmentRecordResponseDto'], 'entry_id' | 'created_at'>>;
 
+/** Where an entry was written: a name, coordinates, or both. Only the writer sees it. */
+export type EntryLocation = components['schemas']['EntryLocationResponseDto'];
+
 export interface Entry {
   id: number;
   /** Optional one-line title. */
@@ -19,6 +22,8 @@ export interface Entry {
   mood?: number | null;
   /** Feeling words: curated ones by their English key, or the writer's own, lowercased. */
   feelings?: string[];
+  /** The place it was written, or null; left out of a sealed or withheld entry. */
+  location?: EntryLocation | null;
   content: string;
   tags: string[];
   date: string;

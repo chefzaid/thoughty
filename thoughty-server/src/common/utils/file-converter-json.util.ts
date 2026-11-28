@@ -7,11 +7,12 @@ import {
   sealedUntilText,
   sortEntries,
 } from './file-converter-entry.util';
+import { entryLocationOf, normalizeEntryLocation } from './entry-location.util';
 
 /**
- * Generate JSON export content from entries
+ * Generate JSON export content from entries. Places stay out unless `includeLocation` asks for them.
  */
-export function generateJsonFile(entries: EntryData[], includeVisibility = false): string {
+export function generateJsonFile(entries: EntryData[], includeVisibility = false, includeLocation = false): string {
   const sorted = sortEntries(entries);
 
   const exportEntries = sorted.map((entry) => {
@@ -29,6 +30,10 @@ export function generateJsonFile(entries: EntryData[], includeVisibility = false
     };
     if (includeVisibility) {
       obj.visibility = entry.visibility || 'private';
+    }
+    const location = includeLocation ? entryLocationOf(entry) : null;
+    if (location) {
+      obj.location = location;
     }
     if (entry.diaryName) {
       obj.diary = entry.diaryName;
@@ -75,6 +80,10 @@ export function parseJsonFile(content: string): ParsedEntry[] {
         entry.timeOfDay = time;
       }
       Object.assign(entry, moodFields(e.mood, e.feelings));
+      const location = normalizeEntryLocation(e.location);
+      if (location) {
+        entry.location = location;
+      }
       if (e.visibility === 'public' || e.visibility === 'private') {
         entry.visibility = e.visibility;
       }

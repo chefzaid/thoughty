@@ -273,6 +273,30 @@ describe('EntriesList.helpers', () => {
         expect(screen.getByTestId('visibility-icon')).toHaveTextContent('private');
     });
 
+    it('shows the place field with Places on entries on, or for an entry that already has a place, and keeps it while it is cleared', () => {
+        const editProps = {
+            editText: 'Text', setEditText: vi.fn(), editDate: new Date('2024-01-15'), setEditDate: vi.fn(), allTags: [], tagMetadata: {},
+            editTags: ['alpha'], setEditTags: vi.fn(), editVisibility: 'private' as const, setEditVisibility: vi.fn(), editFormat: 'plain' as const,
+            setEditFormat: vi.fn(), onSaveEdit: vi.fn(), onCancelEdit: vi.fn(), setEditLocation: vi.fn(), t,
+        };
+        const empty = { name: '', latitude: null, longitude: null };
+        const field = () => screen.queryByLabelText('entryLocationLabel');
+
+        const withoutSetting = render(<EditForm {...editProps} entryId={4} config={{ theme: 'dark' }} editLocation={empty} />);
+        expect(field()).not.toBeInTheDocument();
+        withoutSetting.unmount();
+
+        const withSetting = render(<EditForm {...editProps} entryId={4} config={{ theme: 'dark', entryLocation: true }} editLocation={empty} />);
+        expect(field()).toBeInTheDocument();
+        withSetting.unmount();
+
+        const { rerender } = render(<EditForm {...editProps} entryId={5} config={{ theme: 'light' }} editLocation={{ name: 'Annecy', latitude: null, longitude: null }} />);
+        fireEvent.change(field() as HTMLElement, { target: { value: '' } });
+        expect(editProps.setEditLocation).toHaveBeenCalled();
+        rerender(<EditForm {...editProps} entryId={5} config={{ theme: 'light' }} editLocation={empty} />);
+        expect(field()).toHaveValue('');
+    });
+
     it('spaces the entry being edited, its title and its focus mode as the writer chose', () => {
         render(
             <EditForm

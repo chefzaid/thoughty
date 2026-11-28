@@ -9,6 +9,8 @@
 export interface ContractSchema {
   $ref?: string;
   type?: string;
+  /** `double` on a number the API reads with decimals (`@StrictNumber()`); other numbers are whole. */
+  format?: string;
   nullable?: boolean;
   enum?: unknown[];
   properties?: Record<string, ContractSchema>;

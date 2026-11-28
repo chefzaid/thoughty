@@ -16,6 +16,7 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { SealEntryDto } from './entry-seal.dto';
+import { EntryLocationDto } from './entry-location.dto';
 import { MAX_ENTRY_TITLE_LENGTH, TIME_OF_DAY_PATTERN } from '@/common/utils/entry-order.util';
 import { MAX_FEELING_LENGTH, MAX_FEELINGS, MAX_MOOD, MIN_MOOD } from '@/common/utils/entry-mood.util';
 import { StrictBoolean, StrictInt } from '@/common/validation';
@@ -35,7 +36,11 @@ const FEELINGS_DESCRIPTION =
   'Optional feeling words with the mood: curated ones by their English name, or the writer\'s own words. ' +
   'Stored lowercase without duplicates; an empty list removes them.';
 
-/** Title, time of day, and mood, shared by creating and editing; left out of an edit, they stay as they are. */
+const LOCATION_DESCRIPTION =
+  'Optional place the entry was written: a name, coordinates, or both; null (or a place with neither) removes it. ' +
+  'It is private: the public feed, share links and books never show it, and exports carry it only when asked to.';
+
+/** Title, time of day, mood and place, shared by creating and editing; left out of an edit, they stay as they are. */
 class EntryDetailsDto {
   @ApiPropertyOptional({ description: TITLE_DESCRIPTION, type: String, nullable: true, maxLength: MAX_ENTRY_TITLE_LENGTH, example: 'Morning walk by the river' })
   @IsOptional()
@@ -63,6 +68,12 @@ class EntryDetailsDto {
   @IsString({ each: true })
   @MaxLength(MAX_FEELING_LENGTH, { each: true, message: `Feeling exceeds maximum length of ${MAX_FEELING_LENGTH} characters` })
   feelings?: string[];
+
+  @ApiPropertyOptional({ description: LOCATION_DESCRIPTION, type: EntryLocationDto, nullable: true })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => EntryLocationDto)
+  location?: EntryLocationDto | null;
 }
 
 const ENTRY_TEXT_DESCRIPTION =

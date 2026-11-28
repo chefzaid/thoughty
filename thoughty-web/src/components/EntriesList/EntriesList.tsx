@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState as useLocalStat
 import 'react-datepicker/dist/react-datepicker.css';
 import { useSpeech, type SpeechEntry } from '../../hooks/useSpeech';
 import type { Attachment, Config, Diary, Entry, GroupedEntries, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
+import type { EntryLocationDraft } from '../../utils/entryLocation';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import EntryViewMode, { type EntryCardActions } from './EntryViewMode';
 import EntryDayHeading from './EntryDayHeading';
@@ -55,6 +56,8 @@ interface EntriesListProps extends EntryCardActions {
     setEditMood?: Dispatch<SetStateAction<number | null>>;
     editFeelings?: string[];
     setEditFeelings?: Dispatch<SetStateAction<string[]>>;
+    editLocation?: EntryLocationDraft;
+    setEditLocation?: Dispatch<SetStateAction<EntryLocationDraft>>;
     editTags: string[];
     setEditTags: Dispatch<SetStateAction<string[]>>;
     editDate: Date | null;
@@ -119,6 +122,8 @@ function EntriesList({
     setEditMood,
     editFeelings,
     setEditFeelings,
+    editLocation,
+    setEditLocation,
     editTags,
     setEditTags,
     editDate,
@@ -415,6 +420,8 @@ function EntriesList({
                                             setEditMood={setEditMood}
                                             editFeelings={editFeelings}
                                             setEditFeelings={setEditFeelings}
+                                            editLocation={editLocation}
+                                            setEditLocation={setEditLocation}
                                             editDate={editDate}
                                             setEditDate={setEditDate}
                                             allTags={allTags}

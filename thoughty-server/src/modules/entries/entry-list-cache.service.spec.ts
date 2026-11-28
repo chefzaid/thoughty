@@ -14,6 +14,7 @@ describe('EntryListCacheService', () => {
       time_of_day: null,
       mood: null,
       feelings: [],
+      location: null,
       tags: ['focus'],
       content: 'Cached entry',
       format: 'plain',

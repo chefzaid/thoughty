@@ -83,6 +83,20 @@ export class Entry {
   @Column('text', { array: true, default: [] })
   feelings: string[];
 
+  /**
+   * Optional place the entry was written, as the writer named it; with or without coordinates (`latitude` and
+   * `longitude`, both or neither), which the browser or an imported app gave. It stays private: the public feed,
+   * share links, books and exports never carry it, unless the writer asks an export for it.
+   */
+  @Column({ name: 'location_name', type: 'varchar', length: 200, nullable: true })
+  locationName: string | null;
+
+  @Column({ type: 'double precision', nullable: true })
+  latitude: number | null;
+
+  @Column({ type: 'double precision', nullable: true })
+  longitude: number | null;
+
   @Column({ type: 'text' })
   content: string;
 

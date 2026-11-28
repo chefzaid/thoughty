@@ -162,6 +162,18 @@ describe('runAppImport', () => {
     ]);
   });
 
+  it('sends the place only when the source app recorded one', async () => {
+    acceptEntries();
+    const location = { name: 'Annecy', latitude: 45.9, longitude: 6.13 };
+
+    await runAppImport(exportOf([entry('A', { location }), entry('B')]), { journalsAsDiaries: false }, service, onProgress, new AbortController().signal);
+
+    expect(importEntries.mock.calls[0]![0].entries).toEqual([
+      { sourceId: 'A', date: '2024-03-05', location, content: 'Entry A', tags: [], favorite: false },
+      { sourceId: 'B', date: '2024-03-05', content: 'Entry B', tags: [], favorite: false },
+    ]);
+  });
+
   it('sends journal names only when journals become diaries', async () => {
     acceptEntries();
 

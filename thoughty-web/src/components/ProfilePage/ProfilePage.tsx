@@ -185,7 +185,7 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats,
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> | { target: { name: string; value: string } }
   ): void => {
     const { name, value } = e.target;
-    if (name === 'readDates' || name === 'highContrast' || name === 'streakCard' || name === 'quietMode' || name === 'comfortReads') {
+    if (name === 'readDates' || name === 'highContrast' || name === 'streakCard' || name === 'quietMode' || name === 'comfortReads' || name === 'entryLocation') {
       setLocalConfig({ ...localConfig, [name]: value === 'true' });
     } else {
       setLocalConfig({ ...localConfig, [name]: value });

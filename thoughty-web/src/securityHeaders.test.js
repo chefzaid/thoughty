@@ -32,6 +32,13 @@ describe('web security headers', () => {
     expect(csp['connect-src']).not.toContain('http:');
   });
 
+  it('lets only the app itself use the microphone and the device location, and nothing the camera', () => {
+    const policy = /add_header Permissions-Policy "([^"]+)" always;/.exec(read('nginx-security-headers.conf'))?.[1] ?? '';
+
+    // The microphone for dictation and memoir recordings; the location for Use my location beside an entry's place
+    expect(policy.split(',').map((part) => part.trim())).toEqual(['camera=()', 'geolocation=(self)', 'microphone=(self)']);
+  });
+
   it('sends the headers from every NGINX block that sets its own headers', () => {
     const config = read('nginx.conf');
     // A block with its own add_header does not inherit the server-level ones.

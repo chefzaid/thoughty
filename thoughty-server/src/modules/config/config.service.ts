@@ -35,6 +35,7 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   letterSpacing: 'normal',
   highContrast: 'false',
   quietMode: 'false',
+  entryLocation: 'false',
   memoirSimpleMode: 'false',
   onboardingDone: 'false',
   maxPinnedEntries: '3',

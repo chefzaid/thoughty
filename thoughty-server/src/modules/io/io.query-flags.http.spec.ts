@@ -32,22 +32,30 @@ describe('IoController query flags over HTTP', () => {
   it('exports without visibility for includeVisibility=false', async () => {
     await request(app.getHttpServer()).get('/api/io/export?format=json&includeVisibility=false&diaryId=5').expect(200);
 
-    expect(ioService.export).toHaveBeenCalledWith(HTTP_SPEC_USER.userId, 5, false, 'json', utcToday());
+    expect(ioService.export).toHaveBeenCalledWith(HTTP_SPEC_USER.userId, 5, false, 'json', utcToday(), undefined);
   });
 
   it('exports with visibility for includeVisibility=true, and leaves it unset when not sent', async () => {
     await request(app.getHttpServer()).get('/api/io/export?includeVisibility=true').expect(200);
     await request(app.getHttpServer()).get('/api/io/export').expect(200);
 
-    expect(ioService.export).toHaveBeenNthCalledWith(1, HTTP_SPEC_USER.userId, undefined, true, undefined, utcToday());
-    expect(ioService.export).toHaveBeenNthCalledWith(2, HTTP_SPEC_USER.userId, undefined, undefined, undefined, utcToday());
+    expect(ioService.export).toHaveBeenNthCalledWith(1, HTTP_SPEC_USER.userId, undefined, true, undefined, utcToday(), undefined);
+    expect(ioService.export).toHaveBeenNthCalledWith(2, HTTP_SPEC_USER.userId, undefined, undefined, undefined, utcToday(), undefined);
+  });
+
+  it('asks for places only with includeLocation=true', async () => {
+    await request(app.getHttpServer()).get('/api/io/export?format=json&includeLocation=true').expect(200);
+    await request(app.getHttpServer()).get('/api/io/export?format=json&includeLocation=0').expect(200);
+
+    expect(ioService.export).toHaveBeenNthCalledWith(1, HTTP_SPEC_USER.userId, undefined, undefined, 'json', utcToday(), true);
+    expect(ioService.export).toHaveBeenNthCalledWith(2, HTTP_SPEC_USER.userId, undefined, undefined, 'json', utcToday(), false);
   });
 
   it('names the file after the writer’s day it is sent, a day either side of UTC', async () => {
     const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     await request(app.getHttpServer()).get(`/api/io/export?today=${tomorrow}`).expect(200);
 
-    expect(ioService.export).toHaveBeenCalledWith(HTTP_SPEC_USER.userId, undefined, undefined, undefined, tomorrow);
+    expect(ioService.export).toHaveBeenCalledWith(HTTP_SPEC_USER.userId, undefined, undefined, undefined, tomorrow, undefined);
   });
 
   it('refuses a day further than a day from UTC', async () => {
@@ -57,7 +65,7 @@ describe('IoController query flags over HTTP', () => {
     expect(ioService.export).not.toHaveBeenCalled();
   });
 
-  it.each(['includeVisibility=on', 'diaryId=', 'diaryId=0x5'])('refuses %s with VALIDATION_FAILED', async (query) => {
+  it.each(['includeVisibility=on', 'includeLocation=yes', 'diaryId=', 'diaryId=0x5'])('refuses %s with VALIDATION_FAILED', async (query) => {
     const response = await request(app.getHttpServer()).get(`/api/io/export?${query}`).expect(400);
 
     expect(response.body.code).toBe('VALIDATION_FAILED');

@@ -30,6 +30,8 @@ export interface Config {
   quietMode?: boolean;
   /** After a very low mood, offer favorite or gratitude entries to reread; offered unless false. */
   comfortReads?: boolean;
+  /** Places on entries: the composer offers a place field; off unless true. */
+  entryLocation?: boolean;
   /** Simple memoir mode: signing in and the weekly question link open one large question with a record button; off unless true. */
   memoirSimpleMode?: boolean;
   /** The first-run welcome page was answered or skipped; false for a new account, which then lands on it. */

@@ -349,4 +349,38 @@ describeContract('io', (context) => {
     expect(html.text).toMatch(/<h2>Chapitre \d+ : Août 2024<\/h2>/);
     expect(html.text).toContain('<div class="entry-date">2 août 2024</div>');
   });
+
+  it('keeps a place with an entry, answers it to its writer and exports it to JSON only when asked', async () => {
+    const { alice } = context;
+    const location = { name: 'Lake Annecy', latitude: 45.8992, longitude: 6.1294 };
+    const created = await call('POST /api/entries', {
+      as: alice,
+      json: { text: 'Swam before breakfast.', tags: ['trip'], date: '2024-09-01', location },
+      status: 201,
+    });
+    const entryId = (created.body as { entryId: number }).entryId;
+    const listed = await call('GET /api/entries', { as: alice, query: { limit: '50', date: '2024-09-01' }, status: 200 });
+    expect((listed.body as { entries: Array<{ id: number; location: unknown }> }).entries).toEqual([
+      expect.objectContaining({ id: entryId, location }),
+    ]);
+    await call('POST /api/entries', {
+      as: alice,
+      json: { text: 'Half a place', tags: ['trip'], date: '2024-09-02', location: { latitude: 45.9 } },
+      status: 400,
+      code: 'VALIDATION_FAILED',
+    });
+
+    const exported = async (query: Record<string, string>) => {
+      const response = await call('GET /api/io/export', {
+        as: alice,
+        query: { format: 'json', ...query },
+        status: 200,
+        contentType: /^application\/json/,
+      });
+      return (response.body as { entries: Array<{ content: string; location?: unknown }> }).entries.find((entry) => entry.content === 'Swam before breakfast.');
+    };
+    expect((await exported({ includeLocation: 'true' }))?.location).toEqual(location);
+    expect(await exported({})).not.toHaveProperty('location');
+    await call('GET /api/io/export', { as: alice, query: { includeLocation: 'maybe' }, status: 400, code: 'VALIDATION_FAILED' });
+  });
 });

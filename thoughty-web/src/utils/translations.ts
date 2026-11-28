@@ -92,6 +92,7 @@ import { diariesTranslations, type DiariesTranslationKey } from "./translations.
 import { writingGoalsTranslations, type WritingGoalsTranslationKey } from "./translations.writingGoals";
 import { writingStreakTranslations, type WritingStreakTranslationKey } from "./translations.writingStreak";
 import { comfortReadsTranslations, type ComfortReadsTranslationKey } from "./translations.comfortReads";
+import { entryLocationTranslations, type EntryLocationTranslationKey } from "./translations.entryLocation";
 import { readingNotesTranslations, type ReadingNotesTranslationKey } from "./translations.readingNotes";
 import { supportResourcesTranslations, type SupportResourcesTranslationKey } from "./translations.supportResources";
 import { shareImageTranslations, type ShareImageTranslationKey } from "./translations.shareImage";
@@ -198,6 +199,7 @@ export type TranslationKey =
   | WritingGoalsTranslationKey
   | WritingStreakTranslationKey
   | ComfortReadsTranslationKey
+  | EntryLocationTranslationKey
   | SupportResourcesTranslationKey
   | ShareImageTranslationKey
   | SubscriptionTranslationKey
@@ -308,6 +310,7 @@ export const translations: Translations = {
     ...writingGoalsTranslations.en,
     ...writingStreakTranslations.en,
     ...comfortReadsTranslations.en,
+    ...entryLocationTranslations.en,
     ...supportResourcesTranslations.en,
     ...shareImageTranslations.en,
     ...subscriptionTranslations.en,
@@ -411,6 +414,7 @@ export const translations: Translations = {
     ...writingGoalsTranslations.fr,
     ...writingStreakTranslations.fr,
     ...comfortReadsTranslations.fr,
+    ...entryLocationTranslations.fr,
     ...supportResourcesTranslations.fr,
     ...shareImageTranslations.fr,
     ...subscriptionTranslations.fr,

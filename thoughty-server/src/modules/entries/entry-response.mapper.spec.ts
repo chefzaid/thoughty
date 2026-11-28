@@ -22,6 +22,9 @@ const entity = (fields: Partial<Entry> = {}) =>
     isPinned: true,
     createdAt: new Date('2026-10-21T08:30:00Z'),
     rereadOn: '2026-11-21',
+    locationName: 'Old harbor',
+    latitude: 43.2965,
+    longitude: 5.3698,
     ...fields,
   }) as Entry;
 
@@ -39,6 +42,7 @@ describe('toEntryResponse', () => {
       time_of_day: '08:30',
       mood: 4,
       feelings: ['calm'],
+      location: { name: 'Old harbor', latitude: 43.2965, longitude: 5.3698 },
       tags: ['walks'],
       content: 'Walked by the harbor.',
       format: 'markdown',
@@ -60,10 +64,13 @@ describe('toEntryResponse', () => {
 
   it('fills unset optional fields and leaves out relations that were not loaded', () => {
     const response = toEntryResponse(
-      entity({ title: undefined, timeOfDay: undefined, mood: undefined, feelings: undefined, rereadOn: undefined, diary: null }) as Entry,
+      entity({
+        title: undefined, timeOfDay: undefined, mood: undefined, feelings: undefined, rereadOn: undefined, diary: null,
+        locationName: undefined, latitude: undefined, longitude: undefined,
+      }) as Entry,
     );
 
-    expect(response).toEqual(expect.objectContaining({ title: null, time_of_day: null, mood: null, feelings: [], reread_on: null }));
+    expect(response).toEqual(expect.objectContaining({ title: null, time_of_day: null, mood: null, feelings: [], location: null, reread_on: null }));
     expect(response.diary_name).toBeUndefined();
     expect(response).not.toHaveProperty('attachments');
   });
@@ -84,11 +91,17 @@ describe('toEntryResponse', () => {
       tags: [],
       mood: null,
       feelings: [],
+      location: null,
       attachments: [],
       sealed_until: sealedUntil,
       reread_on: null,
     }));
     expect(toEntryResponse(entity({ sealedUntil }))).not.toHaveProperty('attachments');
+  });
+
+  it('sends a place with only a name, or only coordinates', () => {
+    expect(toEntryResponse(entity({ latitude: null, longitude: null })).location).toEqual({ name: 'Old harbor', latitude: null, longitude: null });
+    expect(toEntryResponse(entity({ locationName: null })).location).toEqual({ name: null, latitude: 43.2965, longitude: 5.3698 });
   });
 
   it('sends loaded attachments in the API shape', () => {
@@ -124,6 +137,7 @@ describe('toEntryResponse', () => {
         tags: [],
         mood: null,
         feelings: [],
+        location: null,
         attachments: [],
         is_locked: Boolean(locks.isLocked),
         diary_locked: Boolean(locks.diaryLocked),
@@ -132,7 +146,7 @@ describe('toEntryResponse', () => {
     }
 
     const unlocked = asUnlocked(3, () => toEntryResponse(entity({ isLocked: true })));
-    expect(unlocked).toMatchObject({ content: 'Walked by the harbor.', tags: ['walks'], is_locked: true, withheld: false });
+    expect(unlocked).toMatchObject({ content: 'Walked by the harbor.', tags: ['walks'], location: { name: 'Old harbor' }, is_locked: true, withheld: false });
     // Another writer's unlock opens nothing of this writer's
     expect(asUnlocked(4, () => toEntryResponse(entity({ isLocked: true })))).toMatchObject({ content: '', withheld: true });
   });

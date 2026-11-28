@@ -5,7 +5,8 @@ import {
   type MockAppState,
   type MockEntry,
 } from './mockApp.shared';
-import { fulfillApiError, fulfillJson, readQueryFlag, toEntryMutationResponse, toRevisionResponse, type RouteContext } from './mockApp.route-utils';
+import { fulfillApiError, fulfillJson, mockLocation, readQueryFlag, toEntryMutationResponse, toRevisionResponse, type RouteContext } from './mockApp.route-utils';
+import type { components } from '../../src/generated/openapi';
 import { matchMockSearch, type MockSearchResult } from './mockApp.search';
 import { getMockBacklinks } from './mockApp.backlinks';
 import { mockEraContains } from './mockApp.routes.life-eras';
@@ -141,6 +142,7 @@ async function handleEntriesCollectionRoute({ route, request, pathname, state }:
     timeOfDay?: string | null;
     mood?: number | null;
     feelings?: string[];
+    location?: components['schemas']['EntryLocationDto'] | null;
     tags: string[];
     date: string;
     visibility?: 'public' | 'private' | null;
@@ -157,6 +159,7 @@ async function handleEntriesCollectionRoute({ route, request, pathname, state }:
     time_of_day: payload.timeOfDay || null,
     mood: payload.mood ?? null,
     feelings: payload.feelings ?? [],
+    location: mockLocation(payload.location),
     content: payload.text,
     tags: resolveTags(state, payload.tags, payload.diaryId ?? state.diaries.find((diary) => diary.isDefault)?.id ?? 1),
     visibility: payload.visibility || 'private',
@@ -297,6 +300,7 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
       timeOfDay?: string | null;
       mood?: number | null;
       feelings?: string[];
+      location?: components['schemas']['EntryLocationDto'] | null;
       tags: string[];
       date: string;
       visibility: 'public' | 'private';
@@ -332,6 +336,7 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
         ...(payload.timeOfDay === undefined ? {} : { time_of_day: payload.timeOfDay || null }),
         ...(payload.mood === undefined ? {} : { mood: payload.mood }),
         ...(payload.feelings === undefined ? {} : { feelings: payload.feelings }),
+        ...(payload.location === undefined ? {} : { location: mockLocation(payload.location) }),
         content: payload.text,
         tags: resolveTags(state, payload.tags, entry.diaryId ?? 1),
         date: payload.date,

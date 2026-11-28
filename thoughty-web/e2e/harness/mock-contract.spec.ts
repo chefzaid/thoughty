@@ -96,6 +96,9 @@ test.describe('Mock API contract check', () => {
     expect(check({ ...entry, diaryId: '2' })).toEqual([]);
     expect(check({ ...entry, diaryId: '' })).toEqual(['POST /api/entries sends $.diaryId: expected a whole number, got ""']);
     expect(check({ ...entry, mood: 4.5 })).toEqual(['POST /api/entries sends $.mood: expected a whole number, got 4.5']);
+    // Coordinates are documented as doubles, which `@StrictNumber()` reads with their decimals
+    expect(check({ ...entry, location: { name: 'Annecy', latitude: 45.8992, longitude: '6.1294' } })).toEqual([]);
+    expect(check({ ...entry, location: { latitude: 'north', longitude: 6.1 } })).toEqual(['POST /api/entries sends $.location.latitude: expected a number, got "north"']);
     expect(check({ ...entry, text: 42, tags: ['walk', 7] })).toEqual([
       'POST /api/entries sends $.text: expected a string, got 42',
       'POST /api/entries sends $.tags[1]: expected a string, got 7',

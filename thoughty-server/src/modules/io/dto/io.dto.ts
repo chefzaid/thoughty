@@ -1,6 +1,7 @@
 import { IsString, IsOptional, IsIn } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { StrictBoolean, StrictInt, WritersDay } from '@/common/validation';
+import { EntryLocationResponseDto } from '@/modules/entries/dto/entry-location.dto';
 
 export class FormatConfigDto {
   @ApiPropertyOptional()
@@ -67,6 +68,14 @@ export class ExportQueryDto {
   includeVisibility?: boolean;
 
   @ApiPropertyOptional({
+    description: 'Include each entry\'s place (name and coordinates) in a JSON export; every other format leaves places out',
+    default: false,
+  })
+  @IsOptional()
+  @StrictBoolean()
+  includeLocation?: boolean;
+
+  @ApiPropertyOptional({
     description: 'Export file format; `zip` is a Markdown folder with one file per entry and its attachments',
     enum: ['txt', 'json', 'md', 'csv', 'pdf', 'html', 'epub', 'zip'],
     default: 'txt',
@@ -131,6 +140,9 @@ export class PreviewEntryDto {
 
   @ApiPropertyOptional({ type: [String] })
   feelings?: string[];
+
+  @ApiPropertyOptional({ type: EntryLocationResponseDto, description: 'The place a JSON file gives the entry' })
+  location?: EntryLocationResponseDto;
 
   @ApiProperty({ type: [String] })
   tags: string[];

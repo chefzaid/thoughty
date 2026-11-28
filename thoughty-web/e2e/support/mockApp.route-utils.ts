@@ -91,7 +91,7 @@ export function toRevisionResponse(revision: MockEntryRevision): components['sch
 export function toEntryResponse(entry: MockEntry, state: MockAppState): components['schemas']['EntryResponseDto'] {
   const response = sealedOrOpenResponse(entry, state);
   return isMockWithheld(entry, state)
-    ? { ...response, mood: null, feelings: [], tags: [], content: '', withheld: true, ...(response.attachments ? { attachments: [] } : {}) }
+    ? { ...response, mood: null, feelings: [], location: null, tags: [], content: '', withheld: true, ...(response.attachments ? { attachments: [] } : {}) }
     : response;
 }
 
@@ -103,6 +103,7 @@ function sealedOrOpenResponse(entry: MockEntry, state: MockAppState): components
         title: null,
         mood: null,
         feelings: [],
+        location: null,
         tags: [],
         content: '',
         ...(response.attachments ? { attachments: [] } : {}),
@@ -125,6 +126,7 @@ function openEntryResponse(entry: MockEntry, state: MockAppState): components['s
     time_of_day: entry.time_of_day ?? null,
     mood: entry.mood ?? null,
     feelings: entry.feelings ?? [],
+    location: entry.location ?? null,
     tags: entry.tags,
     content: entry.content,
     format: entry.format ?? 'plain',
@@ -175,4 +177,14 @@ export async function refusedForDiary(
     return true;
   }
   return false;
+}
+
+/** The place a create or an edit sends, as the API stores and answers it: null for none, coordinates as a pair. */
+export function mockLocation(
+  given: components['schemas']['EntryLocationDto'] | null | undefined,
+): components['schemas']['EntryLocationResponseDto'] | null {
+  const name = given?.name?.trim() || null;
+  const paired = typeof given?.latitude === 'number' && typeof given.longitude === 'number';
+  if (!name && !paired) return null;
+  return { name, latitude: paired ? given.latitude ?? null : null, longitude: paired ? given.longitude ?? null : null };
 }

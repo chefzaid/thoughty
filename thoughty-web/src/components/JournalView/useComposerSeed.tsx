@@ -6,12 +6,13 @@ import { entryStartingPoint, hasComposerDraft } from '../../utils/entryStartingP
 import { resolveLanguage } from '../../utils/language';
 import { entryReplyDraft, feedEntryDraft, type FeedEntrySource } from '../EntriesList/entryReply';
 import type { SharedContent } from '../../utils/shareTarget';
+import { NO_LOCATION } from '../../utils/entryLocation';
 
 type ComposerState = Pick<ComponentProps<typeof EntryForm>,
   'newEntryText' | 'setNewEntryText' | 'title' | 'setTitle' | 'timeOfDay' | 'setTimeOfDay' | 'mood' | 'setMood'
   | 'feelings' | 'setFeelings' | 'tags' | 'setTags' | 'timeCapsule' | 'setTimeCapsule' | 'setVisibility' | 'setFormat'
   | 'diaryTemplateName'>
-  & Partial<Pick<ComponentProps<typeof EntryForm>, 'setSelectedDate' | 'onAddFile'>>;
+  & Partial<Pick<ComponentProps<typeof EntryForm>, 'setSelectedDate' | 'onAddFile' | 'setLocation'>>;
 
 interface ComposerSeedOptions {
   readonly composer: ComposerState;
@@ -100,6 +101,7 @@ export function useComposerSeed({ composer, defaultVisibility, formRef, language
     form.setTimeOfDay?.('');
     form.setMood?.(null);
     form.setFeelings?.([]);
+    form.setLocation?.(NO_LOCATION);
     form.setTimeCapsule?.(null);
     seed.files?.forEach((file) => form.onAddFile?.(file));
     focusComposer();

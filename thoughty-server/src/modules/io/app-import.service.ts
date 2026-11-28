@@ -3,7 +3,7 @@ import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Attachment, Diary, Entry } from '@/database/entities';
-import { normalizeEntryTitle, normalizeMood, normalizeTimeOfDay, replaceInlineImages, sanitizeString } from '@/common/utils';
+import { entryLocationColumns, normalizeEntryTitle, normalizeMood, normalizeTimeOfDay, replaceInlineImages, sanitizeString } from '@/common/utils';
 import { AttachmentsService } from '@/modules/attachments';
 import { ConfigService } from '@/modules/config';
 import { DiariesService } from '@/modules/diaries';
@@ -91,6 +91,7 @@ export class AppImportService {
         title: normalizeEntryTitle(entry.title),
         timeOfDay: normalizeTimeOfDay(entry.timeOfDay),
         mood: normalizeMood(entry.mood),
+        ...entryLocationColumns(entry.location),
         tags: cleanTags(entry.tags),
         content: keepImportedFileReferences(entry.content),
         format: 'markdown',

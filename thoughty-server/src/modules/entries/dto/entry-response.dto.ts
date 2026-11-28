@@ -1,6 +1,7 @@
 // Response bodies of the entries API.
 import { ApiProperty, ApiPropertyOptional, getSchemaPath } from '@nestjs/swagger';
 import { MAX_MOOD, MIN_MOOD } from '@/common/utils/entry-mood.util';
+import { EntryLocationResponseDto } from './entry-location.dto';
 import { PersonDateDto } from '@/modules/people/dto/person.dto';
 import { PersonReachOutHighlightDto } from '@/modules/people/dto/person-reach-out.dto';
 
@@ -31,6 +32,13 @@ export class EntryResponseDto {
 
   @ApiProperty({ type: [String], description: 'Feeling words recorded with the mood', example: ['calm', 'grateful'] })
   feelings: string[];
+
+  @ApiProperty({
+    type: EntryLocationResponseDto,
+    nullable: true,
+    description: 'The place the entry was written, or null. Only the writer sees it; a sealed or withheld entry leaves it out.',
+  })
+  location: EntryLocationResponseDto | null;
 
   @ApiProperty({ type: [String] })
   tags: string[];

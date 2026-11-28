@@ -6,8 +6,8 @@ const token = { tokenId: 1, userId: 5, email: 'w@example.com', username: 'writer
 
 const listedEntry = {
   id: 57, user_id: 5, diary_id: 2, date: '2026-11-21', index: 1, title: 'Walk', time_of_day: '08:30', mood: 4,
-  feelings: ['calm'], tags: ['walk'], content: 'By the river', format: 'plain', visibility: 'private',
-  is_favorite: false, is_archived: false, is_pinned: false, created_at: new Date('2026-11-21T08:31:00Z'),
+  feelings: ['calm'], location: { name: 'River path', latitude: null, longitude: null }, tags: ['walk'],
+  content: 'By the river', format: 'plain', visibility: 'private', is_favorite: false, is_archived: false, is_pinned: false, created_at: new Date('2026-11-21T08:31:00Z'),
   sealed_until: null, reread_on: null, is_locked: false, diary_locked: false, withheld: false,
 };
 
@@ -44,7 +44,8 @@ describe('PublicApiService', () => {
       nextCursor: 'next',
       entries: [{
         id: 57, diaryId: 2, date: '2026-11-21', index: 1, title: 'Walk', timeOfDay: '08:30', text: 'By the river',
-        format: 'plain', tags: ['walk'], mood: 4, feelings: ['calm'], visibility: 'private', withheld: false,
+        format: 'plain', tags: ['walk'], mood: 4, feelings: ['calm'], location: { name: 'River path', latitude: null, longitude: null },
+        visibility: 'private', withheld: false,
         sealedUntil: null, createdAt: listedEntry.created_at,
       }],
     });

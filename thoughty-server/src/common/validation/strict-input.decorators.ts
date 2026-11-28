@@ -1,6 +1,6 @@
 import { applyDecorators } from '@nestjs/common';
 import { Transform, TransformFnParams } from 'class-transformer';
-import { IsBoolean, IsInt } from 'class-validator';
+import { IsBoolean, IsInt, IsNumber } from 'class-validator';
 
 /**
  * The global ValidationPipe converts nothing on its own (no implicit conversion: `Boolean('false')`
@@ -13,6 +13,7 @@ import { IsBoolean, IsInt } from 'class-validator';
 const TRUE_VALUES: readonly unknown[] = [true, 'true', 1, '1'];
 const FALSE_VALUES: readonly unknown[] = [false, 'false', 0, '0'];
 const INTEGER_TEXT = /^-?\d+$/;
+const DECIMAL_TEXT = /^-?\d+(?:\.\d+)?$/;
 
 /** `true`/`false` (or `1`/`0`), as a value or as text; anything else stays as sent. */
 export function parseStrictBoolean(raw: unknown): unknown {
@@ -30,9 +31,18 @@ export function parseStrictInt(raw: unknown): unknown {
   return raw;
 }
 
+/** A finite number, as a value or as plain decimal digits with an optional minus; anything else stays as sent. */
+export function parseStrictNumber(raw: unknown): unknown {
+  if (typeof raw === 'string' && DECIMAL_TEXT.test(raw)) {
+    return Number(raw);
+  }
+  return raw;
+}
+
 /** The `@Transform` functions the decorators register; the DTO guard spec looks for these exact references. */
 export const toStrictBoolean = ({ obj, key }: TransformFnParams): unknown => parseStrictBoolean(obj[key]);
 export const toStrictInt = ({ obj, key }: TransformFnParams): unknown => parseStrictInt(obj[key]);
+export const toStrictNumber = ({ obj, key }: TransformFnParams): unknown => parseStrictNumber(obj[key]);
 export const toStrictIntEach = ({ obj, key }: TransformFnParams): unknown => {
   const raw: unknown = obj[key];
   return Array.isArray(raw) ? raw.map(parseStrictInt) : raw;
@@ -61,4 +71,14 @@ export function StrictInt(options: { each?: boolean; message?: string } = {}): P
   const each = options.each === true;
   const message = options.message ?? (each ? 'each value in $property must be a whole number' : '$property must be a whole number');
   return applyDecorators(Transform(each ? toStrictIntEach : toStrictInt), IsInt({ each, message }));
+}
+
+/**
+ * A number input that may have decimals (a coordinate): accepts finite numbers and plain decimal text such as
+ * `"48.85"`, and rejects everything else, the empty string, `NaN`, `Infinity` and `true` included. Combine with
+ * `@Min`/`@Max` for ranges and `@IsOptional()` when it may be left out. Whole numbers use `@StrictInt()`.
+ */
+export function StrictNumber(options: { message?: string } = {}): PropertyDecorator {
+  const message = options.message ?? '$property must be a number';
+  return applyDecorators(Transform(toStrictNumber), IsNumber({ allowNaN: false, allowInfinity: false }, { message }));
 }

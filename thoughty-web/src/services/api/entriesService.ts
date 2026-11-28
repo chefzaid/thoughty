@@ -25,6 +25,8 @@ interface CreateEntryInput {
   /** Sent only when set. */
   mood?: number | null;
   feelings?: string[];
+  /** Sent only when set. */
+  location?: CreateEntryRequestDto['location'];
   tags: string[];
   date: string;
   visibility: CreateEntryRequestDto['visibility'] | null;
@@ -96,6 +98,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
         ...(entry.timeOfDay ? { timeOfDay: entry.timeOfDay } : {}),
         ...(entry.mood ? { mood: entry.mood } : {}),
         ...(entry.feelings && entry.feelings.length > 0 ? { feelings: entry.feelings } : {}),
+        ...(entry.location ? { location: entry.location } : {}),
         tags: entry.tags,
         date: entry.date,
         visibility: entry.visibility ?? 'private',

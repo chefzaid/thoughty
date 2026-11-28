@@ -42,6 +42,7 @@ import { isExportableSettingKey } from './config.service';
 import { ContentLockedException, holdsLockedContent, isContentUnlocked } from '@/common/content-lock';
 import { apiError } from '@/common/errors';
 import { isPlaceholderEmail } from '@/common/utils/placeholder-email.util';
+import { entryLocationOf } from '@/common/utils/entry-location.util';
 import { AccountActivityService } from '@/modules/auth/account-activity/account-activity.service';
 
 /** An opt-in email setting as the data download writes it, null when it was never saved. */
@@ -229,6 +230,7 @@ export class UserDataExportService {
         title: entry.title,
         mood: entry.mood,
         feelings: entry.feelings,
+        location: entryLocationOf(entry),
         content: entry.content,
         tags: entry.tags,
         format: entry.format,

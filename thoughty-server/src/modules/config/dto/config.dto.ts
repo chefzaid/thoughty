@@ -140,6 +140,9 @@ export class UpdateConfigDto {
   @SettingChoice(BOOLEAN_TEXT, 'Offer a few favorite or gratitude entries to reread after a very low mood; offered unless false')
   comfortReads?: string;
 
+  @SettingChoice(BOOLEAN_TEXT, 'Places on entries: the composer offers a place field (typed, or from the browser\'s location when asked); off unless true')
+  entryLocation?: string;
+
   @SettingChoice(BOOLEAN_TEXT, 'Simple memoir mode: signing in and the weekly question link open one large question with a record button; off unless true')
   memoirSimpleMode?: string;
 
@@ -222,6 +225,7 @@ export const USER_CONFIG_KEYS: ReadonlySet<string> = new Set<keyof UpdateConfigD
   'streakCard',
   'quietMode',
   'comfortReads',
+  'entryLocation',
   'memoirSimpleMode',
   'onboardingDone',
   'openRouterModel',

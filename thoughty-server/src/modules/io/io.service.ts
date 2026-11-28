@@ -28,6 +28,7 @@ import {
   writersDayOr,
   bookCopy,
   resolveBookLanguage,
+  entryLocationColumns,
 } from '@/common/utils';
 import { AttachmentsService } from '@/modules/attachments';
 import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
@@ -208,6 +209,7 @@ export class IoService {
       timeOfDay: entry.timeOfDay ?? null,
       mood: entry.mood ?? null,
       feelings: entry.feelings ?? [],
+      ...entryLocationColumns(entry.location),
       tags: entry.tags,
       // A file carries no attachments, so an inline image it names keeps only its alt text
       content: entry.format === 'markdown' ? inlineImagesToAltText(entry.content) : entry.content,
@@ -294,13 +296,17 @@ export class IoService {
     }
   }
 
-  /** `today` is the writer's own day, which names the file and dates a reading copy; the UTC day without it. */
+  /**
+   * `today` is the writer's own day, which names the file and dates a reading copy; the UTC day without it. Places
+   * stay out of every file unless `includeLocation` asks a JSON file for them.
+   */
   async export(
     userId: number,
     diaryId?: number,
     includeVisibility?: boolean,
     format: ExportFormat = 'txt',
     today = writersDayOr(undefined),
+    includeLocation = false,
   ): Promise<ExportFile> {
     const diary = diaryId
       ? await this.diaryRepository.findOne({ where: { id: diaryId, userId } })
@@ -347,7 +353,7 @@ export class IoService {
 
     switch (format) {
       case 'json':
-        fileContent = generateJsonFile(entriesWithDiary, includeVisibility);
+        fileContent = generateJsonFile(entriesWithDiary, includeVisibility, includeLocation);
         extension = 'json';
         contentType = 'application/json; charset=utf-8';
         break;
