@@ -26,11 +26,12 @@ const sharingOff = withFeatureFlags({ publicSharing: false });
 describe('with public sharing switched off', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('leaves the feed out of the navigation', () => {
+  it('leaves the feed and messages out of the navigation', () => {
     render(<NavMenu currentView="journal" onViewChange={vi.fn()} t={(key) => key} />, { wrapper: sharingOff });
     fireEvent.click(screen.getByRole('button', { name: 'navGroupSocial' }));
 
     expect(screen.queryByRole('button', { name: 'feed' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'messages' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'people' })).toBeVisible();
   });
 

@@ -6,6 +6,7 @@ import { DiaryAiContext } from './components/DiaryAi/diaryAiScope';
 import AiConsentDialog from './components/DiaryAi/AiConsentDialog';
 import { AiConsentContext } from './components/DiaryAi/aiConsentContext';
 import NotificationsMenu from './components/Notifications/NotificationsMenu';
+import { useUnreadMessages } from './components/Messages/useMessages';
 import IntroPage from './components/IntroPage/IntroPage';
 import { DisplayLanguageContext } from './contexts/displayLanguage';
 import { useAppShellModel, type AppShellModel } from './hooks/useAppShellModel';
@@ -34,6 +35,23 @@ function renderLazy(children: ReactNode) {
     <Suspense fallback={<LoadingSpinner />}>
       {children}
     </Suspense>
+  );
+}
+
+/** The signed-in layout, with the notifications bell and the count of unread messages in its navigation. */
+function SignedInLayout({ layoutProps, children }: Readonly<{
+  layoutProps: AppShellModel['authenticatedLayoutProps'];
+  children: ReactNode;
+}>) {
+  const unreadMessages = useUnreadMessages();
+  return (
+    <AuthenticatedAppLayout
+      {...layoutProps}
+      notifications={<NotificationsMenu language={layoutProps.config.language} t={layoutProps.t} />}
+      unreadMessages={unreadMessages}
+    >
+      {children}
+    </AuthenticatedAppLayout>
   );
 }
 
@@ -148,12 +166,9 @@ function AppShellScreens({
   return renderLazy(
     <DiaryAiContext.Provider value={diaries}>
       <AiConsentContext.Provider value={aiConsent.requestConsent}>
-        <AuthenticatedAppLayout
-          {...authenticatedLayoutProps}
-          notifications={<NotificationsMenu language={authenticatedLayoutProps.config.language} t={authenticatedLayoutProps.t} />}
-        >
+        <SignedInLayout layoutProps={authenticatedLayoutProps}>
           <AuthenticatedRoutes {...authenticatedRoutesProps} />
-        </AuthenticatedAppLayout>
+        </SignedInLayout>
         <AiConsentDialog
           request={aiConsent.request}
           config={authenticatedLayoutProps.config}

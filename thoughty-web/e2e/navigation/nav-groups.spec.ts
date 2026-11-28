@@ -10,6 +10,7 @@ const PATH_OF_PAGE: Record<NavPage, string> = {
   Memoir: '/memoir',
   Tasks: '/tasks',
   Feed: '/feed',
+  Messages: '/messages',
   People: '/people',
   Stats: '/stats',
   'Year in review': '/review',

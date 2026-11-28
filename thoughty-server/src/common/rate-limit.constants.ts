@@ -19,6 +19,9 @@ export const RATE_LIMITS = {
   passwordRecovery: { limit: 3, ttl: ONE_HOUR_MS },
   accountSecurity: { limit: 5, ttl: ONE_HOUR_MS },
   socialWrite: { limit: 30, ttl: FIFTEEN_MINUTES_MS },
+  // Messages: a conversation is read again every 20 seconds while it is open, and a chat sends many lines.
+  messagesRead: { limit: 300, ttl: FIFTEEN_MINUTES_MS },
+  messageWrite: { limit: 120, ttl: FIFTEEN_MINUTES_MS },
   // App imports send one request per batch of entries or files; a large library needs hundreds.
   importWrite: { limit: 300, ttl: FIFTEEN_MINUTES_MS },
   // Composer autosave: the web saves at most once every three seconds while the writer types.

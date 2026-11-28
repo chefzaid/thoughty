@@ -19,7 +19,6 @@ import {
   MonthlyRecapEmail,
   WritingReminderEmail,
   YearReviewEmail,
-  type OptInEmailSetting,
   YearReviewMood,
   WeeklyReflection,
   PersonalAccessToken,
@@ -44,22 +43,12 @@ import { apiError } from '@/common/errors';
 import { isPlaceholderEmail } from '@/common/utils/placeholder-email.util';
 import { entryLocationOf } from '@/common/utils/entry-location.util';
 import { AccountActivityService } from '@/modules/auth/account-activity/account-activity.service';
-
-/** An opt-in email setting as the data download writes it, null when it was never saved. */
-function exportOptInEmail(setting: OptInEmailSetting | null) {
-  return setting
-    ? {
-        enabled: setting.enabled,
-        deliveryHour: setting.deliveryHour,
-        timeZone: setting.timeZone,
-        diaryId: setting.diaryId,
-        nextSendAt: setting.nextSendAt,
-        lastSentOn: setting.lastSentOn,
-        createdAt: setting.createdAt,
-        updatedAt: setting.updatedAt,
-      }
-    : null;
-}
+import {
+  CONVERSATIONS_DOWNLOAD_SQL,
+  type ConversationDownloadRow,
+  exportConversations,
+  exportOptInEmail,
+} from './user-data-export.helpers';
 
 @Injectable()
 export class UserDataExportService {
@@ -438,7 +427,7 @@ export class UserDataExportService {
 
   private async collectSocialData(userId: number) {
     const order = { createdAt: 'ASC' } as const;
-    const [follows, topics, comments, entryLikes, commentLikes, savedEntries, mutes, blocks] = await Promise.all([
+    const [follows, topics, comments, entryLikes, commentLikes, savedEntries, mutes, blocks, conversations] = await Promise.all([
       this.followRepository.find({
         where: { followerId: userId },
         relations: { followed: true },
@@ -451,6 +440,7 @@ export class UserDataExportService {
       this.savedEntryRepository.find({ where: { userId }, order }),
       this.muteRepository.find({ where: { userId }, relations: { muted: true }, order }),
       this.blockRepository.find({ where: { blockerId: userId }, relations: { blocked: true }, order }),
+      this.followRepository.query(CONVERSATIONS_DOWNLOAD_SQL, [userId]) as Promise<ConversationDownloadRow[]>,
     ]);
 
     return {
@@ -495,6 +485,8 @@ export class UserDataExportService {
         entryId: saved.entryId,
         savedAt: saved.createdAt,
       })),
+      // Messages with other writers, both ways
+      conversations: exportConversations(conversations, userId),
     };
   }
 }

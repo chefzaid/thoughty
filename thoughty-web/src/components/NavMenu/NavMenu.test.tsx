@@ -50,7 +50,7 @@ describe('NavMenu', () => {
 
   it.each([
     ['navGroupJournaling', ['journal', 'memoir', 'openTasksNav']],
-    ['navGroupSocial', ['feed', 'people']],
+    ['navGroupSocial', ['feed', 'messages', 'people']],
     ['navGroupInsights', ['stats', 'navYearInReview']],
     ['navGroupData', ['manageDiaries', 'tags', 'importExport', 'recycleBin']],
   ])('discloses the %s pages from a closed group button', (group, items) => {
@@ -77,6 +77,7 @@ describe('NavMenu', () => {
     ['navGroupJournaling', 'memoir', 'memoir'],
     ['navGroupJournaling', 'openTasksNav', 'tasks'],
     ['navGroupSocial', 'feed', 'feed'],
+    ['navGroupSocial', 'messages', 'messages'],
     ['navGroupSocial', 'people', 'people'],
     ['navGroupInsights', 'stats', 'stats'],
     ['navGroupInsights', 'navYearInReview', 'review'],

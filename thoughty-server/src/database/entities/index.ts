@@ -43,3 +43,6 @@ export * from './account-event.entity';
 export * from './personal-access-token.entity';
 export * from './notification-read.entity';
 export * from './calendar-event.entity';
+export * from './conversation.entity';
+export * from './conversation-member.entity';
+export * from './message.entity';

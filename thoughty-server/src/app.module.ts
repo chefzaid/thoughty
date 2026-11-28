@@ -17,6 +17,7 @@ import { MetricsModule } from './modules/metrics';
 import { FeatureRequestsModule } from './modules/feature-requests';
 import { ContactModule } from './modules/contact';
 import { SocialModule } from './modules/social';
+import { MessagesModule } from './modules/messages';
 import { MemoirModule } from './modules/memoir';
 import { ReviewModule } from './modules/review';
 import { RecycleBinModule } from './modules/recycle-bin';
@@ -80,6 +81,7 @@ import {
     FeatureRequestsModule,
     ContactModule,
     SocialModule,
+    MessagesModule,
     MemoirModule,
     ReviewModule,
     RecycleBinModule,

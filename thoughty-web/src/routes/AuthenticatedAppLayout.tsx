@@ -54,6 +54,8 @@ interface AuthenticatedAppLayoutProps {
   readonly quickCapture?: QuickCaptureState;
   /** The notifications bell in the navigation, built where the router and the session are at hand. */
   readonly notifications?: ReactNode;
+  /** Unread messages, counted in the navigation. */
+  readonly unreadMessages?: number;
 }
 
 function AuthenticatedAppLayout({
@@ -84,6 +86,7 @@ function AuthenticatedAppLayout({
   onSendChat,
   quickCapture,
   notifications,
+  unreadMessages,
 }: Readonly<AuthenticatedAppLayoutProps>) {
   const mainContentRef = useRef<HTMLElement>(null);
   const appTypographyStyle = {
@@ -142,6 +145,7 @@ function AuthenticatedAppLayout({
               privacyBlur={privacyBlur}
               quickCapture={quickCapture}
               notifications={notifications}
+              unreadMessages={unreadMessages}
             />}
 
             {quickCapture && !chromeless && <QuickCaptureDialog quickCapture={quickCapture} theme={config.theme} t={t} />}

@@ -247,6 +247,11 @@ export function buildAuthenticatedRoutesProps({
       language: config.language,
       t,
     },
+    messagesRouteProps: {
+      theme: config.theme,
+      language: config.language,
+      t,
+    },
     recycleBinRouteProps: {
       theme: config.theme,
       language: config.language,

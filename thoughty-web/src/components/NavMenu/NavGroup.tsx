@@ -21,9 +21,12 @@ interface NavGroupProps {
  */
 function NavGroup({ label, icon, items, currentView, isOpen, onToggle, onClose, onSelect }: NavGroupProps) {
     const panelId = useId();
+    const waitingId = useId();
     const wrapperRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const isActive = items.some((item) => item.view === currentView);
+    // A page with something waiting puts a dot on its closed group, named after what waits
+    const waiting = items.find((item) => item.badge)?.badge;
 
     const dismiss = useCallback((reason: MenuDismissReason) => {
         onClose();
@@ -49,10 +52,13 @@ function NavGroup({ label, icon, items, currentView, isOpen, onToggle, onClose, 
                 className={`nav-item nav-group-btn ${isActive ? 'active' : ''}`}
                 aria-expanded={isOpen}
                 aria-controls={panelId}
+                aria-describedby={waiting && !isOpen ? waitingId : undefined}
                 onClick={onToggle}
             >
                 {icon}
                 <span className="nav-group-label">{label}</span>
+                {waiting && !isOpen && <span className="nav-group-dot" title={waiting.label} aria-hidden="true" />}
+                {waiting && <span id={waitingId} hidden>{waiting.label}</span>}
                 <span className="codicon codicon-chevron-down nav-group-chevron" aria-hidden="true" />
             </button>
             <ul id={panelId} className="nav-group-panel" hidden={!isOpen}>
@@ -64,10 +70,19 @@ function NavGroup({ label, icon, items, currentView, isOpen, onToggle, onClose, 
                                 type="button"
                                 className={`nav-group-option ${isCurrent ? 'active' : ''}`}
                                 aria-current={isCurrent ? 'page' : undefined}
+                                aria-describedby={item.badge ? `${waitingId}-${item.view}` : undefined}
                                 onClick={() => onSelect(item.view)}
                             >
                                 {item.icon}
                                 <span>{item.label}</span>
+                                {item.badge && (
+                                    <>
+                                        <span className={`nav-badge${item.badge.text ? '' : ' nav-badge-dot'}`} title={item.badge.label} aria-hidden="true">
+                                            {item.badge.text}
+                                        </span>
+                                        <span id={`${waitingId}-${item.view}`} hidden>{item.badge.label}</span>
+                                    </>
+                                )}
                             </button>
                         </li>
                     );

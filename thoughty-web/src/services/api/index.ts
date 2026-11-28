@@ -36,3 +36,4 @@ export * from './contentUnlockToken';
 export * from './accountActivityService';
 export * from './accessTokensService';
 export * from './notificationsService';
+export * from './messagesService';

@@ -1,0 +1,350 @@
+.messages-page {
+  width: 100%;
+  color: #f3f4f6;
+}
+
+.messages-page.light {
+  color: #111827;
+}
+
+.messages-layout {
+  display: grid;
+  grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.messages-sidebar {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.messages-panel,
+.messages-main {
+  min-width: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid #374151;
+  border-radius: 0.5rem;
+  background: #1f2937;
+}
+
+.messages-page.light .messages-panel,
+.messages-page.light .messages-main {
+  border-color: #e5e7eb;
+  background: #fff;
+}
+
+.messages-panel h2,
+.messages-thread-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.messages-note {
+  margin: 0.6rem 0 0;
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+.messages-page.light .messages-note,
+.messages-page.light .messages-composer-hint,
+.messages-page.light .messages-conversation-meta {
+  color: #6b7280;
+}
+
+.messages-page.light .messages-bubble time {
+  color: #4b5563;
+}
+
+.messages-choose {
+  margin: 0;
+}
+
+.messages-error {
+  margin: 0.6rem 0 0;
+  color: #f87171;
+  font-size: 0.875rem;
+}
+
+.messages-page.light .messages-error {
+  color: #b91c1c;
+}
+
+.messages-writers,
+.messages-conversations,
+.messages-log ol {
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.messages-writers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.messages-writers button {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.25rem 0.7rem 0.25rem 0.25rem;
+  border: 1px solid #4b5563;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.messages-page.light .messages-writers button {
+  border-color: #d1d5db;
+}
+
+.messages-writers button:hover,
+.messages-conversation:hover {
+  background: rgba(148, 163, 184, 0.15);
+}
+
+.messages-writers .feed-avatar,
+.messages-conversation .feed-avatar {
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-basis: 1.75rem;
+  font-size: 0.7rem;
+}
+
+.messages-conversations {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.messages-conversation {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.messages-conversation[aria-current="true"] {
+  border-color: #0f766e;
+  background: rgba(15, 118, 110, 0.18);
+}
+
+.messages-conversation-text {
+  display: grid;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.messages-conversation-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.messages-conversation-preview {
+  overflow: hidden;
+  font-size: 0.8125rem;
+  opacity: 0.8;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.messages-conversation.unread .messages-conversation-preview {
+  font-weight: 600;
+  opacity: 1;
+}
+
+.messages-conversation-meta {
+  display: grid;
+  flex: 0 0 auto;
+  justify-items: end;
+  gap: 0.2rem;
+  color: #9ca3af;
+  font-size: 0.6875rem;
+}
+
+.messages-unread {
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: #0f766e;
+  color: #fff;
+  font-weight: 700;
+}
+
+.messages-thread {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.messages-thread-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Back to the list only shows where the list is hidden, on a narrow screen. */
+.messages-back {
+  display: none;
+  align-items: center;
+  gap: 0.3rem;
+  margin-right: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #4b5563;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.messages-earlier {
+  justify-self: center;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid #4b5563;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.messages-log {
+  max-height: min(60vh, 36rem);
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.messages-log ol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.messages-bubble {
+  display: grid;
+  max-width: min(36rem, 85%);
+  gap: 0.2rem;
+  align-self: flex-start;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.75rem 0.75rem 0.75rem 0.25rem;
+  background: #374151;
+}
+
+.messages-page.light .messages-bubble {
+  background: #f3f4f6;
+}
+
+.messages-bubble.mine,
+.messages-page.light .messages-bubble.mine {
+  align-self: flex-end;
+  border-radius: 0.75rem 0.75rem 0.25rem 0.75rem;
+  background: #0f766e;
+  color: #fff;
+}
+
+.messages-bubble p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.messages-bubble time {
+  color: #d1d5db;
+  font-size: 0.6875rem;
+}
+
+.messages-bubble.mine time,
+.messages-page.light .messages-bubble.mine time {
+  color: #fff;
+}
+
+.messages-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.4rem 0.5rem;
+  align-items: end;
+}
+
+.messages-composer textarea {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid #4b5563;
+  border-radius: 0.5rem;
+  background: #111827;
+  color: inherit;
+  font: inherit;
+  resize: vertical;
+}
+
+.messages-page.light .messages-composer textarea {
+  border-color: #d1d5db;
+  background: #fff;
+}
+
+.messages-send {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0 0.9rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: #0f766e;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.messages-send:disabled,
+.messages-earlier:disabled,
+.messages-writers button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.messages-composer-hint,
+.messages-composer .messages-error {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #9ca3af;
+  font-size: 0.75rem;
+}
+
+.messages-composer .messages-error {
+  color: #f87171;
+}
+
+@media (max-width: 767px) {
+  .messages-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .messages-page.has-thread .messages-sidebar,
+  .messages-page:not(.has-thread) .messages-main {
+    display: none;
+  }
+
+  .messages-back {
+    display: inline-flex;
+  }
+}
+
+/* The open conversation's tinted row keeps its time as readable as its name. */
+.messages-conversation[aria-current="true"] .messages-conversation-meta,
+.messages-page.light .messages-conversation[aria-current="true"] .messages-conversation-meta {
+  color: inherit;
+}

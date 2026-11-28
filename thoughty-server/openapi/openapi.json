@@ -14942,6 +14942,537 @@
         ]
       }
     },
+    "/api/conversations": {
+      "get": {
+        "operationId": "ConversationsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The conversations, each with its newest message",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationListDto"
+                },
+                "example": {
+                  "conversations": [
+                    {
+                      "id": 7,
+                      "writer": {
+                        "id": 2,
+                        "username": "maya",
+                        "avatarUrl": null
+                      },
+                      "lastMessage": {
+                        "id": 120,
+                        "conversationId": 7,
+                        "senderId": 2,
+                        "mine": true,
+                        "body": "Your walk by the river made me want to go back there.",
+                        "createdAt": "2026-11-28T08:30:00.000Z"
+                      },
+                      "unreadCount": 2,
+                      "canWrite": true
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the conversations with at least one message, the most recent first",
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/api/conversations/unread": {
+      "get": {
+        "operationId": "ConversationsController_countUnread",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "How many messages are unread",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadMessagesDto"
+                },
+                "example": {
+                  "unreadCount": 3
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Count the unread messages across every conversation",
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/api/conversations/with/{userId}": {
+      "put": {
+        "operationId": "ConversationsController_open",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The conversation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationSummaryDto"
+                },
+                "example": {
+                  "id": 7,
+                  "writer": {
+                    "id": 2,
+                    "username": "maya",
+                    "avatarUrl": null
+                  },
+                  "lastMessage": {
+                    "id": 120,
+                    "conversationId": 7,
+                    "senderId": 2,
+                    "mine": true,
+                    "body": "Your walk by the river made me want to go back there.",
+                    "createdAt": "2026-11-28T08:30:00.000Z"
+                  },
+                  "unreadCount": 2,
+                  "canWrite": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Users cannot write to themselves",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Users cannot write to themselves",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No writer with this id who follows you and whom you follow, without a block either way",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "No writer with this id who follows you and whom you follow, without a block either way",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Open the conversation with a writer you follow and who follows you, made the first time",
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/api/conversations/{conversationId}": {
+      "get": {
+        "operationId": "ConversationsController_thread",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "description": "Only the messages sent before this one (its id), to read further back",
+            "schema": {
+              "minimum": 1,
+              "example": 120,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The conversation and a page of its messages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationThreadDto"
+                },
+                "example": {
+                  "conversation": {
+                    "id": 7,
+                    "writer": {
+                      "id": 2,
+                      "username": "maya",
+                      "avatarUrl": null
+                    },
+                    "lastMessage": {
+                      "id": 120,
+                      "conversationId": 7,
+                      "senderId": 2,
+                      "mine": true,
+                      "body": "Your walk by the river made me want to go back there.",
+                      "createdAt": "2026-11-28T08:30:00.000Z"
+                    },
+                    "unreadCount": 2,
+                    "canWrite": true
+                  },
+                  "messages": [
+                    {
+                      "id": 120,
+                      "conversationId": 7,
+                      "senderId": 2,
+                      "mine": true,
+                      "body": "Your walk by the river made me want to go back there.",
+                      "createdAt": "2026-11-28T08:30:00.000Z"
+                    }
+                  ],
+                  "hasMore": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "`before` is not a positive whole number",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "`before` is not a positive whole number",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No conversation of yours with this id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "No conversation of yours with this id",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read a conversation: its newest messages, or those before `before`",
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/api/conversations/{conversationId}/messages": {
+      "post": {
+        "operationId": "ConversationsController_send",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageDto"
+              },
+              "example": {
+                "body": "Your walk by the river made me want to go back there."
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The message as sent",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageDto"
+                },
+                "example": {
+                  "id": 120,
+                  "conversationId": 7,
+                  "senderId": 2,
+                  "mine": true,
+                  "body": "Your walk by the river made me want to go back there.",
+                  "createdAt": "2026-11-28T08:30:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The message is empty or longer than 2000 characters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "The message is empty or longer than 2000 characters",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "You and the other writer no longer follow each other",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 403,
+                  "message": "You and the other writer no longer follow each other",
+                  "error": "Forbidden",
+                  "code": "FORBIDDEN"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No conversation of yours with this id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "No conversation of yours with this id",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send a message, while you and the other writer follow each other",
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/api/conversations/{conversationId}/read": {
+      "put": {
+        "operationId": "ConversationsController_markRead",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "How many messages are still unread elsewhere",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadMessagesDto"
+                },
+                "example": {
+                  "unreadCount": 3
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No conversation of yours with this id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "No conversation of yours with this id",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark a conversation read up to its newest message",
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
     "/api/memoir": {
       "get": {
         "operationId": "MemoirController_getOverview",
@@ -31045,6 +31576,266 @@
           "unreadCount": 3
         }
       },
+      "ConversationWriterDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 2
+          },
+          "username": {
+            "type": "string",
+            "example": "maya"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "avatarUrl"
+        ],
+        "example": {
+          "id": 2,
+          "username": "maya",
+          "avatarUrl": null
+        }
+      },
+      "MessageDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 120
+          },
+          "conversationId": {
+            "type": "number",
+            "example": 7
+          },
+          "senderId": {
+            "type": "number",
+            "example": 2,
+            "description": "Who wrote it"
+          },
+          "mine": {
+            "type": "boolean",
+            "description": "The current user wrote it"
+          },
+          "body": {
+            "type": "string",
+            "example": "Your walk by the river made me want to go back there."
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-11-28T08:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "conversationId",
+          "senderId",
+          "mine",
+          "body",
+          "createdAt"
+        ],
+        "example": {
+          "id": 120,
+          "conversationId": 7,
+          "senderId": 2,
+          "mine": true,
+          "body": "Your walk by the river made me want to go back there.",
+          "createdAt": "2026-11-28T08:30:00.000Z"
+        }
+      },
+      "ConversationSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 7
+          },
+          "writer": {
+            "description": "The other writer in the conversation",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConversationWriterDto"
+              }
+            ]
+          },
+          "lastMessage": {
+            "nullable": true,
+            "description": "The newest message, null before the first one",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MessageDto"
+              }
+            ]
+          },
+          "unreadCount": {
+            "type": "number",
+            "example": 2,
+            "description": "Messages from the other writer the current user has not read"
+          },
+          "canWrite": {
+            "type": "boolean",
+            "description": "Whether the current user may write in it: they follow each other and neither blocked the other. Otherwise it can only be read"
+          }
+        },
+        "required": [
+          "id",
+          "writer",
+          "lastMessage",
+          "unreadCount",
+          "canWrite"
+        ],
+        "example": {
+          "id": 7,
+          "writer": {
+            "id": 2,
+            "username": "maya",
+            "avatarUrl": null
+          },
+          "lastMessage": {
+            "id": 120,
+            "conversationId": 7,
+            "senderId": 2,
+            "mine": true,
+            "body": "Your walk by the river made me want to go back there.",
+            "createdAt": "2026-11-28T08:30:00.000Z"
+          },
+          "unreadCount": 2,
+          "canWrite": true
+        }
+      },
+      "ConversationListDto": {
+        "type": "object",
+        "properties": {
+          "conversations": {
+            "description": "Conversations with at least one message, the most recent first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConversationSummaryDto"
+            }
+          }
+        },
+        "required": [
+          "conversations"
+        ],
+        "example": {
+          "conversations": [
+            {
+              "id": 7,
+              "writer": {
+                "id": 2,
+                "username": "maya",
+                "avatarUrl": null
+              },
+              "lastMessage": {
+                "id": 120,
+                "conversationId": 7,
+                "senderId": 2,
+                "mine": true,
+                "body": "Your walk by the river made me want to go back there.",
+                "createdAt": "2026-11-28T08:30:00.000Z"
+              },
+              "unreadCount": 2,
+              "canWrite": true
+            }
+          ]
+        }
+      },
+      "UnreadMessagesDto": {
+        "type": "object",
+        "properties": {
+          "unreadCount": {
+            "type": "number",
+            "example": 3,
+            "description": "Unread messages across every conversation"
+          }
+        },
+        "required": [
+          "unreadCount"
+        ],
+        "example": {
+          "unreadCount": 3
+        }
+      },
+      "ConversationThreadDto": {
+        "type": "object",
+        "properties": {
+          "conversation": {
+            "$ref": "#/components/schemas/ConversationSummaryDto"
+          },
+          "messages": {
+            "description": "The newest messages (or those before `before`), oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageDto"
+            }
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "Older messages remain: ask again with `before` set to the first one here"
+          }
+        },
+        "required": [
+          "conversation",
+          "messages",
+          "hasMore"
+        ],
+        "example": {
+          "conversation": {
+            "id": 7,
+            "writer": {
+              "id": 2,
+              "username": "maya",
+              "avatarUrl": null
+            },
+            "lastMessage": {
+              "id": 120,
+              "conversationId": 7,
+              "senderId": 2,
+              "mine": true,
+              "body": "Your walk by the river made me want to go back there.",
+              "createdAt": "2026-11-28T08:30:00.000Z"
+            },
+            "unreadCount": 2,
+            "canWrite": true
+          },
+          "messages": [
+            {
+              "id": 120,
+              "conversationId": 7,
+              "senderId": 2,
+              "mine": true,
+              "body": "Your walk by the river made me want to go back there.",
+              "createdAt": "2026-11-28T08:30:00.000Z"
+            }
+          ],
+          "hasMore": true
+        }
+      },
+      "SendMessageDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "example": "Your walk by the river made me want to go back there.",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "example": {
+          "body": "Your walk by the river made me want to go back there."
+        }
+      },
       "MemoirProgramDto": {
         "type": "object",
         "properties": {
@@ -35729,6 +36520,9 @@
           "COMMENTS_FOLLOWERS_ONLY",
           "COMMENT_PIN_HIDDEN",
           "FEATURE_REQUEST_NOT_FOUND",
+          "SOCIAL_CANNOT_MESSAGE_SELF",
+          "CONVERSATION_NOT_FOUND",
+          "CONVERSATION_READ_ONLY",
           "CONTACT_INVALID_REQUEST",
           "CONTACT_NOT_CONFIGURED",
           "CONTACT_NOT_SENT"

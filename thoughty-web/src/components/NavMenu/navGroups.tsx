@@ -7,6 +7,14 @@ export interface NavGroupItem {
     readonly view: ViewType;
     readonly label: string;
     readonly icon: ReactNode;
+    /** What waits on the page (unread messages), shown beside its name. */
+    readonly badge?: NavBadge;
+}
+
+/** A count beside a page's name: `text` as shown (empty for a dot alone, in quiet mode) and `label` as read out. */
+export interface NavBadge {
+    readonly text: string;
+    readonly label: string;
 }
 
 export interface NavGroupDefinition {
@@ -52,9 +60,13 @@ const importExportIcon = (
 /**
  * The main navigation's groups, in order: writing, other people, looking back, and what organizes,
  * moves or holds the data itself (the diaries, the tags, import and export, the recycle bin). The views in
- * `hiddenViews` (a feature switched off) are left out.
+ * `hiddenViews` (a feature switched off) are left out, and a view in `badges` shows what waits on it.
  */
-export function buildNavGroups(t: Translate, hiddenViews: readonly ViewType[] = []): readonly NavGroupDefinition[] {
+export function buildNavGroups(
+    t: Translate,
+    hiddenViews: readonly ViewType[] = [],
+    badges: Partial<Record<ViewType, NavBadge>> = {},
+): readonly NavGroupDefinition[] {
     const groups: readonly NavGroupDefinition[] = [
         {
             id: 'journaling',
@@ -72,6 +84,7 @@ export function buildNavGroups(t: Translate, hiddenViews: readonly ViewType[] = 
             icon: codicon('comment-discussion'),
             items: [
                 { view: 'feed', label: t('feed'), icon: codicon('rss') },
+                { view: 'messages', label: t('messages'), icon: codicon('mail') },
                 { view: 'people', label: t('people'), icon: codicon('organization') },
             ],
         },
@@ -96,6 +109,11 @@ export function buildNavGroups(t: Translate, hiddenViews: readonly ViewType[] = 
             ],
         },
     ];
-    return groups.map((group) => ({ ...group, items: group.items.filter((item) => !hiddenViews.includes(item.view)) }));
+    return groups.map((group) => ({
+        ...group,
+        items: group.items
+            .filter((item) => !hiddenViews.includes(item.view))
+            .map((item) => (badges[item.view] ? { ...item, badge: badges[item.view] } : item)),
+    }));
 }
 

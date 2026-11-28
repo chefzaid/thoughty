@@ -232,6 +232,14 @@ export const CONTRACT_SUITES = {
   // Followers by approval: requests, approving and declining them, and the teaser others read
   'follow-approval': ['PUT /api/follows/approval', 'PUT /api/follows/followers/{userId}'],
   notifications: ['GET /api/notifications', 'GET /api/notifications/unread', 'PUT /api/notifications/read'],
+  conversations: [
+    'GET /api/conversations',
+    'GET /api/conversations/unread',
+    'PUT /api/conversations/with/{userId}',
+    'GET /api/conversations/{conversationId}',
+    'POST /api/conversations/{conversationId}/messages',
+    'PUT /api/conversations/{conversationId}/read',
+  ],
   calendar: ['GET /api/calendar', 'GET /api/calendar/events', 'GET /api/calendar/days', 'POST /api/calendar/import', 'DELETE /api/calendar'],
   featureFlags: ['GET /api/config/feature-flags'],
   // The flags read from an Unleash client API instead of FEATURE_FLAGS; its route is listed above

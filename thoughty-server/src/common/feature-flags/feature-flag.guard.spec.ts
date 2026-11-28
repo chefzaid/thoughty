@@ -4,6 +4,7 @@ import { AiController } from '@/modules/ai/ai.controller';
 import { AttachmentsController } from '@/modules/attachments/attachments.controller';
 import { BooksController } from '@/modules/books/books.controller';
 import { CloudSyncController } from '@/modules/cloud-sync/cloud-sync.controller';
+import { ConversationsController } from '@/modules/messages/conversations.controller';
 import { ReviewController } from '@/modules/review/review.controller';
 import { ShareLinksController } from '@/modules/share-links/share-links.controller';
 import { SharedContentController } from '@/modules/share-links/shared-content.controller';
@@ -82,6 +83,8 @@ const GUARDED_ROUTES: Record<FeatureFlag, Array<[Controller, string]>> = {
     [FollowsController, 'list'],
     [FollowsController, 'follow'],
     [LeaderboardController, 'getLeaderboard'],
+    [ConversationsController, 'list'],
+    [ConversationsController, 'send'],
     [ShareLinksController, 'create'],
     [SharedContentController, 'open'],
     [SharedContentController, 'downloadBook'],

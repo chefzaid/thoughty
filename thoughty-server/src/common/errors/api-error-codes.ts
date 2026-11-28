@@ -245,6 +245,10 @@ export const API_ERROR_MESSAGES = {
   COMMENTS_FOLLOWERS_ONLY: 'Only followers of its writer can comment on this entry',
   COMMENT_PIN_HIDDEN: 'Show this comment again before pinning it',
   FEATURE_REQUEST_NOT_FOUND: 'Feature request not found',
+  // Messages between writers who follow each other.
+  SOCIAL_CANNOT_MESSAGE_SELF: 'You cannot write to yourself',
+  CONVERSATION_NOT_FOUND: 'Conversation not found',
+  CONVERSATION_READ_ONLY: 'You can write only to a writer who follows you and whom you follow',
 
   // The public Contact page form (`POST /api/contact`).
   CONTACT_INVALID_REQUEST: 'This message could not be accepted',

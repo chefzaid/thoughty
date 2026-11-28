@@ -4,6 +4,7 @@ import { handleCommentRoutes, visibleComments } from './mockApp.routes.comments'
 import { authorId, feedEligibleEntries, likeState, setLiked } from './mockApp.social-shared';
 import { handleWriterControlRoutes } from './mockApp.routes.writer-controls';
 import { handleNotificationRoutes } from './mockApp.routes.notifications';
+import { handleMessageRoutes } from './mockApp.routes.messages';
 import {
   authorFollowFields,
   followWriter,
@@ -283,6 +284,7 @@ export async function handleSocialRoutes(context: RouteContext): Promise<boolean
     || (await handleFollowApprovalRoutes(context))
     || (await handleWriterControlRoutes(context))
     || (await handleNotificationRoutes(context))
+    || (await handleMessageRoutes(context))
     || (await handleFollowRoutes(context))
     || (await handleLikeRoutes(context))
     || (await handleSaveRoute(context))

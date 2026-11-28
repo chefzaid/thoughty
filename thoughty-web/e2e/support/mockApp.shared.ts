@@ -18,6 +18,7 @@ import type { MockCloudFile, MockCloudProvider, MockCloudProviderStatus, MockClo
 import { createMockSignUpState, type MockSignUpOptions, type MockSignUpState } from "./mockApp.sign-up";
 import { createMockContactState, type MockContactOptions, type MockContactState } from "./mockApp.contact";
 import { createMockFollowApprovalState, type MockFollowApprovalState } from "./mockApp.routes.follow-approval";
+import { createMockMessagesState, type MockConversation, type MockMessagesState } from "./mockApp.routes.messages";
 
 export type { MockCloudFile, MockCloudProvider, MockCloudProviderStatus, MockCloudSchedule } from "./mockApp.cloud";
 
@@ -140,6 +141,8 @@ export interface SetupMockAppOptions {
   savedEntryIds?: number[];
   /** The writer's notifications, newest first; opening them marks every one read. */
   notifications?: components["schemas"]["NotificationDto"][];
+  /** The reader's conversations with other writers. */
+  conversations?: MockConversation[];
   /** Feed topics followed, in lower case. */
   followedTopics?: string[];
   /** A started guided memoir (defaults filled in), or null/omitted for one not started yet. */
@@ -235,6 +238,7 @@ export interface MockAppState {
   likedCommentIds: number[];
   savedEntryIds: number[];
   notifications: components["schemas"]["NotificationDto"][];
+  messages: MockMessagesState;
   followedTopics: string[];
   bookVersions: MockBookVersion[];
   /** What each saved version held, so the next one can count what it adds. */
@@ -425,6 +429,7 @@ export function createMockAppState(
     likedCommentIds: [...(options.likedCommentIds || [])],
     savedEntryIds: [...(options.savedEntryIds || [])],
     notifications: (options.notifications || []).map((notification) => ({ ...notification })),
+    messages: createMockMessagesState(options.conversations),
     followedTopics: [...(options.followedTopics || [])],
     bookVersions: [],
     bookVersionManifests: {},

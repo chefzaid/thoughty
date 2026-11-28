@@ -7,6 +7,9 @@ import PrivacyBlurButton from '../PrivacyBlur/PrivacyBlurButton';
 import type { PrivacyBlurState } from '../PrivacyBlur/usePrivacyBlur';
 import QuickCaptureButton from '../QuickCapture/QuickCaptureButton';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
+import { useQuietMode } from '../QuietMode/quietMode';
+import { useDisplayLanguage } from '../../contexts/displayLanguage';
+import { pluralPhrase } from '../../utils/pluralPhrase';
 
 interface NavMenuProps {
     readonly currentView: ViewType;
@@ -23,15 +26,28 @@ interface NavMenuProps {
     readonly quickCapture?: { readonly isOpen: boolean; readonly open: () => void };
     /** The notifications bell, first among the buttons beside the profile. */
     readonly notifications?: ReactNode;
+    /** Unread messages, counted beside Messages (a dot alone in quiet mode). */
+    readonly unreadMessages?: number;
 }
 
-function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVerified, t, onLogout, privacyBlur, quickCapture, notifications }: NavMenuProps) {
+function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVerified, t, onLogout, privacyBlur, quickCapture, notifications, unreadMessages = 0 }: NavMenuProps) {
     const isLight = theme === 'light';
     const displayName = name || t('user');
     const initial = displayName.charAt(0).toUpperCase();
-    // The feed is left out while public sharing is switched off
+    // The feed and messages are left out while public sharing is switched off
     const publicSharing = useFeatureFlag('publicSharing');
-    const groups = useMemo(() => buildNavGroups(t, publicSharing ? [] : ['feed']), [publicSharing, t]);
+    const quiet = useQuietMode();
+    const language = useDisplayLanguage();
+    const groups = useMemo(() => {
+        const badges = unreadMessages > 0
+            ? {
+                messages: quiet
+                    ? { text: '', label: t('messagesNavUnreadQuiet') }
+                    : { text: unreadMessages.toLocaleString(language), label: pluralPhrase(t, 'messagesNavUnread', unreadMessages, language) },
+            }
+            : {};
+        return buildNavGroups(t, publicSharing ? [] : ['feed', 'messages'], badges);
+    }, [language, publicSharing, quiet, t, unreadMessages]);
     const [openGroup, setOpenGroup] = useState<NavGroupId | null>(null);
     const closeGroup = useCallback(() => setOpenGroup(null), []);
     const selectView = useCallback((view: ViewType) => {
