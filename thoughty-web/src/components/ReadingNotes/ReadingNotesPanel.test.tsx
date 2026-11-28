@@ -69,7 +69,8 @@ describe('ReadingNotesPanel', () => {
     const dialog = await openBook();
     expect(within(dialog).getByText('Henry David Thoreau')).toBeInTheDocument();
     const page = await within(dialog).findByRole('region', { name: 'Page 1' });
-    expect(within(page).getByText(/I went to the woods/)).toBeInTheDocument();
+    // The region shows while the page text is still loading, so wait for the text itself
+    expect(await within(page).findByText(/I went to the woods/)).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: 'Previous page' })).toBeDisabled();
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Next page' }));
