@@ -260,7 +260,7 @@ Parts of tasks that cannot advance without the owner's decision or information. 
 - [x] Possibility to provide your own API key (OpenRouter) to use AI features with your own token, and a usage dashboard to monitor your token consumption and costs
 - [x] Graph of insights and correlations from all entries, to discover patterns and connections between them, do the same for tags
 - [x] Transcription from an Audio note
-- [ ] Ability to read PDF and ePub files, annotate them, then export these annotations as thoughts in a specific general or specific Journal
+- [x] Ability to read PDF and ePub files, annotate them, then export these annotations as thoughts in a specific general or specific Journal: **Import** › **Reading notes** reads a PDF or EPUB in the browser (never uploaded), page by page or chapter by chapter as text; a selected passage becomes a note's quote, and **Save the notes** makes each note a private entry in the page's diary (titled after the book, on the day and time it was taken, with the passage, the note and the page or chapter), sent as `reading-notes` through `POST /api/io/import/entries` so a repeated save adds nothing. Unsaved notes wait in the browser by book until saved or discarded (see docs/features.md "Reading notes")
 - [x] Use different models for different tasks, to optimize token consumption parameterized in the AI settings
 - [x] "Get Inspired": one deep reflective question based on the user's most used and most recent tags (only tag names and counts are sent to the AI), replacing the earlier list of history-based writing prompts
 - [x] Summaries of long entries, with the option to include or exclude certain details

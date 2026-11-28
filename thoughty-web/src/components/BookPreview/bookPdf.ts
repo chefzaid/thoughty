@@ -1,4 +1,4 @@
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
 
 /** A chapter of the generated book and the page it starts on (1-based, as printed in its footer). */
 export interface BookPdfChapter {
@@ -42,13 +42,22 @@ const CSS_PIXELS_PER_POINT = 96 / 72;
  * CMaps or standard font files, so the PDF's fonts fall back to the system's sans-serif and
  * page breaks stay exactly those of the PDF.
  */
-async function loadPdfJs() {
+export async function loadPdfJs() {
     const [pdfjs, worker] = await Promise.all([
         import('pdfjs-dist/legacy/build/pdf.mjs'),
         import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?worker&url'),
     ]);
     pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
     return pdfjs;
+}
+
+/** A page's text, line by line as the PDF breaks it. */
+export async function pdfPageText(page: PDFPageProxy): Promise<string> {
+    const content = await page.getTextContent();
+    return content.items
+        .map((item) => ('str' in item ? `${item.str}${item.hasEOL ? '\n' : ''}` : ''))
+        .join('')
+        .trim();
 }
 
 /** Whether an error only says that a render was cancelled for the next one. */
@@ -141,11 +150,7 @@ export async function openBookPdf(data: ArrayBuffer): Promise<BookPdf> {
             };
         },
         async pageText(pageNumber) {
-            const content = await (await document.getPage(pageNumber)).getTextContent();
-            return content.items
-                .map((item) => ('str' in item ? `${item.str}${item.hasEOL ? '\n' : ''}` : ''))
-                .join('')
-                .trim();
+            return pdfPageText(await document.getPage(pageNumber));
         },
         destroy: () => loadingTask.destroy(),
     };

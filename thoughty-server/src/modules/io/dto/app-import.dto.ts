@@ -18,7 +18,7 @@ import { MAX_ENTRY_TITLE_LENGTH, TIME_OF_DAY_PATTERN } from '@/common/utils/entr
 import { MAX_MOOD, MIN_MOOD } from '@/common/utils/entry-mood.util';
 import { StrictBoolean, StrictInt } from '@/common/validation';
 
-export const APP_IMPORT_SOURCES = ['dayone', 'journey', 'daily-notes', 'keep'] as const;
+export const APP_IMPORT_SOURCES = ['dayone', 'journey', 'daily-notes', 'keep', 'reading-notes'] as const;
 export type AppImportSource = (typeof APP_IMPORT_SOURCES)[number];
 export const MAX_APP_IMPORT_ENTRIES = 200;
 export const MAX_IMPORT_FILES = 8;
@@ -27,7 +27,8 @@ export class AppImportEntryDto {
   @ApiProperty({
     description:
       'ID of the entry in the source app (for daily notes, the note\'s path in the archive; for Google Keep, the ' +
-      'note\'s file name in Takeout); an entry already imported is not imported again',
+      'note\'s file name in Takeout; for reading notes, a hash of the book and the note\'s own ID); an entry already ' +
+      'imported is not imported again',
     example: 'journals/2024_03_14.md',
   })
   @IsString()
@@ -106,7 +107,9 @@ export class AppImportEntryDto {
 export class AppImportDto {
   @ApiProperty({
     enum: APP_IMPORT_SOURCES,
-    description: 'Day One, Journey, a folder of daily notes named by date (Obsidian, Logseq), or Google Keep (Takeout)',
+    description:
+      'Day One, Journey, a folder of daily notes named by date (Obsidian, Logseq), Google Keep (Takeout), or the ' +
+      'notes a writer took while reading a PDF or EPUB book in the browser',
   })
   @IsIn(APP_IMPORT_SOURCES)
   source: AppImportSource;

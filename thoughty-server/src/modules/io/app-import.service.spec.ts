@@ -190,6 +190,28 @@ describe('AppImportService', () => {
       ]);
     });
 
+    it('keys reading notes by the book and the note, as private entries at the time each note was taken', async () => {
+      const sourceId = '0123456789abcdef/3f2b8c1e-5a4d-4e2f-9b7a-1c2d3e4f5a6b';
+      diaryRepository.findOne.mockResolvedValue({ id: 3, userId: 7 });
+
+      const result = await service.importEntries(7, batch([
+        entry({ sourceId, date: '2026-11-20', timeOfDay: '21:15', title: 'The Little Prince', content: '> What is essential\n\nSo true.' }),
+      ], { source: 'reading-notes', diaryId: 3 }));
+
+      expect(entryRepository.save.mock.calls[0][0]).toEqual([
+        expect.objectContaining({
+          importRef: `reading-notes:${sourceId}`,
+          diaryId: 3,
+          date: '2026-11-20',
+          timeOfDay: '21:15',
+          title: 'The Little Prince',
+          visibility: 'private',
+          format: 'markdown',
+        }),
+      ]);
+      expect(result.importedCount).toBe(1);
+    });
+
     it('keys Google Keep notes by their file name and keeps their archived and pinned flags', async () => {
       entryRepository.count.mockResolvedValue(1);
 

@@ -6,6 +6,7 @@ import { CloudImportSection, CloudSyncSection } from './ImportExportCloudSection
 import { DangerZoneSection, ExportSection, FormatSection, ImportSection, RouteActions } from './ImportExportPanels';
 import { ImportExportBookPanel } from './ImportExportBookPanel';
 import { AppImportPanel } from './appImport/AppImportPanel';
+import { ReadingNotesPanel } from '../ReadingNotes/ReadingNotesPanel';
 import { useImportExportCloud } from './useImportExportCloud';
 import FeatureOffNote from '../FeatureFlags/FeatureOffNote';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
@@ -352,6 +353,9 @@ function ImportExport({
                             onImported={onDiariesChanged}
                             t={t}
                         />
+                    )}
+                    readingNotesContent={(
+                        <ReadingNotesPanel diaryId={diaryId} diaryName={diaryName} isLight={isLight} language={language} t={t} />
                     )}
                     calendarImportContent={calendarImport}
                     cloudImportContent={cloudSyncOn ? <CloudImportSection {...cloud.importProps} t={t} /> : null}

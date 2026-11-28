@@ -7915,7 +7915,7 @@ export interface components {
          */
         AppImportEntryDto: {
             /**
-             * @description ID of the entry in the source app (for daily notes, the note's path in the archive; for Google Keep, the note's file name in Takeout); an entry already imported is not imported again
+             * @description ID of the entry in the source app (for daily notes, the note's path in the archive; for Google Keep, the note's file name in Takeout; for reading notes, a hash of the book and the note's own ID); an entry already imported is not imported again
              * @example journals/2024_03_14.md
              */
             sourceId: string;
@@ -7976,10 +7976,10 @@ export interface components {
          */
         AppImportDto: {
             /**
-             * @description Day One, Journey, a folder of daily notes named by date (Obsidian, Logseq), or Google Keep (Takeout)
+             * @description Day One, Journey, a folder of daily notes named by date (Obsidian, Logseq), Google Keep (Takeout), or the notes a writer took while reading a PDF or EPUB book in the browser
              * @enum {string}
              */
-            source: "dayone" | "journey" | "daily-notes" | "keep";
+            source: "dayone" | "journey" | "daily-notes" | "keep" | "reading-notes";
             entries: components["schemas"]["AppImportEntryDto"][];
             /** @description Diary for the entries; defaults to the default diary */
             diaryId?: number;

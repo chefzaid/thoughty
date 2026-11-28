@@ -114,6 +114,7 @@ export function ImportSection({
     onSetSkipDuplicates,
     onImport,
     appImportContent,
+    readingNotesContent,
     calendarImportContent,
     cloudImportContent,
     t,
@@ -128,6 +129,7 @@ export function ImportSection({
     onSetSkipDuplicates: (value: boolean) => void;
     onImport: () => void;
     appImportContent?: ReactNode;
+    readingNotesContent?: ReactNode;
     calendarImportContent?: ReactNode;
     cloudImportContent?: ReactNode;
     t: TranslationFunction;
@@ -177,6 +179,7 @@ export function ImportSection({
             )}
 
             {appImportContent}
+            {readingNotesContent}
             {calendarImportContent}
             {cloudImportContent}
         </section>

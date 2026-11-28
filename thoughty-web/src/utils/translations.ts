@@ -92,6 +92,7 @@ import { diariesTranslations, type DiariesTranslationKey } from "./translations.
 import { writingGoalsTranslations, type WritingGoalsTranslationKey } from "./translations.writingGoals";
 import { writingStreakTranslations, type WritingStreakTranslationKey } from "./translations.writingStreak";
 import { comfortReadsTranslations, type ComfortReadsTranslationKey } from "./translations.comfortReads";
+import { readingNotesTranslations, type ReadingNotesTranslationKey } from "./translations.readingNotes";
 import { supportResourcesTranslations, type SupportResourcesTranslationKey } from "./translations.supportResources";
 import { shareImageTranslations, type ShareImageTranslationKey } from "./translations.shareImage";
 import { subscriptionTranslations, type SubscriptionTranslationKey } from "./translations.subscription";
@@ -106,6 +107,7 @@ export type TranslationKey =
   | VisitorPreferencesTranslationKey
   | ApiErrorTranslationKey
   | AppImportTranslationKey
+  | ReadingNotesTranslationKey
   | MemoirTranslationKey
   | MemoirSimpleTranslationKey
   | MemoirPhotosTranslationKey
@@ -213,6 +215,7 @@ export const translations: Translations = {
   en: {
     ...apiErrorsTranslations.en,
     ...appImportTranslations.en,
+    ...readingNotesTranslations.en,
     ...memoirTranslations.en,
     ...memoirSimpleTranslations.en,
     ...memoirPhotosTranslations.en,
@@ -315,6 +318,7 @@ export const translations: Translations = {
   fr: {
     ...apiErrorsTranslations.fr,
     ...appImportTranslations.fr,
+    ...readingNotesTranslations.fr,
     ...memoirTranslations.fr,
     ...memoirSimpleTranslations.fr,
     ...memoirPhotosTranslations.fr,

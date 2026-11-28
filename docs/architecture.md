@@ -56,7 +56,7 @@ flowchart TD
 | `ai` | OpenRouter credentials and usage, tag suggestions, inspiration, rephrasing, summaries, chat, semantic search, duplicates, tag organization, writing insights |
 | `stats` | statistics, heatmap, writing goal progress, daily writing streak, mood stats (with the tags beside good and low moods), the words used most this month, connections graph, writing-tendency analysis |
 | `review` | year in review: totals, rhythm, themes, highlights, moods, and the on-request AI mood arc |
-| `io` | import and export formats, TXT format settings, Day One, Journey, daily-notes (Obsidian, Logseq) and Google Keep (Takeout) imports parsed in the browser ([ADR 0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md)), the streamed Markdown folder export |
+| `io` | import and export formats, TXT format settings, Day One, Journey, daily-notes (Obsidian, Logseq) and Google Keep (Takeout) imports parsed in the browser ([ADR 0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md)), reading notes taken on a PDF or EPUB read in the browser (saved through the same app-import route), the streamed Markdown folder export |
 | `books` | book composition, covers, previews, saved versions; `BookEntrySourceService` selects entries from the journal, a saved search (through `saved-searches` and the entry list filters of `entries`) or hand-picked IDs |
 | `cloud-sync` | provider connections, file browsing, schedules, queued jobs |
 | `config` | user preferences and profile, encrypted settings, data export, the feature-flag endpoint (`GET /api/config/feature-flags`; the flags themselves are `src/common/feature-flags`) |

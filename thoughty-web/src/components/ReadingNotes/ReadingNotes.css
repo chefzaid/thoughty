@@ -1,0 +1,307 @@
+/* Reading notes: the panel on the Import page, and the book open for reading in a modal beside its notes. */
+.reading-notes__pending {
+    display: grid;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.reading-notes__pending ul {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.reading-notes__pending li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.reading-notes__book {
+    overflow-wrap: anywhere;
+}
+
+.reading-notes__actions,
+.reading-note-form__actions,
+.reading-notes-list__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.reading-notes .io-btn,
+.reading-dialog .io-btn {
+    padding: 0.5rem 1rem;
+}
+
+.reading-backdrop {
+    --reading-bg: #0f172a;
+    --reading-surface: #1e293b;
+    --reading-border: rgba(148, 163, 184, 0.35);
+    --reading-text: #f8fafc;
+    --reading-muted: #cbd5e1;
+    --reading-focus: #a5b4fc;
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(2, 6, 23, 0.8);
+}
+
+.reading-backdrop.reading--light {
+    --reading-bg: #ffffff;
+    --reading-surface: #f8fafc;
+    --reading-border: #d1d5db;
+    --reading-text: #111827;
+    --reading-muted: #4b5563;
+    --reading-focus: #4338ca;
+}
+
+.reading--light .io-btn.secondary {
+    background: #eef2ff;
+    border-color: #a5b4fc;
+    color: #3730a3;
+}
+
+.reading-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: min(100%, 1200px);
+    height: min(100%, 1000px);
+    padding: 1rem;
+    border: 1px solid var(--reading-border);
+    border-radius: 16px;
+    background: var(--reading-bg);
+    color: var(--reading-text);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.45);
+}
+
+.reading-dialog__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.reading-dialog__heading {
+    min-width: 0;
+}
+
+.reading-dialog__title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.reading-dialog__author,
+.reading-dialog__hint,
+.reading-note-form__location,
+.reading-notes-list__empty {
+    margin: 0;
+    color: var(--reading-muted);
+    font-size: 0.875rem;
+}
+
+.reading-dialog__body {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(16rem, 2fr);
+    gap: 1rem;
+    min-height: 0;
+    flex: 1;
+}
+
+.reading-dialog__reader,
+.reading-dialog__notes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-height: 0;
+}
+
+.reading-dialog__notes {
+    overflow-y: auto;
+}
+
+.reading-dialog__notes h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.reading-dialog__nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.reading-dialog__nav select,
+.reading-note-form textarea {
+    border: 1px solid var(--reading-border);
+    border-radius: 8px;
+    background: var(--reading-surface);
+    color: var(--reading-text);
+}
+
+.reading-dialog__nav select {
+    flex: 1;
+    min-width: 8rem;
+    max-width: 100%;
+    padding: 0.5rem;
+}
+
+.reading-dialog__text {
+    flex: 1;
+    min-height: 12rem;
+    overflow-y: auto;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--reading-border);
+    border-radius: 12px;
+    background: var(--reading-surface);
+    font-size: 1.0625rem;
+    line-height: 1.7;
+}
+
+.reading-dialog__text p {
+    margin: 0 0 0.9rem;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+.reading-dialog__text:focus-visible,
+.reading-dialog select:focus-visible,
+.reading-dialog button:focus-visible,
+.reading-note-form textarea:focus-visible {
+    outline: 3px solid var(--reading-focus);
+    outline-offset: 2px;
+}
+
+.reading-dialog__empty {
+    color: var(--reading-muted);
+}
+
+.reading-dialog__add,
+.reading-dialog__save {
+    display: grid;
+    gap: 0.4rem;
+    justify-items: start;
+}
+
+.reading-dialog__save {
+    margin-top: auto;
+}
+
+.reading-dialog .message {
+    margin: 0;
+}
+
+.reading-note-form {
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.75rem;
+    border: 1px solid var(--reading-border);
+    border-radius: 12px;
+}
+
+.reading-note-form label {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.reading-note-form textarea {
+    width: 100%;
+    padding: 0.5rem;
+    resize: vertical;
+}
+
+.reading-notes-list {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.reading-notes-list__item {
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.75rem;
+    border: 1px solid var(--reading-border);
+    border-radius: 12px;
+    background: var(--reading-surface);
+}
+
+.reading-notes-list__location {
+    justify-self: start;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--reading-muted);
+    font-size: 0.8125rem;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.reading-notes-list__quote {
+    margin: 0;
+    padding-left: 0.75rem;
+    border-left: 3px solid var(--reading-border);
+    font-style: italic;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+.reading-notes-list__note {
+    margin: 0;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+    .reading-backdrop {
+        padding: 0;
+    }
+
+    .reading-dialog {
+        height: 100%;
+        border-radius: 0;
+        overflow-y: auto;
+    }
+
+    .reading-dialog__body {
+        display: flex;
+        flex: none;
+        flex-direction: column;
+    }
+
+    .reading-dialog__reader,
+    .reading-dialog__notes {
+        min-height: auto;
+        overflow: visible;
+    }
+
+    .reading-dialog__nav select {
+        order: -1;
+        flex-basis: 100%;
+    }
+
+    .reading-dialog__nav .io-btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .reading-dialog__text {
+        flex: none;
+        min-height: 50vh;
+        max-height: 70vh;
+    }
+}

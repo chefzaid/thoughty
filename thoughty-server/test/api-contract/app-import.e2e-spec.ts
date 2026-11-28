@@ -203,4 +203,35 @@ describeContract('app-import', (context) => {
       code: 'VALIDATION_FAILED',
     });
   });
+  it('saves reading notes as private entries on the day and at the time each was taken, once', async () => {
+    const { alice } = context;
+    // What the browser builds from notes taken on a PDF or EPUB: a hash of the book, then the note's own ID
+    const notes = {
+      source: 'reading-notes',
+      entries: [
+        {
+          sourceId: '0123456789abcdef/3f2b8c1e-5a4d-4e2f-9b7a-1c2d3e4f5a6b',
+          date: '2026-11-20',
+          timeOfDay: '21:15',
+          title: 'The Little Prince',
+          content: '> What is essential is invisible to the eye.\n\nThe fox was right.\n\n— *The Little Prince*, Antoine de Saint-Exupéry, page 12',
+          tags: [],
+        },
+      ],
+    };
+    const saved = await call('POST /api/io/import/entries', { as: alice, json: notes, status: 200 });
+    expect(saved.body).toMatchObject({ importedCount: 1, alreadyImportedCount: 0 });
+    const again = await call('POST /api/io/import/entries', { as: alice, json: notes, status: 200 });
+    expect(again.body).toMatchObject({ importedCount: 0, alreadyImportedCount: 1 });
+
+    const [{ entryId }] = (saved.body as { entries: { entryId: number }[] }).entries;
+    const listed = (await call('GET /api/entries', {
+      as: alice,
+      query: new URLSearchParams({ limit: '5', ids: String(entryId) }),
+      status: 200,
+    })).body as { entries: Array<{ date: string; title: string; time_of_day: string; content: string; visibility: string }> };
+    expect(listed.entries.map(({ date, title, time_of_day, content, visibility }) => ({ date, title, time_of_day, content, visibility }))).toEqual([
+      { date: '2026-11-20', title: 'The Little Prince', time_of_day: '21:15', content: notes.entries[0]!.content, visibility: 'private' },
+    ]);
+  });
 });
