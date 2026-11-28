@@ -10,17 +10,28 @@ const summaryRow = (overrides: Record<string, unknown> = {}) => ({
   last_sender_id: 2,
   last_body: 'See you there',
   last_created_at: new Date('2026-11-28T08:30:00Z'),
+  last_shared_entry_ref: null,
+  last_entry_id: null,
+  last_entry_date: null,
+  last_entry_index: null,
+  last_entry_title: null,
   unread_count: '1',
   can_write: true,
   ...overrides,
 });
 
-const messageRow = (id: number, senderId = 4) => ({
+const messageRow = (id: number, senderId = 4, overrides: Record<string, unknown> = {}) => ({
   id,
   conversation_id: 7,
   sender_id: senderId,
   body: `Message ${id}`,
   created_at: new Date('2026-11-28T08:00:00Z'),
+  shared_entry_ref: null,
+  entry_id: null,
+  entry_date: null,
+  entry_index: null,
+  entry_title: null,
+  ...overrides,
 });
 
 describe('ConversationsService', () => {
@@ -53,12 +64,39 @@ describe('ConversationsService', () => {
         mine: false,
         body: 'See you there',
         createdAt: '2026-11-28T08:30:00.000Z',
+        entry: null,
+        entryUnavailable: false,
       },
       unreadCount: 1,
       canWrite: true,
     });
     expect(conversations[1]).toEqual(expect.objectContaining({ canWrite: false, unreadCount: 0 }));
     expect(conversations[1].lastMessage?.mine).toBe(true);
+  });
+
+  it('names the entry the newest message shares while the reader may read it, and says when they no longer may', async () => {
+    dataSource.query.mockResolvedValueOnce([
+      summaryRow({
+        last_shared_entry_ref: 42,
+        last_entry_id: 42,
+        last_entry_date: '2026-11-20',
+        last_entry_index: '2',
+        last_entry_title: null,
+      }),
+      summaryRow({ id: 8, last_shared_entry_ref: 43 }),
+    ]);
+
+    const { conversations } = await service.list(4);
+
+    expect(conversations[0].lastMessage).toEqual(
+      expect.objectContaining({
+        entry: { id: 42, date: '2026-11-20', index: 2, title: null },
+        entryUnavailable: false,
+      }),
+    );
+    expect(conversations[1].lastMessage).toEqual(
+      expect.objectContaining({ entry: null, entryUnavailable: true }),
+    );
   });
 
   it('counts the unread messages, none without a row', async () => {
@@ -114,11 +152,36 @@ describe('ConversationsService', () => {
 
       const thread = await service.thread(4, 7);
 
-      expect(dataSource.query.mock.calls[1][1]).toEqual([7, null]);
+      expect(dataSource.query.mock.calls[1][1]).toEqual([4, 7, null]);
       expect(thread.hasMore).toBe(true);
       expect(thread.messages).toHaveLength(MESSAGE_PAGE_SIZE);
       expect(thread.messages[0].id).toBe(200 - MESSAGE_PAGE_SIZE + 1);
       expect(thread.messages.at(-1)).toEqual(expect.objectContaining({ id: 200, mine: true }));
+    });
+
+    it('names the entries messages share while the reader may read them', async () => {
+      dataSource.query
+        .mockResolvedValueOnce([summaryRow()])
+        .mockResolvedValueOnce([
+          messageRow(6, 2, {
+            shared_entry_ref: 42,
+            entry_id: 42,
+            entry_date: '2026-11-20',
+            entry_index: 1,
+            entry_title: 'Walk',
+          }),
+          messageRow(5, 2, { shared_entry_ref: 41 }),
+        ]);
+
+      const { messages } = await service.thread(4, 7);
+
+      expect(messages[0]).toEqual(expect.objectContaining({ entry: null, entryUnavailable: true }));
+      expect(messages[1]).toEqual(
+        expect.objectContaining({
+          entry: { id: 42, date: '2026-11-20', index: 1, title: 'Walk' },
+          entryUnavailable: false,
+        }),
+      );
     });
 
     it('reads before a message, and refuses a conversation the reader is not in', async () => {
@@ -126,7 +189,7 @@ describe('ConversationsService', () => {
         .mockResolvedValueOnce([summaryRow()])
         .mockResolvedValueOnce([messageRow(5, 2)]);
       const thread = await service.thread(4, 7, 6);
-      expect(dataSource.query.mock.calls[1][1]).toEqual([7, 6]);
+      expect(dataSource.query.mock.calls[1][1]).toEqual([4, 7, 6]);
       expect(thread).toEqual(expect.objectContaining({ hasMore: false }));
       expect(thread.messages[0].mine).toBe(false);
 
@@ -142,10 +205,45 @@ describe('ConversationsService', () => {
 
       const message = await service.send(4, 7, 'Hello');
 
-      expect(manager.query.mock.calls[0][1]).toEqual([7, 4, 'Hello']);
+      expect(manager.query.mock.calls[0][1]).toEqual([7, 4, 'Hello', null]);
       expect(manager.query.mock.calls[1][0]).toContain('UPDATE conversations SET last_message_at');
       expect(manager.query.mock.calls[2][1]).toEqual([7, 4, 31]);
-      expect(message).toEqual(expect.objectContaining({ id: 31, mine: true, body: 'Message 31' }));
+      expect(message).toEqual(
+        expect.objectContaining({ id: 31, mine: true, body: 'Message 31', entry: null }),
+      );
+    });
+
+    it('shares one of the sender\'s public entries with the message', async () => {
+      dataSource.query
+        .mockResolvedValueOnce([summaryRow()])
+        .mockResolvedValueOnce([
+          { id: 42, date: '2026-11-20', index: 1, title: 'Walk', shareable: true },
+        ]);
+      manager.query.mockResolvedValueOnce([messageRow(31)]).mockResolvedValue([]);
+
+      const message = await service.send(4, 7, 'Look', 42);
+
+      expect(dataSource.query.mock.calls[1][1]).toEqual([4, 42]);
+      expect(manager.query.mock.calls[0][1]).toEqual([7, 4, 'Look', 42]);
+      expect(message).toEqual(
+        expect.objectContaining({
+          entry: { id: 42, date: '2026-11-20', index: 1, title: 'Walk' },
+          entryUnavailable: false,
+        }),
+      );
+    });
+
+    it('refuses an entry that is not public, and answers as missing one that is not the sender\'s', async () => {
+      dataSource.query
+        .mockResolvedValueOnce([summaryRow()])
+        .mockResolvedValueOnce([
+          { id: 42, date: '2026-11-20', index: 1, title: null, shareable: false },
+        ]);
+      await expect(service.send(4, 7, 'Look', 42)).rejects.toThrow(BadRequestException);
+
+      dataSource.query.mockResolvedValueOnce([summaryRow()]).mockResolvedValueOnce([]);
+      await expect(service.send(4, 7, 'Look', 43)).rejects.toThrow(NotFoundException);
+      expect(dataSource.transaction).not.toHaveBeenCalled();
     });
 
     it('refuses to write once the writers no longer follow each other', async () => {

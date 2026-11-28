@@ -29,6 +29,14 @@ describe('messagesService', () => {
     expect(authFetch.mock.calls[5]?.[1]?.body).toBe(JSON.stringify({ body: 'Hello' }));
   });
 
+  it('sends the entry a message shares', async () => {
+    const authFetch = vi.fn().mockImplementation(() => Promise.resolve(ok({ ok: true })));
+
+    await createMessagesService(authFetch).send(7, 'Look', 42);
+
+    expect(authFetch.mock.calls[0]?.[1]?.body).toBe(JSON.stringify({ body: 'Look', entryId: 42 }));
+  });
+
   it('gives a translation key when a request fails', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const service = createMessagesService(vi.fn().mockRejectedValue(new Error('offline')));

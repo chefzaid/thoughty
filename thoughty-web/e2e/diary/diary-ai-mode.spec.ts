@@ -45,13 +45,15 @@ test.describe('Diary AI mode', () => {
     await composer(page).fill('A note for the doctor');
     await expect(page.getByRole('button', { name: 'Rephrase', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Auto Tag' })).toHaveCount(0);
-    await expect(page.locator('#entry-102').getByTitle('Discuss with AI')).toHaveCount(0);
+    // Discuss offers only a writer there: no menu, so no AI chat
+    await expect(page.locator('#entry-102').getByRole('button', { name: 'Discuss with someone' })).toBeVisible();
+    await expect(page.locator('#entry-102').getByRole('button', { name: 'Discuss this entry' })).toHaveCount(0);
 
     // The other diary keeps them
     await page.getByTitle('Work', { exact: true }).click();
     await expect(page.locator('#entry-101')).toContainText('A plan for the launch');
     await expect(page.getByRole('button', { name: 'Rephrase', exact: true })).toBeVisible();
-    await expect(page.locator('#entry-101').getByTitle('Discuss with AI')).toBeVisible();
+    await expect(page.locator('#entry-101').getByRole('button', { name: 'Discuss this entry' })).toBeVisible();
 
     // Turned off elsewhere while this page still offers Rephrase: the text names its diary, the API refuses it,
     // the page says why and reloads the diaries, so the AI actions leave that diary
@@ -63,6 +65,7 @@ test.describe('Diary AI mode', () => {
     expect(state.lastAiFixPayload).toEqual({ content: 'Launch notes to tidy', mode: 'grammar', diaryId: 1 });
     await expect(page.getByRole('button', { name: 'Rephrase', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Auto Tag' })).toHaveCount(0);
-    await expect(page.locator('#entry-101').getByTitle('Discuss with AI')).toHaveCount(0);
+    await expect(page.locator('#entry-101').getByRole('button', { name: 'Discuss this entry' })).toHaveCount(0);
+    await expect(page.locator('#entry-101').getByRole('button', { name: 'Discuss with someone' })).toBeVisible();
   });
 });

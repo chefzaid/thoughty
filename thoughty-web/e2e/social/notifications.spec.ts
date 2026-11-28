@@ -38,6 +38,7 @@ const NOTIFICATIONS: NonNullable<SetupMockAppOptions['notifications']> = [
     actor: { id: 2, username: 'Maya', avatarUrl: null },
     entry: { id: 10, date: '2026-11-20', index: 1, title: 'Morning walk' },
     comment: { id: 5, excerpt: 'What a lovely walk' },
+    conversation: null,
   },
   {
     id: 'entryLike:10:3',
@@ -47,6 +48,7 @@ const NOTIFICATIONS: NonNullable<SetupMockAppOptions['notifications']> = [
     actor: { id: 3, username: 'Sam', avatarUrl: null },
     entry: { id: 10, date: '2026-11-20', index: 1, title: 'Morning walk' },
     comment: null,
+    conversation: null,
   },
   {
     id: 'follow:4',
@@ -56,6 +58,7 @@ const NOTIFICATIONS: NonNullable<SetupMockAppOptions['notifications']> = [
     actor: { id: 4, username: 'Lee', avatarUrl: null },
     entry: null,
     comment: null,
+    conversation: null,
   },
 ];
 

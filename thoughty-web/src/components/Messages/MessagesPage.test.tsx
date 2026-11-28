@@ -1,5 +1,6 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ChatMessage, Conversation } from '../../services/api';
@@ -32,6 +33,8 @@ const message = (id: number, body: string, mine = false): ChatMessage => ({
   mine,
   body,
   createdAt: '2026-11-28T08:30:00.000Z',
+  entry: null,
+  entryUnavailable: false,
 });
 const conversation = (overrides: Partial<Conversation> = {}): Conversation => ({
   id: 7,
@@ -49,11 +52,13 @@ const conversationButton = async (username: string) =>
 function renderPage(conversationId: number | null = null, { quiet = false } = {}) {
   const onOpenConversation = vi.fn();
   render(
-    <QueryClientProvider client={createTestQueryClient()}>
-      <QuietModeContext.Provider value={quiet}>
-        <MessagesPage language="en" conversationId={conversationId} onOpenConversation={onOpenConversation} t={t} />
-      </QuietModeContext.Provider>
-    </QueryClientProvider>,
+    <MemoryRouter>
+      <QueryClientProvider client={createTestQueryClient()}>
+        <QuietModeContext.Provider value={quiet}>
+          <MessagesPage language="en" conversationId={conversationId} onOpenConversation={onOpenConversation} t={t} />
+        </QuietModeContext.Provider>
+      </QueryClientProvider>
+    </MemoryRouter>,
   );
   return { onOpenConversation };
 }
@@ -150,6 +155,30 @@ describe('MessagesPage', () => {
 
     fireEvent.click(within(thread).getByRole('button', { name: 'All conversations' }));
     expect(onOpenConversation).toHaveBeenCalledWith(null);
+  });
+
+  it('shows the public entry a message shares with a link to it in the feed, and when it is no longer shared', async () => {
+    services.thread.mockResolvedValue({
+      data: {
+        conversation: conversation(),
+        messages: [
+          { ...message(28, 'Read this', true), entry: { id: 42, date: '2026-11-20', index: 1, title: 'River walk' } },
+          { ...message(29, 'And this'), entry: { id: 43, date: '2026-11-21', index: 2, title: null } },
+          { ...message(30, 'Gone now'), entryUnavailable: true },
+        ],
+        hasMore: false,
+      },
+      error: null,
+    });
+    renderPage(7);
+
+    const log = within(await screen.findByRole('region', { name: 'Conversation with maya' })).getByRole('log');
+    const [titled, untitled, gone] = within(log).getAllByRole('listitem') as [HTMLElement, HTMLElement, HTMLElement];
+    expect(titled).toHaveTextContent('Shared entry: “River walk”');
+    expect(within(titled).getByRole('link', { name: 'Open in the feed' })).toHaveAttribute('href', '/feed?entry=42');
+    expect(untitled).toHaveTextContent('Shared entry: November 21, 2026');
+    expect(gone).toHaveTextContent('The entry shared here is no longer public.');
+    expect(within(gone).queryByRole('link')).not.toBeInTheDocument();
   });
 
   it('sends with Enter, keeps Shift+Enter for a new line, and empties the field once sent', async () => {

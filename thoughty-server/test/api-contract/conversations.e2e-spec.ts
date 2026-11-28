@@ -1,4 +1,5 @@
 import { describeContract, registerWriter } from './contract-suite';
+import type { ApiErrorCode } from '../../src/common/errors/api-error-codes';
 import { createEntry } from './contract-fixtures';
 
 interface Summary {
@@ -110,6 +111,63 @@ describeContract('conversations', (context) => {
       status: 200,
     });
     expect(read.body).toEqual({ unreadCount: 0 });
+  });
+
+  it('shares only a public entry of the sender, and tells the other writer once per conversation in the bell', async () => {
+    const { alice, bob } = context;
+    const publicEntry = await createEntry(context, alice, {
+      text: 'Shared out loud',
+      title: 'River walk',
+      visibility: 'public',
+    });
+    const privateEntry = await createEntry(context, alice, { text: 'Kept to myself' });
+    const bobsEntry = await createEntry(context, bob, { text: 'Bob again', visibility: 'public' });
+    const [conversation] = await list(alice);
+    const send = (json: Record<string, unknown>, status: number, code?: ApiErrorCode) =>
+      call('POST /api/conversations/{conversationId}/messages', {
+        as: alice,
+        params: { conversationId: conversation.id },
+        json,
+        status,
+        ...(code ? { code } : {}),
+      });
+
+    const sent = await send({ body: 'What do you think?', entryId: publicEntry }, 201);
+    expect(sent.body).toEqual(
+      expect.objectContaining({
+        entry: expect.objectContaining({ id: publicEntry, title: 'River walk', index: expect.any(Number) }),
+        entryUnavailable: false,
+      }),
+    );
+    await send({ body: 'And this?', entryId: privateEntry }, 400, 'MESSAGE_ENTRY_NOT_PUBLIC');
+    await send({ body: 'Yours', entryId: bobsEntry }, 404, 'ENTRY_NOT_FOUND');
+    await send({ body: 'Odd', entryId: 'soon' }, 400, 'VALIDATION_FAILED');
+    await send({ body: 'One more thing' }, 201);
+
+    const bell = await call('GET /api/notifications', { as: bob, status: 200 });
+    const messages = (
+      bell.body as { notifications: { id: string; type: string; conversation: unknown }[] }
+    ).notifications.filter((notification) => notification.type === 'message');
+    expect(messages).toEqual([
+      expect.objectContaining({
+        id: `message:${conversation.id}`,
+        actor: expect.objectContaining({ id: alice.id }),
+        entry: null,
+        conversation: { id: conversation.id, messageCount: 2, excerpt: 'One more thing' },
+      }),
+    ]);
+
+    await call('PUT /api/conversations/{conversationId}/read', {
+      as: bob,
+      params: { conversationId: conversation.id },
+      status: 200,
+    });
+    const after = await call('GET /api/notifications', { as: bob, status: 200 });
+    expect(
+      (after.body as { notifications: { type: string }[] }).notifications.some(
+        (notification) => notification.type === 'message',
+      ),
+    ).toBe(false);
   });
 
   it('keeps everyone else out: no conversation with oneself, a writer one way, or someone else’s', async () => {

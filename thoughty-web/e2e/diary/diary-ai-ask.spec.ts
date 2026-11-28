@@ -1,5 +1,6 @@
 import AxeBuilder from '../support/axe';
 import { test, expect, type Page } from '../support/test';
+import { discussEntry } from '../support/discuss';
 import { setupMockApp } from '../support/mockApp';
 import { mockDiary } from '../support/mockApp.diaries';
 import { fulfillJson } from '../support/mockApp.route-utils';
@@ -48,7 +49,7 @@ test.describe('A diary that asks before each AI request', () => {
     // entry's own chat stays, asking before each message
     await expect(page.getByRole('button', { name: 'Discuss', exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Meaning', exact: true })).toHaveCount(0);
-    await expect(page.locator('#entry-102').getByTitle('Discuss with AI')).toBeVisible();
+    await expect(page.locator('#entry-102').getByRole('button', { name: 'Discuss this entry' })).toBeVisible();
 
     // Cancelled: nothing is sent and the text stays
     await composer(page).fill('i dreamt of a boat');
@@ -116,7 +117,7 @@ test.describe('A diary that asks before each AI request', () => {
       initialEntries,
     });
     await page.goto('/journal?diary=2');
-    await page.locator('#entry-102').getByTitle('Discuss with AI').click();
+    await discussEntry(page.locator('#entry-102'), 'Discuss with AI');
     const chat = page.getByRole('dialog', { name: 'AI Chat' });
     await expect(chat.getByText('Previously saved reflection prompt.')).toBeVisible();
     const field = chat.getByLabel('Message to the AI');

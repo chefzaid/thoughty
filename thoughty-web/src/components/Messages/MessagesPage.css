@@ -348,3 +348,31 @@
 .messages-page.light .messages-conversation[aria-current="true"] .messages-conversation-meta {
   color: inherit;
 }
+
+/* The public entry a message shares, under its text, with a link to it in the feed. */
+.messages-shared-entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  margin: 0.15rem 0 0;
+  padding: 0.35rem 0.5rem;
+  border-left: 3px solid currentColor;
+  border-radius: 0.25rem;
+  background: rgb(0 0 0 / 15%);
+  font-size: 0.8125rem;
+}
+
+.messages-page.light .messages-bubble:not(.mine) .messages-shared-entry {
+  background: rgb(0 0 0 / 5%);
+}
+
+.messages-shared-entry a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.messages-shared-entry.gone {
+  font-style: italic;
+}

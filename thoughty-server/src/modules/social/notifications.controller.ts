@@ -15,7 +15,8 @@ export class NotificationsController {
 
   @Get()
   @ApiOperation({
-    summary: 'List the comments and likes on your public entries, the likes on your comments, and new followers',
+    summary:
+      'List the comments and likes on your public entries, the likes on your comments, new followers and unread messages',
   })
   @ApiResponse({
     status: 200,

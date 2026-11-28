@@ -5,6 +5,7 @@ export type Conversation = components['schemas']['ConversationSummaryDto'];
 export type ConversationList = components['schemas']['ConversationListDto'];
 export type ConversationThread = components['schemas']['ConversationThreadDto'];
 export type ChatMessage = components['schemas']['MessageDto'];
+export type MessageSharedEntry = components['schemas']['MessageEntryDto'];
 export type UnreadMessages = components['schemas']['UnreadMessagesDto'];
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
@@ -33,12 +34,13 @@ export const createMessagesService = (authFetch: AuthFetchFunction) => ({
     return requestJson(authFetch(url), 'messagesLoadError');
   },
 
-  send(conversationId: number, body: string): Promise<ServiceResult<ChatMessage>> {
+  /** Sends a message, sharing one of the writer's public entries when `entryId` is given. */
+  send(conversationId: number, body: string, entryId?: number): Promise<ServiceResult<ChatMessage>> {
     return requestJson(
       authFetch(`/api/conversations/${conversationId}/messages`, {
         method: 'POST',
         headers: JSON_HEADERS,
-        body: JSON.stringify({ body }),
+        body: JSON.stringify(entryId === undefined ? { body } : { body, entryId }),
       }),
       'messageSendError',
     );

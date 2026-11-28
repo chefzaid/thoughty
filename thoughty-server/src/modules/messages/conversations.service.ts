@@ -7,12 +7,19 @@ import {
 import { InjectDataSource } from '@nestjs/typeorm';
 import type { DataSource } from 'typeorm';
 import { apiError } from '@/common/errors';
-import { CAN_WRITE_TO_SQL, CONVERSATION_SUMMARY_SQL, UNREAD_COUNT_SQL } from './conversations.sql';
+import {
+  CAN_WRITE_TO_SQL,
+  CONVERSATION_SUMMARY_SQL,
+  SHAREABLE_ENTRY_SQL,
+  THREAD_PAGE_SQL,
+  UNREAD_COUNT_SQL,
+} from './conversations.sql';
 import type {
   ConversationListDto,
   ConversationSummaryDto,
   ConversationThreadDto,
   MessageDto,
+  MessageEntryDto,
   UnreadMessagesDto,
 } from './dto';
 
@@ -30,6 +37,11 @@ interface SummaryRow {
   last_sender_id: number | null;
   last_body: string | null;
   last_created_at: Date | null;
+  last_shared_entry_ref: number | null;
+  last_entry_id: number | null;
+  last_entry_date: string | null;
+  last_entry_index: number | null;
+  last_entry_title: string | null;
   unread_count: number | string;
   can_write: boolean;
 }
@@ -40,9 +52,22 @@ interface MessageRow {
   sender_id: number;
   body: string;
   created_at: Date;
+  /** The entry the message shares, whether or not the reader may still read it. */
+  shared_entry_ref: number | null;
+  /** That entry while the reader may read it, with its day, number and title; null otherwise. */
+  entry_id: number | null;
+  entry_date: string | null;
+  entry_index: number | null;
+  entry_title: string | null;
 }
 
-const MESSAGE_COLUMNS = 'id, conversation_id, sender_id, body, created_at';
+interface ShareableEntryRow {
+  id: number;
+  date: string;
+  index: number;
+  title: string | null;
+  shareable: boolean;
+}
 
 /**
  * One-to-one conversations between writers who follow each other. A conversation stays readable when they no
@@ -115,13 +140,11 @@ export class ConversationsService {
     before?: number,
   ): Promise<ConversationThreadDto> {
     const conversation = await this.summary(userId, conversationId);
-    const rows = (await this.dataSource.query(
-      `SELECT ${MESSAGE_COLUMNS} FROM messages
-        WHERE conversation_id = $1 AND ($2::int IS NULL OR id < $2)
-        ORDER BY id DESC
-        LIMIT ${MESSAGE_PAGE_SIZE + 1}`,
-      [conversationId, before ?? null],
-    )) as MessageRow[];
+    const rows = (await this.dataSource.query(THREAD_PAGE_SQL(MESSAGE_PAGE_SIZE + 1), [
+      userId,
+      conversationId,
+      before ?? null,
+    ])) as MessageRow[];
     const page = rows.slice(0, MESSAGE_PAGE_SIZE).reverse();
     return {
       conversation,
@@ -130,16 +153,26 @@ export class ConversationsService {
     };
   }
 
-  /** Sends a message, which the sender has read; only while the two writers follow each other. */
-  async send(userId: number, conversationId: number, body: string): Promise<MessageDto> {
+  /**
+   * Sends a message, which the sender has read; only while the two writers follow each other. It may share one
+   * of the sender's public entries, which the other writer can then already read in the feed.
+   */
+  async send(
+    userId: number,
+    conversationId: number,
+    body: string,
+    entryId?: number,
+  ): Promise<MessageDto> {
     const conversation = await this.summary(userId, conversationId);
     if (!conversation.canWrite) {
       throw apiError(ForbiddenException, 'CONVERSATION_READ_ONLY');
     }
+    const entry = entryId === undefined ? null : await this.shareableEntry(userId, entryId);
     const row = await this.dataSource.transaction(async (manager) => {
       const [message] = (await manager.query(
-        `INSERT INTO messages (conversation_id, sender_id, body) VALUES ($1, $2, $3) RETURNING ${MESSAGE_COLUMNS}`,
-        [conversationId, userId, body],
+        `INSERT INTO messages (conversation_id, sender_id, body, entry_id) VALUES ($1, $2, $3, $4)
+         RETURNING id, conversation_id, sender_id, body, created_at`,
+        [conversationId, userId, body, entry?.id ?? null],
       )) as MessageRow[];
       await manager.query('UPDATE conversations SET last_message_at = $2 WHERE id = $1', [
         conversationId,
@@ -152,7 +185,25 @@ export class ConversationsService {
       );
       return message;
     });
-    return toMessage(row, userId);
+    return { ...toMessage({ ...row, shared_entry_ref: null, entry_id: null }, userId), entry };
+  }
+
+  /**
+   * The sender's entry a message may share: a public one the feed shows. Anyone else's, or one in the recycle
+   * bin, answers as missing.
+   */
+  private async shareableEntry(userId: number, entryId: number): Promise<MessageEntryDto> {
+    const [entry] = (await this.dataSource.query(SHAREABLE_ENTRY_SQL, [
+      userId,
+      entryId,
+    ])) as ShareableEntryRow[];
+    if (!entry) {
+      throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
+    }
+    if (!entry.shareable) {
+      throw apiError(BadRequestException, 'MESSAGE_ENTRY_NOT_PUBLIC');
+    }
+    return { id: Number(entry.id), date: entry.date, index: Number(entry.index), title: entry.title };
   }
 
   /** The reader has read the conversation up to its newest message; answers what is left unread elsewhere. */
@@ -191,6 +242,16 @@ function toMessage(row: MessageRow, userId: number): MessageDto {
     mine: Number(row.sender_id) === userId,
     body: row.body,
     createdAt: new Date(row.created_at).toISOString(),
+    entry:
+      row.entry_id === null
+        ? null
+        : {
+            id: Number(row.entry_id),
+            date: row.entry_date as string,
+            index: Number(row.entry_index),
+            title: row.entry_title,
+          },
+    entryUnavailable: row.shared_entry_ref !== null && row.entry_id === null,
   };
 }
 
@@ -208,6 +269,11 @@ function toSummary(row: SummaryRow, userId: number): ConversationSummaryDto {
               sender_id: row.last_sender_id as number,
               body: row.last_body as string,
               created_at: row.last_created_at as Date,
+              shared_entry_ref: row.last_shared_entry_ref,
+              entry_id: row.last_entry_id,
+              entry_date: row.last_entry_date,
+              entry_index: row.last_entry_index,
+              entry_title: row.last_entry_title,
             },
             userId,
           ),

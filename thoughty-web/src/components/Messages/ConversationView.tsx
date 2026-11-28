@@ -5,6 +5,7 @@ import type { Language } from '../../utils/translations';
 import { FeedAvatar } from '../FeedPage/FeedAuthor';
 import LoadingSpinner from '../LoadingSpinner/LoadingSpinner';
 import MessageComposer from './MessageComposer';
+import MessageSharedEntry from './MessageSharedEntry';
 import { useConversationThread } from './useMessages';
 
 interface ConversationViewProps {
@@ -57,6 +58,7 @@ export default function ConversationView({ conversationId, language, onBack, t }
             {messages.map((message) => (
               <li key={message.id} className={`messages-bubble${message.mine ? ' mine' : ''}`}>
                 <p className="privacy-text">{message.body}</p>
+                <MessageSharedEntry message={message} language={language} t={t} />
                 <time dateTime={message.createdAt}>{timeFormat.format(new Date(message.createdAt))}</time>
               </li>
             ))}

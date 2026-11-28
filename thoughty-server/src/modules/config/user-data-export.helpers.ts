@@ -22,7 +22,7 @@ export function exportOptInEmail(setting: OptInEmailSetting | null) {
  */
 export const CONVERSATIONS_DOWNLOAD_SQL = `
   SELECT c.id AS conversation_id, c.created_at AS conversation_created_at, o.id AS writer_id, o.username,
-         m.id AS message_id, m.sender_id, m.body, m.created_at
+         m.id AS message_id, m.sender_id, m.body, m.entry_id, m.created_at
     FROM conversation_members me
     JOIN conversations c ON c.id = me.conversation_id
     JOIN conversation_members om ON om.conversation_id = c.id AND om.user_id <> me.user_id
@@ -40,6 +40,7 @@ export interface ConversationDownloadRow {
   message_id: number | null;
   sender_id: number | null;
   body: string | null;
+  entry_id: number | null;
   created_at: Date | null;
 }
 
@@ -51,7 +52,13 @@ export function exportConversations(rows: ConversationDownloadRow[], userId: num
       id: number;
       with: { userId: number; username: string };
       createdAt: Date;
-      messages: { id: number; sentByMe: boolean; body: string; sentAt: Date }[];
+      messages: {
+        id: number;
+        sentByMe: boolean;
+        body: string;
+        sharedEntryId: number | null;
+        sentAt: Date;
+      }[];
     }
   >();
   for (const row of rows) {
@@ -68,6 +75,7 @@ export function exportConversations(rows: ConversationDownloadRow[], userId: num
         id: Number(row.message_id),
         sentByMe: Number(row.sender_id) === userId,
         body: row.body as string,
+        sharedEntryId: row.entry_id === null ? null : Number(row.entry_id),
         sentAt: row.created_at as Date,
       });
     }

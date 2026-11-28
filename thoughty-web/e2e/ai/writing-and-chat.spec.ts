@@ -1,4 +1,5 @@
 import { test, expect } from '../support/test';
+import { discussEntry } from '../support/discuss';
 import { setupMockApp } from '../support/mockApp';
 
 test.describe('AI writing assistance and entry chat', () => {
@@ -29,7 +30,7 @@ test.describe('AI writing assistance and entry chat', () => {
       diaryId: 1,
     });
 
-    await page.locator('#entry-101').getByTitle('Discuss with AI').click();
+    await discussEntry(page.locator('#entry-101'), 'Discuss with AI');
     await expect(page.getByRole('heading', { name: 'AI Chat' })).toBeVisible();
     await expect(page.getByText('Previously saved reflection prompt.')).toBeVisible();
 
@@ -136,7 +137,7 @@ test.describe('AI writing assistance and entry chat', () => {
     });
 
     await page.goto('/journal');
-    await page.locator('#entry-104').getByTitle("Discuter avec l'IA").click();
+    await discussEntry(page.locator('#entry-104'), "Discuter avec l'IA", 'Discuter de cette entrée');
     await expect(page.getByText('Previously saved reflection prompt.')).toBeVisible();
 
     const downloadPromise = page.waitForEvent('download');

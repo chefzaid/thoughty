@@ -20,6 +20,9 @@ describe('NotificationsService', () => {
     entry_title: null,
     comment_id: null,
     comment_excerpt: null,
+    conversation_id: null,
+    message_count: null,
+    message_excerpt: null,
     ...overrides,
   });
 
@@ -31,6 +34,7 @@ describe('NotificationsService', () => {
         row({ type: 'commentLike', entry_id: 50, entry_date: '2026-11-19', entry_index: 2, entry_title: 'Theirs', comment_id: 8, comment_excerpt: 'Mine' }),
         row({ type: 'follow', actor_id: 4, username: 'lee' }),
         row({ type: 'followRequest', actor_id: 6, username: 'pia' }),
+        row({ type: 'message', actor_id: 7, username: 'noa', conversation_id: '9', message_count: '3', message_excerpt: 'See you' }),
       ])
       .mockResolvedValueOnce([{ count: '3' }]);
 
@@ -41,6 +45,7 @@ describe('NotificationsService', () => {
     expect(sql(0)).toContain(`LIMIT ${NOTIFICATION_LIST_LIMIT}`);
     expect(sql(0)).toContain('ORDER BY a.created_at DESC');
     expect(sql(0)).toContain('left(c.content, 140)');
+    expect(sql(0)).toContain('left(nm.body, 140)');
     expect(result.unreadCount).toBe(3);
     expect(result.notifications).toEqual([
       {
@@ -51,6 +56,7 @@ describe('NotificationsService', () => {
         actor: { id: 2, username: 'maya', avatarUrl: null },
         entry: { id: 42, date: '2026-11-20', index: 1, title: 'Walk' },
         comment: { id: 7, excerpt: 'Lovely' },
+        conversation: null,
       },
       expect.objectContaining({
         id: 'entryLike:42:3',
@@ -62,6 +68,14 @@ describe('NotificationsService', () => {
       expect.objectContaining({ id: 'commentLike:8:2', comment: { id: 8, excerpt: 'Mine' } }),
       expect.objectContaining({ id: 'follow:4', entry: null, comment: null }),
       expect.objectContaining({ id: 'followRequest:6', type: 'followRequest', entry: null, comment: null }),
+      expect.objectContaining({
+        id: 'message:9',
+        type: 'message',
+        actor: { id: 7, username: 'noa', avatarUrl: null },
+        entry: null,
+        comment: null,
+        conversation: { id: 9, messageCount: 3, excerpt: 'See you' },
+      }),
     ]);
   });
 
@@ -77,6 +91,11 @@ describe('NotificationsService', () => {
     }
     // A request waiting for the reader's approval is told apart from a follow
     expect(statement).toContain("CASE f.status WHEN 'pending' THEN 'followRequest' ELSE 'follow' END");
+    // Unread messages, one notification per conversation dated by its newest unread message
+    expect(statement).toContain('JOIN messages m ON m.conversation_id = me.conversation_id');
+    expect(statement).toContain('m.id > me.last_read_message_id');
+    expect(statement).toContain('SELECT DISTINCT ON (m.conversation_id)');
+    expect(statement).toContain('COUNT(*) OVER (PARTITION BY m.conversation_id)');
     // A comment the writer hid, the reader's own doings, deleted accounts, blocks and mutes
     expect(statement).toContain('c.hidden_at IS NULL');
     expect(statement).toContain('a.actor_id <> $1');

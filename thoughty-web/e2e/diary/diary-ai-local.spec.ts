@@ -1,5 +1,6 @@
 import AxeBuilder from '../support/axe';
 import { test, expect, type Page } from '../support/test';
+import { discussEntry } from '../support/discuss';
 import { setupMockApp } from '../support/mockApp';
 import { mockDiary } from '../support/mockApp.diaries';
 import { HTTPS_MODEL_URL, LOCAL_MODEL_URL, routeLocalModelServer } from '../support/localModelServer';
@@ -135,7 +136,7 @@ test.describe('A diary on the writer’s own model', () => {
     await saveHttpsModel(page);
 
     await page.goto('/journal?diary=2');
-    await page.locator('#entry-102').getByTitle('Discuss with AI').click();
+    await discussEntry(page.locator('#entry-102'), 'Discuss with AI');
     const chat = page.getByRole('dialog', { name: 'AI Chat' });
     await expect(chat.getByRole('note')).toHaveText(/This chat goes to your own model and is kept only in this browser/);
     await chat.getByPlaceholder('Ask something about this entry...').fill('Why do I write to her?');
@@ -148,7 +149,7 @@ test.describe('A diary on the writer’s own model', () => {
 
     // Opened again, the chat comes from this browser, never from Thoughty's server
     await page.keyboard.press('Escape');
-    await page.locator('#entry-102').getByTitle('Discuss with AI').click();
+    await discussEntry(page.locator('#entry-102'), 'Discuss with AI');
     await expect(chat.getByText('My model hears you: Why do I write to her?')).toBeVisible();
     await expect(chat.getByText('Previously saved reflection prompt.')).toHaveCount(0);
     expect(await chatKeys(page)).toHaveLength(1);

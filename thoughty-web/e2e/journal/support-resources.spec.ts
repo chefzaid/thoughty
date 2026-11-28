@@ -1,5 +1,6 @@
 import AxeBuilder from '../support/axe';
 import { expect, test, type Page } from '../support/test';
+import { discussEntry } from '../support/discuss';
 import { setupMockApp } from '../support/mockApp';
 
 const EN_TITLE = "You don't have to face this alone";
@@ -73,7 +74,7 @@ test.describe('Support resources when words signal a crisis', () => {
     });
     await page.goto('/journal');
 
-    await page.locator('#entry-101').getByTitle('Discuss with AI').click();
+    await discussEntry(page.locator('#entry-101'), 'Discuss with AI');
     const dialog = page.getByRole('dialog', { name: 'AI Chat' });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByTestId('support-resources')).toHaveCount(0);

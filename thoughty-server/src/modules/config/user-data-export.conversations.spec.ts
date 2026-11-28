@@ -27,7 +27,7 @@ function build(followRepository: ReturnType<typeof emptyRepository>) {
 }
 
 describe('UserDataExportService conversations', () => {
-  it('writes each conversation with its writer and every message both ways, an empty one included', async () => {
+  it('writes each conversation with its writer and every message both ways with the entry it shared, an empty one included', async () => {
     const follows = emptyRepository();
     const created = new Date('2026-11-20T08:00:00Z');
     follows.query.mockResolvedValue([
@@ -39,6 +39,7 @@ describe('UserDataExportService conversations', () => {
         message_id: 30,
         sender_id: 1,
         body: 'Hello',
+        entry_id: 42,
         created_at: new Date('2026-11-20T08:01:00Z'),
       },
       {
@@ -49,6 +50,7 @@ describe('UserDataExportService conversations', () => {
         message_id: 31,
         sender_id: 2,
         body: 'Hi!',
+        entry_id: null,
         created_at: new Date('2026-11-20T08:02:00Z'),
       },
       {
@@ -59,6 +61,7 @@ describe('UserDataExportService conversations', () => {
         message_id: null,
         sender_id: null,
         body: null,
+        entry_id: null,
         created_at: null,
       },
     ]);
@@ -72,8 +75,20 @@ describe('UserDataExportService conversations', () => {
         with: { userId: 2, username: 'maya' },
         createdAt: created,
         messages: [
-          { id: 30, sentByMe: true, body: 'Hello', sentAt: new Date('2026-11-20T08:01:00Z') },
-          { id: 31, sentByMe: false, body: 'Hi!', sentAt: new Date('2026-11-20T08:02:00Z') },
+          {
+            id: 30,
+            sentByMe: true,
+            body: 'Hello',
+            sharedEntryId: 42,
+            sentAt: new Date('2026-11-20T08:01:00Z'),
+          },
+          {
+            id: 31,
+            sentByMe: false,
+            body: 'Hi!',
+            sharedEntryId: null,
+            sentAt: new Date('2026-11-20T08:02:00Z'),
+          },
         ],
       },
       { id: 9, with: { userId: 3, username: 'omar' }, createdAt: created, messages: [] },

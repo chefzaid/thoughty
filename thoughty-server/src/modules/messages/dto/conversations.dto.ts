@@ -14,6 +14,17 @@ export class SendMessageDto {
   @IsString()
   @Length(1, MESSAGE_MAX_LENGTH)
   body!: string;
+
+  @ApiPropertyOptional({
+    description:
+      'One of your public entries to share with the message, which the other writer can already read in the feed',
+    minimum: 1,
+    example: 42,
+  })
+  @IsOptional()
+  @StrictInt()
+  @Min(1)
+  entryId?: number;
 }
 
 export class ConversationMessagesQueryDto {
@@ -39,6 +50,21 @@ export class ConversationWriterDto {
   avatarUrl!: string | null;
 }
 
+/** The public entry a message shares, by its day, its number that day and its title. */
+export class MessageEntryDto {
+  @ApiProperty({ example: 42 })
+  id!: number;
+
+  @ApiProperty({ example: '2026-11-20' })
+  date!: string;
+
+  @ApiProperty({ example: 1 })
+  index!: number;
+
+  @ApiProperty({ type: String, nullable: true, example: 'Morning walk by the river' })
+  title!: string | null;
+}
+
 export class MessageDto {
   @ApiProperty({ example: 120 })
   id!: number;
@@ -57,6 +83,20 @@ export class MessageDto {
 
   @ApiProperty({ example: '2026-11-28T08:30:00.000Z' })
   createdAt!: string;
+
+  @ApiProperty({
+    type: MessageEntryDto,
+    nullable: true,
+    description:
+      'The public entry the message shares, while the current user may read it in the feed; null otherwise',
+  })
+  entry!: MessageEntryDto | null;
+
+  @ApiProperty({
+    description:
+      'The message shared an entry the current user can no longer read (made private, archived, hidden by moderation or in the recycle bin)',
+  })
+  entryUnavailable!: boolean;
 }
 
 export class ConversationSummaryDto {

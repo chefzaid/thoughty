@@ -1,5 +1,6 @@
 import AxeBuilder from '../support/axe';
 import { test, expect, type Page } from '../support/test';
+import { discussEntry } from '../support/discuss';
 import { setupMockApp } from '../support/mockApp';
 
 // A 1x1 transparent PNG, served for the image attachment.
@@ -47,8 +48,13 @@ async function expectNoAxeViolations(page: Page) {
 test.describe('Modal dialogs', () => {
   test('AI chat keeps the keyboard inside and returns focus to its opener', async ({ page }) => {
     const entry = await openJournal(page);
-    const opener = entry.getByTitle('Discuss with AI');
+    // Discuss opens its two choices; the AI chat returns focus to the Discuss button
+    const opener = entry.getByRole('button', { name: 'Discuss this entry' });
     await opener.focus();
+    await page.keyboard.press('Enter');
+    const withAi = entry.getByRole('menuitem', { name: 'Discuss with AI' });
+    await page.keyboard.press('Tab');
+    await expect(withAi).toBeFocused();
     await page.keyboard.press('Enter');
 
     const dialog = page.getByRole('dialog', { name: 'AI Chat' });
@@ -158,7 +164,7 @@ test.describe('Modal dialogs', () => {
     test(`AI chat and attachment preview pass an accessibility scan in the ${theme} theme`, async ({ page }) => {
       const entry = await openJournal(page, theme);
 
-      await entry.getByTitle('Discuss with AI').click();
+      await discussEntry(entry, 'Discuss with AI');
       const chat = page.getByRole('dialog', { name: 'AI Chat' });
       const message = chat.getByRole('textbox', { name: 'Message to the AI' });
       await expect(message).toBeEnabled();

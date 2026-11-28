@@ -10,6 +10,8 @@ interface MockMessage {
   senderId: number;
   body: string;
   createdAt: string;
+  /** The sender's public entry the message shares. */
+  entryId?: number;
 }
 
 /** A seeded conversation: who with, its messages oldest first, and the newest one the reader has read. */
@@ -20,11 +22,12 @@ export interface MockConversation {
   lastReadMessageId: number;
 }
 
-/** Messages in the mock API: the reader's conversations, and the ids the next ones take. */
+/** Messages in the mock API: the reader's conversations, the ids the next ones take, and when the bell was opened. */
 export interface MockMessagesState {
   conversations: MockConversation[];
   nextConversationId: number;
   nextMessageId: number;
+  notificationsReadAt: string | null;
 }
 
 export function createMockMessagesState(conversations: MockConversation[] = []): MockMessagesState {
@@ -34,6 +37,7 @@ export function createMockMessagesState(conversations: MockConversation[] = []):
     conversations: copies,
     nextConversationId: Math.max(0, ...copies.map((conversation) => conversation.id)) + 1,
     nextMessageId: Math.max(0, ...messageIds) + 1,
+    notificationsReadAt: null,
   };
 }
 
@@ -47,11 +51,22 @@ function writerToMessage(state: MockAppState, id: number): ConversationWriter | 
     : null;
 }
 
-const toMessage = (state: MockAppState, conversationId: number, message: MockMessage) => ({
-  ...message,
-  conversationId,
-  mine: message.senderId === state.user.id,
-});
+/** The reader's own public entry `entryId`, which a message may share and the other writer can read. */
+function publicEntry(state: MockAppState, entryId: number | undefined) {
+  const entry = state.entries.find((candidate) => candidate.id === entryId);
+  return entry && entry.visibility === 'public' && !entry.is_archived ? entry : null;
+}
+
+const toMessage = (state: MockAppState, conversationId: number, { entryId, ...message }: MockMessage) => {
+  const entry = publicEntry(state, entryId);
+  return {
+    ...message,
+    conversationId,
+    mine: message.senderId === state.user.id,
+    entry: entry ? { id: entry.id, date: entry.date, index: entry.index, title: entry.title ?? null } : null,
+    entryUnavailable: entryId !== undefined && !entry,
+  };
+};
 
 const unreadIn = (state: MockAppState, conversation: MockConversation) =>
   conversation.messages.filter((message) => message.senderId !== state.user.id && message.id > conversation.lastReadMessageId).length;
@@ -69,6 +84,29 @@ function toSummary(state: MockAppState, conversation: MockConversation) {
 
 const unreadCount = (state: MockAppState) =>
   state.messages.conversations.reduce((count, conversation) => count + unreadIn(state, conversation), 0);
+
+/**
+ * The bell's message notifications, as the API reads them: one per conversation with unread messages, dated by
+ * the newest, new when it came after the bell was last opened.
+ */
+export function messageNotifications(state: MockAppState): components['schemas']['NotificationDto'][] {
+  return state.messages.conversations.flatMap((conversation) => {
+    const unread = conversation.messages.filter((message) => message.senderId !== state.user.id && message.id > conversation.lastReadMessageId);
+    const newest = unread.at(-1);
+    if (!newest) return [];
+    const readAt = state.messages.notificationsReadAt;
+    return [{
+      id: `message:${conversation.id}`,
+      type: 'message' as const,
+      createdAt: newest.createdAt,
+      unread: readAt === null || newest.createdAt > readAt,
+      actor: conversation.writer,
+      entry: null,
+      comment: null,
+      conversation: { id: conversation.id, messageCount: unread.length, excerpt: newest.body.slice(0, 140) },
+    }];
+  });
+}
 
 /** `GET /api/conversations/{id}`, `POST …/messages` and `PUT …/read` for one of the reader's conversations. */
 async function handleConversationRoutes({ route, request, pathname, searchParams, state }: RouteContext): Promise<boolean> {
@@ -92,7 +130,8 @@ async function handleConversationRoutes({ route, request, pathname, searchParams
     return true;
   }
   if (match[2] === '/messages' && method === 'POST') {
-    const body = String((request.postDataJSON() as { body?: unknown }).body ?? '').trim();
+    const posted = request.postDataJSON() as { body?: unknown; entryId?: number };
+    const body = String(posted.body ?? '').trim();
     if (!toSummary(state, conversation).canWrite) {
       await fulfillApiError(route, 403, 'CONVERSATION_READ_ONLY', 'You can write only to a writer who follows you and whom you follow');
       return true;
@@ -101,7 +140,24 @@ async function handleConversationRoutes({ route, request, pathname, searchParams
       await fulfillApiError(route, 400, 'VALIDATION_FAILED', ['body must be shorter than or equal to 2000 characters']);
       return true;
     }
-    const message = { id: state.messages.nextMessageId++, senderId: state.user.id, body, createdAt: new Date().toISOString() };
+    if (posted.entryId !== undefined) {
+      const own = state.entries.find((entry) => entry.id === posted.entryId && (entry.userId ?? state.user.id) === state.user.id);
+      if (!own) {
+        await fulfillApiError(route, 404, 'ENTRY_NOT_FOUND', 'Entry not found');
+        return true;
+      }
+      if (!publicEntry(state, own.id)) {
+        await fulfillApiError(route, 400, 'MESSAGE_ENTRY_NOT_PUBLIC', 'Only a public entry can be shared in a message');
+        return true;
+      }
+    }
+    const message = {
+      id: state.messages.nextMessageId++,
+      senderId: state.user.id,
+      body,
+      createdAt: new Date().toISOString(),
+      ...(posted.entryId === undefined ? {} : { entryId: posted.entryId }),
+    };
     conversation.messages.push(message);
     conversation.lastReadMessageId = message.id;
     await fulfillJson(route, toMessage(state, conversation.id, message), { status: 201 });

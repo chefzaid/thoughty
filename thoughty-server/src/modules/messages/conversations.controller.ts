@@ -88,17 +88,27 @@ export class ConversationsController {
 
   @Post(':conversationId/messages')
   @Throttle(throttleDefault(RATE_LIMITS.messageWrite))
-  @ApiOperation({ summary: 'Send a message, while you and the other writer follow each other' })
+  @ApiOperation({
+    summary:
+      'Send a message, while you and the other writer follow each other, optionally sharing one of your public entries',
+  })
   @ApiResponse({ status: 201, description: 'The message as sent', type: MessageDto })
-  @ApiResponse({ status: 400, description: 'The message is empty or longer than 2000 characters' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'The message is empty or longer than 2000 characters, or the entry to share is not public (`MESSAGE_ENTRY_NOT_PUBLIC`)',
+  })
   @ApiResponse({ status: 403, description: 'You and the other writer no longer follow each other' })
-  @ApiResponse({ status: 404, description: 'No conversation of yours with this id' })
+  @ApiResponse({
+    status: 404,
+    description: 'No conversation of yours with this id, or no entry of yours with `entryId`',
+  })
   send(
     @CurrentUser() user: AuthenticatedUser,
     @Param('conversationId', ParseIntPipe) conversationId: number,
-    @Body() { body }: SendMessageDto,
+    @Body() { body, entryId }: SendMessageDto,
   ): Promise<MessageDto> {
-    return this.conversationsService.send(user.userId, conversationId, body);
+    return this.conversationsService.send(user.userId, conversationId, body, entryId);
   }
 
   @Put(':conversationId/read')

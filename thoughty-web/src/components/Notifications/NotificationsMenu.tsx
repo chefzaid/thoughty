@@ -19,8 +19,9 @@ interface NotificationsMenuProps {
 
 /**
  * The bell beside quick capture: how many notifications are new (only that there are some, in quiet mode), and a
- * panel listing the comments and likes on your public entries, the likes on your comments and your new followers.
- * Opening it marks them read; one about an entry opens that entry in the feed. Not shown while public sharing is off.
+ * panel listing the comments and likes on your public entries, the likes on your comments, your new followers and
+ * the conversations with unread messages. Opening it marks them read; one about an entry opens that entry in the
+ * feed, one about messages opens the conversation. Not shown while public sharing is off.
  */
 function NotificationsMenu(props: NotificationsMenuProps) {
     return useFeatureFlag('publicSharing') ? <NotificationsMenuInner {...props} /> : null;
@@ -52,9 +53,9 @@ function NotificationsMenuInner({ language, t }: NotificationsMenuProps) {
         const next = event.relatedTarget;
         if (open && next instanceof Node && !wrapperRef.current?.contains(next)) setOpen(false);
     };
-    const openEntry = (entryId: number) => {
+    const openTarget = (path: string) => {
         setOpen(false);
-        navigate(`/feed?entry=${entryId}`);
+        navigate(path);
     };
 
     let buttonLabel = t('notifications');
@@ -99,9 +100,9 @@ function NotificationsMenuInner({ language, t }: NotificationsMenuProps) {
                             <NotificationItem
                                 key={notification.id}
                                 notification={notification}
-                                message={notificationMessage(notification, uiLanguage, t)}
+                                message={notificationMessage(notification, uiLanguage, t, quiet)}
                                 time={timeFormat.format(new Date(notification.createdAt))}
-                                onOpenEntry={openEntry}
+                                onOpen={openTarget}
                                 t={t}
                             />
                         ))}
@@ -116,19 +117,28 @@ interface NotificationItemProps {
     readonly notification: AppNotification;
     readonly message: string;
     readonly time: string;
-    readonly onOpenEntry: (entryId: number) => void;
+    readonly onOpen: (path: string) => void;
     readonly t: TranslationFunction;
 }
 
-/** One notification: a button to its entry in the feed, or plain text for a new follower. */
-function NotificationItem({ notification, message, time, onOpenEntry, t }: NotificationItemProps) {
-    const { entry, comment, unread } = notification;
+/** Where a notification leads: its entry in the feed, or the conversation; nowhere for a new follower. */
+function notificationTarget({ entry, conversation }: AppNotification): string | null {
+    if (entry) return `/feed?entry=${entry.id}`;
+    if (conversation) return `/messages?conversation=${conversation.id}`;
+    return null;
+}
+
+/** One notification: a button to its entry in the feed or its conversation, or plain text for a new follower. */
+function NotificationItem({ notification, message, time, onOpen, t }: NotificationItemProps) {
+    const { comment, conversation, unread } = notification;
+    const target = notificationTarget(notification);
     const body = (
         <>
             <span className={`codicon codicon-${notificationIcon(notification)}`} aria-hidden="true" />
             <span className="nav-notification-text">
                 <span className="nav-notification-message">{message}</span>
                 {comment && <span className="nav-notification-excerpt">{comment.excerpt}</span>}
+                {conversation && <span className="nav-notification-excerpt privacy-text">{conversation.excerpt}</span>}
                 <span className="nav-notification-time">
                     {time}
                     {unread && <span className="nav-notification-new"> · {t('notificationNew')}</span>}
@@ -138,8 +148,8 @@ function NotificationItem({ notification, message, time, onOpenEntry, t }: Notif
     );
     return (
         <li className={unread ? 'unread' : undefined}>
-            {entry ? (
-                <button type="button" className="nav-notification" onClick={() => onOpenEntry(entry.id)}>{body}</button>
+            {target ? (
+                <button type="button" className="nav-notification" onClick={() => onOpen(target)}>{body}</button>
             ) : (
                 <div className="nav-notification">{body}</div>
             )}

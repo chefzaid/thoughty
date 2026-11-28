@@ -27,6 +27,8 @@ const PRIMARY_TOOLBAR_ACTIONS = [
     'Private - only you can see',
     'Favorite',
     'Pin entry',
+    // Discuss opens its two choices; "With AI" is the entry's AI chat
+    'Discuss this entry',
     'Discuss entry',
     'Edit',
 ] as const;
@@ -274,7 +276,7 @@ describe('EntryViewMode', () => {
         renderEntryViewMode({ onToggleArchived, onDelete, onDiscuss, onShareEntry });
 
         expect(screen.queryByTitle('Delete')).not.toBeInTheDocument();
-        expect(screen.getByTitle('Discuss entry')).toBeInTheDocument();
+        expect(screen.getByTitle('Discuss this entry')).toHaveAttribute('aria-expanded', 'false');
         expect(screen.getByLabelText('More actions')).toHaveAttribute('aria-expanded', 'false');
 
         await user.click(screen.getByLabelText('More actions'));
@@ -283,6 +285,7 @@ describe('EntryViewMode', () => {
         expect(screen.getByTitle('Open entry permalink')).toHaveAttribute('href', getTestEntryPermalink(mockEntries[0].id));
         expect(screen.getByTitle('Share entry')).toBeInTheDocument();
 
+        await user.click(screen.getByTitle('Discuss this entry'));
         await user.click(screen.getByTitle('Discuss entry'));
         expect(onDiscuss).toHaveBeenCalledWith(mockEntries[0]);
 

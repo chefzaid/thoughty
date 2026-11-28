@@ -28,6 +28,17 @@ const commentNotification: AppNotification = {
   actor,
   entry: { id: 42, date: '2026-11-20', index: 1, title: 'Morning walk' },
   comment: { id: 7, excerpt: 'What a lovely morning' },
+  conversation: null,
+};
+const messageNotification: AppNotification = {
+  id: 'message:9',
+  type: 'message',
+  createdAt: '2026-11-21T09:00:00.000Z',
+  unread: true,
+  actor: { id: 4, username: 'noa', avatarUrl: null },
+  entry: null,
+  comment: null,
+  conversation: { id: 9, messageCount: 3, excerpt: 'See you on Sunday' },
 };
 const notifications: AppNotification[] = [
   commentNotification,
@@ -39,6 +50,7 @@ const notifications: AppNotification[] = [
     actor: { id: 3, username: 'sam', avatarUrl: null },
     entry: null,
     comment: null,
+    conversation: null,
   },
 ];
 
@@ -123,6 +135,26 @@ describe('NotificationsMenu', () => {
     expect(bell).toHaveAttribute('aria-expanded', 'false');
   });
 
+  it('tells of the unread messages of a conversation once, and opens that conversation', async () => {
+    service.list.mockResolvedValue({ data: { notifications: [messageNotification, ...notifications], unreadCount: 3 }, error: null });
+    renderMenu();
+    fireEvent.click(await screen.findByRole('button', { name: 'Notifications, 3 new' }));
+
+    const item = await screen.findByRole('button', { name: /noa sent you 3 messages/ });
+    expect(within(item).getByText('See you on Sunday')).toHaveClass('privacy-text');
+    fireEvent.click(item);
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/messages?conversation=9');
+  });
+
+  it('leaves out how many messages came in quiet mode', async () => {
+    service.list.mockResolvedValue({ data: { notifications: [messageNotification], unreadCount: 1 }, error: null });
+    renderMenu({ quiet: true });
+    fireEvent.click(await screen.findByRole('button', { name: 'Notifications, some new' }));
+
+    expect(await screen.findByRole('button', { name: /noa wrote to you/ })).not.toHaveTextContent(/3/);
+  });
+
   it('says only that something is new in quiet mode', async () => {
     renderMenu({ quiet: true });
 
@@ -194,5 +226,14 @@ describe('notificationMessage', () => {
       'maya demande à vous suivre. Approuvez ou refusez dans l’onglet Abonnements du fil',
     );
     expect(notificationIcon(request)).toBe('person-add');
+  });
+
+  it('counts the unread messages of a conversation in each language', () => {
+    const one = { ...messageNotification, conversation: { id: 9, messageCount: 1, excerpt: 'Hi' } };
+    expect(notificationMessage(one, 'en', en)).toBe('noa sent you a message');
+    expect(notificationMessage(messageNotification, 'fr', fr)).toBe('noa vous a envoyé 3 messages');
+    expect(notificationMessage(one, 'fr', fr, true)).toBe('noa vous a écrit');
+    expect(notificationMessage({ ...messageNotification, conversation: null }, 'en', en)).toBe('noa sent you a message');
+    expect(notificationIcon(messageNotification)).toBe('mail');
   });
 });

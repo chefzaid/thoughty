@@ -28,14 +28,16 @@ describe('ConversationsController', () => {
     await expect(controller.countUnread(user)).resolves.toEqual({ unreadCount: 1 });
     await expect(controller.open(user, 2)).resolves.toEqual({ id: 7 });
     await expect(controller.thread(user, 7, { before: 30 })).resolves.toEqual({ messages: [] });
-    await expect(controller.send(user, 7, { body: 'Hello' })).resolves.toEqual({ id: 9 });
+    await expect(controller.send(user, 7, { body: 'Hello', entryId: 42 })).resolves.toEqual({
+      id: 9,
+    });
     await expect(controller.markRead(user, 7)).resolves.toEqual({ unreadCount: 0 });
 
     expect(service.list).toHaveBeenCalledWith(4);
     expect(service.countUnread).toHaveBeenCalledWith(4);
     expect(service.open).toHaveBeenCalledWith(4, 2);
     expect(service.thread).toHaveBeenCalledWith(4, 7, 30);
-    expect(service.send).toHaveBeenCalledWith(4, 7, 'Hello');
+    expect(service.send).toHaveBeenCalledWith(4, 7, 'Hello', 42);
     expect(service.markRead).toHaveBeenCalledWith(4, 7);
   });
 

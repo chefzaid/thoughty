@@ -1,13 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 /**
- * What happened: a comment on your entry, a like on your entry or comment, a new follower, or a request to follow
- * you waiting for your approval (Followers by approval).
+ * What happened: a comment on your entry, a like on your entry or comment, a new follower, a request to follow
+ * you waiting for your approval (Followers by approval), or messages you have not read in a conversation.
  */
-export const notificationTypes = ['comment', 'entryLike', 'commentLike', 'follow', 'followRequest'] as const;
+export const notificationTypes = [
+  'comment',
+  'entryLike',
+  'commentLike',
+  'follow',
+  'followRequest',
+  'message',
+] as const;
 export type NotificationType = (typeof notificationTypes)[number];
 
-/** Who commented, liked, followed or asked to follow. */
+/** Who commented, liked, followed, asked to follow or wrote to you. */
 export class NotificationActorDto {
   @ApiProperty({ example: 2 })
   id!: number;
@@ -46,6 +53,21 @@ export class NotificationCommentDto {
   excerpt!: string;
 }
 
+/** The conversation with unread messages, how many, and the newest one by its first words. */
+export class NotificationConversationDto {
+  @ApiProperty({ example: 7 })
+  id!: number;
+
+  @ApiProperty({ example: 3, description: 'Messages in it you have not read' })
+  messageCount!: number;
+
+  @ApiProperty({
+    example: 'Your walk by the river made me want to go back there.',
+    description: "The newest unread message's first 140 characters",
+  })
+  excerpt!: string;
+}
+
 export class NotificationDto {
   @ApiProperty({
     example: 'comment:7',
@@ -65,7 +87,11 @@ export class NotificationDto {
   @ApiProperty({ type: NotificationActorDto })
   actor!: NotificationActorDto;
 
-  @ApiProperty({ type: NotificationEntryDto, nullable: true, description: 'Null for a new follower or a follow request' })
+  @ApiProperty({
+    type: NotificationEntryDto,
+    nullable: true,
+    description: 'Null for a new follower, a follow request or messages',
+  })
   entry!: NotificationEntryDto | null;
 
   @ApiProperty({
@@ -74,6 +100,14 @@ export class NotificationDto {
     description: 'The comment written (`comment`) or liked (`commentLike`); null otherwise',
   })
   comment!: NotificationCommentDto | null;
+
+  @ApiProperty({
+    type: NotificationConversationDto,
+    nullable: true,
+    description:
+      'The conversation with unread messages (`message`), one notification per conversation until it is read; null otherwise',
+  })
+  conversation!: NotificationConversationDto | null;
 }
 
 export class NotificationsResponseDto {

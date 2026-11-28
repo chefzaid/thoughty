@@ -14814,6 +14814,11 @@
                       "comment": {
                         "id": 7,
                         "excerpt": "What a lovely morning to read about."
+                      },
+                      "conversation": {
+                        "id": 7,
+                        "messageCount": 3,
+                        "excerpt": "Your walk by the river made me want to go back there."
                       }
                     }
                   ],
@@ -14844,7 +14849,7 @@
             "bearer": []
           }
         ],
-        "summary": "List the comments and likes on your public entries, the likes on your comments, and new followers",
+        "summary": "List the comments and likes on your public entries, the likes on your comments, new followers and unread messages",
         "tags": [
           "Social"
         ]
@@ -14969,7 +14974,14 @@
                         "senderId": 2,
                         "mine": true,
                         "body": "Your walk by the river made me want to go back there.",
-                        "createdAt": "2026-11-28T08:30:00.000Z"
+                        "createdAt": "2026-11-28T08:30:00.000Z",
+                        "entry": {
+                          "id": 42,
+                          "date": "2026-11-20",
+                          "index": 1,
+                          "title": "Morning walk by the river"
+                        },
+                        "entryUnavailable": true
                       },
                       "unreadCount": 2,
                       "canWrite": true
@@ -15087,7 +15099,14 @@
                     "senderId": 2,
                     "mine": true,
                     "body": "Your walk by the river made me want to go back there.",
-                    "createdAt": "2026-11-28T08:30:00.000Z"
+                    "createdAt": "2026-11-28T08:30:00.000Z",
+                    "entry": {
+                      "id": 42,
+                      "date": "2026-11-20",
+                      "index": 1,
+                      "title": "Morning walk by the river"
+                    },
+                    "entryUnavailable": true
                   },
                   "unreadCount": 2,
                   "canWrite": true
@@ -15201,7 +15220,14 @@
                       "senderId": 2,
                       "mine": true,
                       "body": "Your walk by the river made me want to go back there.",
-                      "createdAt": "2026-11-28T08:30:00.000Z"
+                      "createdAt": "2026-11-28T08:30:00.000Z",
+                      "entry": {
+                        "id": 42,
+                        "date": "2026-11-20",
+                        "index": 1,
+                        "title": "Morning walk by the river"
+                      },
+                      "entryUnavailable": true
                     },
                     "unreadCount": 2,
                     "canWrite": true
@@ -15213,7 +15239,14 @@
                       "senderId": 2,
                       "mine": true,
                       "body": "Your walk by the river made me want to go back there.",
-                      "createdAt": "2026-11-28T08:30:00.000Z"
+                      "createdAt": "2026-11-28T08:30:00.000Z",
+                      "entry": {
+                        "id": 42,
+                        "date": "2026-11-20",
+                        "index": 1,
+                        "title": "Morning walk by the river"
+                      },
+                      "entryUnavailable": true
                     }
                   ],
                   "hasMore": true
@@ -15302,7 +15335,8 @@
                 "$ref": "#/components/schemas/SendMessageDto"
               },
               "example": {
-                "body": "Your walk by the river made me want to go back there."
+                "body": "Your walk by the river made me want to go back there.",
+                "entryId": 42
               }
             }
           }
@@ -15321,13 +15355,20 @@
                   "senderId": 2,
                   "mine": true,
                   "body": "Your walk by the river made me want to go back there.",
-                  "createdAt": "2026-11-28T08:30:00.000Z"
+                  "createdAt": "2026-11-28T08:30:00.000Z",
+                  "entry": {
+                    "id": 42,
+                    "date": "2026-11-20",
+                    "index": 1,
+                    "title": "Morning walk by the river"
+                  },
+                  "entryUnavailable": true
                 }
               }
             }
           },
           "400": {
-            "description": "The message is empty or longer than 2000 characters",
+            "description": "The message is empty or longer than 2000 characters, or the entry to share is not public (`MESSAGE_ENTRY_NOT_PUBLIC`)",
             "content": {
               "application/json": {
                 "schema": {
@@ -15335,7 +15376,7 @@
                 },
                 "example": {
                   "statusCode": 400,
-                  "message": "The message is empty or longer than 2000 characters",
+                  "message": "The message is empty or longer than 2000 characters, or the entry to share is not public (`MESSAGE_ENTRY_NOT_PUBLIC`)",
                   "error": "Bad Request",
                   "code": "VALIDATION_FAILED"
                 }
@@ -15359,7 +15400,7 @@
             }
           },
           "404": {
-            "description": "No conversation of yours with this id",
+            "description": "No conversation of yours with this id, or no entry of yours with `entryId`",
             "content": {
               "application/json": {
                 "schema": {
@@ -15367,7 +15408,7 @@
                 },
                 "example": {
                   "statusCode": 404,
-                  "message": "No conversation of yours with this id",
+                  "message": "No conversation of yours with this id, or no entry of yours with `entryId`",
                   "error": "Not Found",
                   "code": "NOT_FOUND"
                 }
@@ -15396,7 +15437,7 @@
             "bearer": []
           }
         ],
-        "summary": "Send a message, while you and the other writer follow each other",
+        "summary": "Send a message, while you and the other writer follow each other, optionally sharing one of your public entries",
         "tags": [
           "Messages"
         ]
@@ -31430,6 +31471,35 @@
           "excerpt": "What a lovely morning to read about."
         }
       },
+      "NotificationConversationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 7
+          },
+          "messageCount": {
+            "type": "number",
+            "example": 3,
+            "description": "Messages in it you have not read"
+          },
+          "excerpt": {
+            "type": "string",
+            "example": "Your walk by the river made me want to go back there.",
+            "description": "The newest unread message's first 140 characters"
+          }
+        },
+        "required": [
+          "id",
+          "messageCount",
+          "excerpt"
+        ],
+        "example": {
+          "id": 7,
+          "messageCount": 3,
+          "excerpt": "Your walk by the river made me want to go back there."
+        }
+      },
       "NotificationDto": {
         "type": "object",
         "properties": {
@@ -31445,7 +31515,8 @@
               "entryLike",
               "commentLike",
               "follow",
-              "followRequest"
+              "followRequest",
+              "message"
             ],
             "example": "comment"
           },
@@ -31463,7 +31534,7 @@
           },
           "entry": {
             "nullable": true,
-            "description": "Null for a new follower or a follow request",
+            "description": "Null for a new follower, a follow request or messages",
             "type": "object",
             "allOf": [
               {
@@ -31480,6 +31551,16 @@
                 "$ref": "#/components/schemas/NotificationCommentDto"
               }
             ]
+          },
+          "conversation": {
+            "nullable": true,
+            "description": "The conversation with unread messages (`message`), one notification per conversation until it is read; null otherwise",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NotificationConversationDto"
+              }
+            ]
           }
         },
         "required": [
@@ -31489,7 +31570,8 @@
           "unread",
           "actor",
           "entry",
-          "comment"
+          "comment",
+          "conversation"
         ],
         "example": {
           "id": "comment:7",
@@ -31510,6 +31592,11 @@
           "comment": {
             "id": 7,
             "excerpt": "What a lovely morning to read about."
+          },
+          "conversation": {
+            "id": 7,
+            "messageCount": 3,
+            "excerpt": "Your walk by the river made me want to go back there."
           }
         }
       },
@@ -31554,6 +31641,11 @@
               "comment": {
                 "id": 7,
                 "excerpt": "What a lovely morning to read about."
+              },
+              "conversation": {
+                "id": 7,
+                "messageCount": 3,
+                "excerpt": "Your walk by the river made me want to go back there."
               }
             }
           ],
@@ -31604,6 +31696,40 @@
           "avatarUrl": null
         }
       },
+      "MessageEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 42
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-11-20"
+          },
+          "index": {
+            "type": "number",
+            "example": 1
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "example": "Morning walk by the river"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "index",
+          "title"
+        ],
+        "example": {
+          "id": 42,
+          "date": "2026-11-20",
+          "index": 1,
+          "title": "Morning walk by the river"
+        }
+      },
       "MessageDto": {
         "type": "object",
         "properties": {
@@ -31631,6 +31757,20 @@
           "createdAt": {
             "type": "string",
             "example": "2026-11-28T08:30:00.000Z"
+          },
+          "entry": {
+            "nullable": true,
+            "description": "The public entry the message shares, while the current user may read it in the feed; null otherwise",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MessageEntryDto"
+              }
+            ]
+          },
+          "entryUnavailable": {
+            "type": "boolean",
+            "description": "The message shared an entry the current user can no longer read (made private, archived, hidden by moderation or in the recycle bin)"
           }
         },
         "required": [
@@ -31639,7 +31779,9 @@
           "senderId",
           "mine",
           "body",
-          "createdAt"
+          "createdAt",
+          "entry",
+          "entryUnavailable"
         ],
         "example": {
           "id": 120,
@@ -31647,7 +31789,14 @@
           "senderId": 2,
           "mine": true,
           "body": "Your walk by the river made me want to go back there.",
-          "createdAt": "2026-11-28T08:30:00.000Z"
+          "createdAt": "2026-11-28T08:30:00.000Z",
+          "entry": {
+            "id": 42,
+            "date": "2026-11-20",
+            "index": 1,
+            "title": "Morning walk by the river"
+          },
+          "entryUnavailable": true
         }
       },
       "ConversationSummaryDto": {
@@ -31705,7 +31854,14 @@
             "senderId": 2,
             "mine": true,
             "body": "Your walk by the river made me want to go back there.",
-            "createdAt": "2026-11-28T08:30:00.000Z"
+            "createdAt": "2026-11-28T08:30:00.000Z",
+            "entry": {
+              "id": 42,
+              "date": "2026-11-20",
+              "index": 1,
+              "title": "Morning walk by the river"
+            },
+            "entryUnavailable": true
           },
           "unreadCount": 2,
           "canWrite": true
@@ -31740,7 +31896,14 @@
                 "senderId": 2,
                 "mine": true,
                 "body": "Your walk by the river made me want to go back there.",
-                "createdAt": "2026-11-28T08:30:00.000Z"
+                "createdAt": "2026-11-28T08:30:00.000Z",
+                "entry": {
+                  "id": 42,
+                  "date": "2026-11-20",
+                  "index": 1,
+                  "title": "Morning walk by the river"
+                },
+                "entryUnavailable": true
               },
               "unreadCount": 2,
               "canWrite": true
@@ -31801,7 +31964,14 @@
               "senderId": 2,
               "mine": true,
               "body": "Your walk by the river made me want to go back there.",
-              "createdAt": "2026-11-28T08:30:00.000Z"
+              "createdAt": "2026-11-28T08:30:00.000Z",
+              "entry": {
+                "id": 42,
+                "date": "2026-11-20",
+                "index": 1,
+                "title": "Morning walk by the river"
+              },
+              "entryUnavailable": true
             },
             "unreadCount": 2,
             "canWrite": true
@@ -31813,7 +31983,14 @@
               "senderId": 2,
               "mine": true,
               "body": "Your walk by the river made me want to go back there.",
-              "createdAt": "2026-11-28T08:30:00.000Z"
+              "createdAt": "2026-11-28T08:30:00.000Z",
+              "entry": {
+                "id": 42,
+                "date": "2026-11-20",
+                "index": 1,
+                "title": "Morning walk by the river"
+              },
+              "entryUnavailable": true
             }
           ],
           "hasMore": true
@@ -31827,13 +32004,20 @@
             "example": "Your walk by the river made me want to go back there.",
             "minLength": 1,
             "maxLength": 2000
+          },
+          "entryId": {
+            "type": "number",
+            "description": "One of your public entries to share with the message, which the other writer can already read in the feed",
+            "minimum": 1,
+            "example": 42
           }
         },
         "required": [
           "body"
         ],
         "example": {
-          "body": "Your walk by the river made me want to go back there."
+          "body": "Your walk by the river made me want to go back there.",
+          "entryId": 42
         }
       },
       "MemoirProgramDto": {
@@ -36523,6 +36707,7 @@
           "SOCIAL_CANNOT_MESSAGE_SELF",
           "CONVERSATION_NOT_FOUND",
           "CONVERSATION_READ_ONLY",
+          "MESSAGE_ENTRY_NOT_PUBLIC",
           "CONTACT_INVALID_REQUEST",
           "CONTACT_NOT_CONFIGURED",
           "CONTACT_NOT_SENT"
