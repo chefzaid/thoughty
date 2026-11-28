@@ -1,7 +1,7 @@
 import { useEffect, useRef, type ComponentProps } from 'react';
-import { useSearchParams } from 'react-router-dom';
 
 import type FilterControls from '../FilterControls/FilterControls';
+import { useLateSearchParams } from '../../hooks/useLateSearchParams';
 import { JOURNAL_PERSON_PARAM, parseJournalPersonParam } from '../../utils/appRouting';
 import { SAVED_SEARCH_PARAM, personViewFilterState } from '../../utils/savedSearches';
 
@@ -18,7 +18,7 @@ export type PersonFilterControls = Pick<ComponentProps<typeof FilterControls>,
  * mentions them, so the other filters are cleared, unless a saved search in the address restores its own.
  */
 export function usePersonFilterRoute(controls: PersonFilterControls): void {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams, writeSearchParams] = useLateSearchParams();
   const routePersonId = parseJournalPersonParam(searchParams);
   const showsSavedSearch = searchParams.has(SAVED_SEARCH_PARAM);
   const controlsRef = useRef(controls);
@@ -27,9 +27,18 @@ export function usePersonFilterRoute(controls: PersonFilterControls): void {
   const seenRef = useRef<number | null | undefined>(undefined);
   /** The person this hook wrote to the address, until the address shows it (router updates can land a render later). */
   const writingRef = useRef<number | null | undefined>(undefined);
+  /** The address's person and the filter's when this hook last acted on them. */
+  const handledRef = useRef<{ readonly route: number | null; readonly filter: number | null } | null>(null);
   const { filterPersonId } = controls;
 
   useEffect(() => {
+    // React can run this again on the same values (Strict Mode's check, or another part of the address
+    // changing). They were handled: acting again would read the person just given to the filter, which
+    // it does not show yet, as the writer clearing it, and drop them from the address.
+    const handled = handledRef.current;
+    if (handled?.route === routePersonId && handled.filter === filterPersonId) return;
+    handledRef.current = { route: routePersonId, filter: filterPersonId };
+
     if (writingRef.current !== undefined) {
       if (routePersonId !== writingRef.current) return;
       writingRef.current = undefined;
@@ -58,17 +67,16 @@ export function usePersonFilterRoute(controls: PersonFilterControls): void {
       return;
     }
 
-    if (filterPersonId !== routePersonId) {
-      writingRef.current = filterPersonId;
-      setSearchParams((previous) => {
-        const next = new URLSearchParams(previous);
-        if (filterPersonId === null) {
-          next.delete(JOURNAL_PERSON_PARAM);
-        } else {
-          next.set(JOURNAL_PERSON_PARAM, String(filterPersonId));
-        }
-        return next;
-      }, { replace: true });
-    }
-  }, [filterPersonId, routePersonId, setSearchParams, showsSavedSearch]);
+    if (filterPersonId === routePersonId) return;
+    const written = writeSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      if (filterPersonId === null) {
+        next.delete(JOURNAL_PERSON_PARAM);
+      } else {
+        next.set(JOURNAL_PERSON_PARAM, String(filterPersonId));
+      }
+      return next;
+    }, { replace: true });
+    if (written) writingRef.current = filterPersonId;
+  }, [filterPersonId, routePersonId, showsSavedSearch, writeSearchParams]);
 }

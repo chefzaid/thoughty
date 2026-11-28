@@ -97,6 +97,26 @@ describe('BookPreviewDialog', () => {
         expect(pageStatus()).toHaveTextContent('Page 1 of 6');
     });
 
+    it('shows a page’s text only once it is read, never the page before’s', async () => {
+        let readSecond: (text: string) => void = () => undefined;
+        vi.mocked(book.pdf.pageText).mockImplementation((page: number) => (page === 2
+            ? new Promise<string>((resolve) => { readSecond = resolve; })
+            : Promise.resolve(`Text of page ${page}`)));
+        renderDialog();
+        const text = await screen.findByTestId('book-preview-page-text');
+        await waitFor(() => expect(text).toHaveTextContent('Text of page 1'));
+        expect(text).toHaveAttribute('aria-busy', 'false');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
+        expect(pageStatus()).toHaveTextContent('Page 2 of 6');
+        expect(text).toBeEmptyDOMElement();
+        expect(text).toHaveAttribute('aria-busy', 'true');
+
+        await act(async () => readSecond('Text of page 2'));
+        expect(text).toHaveTextContent('Text of page 2');
+        expect(text).toHaveAttribute('aria-busy', 'false');
+    });
+
     it('jumps from the book contents and keeps the list on the chapter being read', async () => {
         renderDialog();
         const jump = await screen.findByLabelText('Go to');

@@ -17,12 +17,15 @@ const TRASHED = [
 /** The text of every page of the open book preview, page by page. */
 async function readEveryPage(dialog: Locator): Promise<string[]> {
   const status = dialog.getByRole('toolbar').getByRole('status');
+  const text = dialog.getByTestId('book-preview-page-text');
   await expect(status).toHaveText(/^Page 1 of \d+$/);
   const total = Number((await status.textContent())!.split(' of ')[1]);
   const pages: string[] = [];
   for (let page = 1; page <= total; page += 1) {
     await expect(status).toHaveText(`Page ${page} of ${total}`);
-    pages.push(await dialog.getByTestId('book-preview-page-text').innerText());
+    // The page's text is read after the page is shown
+    await expect(text).toHaveAttribute('aria-busy', 'false');
+    pages.push(await text.innerText());
     if (page < total) await dialog.getByRole('button', { name: 'Next page' }).click();
   }
   return pages;

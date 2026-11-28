@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ComponentProps } from 'react';
-import { useSearchParams } from 'react-router-dom';
 
 import type FilterControls from '../FilterControls/FilterControls';
+import { useLateSearchParams } from '../../hooks/useLateSearchParams';
 import type { SavedSearch } from '../../services/api';
 import type { TranslationFunction } from '../../types';
 import { formatDiarySearchParam, parseDiarySearchParam } from '../../types';
@@ -47,7 +47,7 @@ function parseSavedSearchParam(searchParams: URLSearchParams): number | null {
  * search, and changing any filter afterwards drops it again. A saved meaning search runs once applied.
  */
 export function useSavedSearchRoute({ savedSearches, filters, currentDiaryId, notify, t }: UseSavedSearchRouteOptions) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams, writeSearchParams] = useLateSearchParams();
   const viewId = parseSavedSearchParam(searchParams);
   const [appliedId, setAppliedId] = useState<number | null>(null);
   const [pendingMeaningSearch, setPendingMeaningSearch] = useState<PendingMeaningSearch | null>(null);
@@ -87,8 +87,7 @@ export function useSavedSearchRoute({ savedSearches, filters, currentDiaryId, no
   }, []);
 
   const writeRoute = useCallback((saved: SavedSearch | null) => {
-    routeTargetRef.current = { viewId: saved?.id ?? null };
-    setSearchParams((previous) => {
+    const written = writeSearchParams((previous) => {
       const next = new URLSearchParams(previous);
       if (saved) {
         next.set('diary', formatDiarySearchParam(saved.diaryId));
@@ -99,7 +98,8 @@ export function useSavedSearchRoute({ savedSearches, filters, currentDiaryId, no
       }
       return next;
     }, { replace: true });
-  }, [setSearchParams]);
+    if (written) routeTargetRef.current = { viewId: saved?.id ?? null };
+  }, [writeSearchParams]);
 
   const applySavedSearch = useCallback((saved: SavedSearch) => {
     restoreFilters(saved);

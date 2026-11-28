@@ -135,7 +135,9 @@ export function BookPreviewDialog({
                             tabIndex={0}
                         >
                             <canvas ref={reader.canvasRef} className="book-reader__page privacy-text" aria-hidden="true" />
-                            <div className="sr-only" data-testid="book-preview-page-text">{reader.pageText}</div>
+                            <div className="sr-only" data-testid="book-preview-page-text" aria-busy={!reader.pageTextRead}>
+                                {reader.pageText}
+                            </div>
                         </div>
                     </>
                 )}

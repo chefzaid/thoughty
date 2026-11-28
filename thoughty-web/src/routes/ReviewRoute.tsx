@@ -1,7 +1,8 @@
 import { useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import YearReviewPage, { type YearReviewPageProps } from '../components/YearReview/YearReviewPage';
+import { useLateSearchParams } from '../hooks/useLateSearchParams';
 import { getPathForView } from '../types';
 import { ENTRY_PERMALINK_PARAM } from '../utils/appRouting';
 
@@ -20,10 +21,10 @@ function parseDiary(value: string | null): number | null {
 /** `/review?year=2025&diary=3`; both are optional. */
 function ReviewRoute(props: Readonly<ReviewRouteProps>) {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams, writeSearchParams] = useLateSearchParams();
 
   const update = useCallback((key: 'year' | 'diary', value: number | null, replace = false) => {
-    setSearchParams((current) => {
+    writeSearchParams((current) => {
       const next = new URLSearchParams(current);
       if (value === null) {
         next.delete(key);
@@ -32,7 +33,7 @@ function ReviewRoute(props: Readonly<ReviewRouteProps>) {
       }
       return next;
     }, { replace });
-  }, [setSearchParams]);
+  }, [writeSearchParams]);
   const changeYear = useCallback(
     (year: number, options?: { replace?: boolean }) => update('year', year, options?.replace),
     [update],

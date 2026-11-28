@@ -1,8 +1,9 @@
 import { useCallback } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 import DiaryTabs from '../components/DiaryTabs/DiaryTabs';
 import OpenTasksPage, { type ChangePageOptions } from '../components/OpenTasks/OpenTasksPage';
+import { useLateSearchParams } from '../hooks/useLateSearchParams';
 import type { Diary, TranslationFunction } from '../types';
 
 interface TasksRouteProps {
@@ -32,11 +33,11 @@ function parseAfter(state: unknown): string | null {
  * finds the same tasks; a link without one opens the page by its offset.
  */
 function TasksRoute({ diaries, currentDiaryId, onDiaryChange, onManageDiaries, theme, language, t }: Readonly<TasksRouteProps>) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams, writeSearchParams] = useLateSearchParams();
   const { state } = useLocation();
 
   const changePage = useCallback((page: number, options?: ChangePageOptions) => {
-    setSearchParams((current) => {
+    writeSearchParams((current) => {
       const next = new URLSearchParams(current);
       if (page > 1) {
         next.set('page', String(page));
@@ -45,7 +46,7 @@ function TasksRoute({ diaries, currentDiaryId, onDiaryChange, onManageDiaries, t
       }
       return next;
     }, { replace: options?.replace, state: options?.after ? { openTasksAfter: options.after } : null });
-  }, [setSearchParams]);
+  }, [writeSearchParams]);
 
   return (
     <>

@@ -52,7 +52,8 @@ export function useBookPdfReader(file: Blob | null) {
     const [status, setStatus] = useState<BookPdfReaderStatus>('idle');
     const [pageNumber, setPageNumber] = useState(1);
     const [zoomIndex, setZoomIndex] = useState(FIT_ZOOM_INDEX);
-    const [pageText, setPageText] = useState('');
+    /** The text read from a page, kept with the document and page it belongs to. */
+    const [readText, setReadText] = useState<{ pdf: BookPdf; page: number; text: string } | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const viewportRef = useRef<HTMLDivElement>(null);
     const viewportSize = useElementSize(viewportRef, status === 'ready');
@@ -118,17 +119,22 @@ export function useBookPdfReader(file: Blob | null) {
     useEffect(() => {
         if (!pdf) return undefined;
         let active = true;
-        setPageText('');
+        const read = (text: string) => {
+            if (active) setReadText({ pdf, page: pageNumber, text });
+        };
         pdf.pageText(pageNumber)
-            .then((text) => {
-                if (active) setPageText(text);
-            })
-            .catch((error: unknown) => console.error('Book preview could not read the page text:', error));
+            .then(read)
+            .catch((error: unknown) => {
+                console.error('Book preview could not read the page text:', error);
+                read('');
+            });
         return () => {
             active = false;
         };
     }, [pdf, pageNumber]);
 
+    // Only the shown page's text: the previous page's would otherwise stay a moment under the new page number
+    const pageTextRead = readText !== null && readText.pdf === pdf && readText.page === pageNumber;
     const pageCount = pdf?.pageCount ?? 0;
     const goToPage = useCallback((target: number) => {
         setPageNumber(Math.min(Math.max(Math.round(target), 1), Math.max(pageCount, 1)));
@@ -147,7 +153,9 @@ export function useBookPdfReader(file: Blob | null) {
         goToPage,
         pageCount,
         pageNumber,
-        pageText,
+        pageText: pageTextRead ? readText.text : '',
+        /** False while the shown page's text is still being read. */
+        pageTextRead,
         status,
         viewportRef,
         zoom,
