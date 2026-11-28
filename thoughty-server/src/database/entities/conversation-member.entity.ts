@@ -24,6 +24,13 @@ export class ConversationMember {
   @Column({ name: 'last_read_message_id', type: 'integer', default: 0 })
   lastReadMessageId: number;
 
+  /**
+   * The newest message when the writer last deleted the conversation for themselves (0 if never): only the
+   * messages after it are still there for them.
+   */
+  @Column({ name: 'deleted_up_to_message_id', type: 'integer', default: 0 })
+  deletedUpToMessageId: number;
+
   @CreateDateColumn({ name: 'joined_at', type: 'timestamptz' })
   joinedAt: Date;
 

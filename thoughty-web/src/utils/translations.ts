@@ -50,6 +50,7 @@ import { notificationsTranslations, type NotificationsTranslationKey } from "./t
 import { calendarEventsTranslations, type CalendarEventsTranslationKey } from "./translations.calendarEvents";
 import { messagesTranslations, type MessagesTranslationKey } from "./translations.messages";
 import { messageSharingTranslations, type MessageSharingTranslationKey } from "./translations.messageSharing";
+import { messageDeletionTranslations, type MessageDeletionTranslationKey } from "./translations.messageDeletion";
 import { commentControlsTranslations, type CommentControlsTranslationKey } from "./translations.commentControls";
 import { peopleCheckTranslations, type PeopleCheckTranslationKey } from "./translations.peopleCheck";
 import { navigationTranslations, type NavigationTranslationKey } from "./translations.navigation";
@@ -161,6 +162,7 @@ export type TranslationKey =
   | CalendarEventsTranslationKey
   | MessagesTranslationKey
   | MessageSharingTranslationKey
+  | MessageDeletionTranslationKey
   | NavigationTranslationKey
   | QuickCaptureTranslationKey
   | QuietModeTranslationKey
@@ -272,6 +274,7 @@ export const translations: Translations = {
     ...calendarEventsTranslations.en,
     ...messagesTranslations.en,
     ...messageSharingTranslations.en,
+    ...messageDeletionTranslations.en,
     ...commentControlsTranslations.en,
     ...peopleCheckTranslations.en,
     ...navigationTranslations.en,
@@ -378,6 +381,7 @@ export const translations: Translations = {
     ...calendarEventsTranslations.fr,
     ...messagesTranslations.fr,
     ...messageSharingTranslations.fr,
+    ...messageDeletionTranslations.fr,
     ...commentControlsTranslations.fr,
     ...peopleCheckTranslations.fr,
     ...navigationTranslations.fr,

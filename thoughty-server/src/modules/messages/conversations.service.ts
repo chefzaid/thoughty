@@ -5,11 +5,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import type { DataSource } from 'typeorm';
+import type { DataSource, EntityManager } from 'typeorm';
 import { apiError } from '@/common/errors';
 import {
   CAN_WRITE_TO_SQL,
   CONVERSATION_SUMMARY_SQL,
+  KEPT_MESSAGE_SQL,
+  PURGE_UNKEPT_MESSAGES_SQL,
   SHAREABLE_ENTRY_SQL,
   THREAD_PAGE_SQL,
   UNREAD_COUNT_SQL,
@@ -77,12 +79,15 @@ interface ShareableEntryRow {
 export class ConversationsService {
   constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
-  /** The conversations with at least one message, the most recent first. */
+  /**
+   * The conversations with at least one message the reader still has, the most recent first by that message, so
+   * one they deleted for themselves is left out until a new message comes.
+   */
   async list(userId: number): Promise<ConversationListDto> {
     const rows = (await this.dataSource.query(
       `${CONVERSATION_SUMMARY_SQL}
-         AND c.last_message_at IS NOT NULL
-       ORDER BY c.last_message_at DESC, c.id DESC
+         AND lm.id IS NOT NULL
+       ORDER BY lm.id DESC
        LIMIT ${CONVERSATION_LIST_LIMIT}`,
       [userId],
     )) as SummaryRow[];
@@ -221,6 +226,66 @@ export class ConversationsService {
     return this.countUnread(userId);
   }
 
+  /**
+   * Deletes a message for the reader alone, one they wrote or received; the other writer keeps it. Once no writer
+   * in the conversation has it, it is deleted for good. Answers what is left unread.
+   */
+  async deleteMessage(
+    userId: number,
+    conversationId: number,
+    messageId: number,
+  ): Promise<UnreadMessagesDto> {
+    await this.summary(userId, conversationId);
+    const [message] = (await this.dataSource.query(KEPT_MESSAGE_SQL, [
+      userId,
+      conversationId,
+      messageId,
+    ])) as { id: number }[];
+    if (!message) {
+      throw apiError(NotFoundException, 'MESSAGE_NOT_FOUND');
+    }
+    await this.dataSource.transaction(async (manager) => {
+      await lockConversation(manager, conversationId);
+      await manager.query(
+        `INSERT INTO message_deletions (message_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+        [messageId, userId],
+      );
+      await manager.query(PURGE_UNKEPT_MESSAGES_SQL, [conversationId, messageId, messageId]);
+    });
+    return this.countUnread(userId);
+  }
+
+  /**
+   * Deletes the conversation for the reader alone: every message in it so far leaves their list, the thread and
+   * the unread count, while the other writer keeps them. It comes back with the next message, holding only that
+   * one and those after it. The messages no writer has any more are deleted for good. Answers what is left unread.
+   */
+  async deleteConversation(userId: number, conversationId: number): Promise<UnreadMessagesDto> {
+    await this.summary(userId, conversationId);
+    await this.dataSource.transaction(async (manager) => {
+      await lockConversation(manager, conversationId);
+      const [{ newest }] = (await manager.query(
+        'SELECT COALESCE(MAX(id), 0)::int AS newest FROM messages WHERE conversation_id = $1',
+        [conversationId],
+      )) as { newest: number }[];
+      await manager.query(
+        `UPDATE conversation_members
+            SET deleted_up_to_message_id = GREATEST(deleted_up_to_message_id, $3),
+                last_read_message_id = GREATEST(last_read_message_id, $3)
+          WHERE conversation_id = $1 AND user_id = $2`,
+        [conversationId, userId, newest],
+      );
+      // The messages the reader deleted one by one are now covered by the conversation's mark
+      await manager.query(
+        `DELETE FROM message_deletions md USING messages m
+          WHERE md.message_id = m.id AND md.user_id = $2 AND m.conversation_id = $1 AND m.id <= $3`,
+        [conversationId, userId, newest],
+      );
+      await manager.query(PURGE_UNKEPT_MESSAGES_SQL, [conversationId, 0, newest]);
+    });
+    return this.countUnread(userId);
+  }
+
   /** One conversation the reader is in and may see; any other answers as missing. */
   private async summary(userId: number, conversationId: number): Promise<ConversationSummaryDto> {
     const [row] = (await this.dataSource.query(`${CONVERSATION_SUMMARY_SQL} AND c.id = $2`, [
@@ -232,6 +297,14 @@ export class ConversationsService {
     }
     return toSummary(row, userId);
   }
+}
+
+/**
+ * Holds the conversation's row until the transaction ends, so two writers deleting the same message at once
+ * see each other's deletion and the second one deletes it for good.
+ */
+async function lockConversation(manager: EntityManager, conversationId: number): Promise<void> {
+  await manager.query('SELECT id FROM conversations WHERE id = $1 FOR UPDATE', [conversationId]);
 }
 
 function toMessage(row: MessageRow, userId: number): MessageDto {

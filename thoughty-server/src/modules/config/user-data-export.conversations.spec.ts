@@ -94,4 +94,11 @@ describe('UserDataExportService conversations', () => {
       { id: 9, with: { userId: 3, username: 'omar' }, createdAt: created, messages: [] },
     ]);
   });
+
+  it('leaves out the messages the writer deleted for themselves, one by one or with the conversation', () => {
+    expect(CONVERSATIONS_DOWNLOAD_SQL).toContain('m.id > me.deleted_up_to_message_id');
+    expect(CONVERSATIONS_DOWNLOAD_SQL).toContain(
+      'SELECT 1 FROM message_deletions md WHERE md.message_id = m.id AND md.user_id = $1',
+    );
+  });
 });

@@ -1,4 +1,5 @@
 import type { OptInEmailSetting } from '@/database/entities';
+import { keptByReader } from '@/modules/messages/conversations.sql';
 
 /** An opt-in email setting as the data download writes it, null when it was never saved. */
 export function exportOptInEmail(setting: OptInEmailSetting | null) {
@@ -17,8 +18,9 @@ export function exportOptInEmail(setting: OptInEmailSetting | null) {
 }
 
 /**
- * Every conversation the writer is in, with every message in it from either writer, oldest first: what they
- * wrote and what was written to them. A conversation hidden by a block is still theirs, so it is included.
+ * Every conversation the writer is in, with every message in it from either writer that they still have, oldest
+ * first: what they wrote and what was written to them. A conversation hidden by a block is still theirs, so it is
+ * included; the messages they deleted for themselves, one by one or with the conversation, are not.
  */
 export const CONVERSATIONS_DOWNLOAD_SQL = `
   SELECT c.id AS conversation_id, c.created_at AS conversation_created_at, o.id AS writer_id, o.username,
@@ -27,7 +29,7 @@ export const CONVERSATIONS_DOWNLOAD_SQL = `
     JOIN conversations c ON c.id = me.conversation_id
     JOIN conversation_members om ON om.conversation_id = c.id AND om.user_id <> me.user_id
     JOIN users o ON o.id = om.user_id
-    LEFT JOIN messages m ON m.conversation_id = c.id
+    LEFT JOIN messages m ON m.conversation_id = c.id AND ${keptByReader('m', 'me')}
    WHERE me.user_id = $1
    ORDER BY c.id, m.id
 `;

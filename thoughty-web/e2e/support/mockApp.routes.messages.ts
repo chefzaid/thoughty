@@ -108,15 +108,45 @@ export function messageNotifications(state: MockAppState): components['schemas']
   });
 }
 
-/** `GET /api/conversations/{id}`, `POST …/messages` and `PUT …/read` for one of the reader's conversations. */
-async function handleConversationRoutes({ route, request, pathname, searchParams, state }: RouteContext): Promise<boolean> {
-  const match = /^\/api\/conversations\/(\d+)(\/messages|\/read)?$/.exec(pathname);
+/**
+ * Deleting for the reader alone: `DELETE …/messages/{messageId}` takes one message out of what the reader has,
+ * `DELETE /api/conversations/{id}` every message so far (read, so nothing of it stays unread), until a new one
+ * comes. The mock keeps only the reader's side, so the other writer's copy is not modelled.
+ */
+async function handleDeletion({ route, request, state }: RouteContext, conversation: MockConversation, messageId: number | null) {
+  if (request.method() !== 'DELETE') return false;
+  if (messageId === null) {
+    conversation.lastReadMessageId = Math.max(conversation.lastReadMessageId, conversation.messages.at(-1)?.id ?? 0);
+    conversation.messages = [];
+  } else {
+    const index = conversation.messages.findIndex((message) => message.id === messageId);
+    if (index < 0) {
+      await fulfillApiError(route, 404, 'MESSAGE_NOT_FOUND', 'Message not found');
+      return true;
+    }
+    conversation.messages.splice(index, 1);
+  }
+  await fulfillJson(route, { unreadCount: unreadCount(state) });
+  return true;
+}
+
+/**
+ * `GET` and `DELETE /api/conversations/{id}`, `POST …/messages`, `DELETE …/messages/{messageId}` and `PUT …/read`
+ * for one of the reader's conversations.
+ */
+async function handleConversationRoutes(context: RouteContext): Promise<boolean> {
+  const { route, request, pathname, searchParams, state } = context;
+  const match = /^\/api\/conversations\/(\d+)(\/messages(?:\/(\d+))?|\/read)?$/.exec(pathname);
   if (!match) return false;
   const conversation = state.messages.conversations.find((candidate) => candidate.id === Number(match[1]));
   const method = request.method();
   if (!conversation) {
     await fulfillApiError(route, 404, 'CONVERSATION_NOT_FOUND', 'Conversation not found');
     return true;
+  }
+  if (!match[2] || match[3]) {
+    const deleted = await handleDeletion(context, conversation, match[3] ? Number(match[3]) : null);
+    if (deleted) return true;
   }
   if (!match[2] && method === 'GET') {
     const before = Number(searchParams.get('before') ?? Number.POSITIVE_INFINITY);

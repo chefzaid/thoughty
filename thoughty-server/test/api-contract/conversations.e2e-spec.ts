@@ -170,6 +170,76 @@ describeContract('conversations', (context) => {
     ).toBe(false);
   });
 
+  it('deletes a message or the whole conversation for one writer, while the other keeps them', async () => {
+    const { alice, bob } = context;
+    const [conversation] = await list(alice);
+    const conversationId = conversation.id;
+    const thread = async (as: typeof alice) =>
+      (
+        (await call('GET /api/conversations/{conversationId}', {
+          as,
+          params: { conversationId },
+          status: 200,
+        })).body as { messages: { id: number; body: string }[] }
+      ).messages;
+    const sent = (
+      await call('POST /api/conversations/{conversationId}/messages', {
+        as: bob,
+        params: { conversationId },
+        json: { body: 'Sunday it is' },
+        status: 201,
+      })
+    ).body as { id: number };
+    expect(await unread(alice)).toBe(1);
+
+    const deleted = await call('DELETE /api/conversations/{conversationId}/messages/{messageId}', {
+      as: alice,
+      params: { conversationId, messageId: sent.id },
+      status: 200,
+    });
+    expect(deleted.body).toEqual({ unreadCount: 0 });
+    expect((await thread(alice)).map((message) => message.body)).not.toContain('Sunday it is');
+    expect((await thread(bob)).at(-1)?.body).toBe('Sunday it is');
+    await call('DELETE /api/conversations/{conversationId}/messages/{messageId}', {
+      as: alice,
+      params: { conversationId, messageId: sent.id },
+      status: 404,
+      code: 'MESSAGE_NOT_FOUND',
+    });
+    await call('DELETE /api/conversations/{conversationId}/messages/{messageId}', {
+      as: alice,
+      params: { conversationId, messageId: 'last' },
+      status: 400,
+      code: 'VALIDATION_FAILED',
+    });
+
+    const gone = await call('DELETE /api/conversations/{conversationId}', {
+      as: alice,
+      params: { conversationId },
+      status: 200,
+    });
+    expect(gone.body).toEqual({ unreadCount: 0 });
+    expect(await list(alice)).toEqual([]);
+    expect(await thread(alice)).toEqual([]);
+    expect((await list(bob))[0].lastMessage).toEqual(expect.objectContaining({ body: 'Sunday it is' }));
+
+    // A new message brings it back for alice, holding only that one
+    await call('POST /api/conversations/{conversationId}/messages', {
+      as: bob,
+      params: { conversationId },
+      json: { body: 'Are we still on?' },
+      status: 201,
+    });
+    expect((await list(alice))[0]).toEqual(
+      expect.objectContaining({
+        id: conversationId,
+        unreadCount: 1,
+        lastMessage: expect.objectContaining({ body: 'Are we still on?' }),
+      }),
+    );
+    expect((await thread(alice)).map((message) => message.body)).toEqual(['Are we still on?']);
+  });
+
   it('keeps everyone else out: no conversation with oneself, a writer one way, or someone else’s', async () => {
     const { alice, bob } = context;
     const carol = await registerWriter(context.client, 'carol_conversations');

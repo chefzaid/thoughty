@@ -25,6 +25,17 @@ export function notBlockedEitherWay(column: string): string {
 }
 
 /**
+ * The message in `message` is still there for the reader, whose membership is `member`: newer than when they last
+ * deleted the conversation for themselves, and not one they deleted alone. The other writers keep it either way.
+ */
+export function keptByReader(message: string, member: string): string {
+  return `${message}.id > ${member}.deleted_up_to_message_id
+    AND NOT EXISTS (
+      SELECT 1 FROM message_deletions md WHERE md.message_id = ${message}.id AND md.user_id = $1
+    )`;
+}
+
+/**
  * The entry a message (`m`) shares, as `se`, only while the reader may read it in the feed: public, visible to
  * moderation, not archived and outside the recycle bin, and either the reader's own or by a writer who does not
  * approve their followers or approved the reader's follow. Otherwise `se` is empty and the message says the
@@ -53,15 +64,23 @@ const MESSAGE_SELECT = `
     ${SHARED_ENTRY_JOIN}
 `;
 
-/** A page of a conversation's messages (`$2`), the newest first, before the message `$3` when given. */
+/**
+ * A page of a conversation's messages (`$2`) the reader still has, the newest first, before the message `$3` when
+ * given.
+ */
 export const THREAD_PAGE_SQL = (limit: number) => `
   ${MESSAGE_SELECT}
+    JOIN conversation_members me ON me.conversation_id = m.conversation_id AND me.user_id = $1
    WHERE m.conversation_id = $2 AND ($3::int IS NULL OR m.id < $3)
+     AND ${keptByReader('m', 'me')}
    ORDER BY m.id DESC
    LIMIT ${limit}
 `;
 
-/** The reader's conversations they may see, each with its other writer, newest message and unread count. */
+/**
+ * The reader's conversations they may see, each with its other writer, the newest message and the unread count
+ * among the messages the reader still has.
+ */
 export const CONVERSATION_SUMMARY_SQL = `
   SELECT c.id, c.last_message_at,
          o.id AS writer_id, o.username, o.avatar_url,
@@ -69,7 +88,8 @@ export const CONVERSATION_SUMMARY_SQL = `
          lm.shared_entry_ref AS last_shared_entry_ref, lm.entry_id AS last_entry_id, lm.entry_date AS last_entry_date,
          lm.entry_index AS last_entry_index, lm.entry_title AS last_entry_title,
          (SELECT COUNT(*)::int FROM messages um
-           WHERE um.conversation_id = c.id AND um.sender_id <> $1 AND um.id > me.last_read_message_id) AS unread_count,
+           WHERE um.conversation_id = c.id AND um.sender_id <> $1 AND um.id > me.last_read_message_id
+             AND ${keptByReader('um', 'me')}) AS unread_count,
          ${followEachOther('o.id')} AS can_write
     FROM conversation_members me
     JOIN conversations c ON c.id = me.conversation_id
@@ -77,7 +97,7 @@ export const CONVERSATION_SUMMARY_SQL = `
     JOIN users o ON o.id = om.user_id AND o.deleted_at IS NULL
     LEFT JOIN LATERAL (
       ${MESSAGE_SELECT}
-       WHERE m.conversation_id = c.id
+       WHERE m.conversation_id = c.id AND ${keptByReader('m', 'me')}
        ORDER BY m.id DESC
        LIMIT 1
     ) lm ON true
@@ -85,14 +105,42 @@ export const CONVERSATION_SUMMARY_SQL = `
      AND ${notBlockedEitherWay('o.id')}
 `;
 
-/** Unread messages across the reader's conversations they may see. */
+/** Unread messages, among those the reader still has, across the conversations they may see. */
 export const UNREAD_COUNT_SQL = `
   SELECT COUNT(*)::int AS count
     FROM conversation_members me
     JOIN messages m ON m.conversation_id = me.conversation_id AND m.sender_id <> $1 AND m.id > me.last_read_message_id
     JOIN users s ON s.id = m.sender_id AND s.deleted_at IS NULL
    WHERE me.user_id = $1
+     AND ${keptByReader('m', 'me')}
      AND ${notBlockedEitherWay('m.sender_id')}
+`;
+
+/** The reader's message `$3` in the conversation `$2`, while they still have it. */
+export const KEPT_MESSAGE_SQL = `
+  SELECT m.id
+    FROM messages m
+    JOIN conversation_members me ON me.conversation_id = m.conversation_id AND me.user_id = $1
+   WHERE m.conversation_id = $2 AND m.id = $3
+     AND ${keptByReader('m', 'me')}
+`;
+
+/**
+ * Deletes for good the messages of the conversation `$1`, from `$2` to `$3`, that no writer in it still has: each
+ * deleted them alone or deleted the conversation since. A writer whose account is deleted but not yet purged
+ * still has theirs, so nothing goes before every writer let it go.
+ */
+export const PURGE_UNKEPT_MESSAGES_SQL = `
+  DELETE FROM messages m
+   WHERE m.conversation_id = $1 AND m.id BETWEEN $2 AND $3
+     AND NOT EXISTS (
+       SELECT 1 FROM conversation_members km
+        WHERE km.conversation_id = m.conversation_id
+          AND m.id > km.deleted_up_to_message_id
+          AND NOT EXISTS (
+            SELECT 1 FROM message_deletions kd WHERE kd.message_id = m.id AND kd.user_id = km.user_id
+          )
+     )
 `;
 
 /**

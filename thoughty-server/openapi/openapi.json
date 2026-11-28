@@ -15312,6 +15312,75 @@
         "tags": [
           "Messages"
         ]
+      },
+      "delete": {
+        "operationId": "ConversationsController_deleteConversation",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "How many messages are still unread",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadMessagesDto"
+                },
+                "example": {
+                  "unreadCount": 3
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No conversation of yours with this id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "No conversation of yours with this id",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a conversation for yourself: its messages so far leave your list, and it comes back with the next one",
+        "tags": [
+          "Messages"
+        ]
       }
     },
     "/api/conversations/{conversationId}/messages": {
@@ -15509,6 +15578,85 @@
           }
         ],
         "summary": "Mark a conversation read up to its newest message",
+        "tags": [
+          "Messages"
+        ]
+      }
+    },
+    "/api/conversations/{conversationId}/messages/{messageId}": {
+      "delete": {
+        "operationId": "ConversationsController_deleteMessage",
+        "parameters": [
+          {
+            "name": "conversationId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "messageId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "How many messages are still unread",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadMessagesDto"
+                },
+                "example": {
+                  "unreadCount": 3
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No conversation of yours with this id, or no message with this id in it that you still have (`MESSAGE_NOT_FOUND`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "No conversation of yours with this id, or no message with this id in it that you still have (`MESSAGE_NOT_FOUND`)",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a message for yourself, one you wrote or received; the other writer still has it",
         "tags": [
           "Messages"
         ]
@@ -36708,6 +36856,7 @@
           "CONVERSATION_NOT_FOUND",
           "CONVERSATION_READ_ONLY",
           "MESSAGE_ENTRY_NOT_PUBLIC",
+          "MESSAGE_NOT_FOUND",
           "CONTACT_INVALID_REQUEST",
           "CONTACT_NOT_CONFIGURED",
           "CONTACT_NOT_SENT"

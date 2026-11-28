@@ -239,6 +239,8 @@ export const CONTRACT_SUITES = {
     'GET /api/conversations/{conversationId}',
     'POST /api/conversations/{conversationId}/messages',
     'PUT /api/conversations/{conversationId}/read',
+    'DELETE /api/conversations/{conversationId}/messages/{messageId}',
+    'DELETE /api/conversations/{conversationId}',
   ],
   calendar: ['GET /api/calendar', 'GET /api/calendar/events', 'GET /api/calendar/days', 'POST /api/calendar/import', 'DELETE /api/calendar'],
   featureFlags: ['GET /api/config/feature-flags'],

@@ -52,7 +52,10 @@ describe('ConversationsService', () => {
 
     const { conversations } = await service.list(4);
 
-    expect(dataSource.query.mock.calls[0][0]).toContain('c.last_message_at IS NOT NULL');
+    // Only conversations with a message the reader still has, by that message
+    expect(dataSource.query.mock.calls[0][0]).toContain('AND lm.id IS NOT NULL');
+    expect(dataSource.query.mock.calls[0][0]).toContain('ORDER BY lm.id DESC');
+    expect(dataSource.query.mock.calls[0][0]).toContain('m.id > me.deleted_up_to_message_id');
     expect(dataSource.query.mock.calls[0][1]).toEqual([4]);
     expect(conversations[0]).toEqual({
       id: 7,
@@ -262,5 +265,63 @@ describe('ConversationsService', () => {
     await expect(service.markRead(4, 7)).resolves.toEqual({ unreadCount: 2 });
     expect(dataSource.query.mock.calls[1][0]).toContain('SET last_read_message_id = GREATEST(');
     expect(dataSource.query.mock.calls[1][1]).toEqual([7, 4]);
+  });
+
+  describe('deleting for oneself', () => {
+    it('deletes a message the reader still has for them alone, purges it once no writer has it, and recounts', async () => {
+      dataSource.query
+        .mockResolvedValueOnce([summaryRow()])
+        .mockResolvedValueOnce([{ id: 30 }])
+        .mockResolvedValueOnce([{ count: 0 }]);
+
+      await expect(service.deleteMessage(4, 7, 30)).resolves.toEqual({ unreadCount: 0 });
+
+      expect(dataSource.query.mock.calls[1][0]).toContain('md.user_id = $1');
+      expect(dataSource.query.mock.calls[1][1]).toEqual([4, 7, 30]);
+      const statements = manager.query.mock.calls.map(([sql, parameters]) => [sql, parameters]);
+      expect(statements[0]).toEqual([expect.stringContaining('FOR UPDATE'), [7]]);
+      expect(statements[1]).toEqual([expect.stringContaining('INSERT INTO message_deletions'), [30, 4]]);
+      expect(statements[2]).toEqual([expect.stringContaining('DELETE FROM messages m'), [7, 30, 30]]);
+    });
+
+    it('answers a message the reader no longer has, or never had, as missing', async () => {
+      dataSource.query.mockResolvedValueOnce([summaryRow()]).mockResolvedValueOnce([]);
+
+      await expect(service.deleteMessage(4, 7, 31)).rejects.toMatchObject({
+        response: expect.objectContaining({ code: 'MESSAGE_NOT_FOUND' }),
+      });
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+    });
+
+    it('answers a conversation the reader is not in as missing', async () => {
+      dataSource.query.mockResolvedValue([]);
+
+      await expect(service.deleteMessage(4, 9, 30)).rejects.toThrow(NotFoundException);
+      await expect(service.deleteConversation(4, 9)).rejects.toThrow(NotFoundException);
+      expect(dataSource.transaction).not.toHaveBeenCalled();
+      dataSource.query.mockReset();
+    });
+
+    it('deletes a conversation for the reader up to its newest message, which also reads it', async () => {
+      dataSource.query
+        .mockResolvedValueOnce([summaryRow()])
+        .mockResolvedValueOnce([{ count: 1 }]);
+      manager.query
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ newest: 30 }])
+        .mockResolvedValue([]);
+
+      await expect(service.deleteConversation(4, 7)).resolves.toEqual({ unreadCount: 1 });
+
+      const statements = manager.query.mock.calls.map(([sql, parameters]) => [sql, parameters]);
+      expect(statements[0]).toEqual([expect.stringContaining('FOR UPDATE'), [7]]);
+      expect(statements[2][0]).toContain('SET deleted_up_to_message_id = GREATEST(');
+      expect(statements[2][0]).toContain('last_read_message_id = GREATEST(');
+      expect(statements[2][1]).toEqual([7, 4, 30]);
+      // The single deletions it now covers go, then whatever no writer has any more
+      expect(statements[3]).toEqual([expect.stringContaining('DELETE FROM message_deletions'), [7, 4, 30]]);
+      expect(statements[4]).toEqual([expect.stringContaining('DELETE FROM messages m'), [7, 0, 30]]);
+      manager.query.mockReset();
+    });
   });
 });

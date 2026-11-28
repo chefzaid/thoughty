@@ -266,6 +266,50 @@
   font-size: 0.6875rem;
 }
 
+.messages-bubble-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+/* Deleting a message for oneself: a quiet button beside its time, clearer on hover and focus. */
+.messages-bubble-delete {
+  display: inline-flex;
+  padding: 0.1rem 0.2rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: inherit;
+  font-size: 0.75rem;
+  opacity: 0.75;
+  cursor: pointer;
+}
+
+.messages-bubble-delete:hover,
+.messages-bubble-delete:focus-visible {
+  opacity: 1;
+  background: rgb(0 0 0 / 15%);
+}
+
+.messages-delete-conversation {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: auto;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #4b5563;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.messages-page.light .messages-delete-conversation {
+  border-color: #d1d5db;
+}
+
 .messages-bubble.mine time,
 .messages-page.light .messages-bubble.mine time {
   color: #fff;

@@ -11,8 +11,8 @@ export type UnreadMessages = components['schemas']['UnreadMessagesDto'];
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
 /**
- * Messages between writers who follow each other: the conversations, one conversation's messages, sending and
- * marking read. Errors are translation keys, or the API's coded reason.
+ * Messages between writers who follow each other: the conversations, one conversation's messages, sending,
+ * marking read and deleting for oneself. Errors are translation keys, or the API's coded reason.
  */
 export const createMessagesService = (authFetch: AuthFetchFunction) => ({
   list(): Promise<ServiceResult<ConversationList>> {
@@ -48,6 +48,19 @@ export const createMessagesService = (authFetch: AuthFetchFunction) => ({
 
   markRead(conversationId: number): Promise<ServiceResult<UnreadMessages>> {
     return requestJson(authFetch(`/api/conversations/${conversationId}/read`, { method: 'PUT' }), 'messagesLoadError');
+  },
+
+  /** Deletes a message for the writer alone; answers what is left unread. */
+  deleteMessage(conversationId: number, messageId: number): Promise<ServiceResult<UnreadMessages>> {
+    return requestJson(
+      authFetch(`/api/conversations/${conversationId}/messages/${messageId}`, { method: 'DELETE' }),
+      'messageDeleteError',
+    );
+  },
+
+  /** Deletes the conversation for the writer alone, until a new message brings it back; answers what is left unread. */
+  deleteConversation(conversationId: number): Promise<ServiceResult<UnreadMessages>> {
+    return requestJson(authFetch(`/api/conversations/${conversationId}`, { method: 'DELETE' }), 'conversationDeleteError');
   },
 });
 

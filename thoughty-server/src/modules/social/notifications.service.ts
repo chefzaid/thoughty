@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
 import { NotificationRead } from '@/database/entities';
+import { keptByReader } from '@/modules/messages/conversations.sql';
 import type { NotificationDto, NotificationsResponseDto, NotificationType } from './dto';
 
 /** How many notifications the list holds, the most recent first. */
@@ -14,7 +15,8 @@ export const NOTIFICATION_EXCERPT_LENGTH = 140;
  * entries and likes on them, likes on their comments, new followers, requests to follow them still waiting
  * for their approval (which become a new follower once approved, and go once declined or withdrawn), and the
  * messages they have not read, one notification per conversation dated by its newest unread message, so a burst
- * of messages is one notification and reading the conversation takes it away. Only what is still there counts: a like
+ * of messages is one notification and reading the conversation takes it away (as does deleting those messages or
+ * the conversation for themselves). Only what is still there counts: a like
  * taken back, a comment removed or hidden, a follow ended or an account deleted takes its notification away. It
  * leaves out the reader's own doings, everyone they blocked or who blocked them and the writers they muted, as
  * the feed does, and anything about an entry the feed no longer shows (private again, archived, moderated, in the
@@ -60,6 +62,7 @@ const ACTIVITY_CTE = `
                          AND m.sender_id <> $1
                          AND m.id > me.last_read_message_id
          WHERE me.user_id = $1
+           AND ${keptByReader('m', 'me')}
          ORDER BY m.conversation_id, m.id DESC
       ) um
   )

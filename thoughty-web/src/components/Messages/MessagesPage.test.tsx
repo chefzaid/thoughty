@@ -16,6 +16,8 @@ const services = {
   thread: vi.fn(),
   send: vi.fn(),
   markRead: vi.fn(),
+  deleteMessage: vi.fn(),
+  deleteConversation: vi.fn(),
   fetchFollows: vi.fn(),
 };
 
@@ -245,5 +247,90 @@ describe('MessagesPage', () => {
     renderPage(7);
 
     expect(await screen.findByText('This conversation is no longer here.')).toBeInTheDocument();
+  });
+
+  describe('deleting for oneself', () => {
+    const bodies = () => within(screen.getByRole('log')).getAllByRole('listitem').map((item) => item.querySelector('p')?.textContent);
+    const deleteButtons = async () => screen.findAllByRole('button', { name: 'Delete this message for you' });
+
+    it('deletes a message once confirmed, and keeps it when cancelled', async () => {
+      services.deleteMessage.mockResolvedValue({ data: { unreadCount: 0 }, error: null });
+      renderPage(7);
+
+      fireEvent.click((await deleteButtons())[0] as HTMLElement);
+      const dialog = screen.getByRole('alertdialog', { name: 'Delete this message?' });
+      expect(dialog).toHaveTextContent('It leaves your conversation only: maya still has it.');
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+      expect(services.deleteMessage).not.toHaveBeenCalled();
+
+      services.thread.mockResolvedValue({
+        data: { conversation: conversation({ unreadCount: 0 }), messages: [message(30, 'See you Sunday')], hasMore: false },
+        error: null,
+      });
+      fireEvent.click((await deleteButtons())[0] as HTMLElement);
+      fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Delete' }));
+
+      await waitFor(() => expect(bodies()).toEqual(['See you Sunday']));
+      expect(services.deleteMessage).toHaveBeenCalledWith(7, 29);
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    });
+
+    it('takes a deleted message out of the earlier ones loaded too', async () => {
+      services.deleteMessage.mockResolvedValue({ data: { unreadCount: 0 }, error: null });
+      services.thread.mockImplementation((_id: number, before?: number) => Promise.resolve({
+        data: before
+          ? { conversation: conversation(), messages: [message(5, 'Long ago')], hasMore: false }
+          : { conversation: conversation({ unreadCount: 0 }), messages: [message(29, 'Coffee?', true)], hasMore: true },
+        error: null,
+      }));
+      renderPage(7);
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Show earlier messages' }));
+      await waitFor(() => expect(bodies()).toEqual(['Long ago', 'Coffee?']));
+      fireEvent.click((await deleteButtons())[0] as HTMLElement);
+      fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Delete' }));
+
+      await waitFor(() => expect(bodies()).toEqual(['Coffee?']));
+      expect(services.deleteMessage).toHaveBeenCalledWith(7, 5);
+    });
+
+    it('says why a message could not be deleted and keeps it', async () => {
+      services.deleteMessage.mockResolvedValue({ data: null, error: 'apiError_MESSAGE_NOT_FOUND' });
+      renderPage(7);
+
+      fireEvent.click((await deleteButtons())[1] as HTMLElement);
+      fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Delete' }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('This message is no longer here.');
+      expect(bodies()).toEqual(['Coffee?', 'See you Sunday']);
+    });
+
+    it('deletes the conversation once confirmed and goes back to the list, where it is gone', async () => {
+      services.deleteConversation.mockResolvedValue({ data: { unreadCount: 0 }, error: null });
+      const { onOpenConversation } = renderPage(7);
+
+      const thread = await screen.findByRole('region', { name: 'Conversation with maya' });
+      await conversationButton('maya');
+      services.list.mockResolvedValue({ data: { conversations: [] }, error: null });
+      fireEvent.click(within(thread).getByRole('button', { name: 'Delete conversation' }));
+      const dialog = screen.getByRole('alertdialog', { name: 'Delete this conversation?' });
+      expect(dialog).toHaveTextContent('If maya writes again, the conversation comes back with the new messages only.');
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
+
+      await waitFor(() => expect(onOpenConversation).toHaveBeenCalledWith(null));
+      expect(services.deleteConversation).toHaveBeenCalledWith(7);
+      expect(await screen.findByText('No conversations yet.')).toBeInTheDocument();
+    });
+
+    it('stays in the conversation and says why when it could not be deleted', async () => {
+      services.deleteConversation.mockResolvedValue({ data: null, error: 'conversationDeleteError' });
+      const { onOpenConversation } = renderPage(7);
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Delete conversation' }));
+      fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Delete' }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('This conversation could not be deleted. Try again.');
+      expect(onOpenConversation).not.toHaveBeenCalled();
+    });
   });
 });

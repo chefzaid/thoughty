@@ -2498,7 +2498,8 @@ export interface paths {
         get: operations["ConversationsController_thread"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete a conversation for yourself: its messages so far leave your list, and it comes back with the next one */
+        delete: operations["ConversationsController_deleteConversation"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2533,6 +2534,23 @@ export interface paths {
         put: operations["ConversationsController_markRead"];
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/conversations/{conversationId}/messages/{messageId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a message for yourself, one you wrote or received; the other writer still has it */
+        delete: operations["ConversationsController_deleteMessage"];
         options?: never;
         head?: never;
         patch?: never;
@@ -13472,7 +13490,7 @@ export interface components {
          * @example VALIDATION_FAILED
          * @enum {string}
          */
-        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "FEATURE_DISABLED" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_WEAK_PASSWORD" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "AUTH_INVALID_SIGN_UP_TOKEN" | "AUTH_EMAIL_UNDELIVERABLE" | "AUTH_EMAIL_ALREADY_SET" | "AUTH_EMAIL_MISSING" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "ENTRY_CHAT_NO_MATCH" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "CONTENT_LOCKED" | "CONTENT_LOCKED_PRIVATE" | "CONTENT_PIN_NOT_SET" | "CONTENT_PIN_INCORRECT" | "CONTENT_PIN_BLOCKED" | "CONTENT_PIN_PROOF_REQUIRED" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "DIARY_AI_OFF" | "DIARY_AI_CONSENT_REQUIRED" | "DIARY_AI_LOCAL" | "SETTINGS_RESERVED" | "ENTRY_TEMPLATES_INVALID" | "ENTRY_TEMPLATE_NAME_TOO_LONG" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "COMPOSER_DRAFT_CONFLICT" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "ACCESS_TOKEN_NOT_FOUND" | "ACCESS_TOKEN_LIMIT_REACHED" | "ACCESS_TOKEN_INVALID" | "ACCESS_TOKEN_SCOPE_MISSING" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "CALENDAR_FILE_INVALID" | "CALENDAR_EVENT_LIMIT_REACHED" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "PERSON_DATE_BIRTHDAY_TWICE" | "PERSON_CONTACT_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "TRANSCRIPT_LOCAL_DIARY_ONLY" | "TRANSCRIPT_TOO_LONG" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_DIARY_OFF" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "MEMOIR_PHOTO_EMPTY" | "MEMOIR_PHOTO_NOT_IMAGE" | "MEMOIR_PHOTO_IN_USE" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "REVIEW_WEEK_EMPTY" | "REVIEW_REFLECTION_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "SOCIAL_CANNOT_SAVE_OWN_ENTRY" | "SOCIAL_CANNOT_MUTE_SELF" | "SOCIAL_CANNOT_BLOCK_SELF" | "COMMENT_NOT_FOUND" | "FOLLOW_APPROVAL_REQUIRED" | "FOLLOW_REQUEST_NOT_FOUND" | "COMMENTS_CLOSED" | "COMMENTS_FOLLOWERS_ONLY" | "COMMENT_PIN_HIDDEN" | "FEATURE_REQUEST_NOT_FOUND" | "SOCIAL_CANNOT_MESSAGE_SELF" | "CONVERSATION_NOT_FOUND" | "CONVERSATION_READ_ONLY" | "MESSAGE_ENTRY_NOT_PUBLIC" | "CONTACT_INVALID_REQUEST" | "CONTACT_NOT_CONFIGURED" | "CONTACT_NOT_SENT";
+        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "FEATURE_DISABLED" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_WEAK_PASSWORD" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "AUTH_INVALID_SIGN_UP_TOKEN" | "AUTH_EMAIL_UNDELIVERABLE" | "AUTH_EMAIL_ALREADY_SET" | "AUTH_EMAIL_MISSING" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_TASK_STALE" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "ENTRY_READER_NO_MATCH" | "ENTRY_READER_NOT_FOUND" | "ENTRY_CHAT_NO_MATCH" | "TIME_CAPSULE_DATE_INVALID" | "REREAD_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "CONTENT_LOCKED" | "CONTENT_LOCKED_PRIVATE" | "CONTENT_PIN_NOT_SET" | "CONTENT_PIN_INCORRECT" | "CONTENT_PIN_BLOCKED" | "CONTENT_PIN_PROOF_REQUIRED" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "DIARY_AI_OFF" | "DIARY_AI_CONSENT_REQUIRED" | "DIARY_AI_LOCAL" | "SETTINGS_RESERVED" | "ENTRY_TEMPLATES_INVALID" | "ENTRY_TEMPLATE_NAME_TOO_LONG" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "COMPOSER_DRAFT_CONFLICT" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "ACCESS_TOKEN_NOT_FOUND" | "ACCESS_TOKEN_LIMIT_REACHED" | "ACCESS_TOKEN_INVALID" | "ACCESS_TOKEN_SCOPE_MISSING" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "CALENDAR_FILE_INVALID" | "CALENDAR_EVENT_LIMIT_REACHED" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "PERSON_DATE_INVALID" | "PERSON_DATE_YEAR_INVALID" | "PERSON_DATE_IN_FUTURE" | "PERSON_DATE_BIRTHDAY_TWICE" | "PERSON_CONTACT_IN_FUTURE" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "TRANSCRIPT_LOCAL_DIARY_ONLY" | "TRANSCRIPT_TOO_LONG" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_DEDICATION_TOO_LONG" | "BOOK_EPIGRAPH_TOO_LONG" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_DIARY_OFF" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "MEMOIR_NO_OPEN_QUESTION" | "MEMOIR_PHOTO_EMPTY" | "MEMOIR_PHOTO_NOT_IMAGE" | "MEMOIR_PHOTO_IN_USE" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "REVIEW_WEEK_EMPTY" | "REVIEW_REFLECTION_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "SOCIAL_CANNOT_SAVE_OWN_ENTRY" | "SOCIAL_CANNOT_MUTE_SELF" | "SOCIAL_CANNOT_BLOCK_SELF" | "COMMENT_NOT_FOUND" | "FOLLOW_APPROVAL_REQUIRED" | "FOLLOW_REQUEST_NOT_FOUND" | "COMMENTS_CLOSED" | "COMMENTS_FOLLOWERS_ONLY" | "COMMENT_PIN_HIDDEN" | "FEATURE_REQUEST_NOT_FOUND" | "SOCIAL_CANNOT_MESSAGE_SELF" | "CONVERSATION_NOT_FOUND" | "CONVERSATION_READ_ONLY" | "MESSAGE_ENTRY_NOT_PUBLIC" | "MESSAGE_NOT_FOUND" | "CONTACT_INVALID_REQUEST" | "CONTACT_NOT_CONFIGURED" | "CONTACT_NOT_SENT";
         /**
          * @example {
          *       "statusCode": 401,
@@ -25179,6 +25197,67 @@ export interface operations {
             };
         };
     };
+    ConversationsController_deleteConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversationId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description How many messages are still unread */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "unreadCount": 3
+                     *     }
+                     */
+                    "application/json": components["schemas"]["UnreadMessagesDto"];
+                };
+            };
+            /** @description No conversation of yours with this id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "No conversation of yours with this id",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
     ConversationsController_send: {
         parameters: {
             query?: never;
@@ -25331,6 +25410,68 @@ export interface operations {
                      * @example {
                      *       "statusCode": 404,
                      *       "message": "No conversation of yours with this id",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description FEATURE_DISABLED: the `publicSharing` feature is turned off on this server */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "FEATURE_DISABLED: the `publicSharing` feature is turned off on this server",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    ConversationsController_deleteMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversationId: number;
+                messageId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description How many messages are still unread */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "unreadCount": 3
+                     *     }
+                     */
+                    "application/json": components["schemas"]["UnreadMessagesDto"];
+                };
+            };
+            /** @description No conversation of yours with this id, or no message with this id in it that you still have (`MESSAGE_NOT_FOUND`) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "No conversation of yours with this id, or no message with this id in it that you still have (`MESSAGE_NOT_FOUND`)",
                      *       "error": "Not Found",
                      *       "code": "NOT_FOUND"
                      *     }

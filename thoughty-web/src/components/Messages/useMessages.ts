@@ -2,7 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useAuthenticatedService } from '../../hooks/useAuthenticatedService';
-import { createMessagesService, type ChatMessage, type ServiceResult } from '../../services/api';
+import {
+  createMessagesService,
+  type ChatMessage,
+  type Conversation,
+  type ConversationList,
+  type ConversationThread,
+  type ServiceResult,
+  type UnreadMessages,
+} from '../../services/api';
 import { useFeatureFlag } from '../FeatureFlags/featureFlags';
 
 export const CONVERSATIONS_QUERY_KEY = ['conversations'] as const;
@@ -51,7 +59,8 @@ export function useConversations() {
 
 /**
  * One conversation: its newest messages, read again every 20 seconds while the page is in front, the earlier
- * ones loaded on request, sending, and marking it read whenever it shows unread messages.
+ * ones loaded on request, sending, marking it read whenever it shows unread messages, and deleting a message or
+ * the whole conversation for the reader.
  */
 export function useConversationThread(conversationId: number) {
   const service = useAuthenticatedService(createMessagesService);
@@ -117,5 +126,42 @@ export function useConversationThread(conversationId: number) {
     return null;
   }, [conversationId, queryClient, service]);
 
-  return { thread, messages, hasMore, loadingEarlier, loadEarlier, send };
+  /** What the reader still has once their deletion went through: the unread count, the list and this thread. */
+  const afterDeletion = useCallback(async (
+    unread: UnreadMessages,
+    kept: (message: ChatMessage) => boolean,
+    listed: (conversation: Conversation) => boolean,
+  ) => {
+    queryClient.setQueryData(UNREAD_MESSAGES_QUERY_KEY, unread);
+    queryClient.setQueryData<ConversationThread>(threadKey(conversationId), (data) =>
+      data && { ...data, messages: data.messages.filter(kept), hasMore: data.hasMore && data.messages.some(kept) });
+    queryClient.setQueryData<ConversationList>(CONVERSATIONS_QUERY_KEY, (data) =>
+      data && { conversations: data.conversations.filter(listed) });
+    if (mountedRef.current) setLoaded((current) => current && { ...current, messages: current.messages.filter(kept) });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: threadKey(conversationId) }),
+      queryClient.invalidateQueries({ queryKey: CONVERSATIONS_QUERY_KEY, exact: true }),
+    ]);
+  }, [conversationId, queryClient]);
+
+  /** Deletes a message for the reader alone; resolves to null once deleted, or to the translation key of why not. */
+  const deleteMessage = useCallback(async (messageId: number): Promise<string | null> => {
+    const result = await service.deleteMessage(conversationId, messageId);
+    if (!result.data) return result.error ?? 'messageDeleteError';
+    await afterDeletion(result.data, (message) => message.id !== messageId, () => true);
+    return null;
+  }, [afterDeletion, conversationId, service]);
+
+  /**
+   * Deletes the conversation for the reader alone: it leaves their list until a new message comes. Resolves to
+   * null once deleted, or to the translation key of why it was not.
+   */
+  const deleteConversation = useCallback(async (): Promise<string | null> => {
+    const result = await service.deleteConversation(conversationId);
+    if (!result.data) return result.error ?? 'conversationDeleteError';
+    await afterDeletion(result.data, () => false, (conversation) => conversation.id !== conversationId);
+    return null;
+  }, [afterDeletion, conversationId, service]);
+
+  return { thread, messages, hasMore, loadingEarlier, loadEarlier, send, deleteMessage, deleteConversation };
 }

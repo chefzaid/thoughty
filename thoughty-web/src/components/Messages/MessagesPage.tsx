@@ -88,7 +88,7 @@ export default function MessagesPage({ theme = 'dark', language: languageSetting
         <div className="messages-main">
           {conversationId === null
             ? <p className="messages-note messages-choose">{t('messagesChoose')}</p>
-            : <ConversationView conversationId={conversationId} language={language} onBack={() => onOpenConversation(null)} t={t} />}
+            : <ConversationView key={conversationId} conversationId={conversationId} language={language} onBack={() => onOpenConversation(null)} theme={theme} t={t} />}
         </div>
       </div>
     </section>

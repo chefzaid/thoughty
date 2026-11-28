@@ -250,6 +250,7 @@ export const API_ERROR_MESSAGES = {
   CONVERSATION_NOT_FOUND: 'Conversation not found',
   CONVERSATION_READ_ONLY: 'You can write only to a writer who follows you and whom you follow',
   MESSAGE_ENTRY_NOT_PUBLIC: 'Only a public entry can be shared in a message',
+  MESSAGE_NOT_FOUND: 'Message not found',
 
   // The public Contact page form (`POST /api/contact`).
   CONTACT_INVALID_REQUEST: 'This message could not be accepted',

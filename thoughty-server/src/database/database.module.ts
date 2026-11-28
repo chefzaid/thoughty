@@ -53,6 +53,7 @@ import {
   Conversation,
   ConversationMember,
   Message,
+  MessageDeletion,
 } from './entities';
 import { buildPostgresConnectionOptions } from './postgres-connection-options';
 import { buildPostgresPoolOptions } from './postgres-pool-options';
@@ -130,6 +131,7 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
           Conversation,
           ConversationMember,
           Message,
+          MessageDeletion,
         ],
         extra: buildPostgresPoolOptions({
           POSTGRES_POOL_MAX: configService.get<string>('POSTGRES_POOL_MAX'),

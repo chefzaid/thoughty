@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Put,
+  Query,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthenticatedUser, CurrentUser, RATE_LIMITS, throttleDefault } from '@/common';
@@ -125,5 +135,48 @@ export class ConversationsController {
     @Param('conversationId', ParseIntPipe) conversationId: number,
   ): Promise<UnreadMessagesDto> {
     return this.conversationsService.markRead(user.userId, conversationId);
+  }
+
+  @Delete(':conversationId/messages/:messageId')
+  @Throttle(throttleDefault(RATE_LIMITS.messageWrite))
+  @ApiOperation({
+    summary:
+      'Delete a message for yourself, one you wrote or received; the other writer still has it',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'How many messages are still unread',
+    type: UnreadMessagesDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description:
+      'No conversation of yours with this id, or no message with this id in it that you still have (`MESSAGE_NOT_FOUND`)',
+  })
+  deleteMessage(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('conversationId', ParseIntPipe) conversationId: number,
+    @Param('messageId', ParseIntPipe) messageId: number,
+  ): Promise<UnreadMessagesDto> {
+    return this.conversationsService.deleteMessage(user.userId, conversationId, messageId);
+  }
+
+  @Delete(':conversationId')
+  @Throttle(throttleDefault(RATE_LIMITS.messageWrite))
+  @ApiOperation({
+    summary:
+      'Delete a conversation for yourself: its messages so far leave your list, and it comes back with the next one',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'How many messages are still unread',
+    type: UnreadMessagesDto,
+  })
+  @ApiResponse({ status: 404, description: 'No conversation of yours with this id' })
+  deleteConversation(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('conversationId', ParseIntPipe) conversationId: number,
+  ): Promise<UnreadMessagesDto> {
+    return this.conversationsService.deleteConversation(user.userId, conversationId);
   }
 }
