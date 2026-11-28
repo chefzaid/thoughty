@@ -28,6 +28,7 @@ export type BookTranslationKey =
   | "bookWeavingCreative"
   | "bookIncludeUntagged"
   | "bookIncludeDates"
+  | "bookIncludeLocation"
   | "bookIncludeToc"
   | "bookNarrative"
   | "bookChapterFraming"
@@ -126,6 +127,7 @@ export const bookTranslations: Record<Language, Record<BookTranslationKey, strin
     bookWeavingCreative: "Creative transitions",
     bookIncludeUntagged: "Add a chapter for untagged entries",
     bookIncludeDates: "Show entry dates",
+    bookIncludeLocation: "Show entry places",
     bookIncludeToc: "Include table of contents",
     bookNarrative: "Weave thoughts into flowing prose with AI",
     bookChapterFraming: "Add AI chapter introductions and summaries",
@@ -226,6 +228,7 @@ export const bookTranslations: Record<Language, Record<BookTranslationKey, strin
     bookWeavingCreative: "Transitions créatives",
     bookIncludeUntagged: "Ajouter un chapitre pour les entrées sans tag",
     bookIncludeDates: "Afficher les dates des entrées",
+    bookIncludeLocation: "Afficher les lieux des entrées",
     bookIncludeToc: "Inclure la table des matières",
     bookNarrative: "Tisser les pensées en prose fluide avec l'IA",
     bookChapterFraming:

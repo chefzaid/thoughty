@@ -5,7 +5,7 @@ import { getFilteredEntries } from "./mockApp.routes.entries";
 import { byStart, mockEraContains, type MockLifeEra } from "./mockApp.routes.life-eras";
 import { buildMockBookPdf } from "./mockBookPdf";
 import { bookInlineImages } from "./mockApp.routes.attachments";
-import { MOCK_BOOK_COPY, mockBookDate, mockBookMonth, type MockBookLanguage } from "./mockBookLanguage";
+import { MOCK_BOOK_COPY, mockBookDate, mockBookMonth, mockBookPlace, type MockBookLanguage } from "./mockBookLanguage";
 import { isMockSealed } from "./mockApp.routes.time-capsules";
 
 export interface MockBookVersion {
@@ -220,7 +220,13 @@ function exportBook(state: MockAppState, params: URLSearchParams) {
   const book = buildBook(state, params);
   const format = params.get("format") || "pdf";
   const embed = readQueryFlag(params, "embedImages", false);
-  const chapters = book.chapters.map((chapter) => ({ title: chapter.title, paragraphs: chapter.entries.map((entry) => bookInlineImages(entry, embed)) }));
+  // Each entry's place goes on its own line before its text only when asked, as `includeLocation` prints it
+  const places = readQueryFlag(params, "includeLocation", false);
+  const paragraphs = (entry: MockEntry) => {
+    const place = places ? mockBookPlace(entry.location, book.language) : undefined;
+    return [...(place ? [place] : []), bookInlineImages(entry, embed)];
+  };
+  const chapters = book.chapters.map((chapter) => ({ title: chapter.title, paragraphs: chapter.entries.flatMap(paragraphs) }));
   const closingPage = readQueryFlag(params, "closingPage", false) ? closingPageLines(book, params.get("today") ?? new Date().toISOString().slice(0, 10)) : undefined;
   const body = format === "pdf"
     ? buildMockBookPdf({

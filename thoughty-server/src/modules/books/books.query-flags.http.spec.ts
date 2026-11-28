@@ -7,9 +7,10 @@ import { BooksService } from './books.service';
 import { BookVersionsService } from './book-versions.service';
 import { BookEntrySourceService } from './book-entry-source.service';
 
-const OFF = 'narrative=false&includeToc=false&includeDates=false&includeUntagged=false&chapterFraming=false&embedImages=false&closingPage=false';
+const OFF = 'narrative=false&includeLocation=false&includeToc=false&includeDates=false&includeUntagged=false&chapterFraming=false&embedImages=false&closingPage=false';
 const ALL_OFF = {
   closingPage: false,
+  includeLocation: false,
   narrative: false,
   includeToc: false,
   includeDates: false,
@@ -53,11 +54,11 @@ describe('BooksController query flags over HTTP', () => {
   });
 
   it('reads true and 1 as on', async () => {
-    await request(app.getHttpServer()).get('/api/books/export?narrative=true&chapterFraming=1&closingPage=1').expect(200);
+    await request(app.getHttpServer()).get('/api/books/export?narrative=true&chapterFraming=1&closingPage=1&includeLocation=true').expect(200);
 
     expect(booksService.export).toHaveBeenCalledWith(
       HTTP_SPEC_USER.userId,
-      expect.objectContaining({ narrative: true, chapterFraming: true, closingPage: true }),
+      expect.objectContaining({ narrative: true, chapterFraming: true, closingPage: true, includeLocation: true }),
     );
   });
 
@@ -106,7 +107,7 @@ describe('BooksController query flags over HTTP', () => {
     );
   });
 
-  it.each(['narrative=yes', 'dedication=a&dedication=b', 'includeToc=', 'narrative=true&narrative=false', 'diaryId=', 'diaryId=1.5', 'savedSearchId=0', 'interiorTheme=fancy', 'coverTheme=ocean&interiorTheme='])(
+  it.each(['narrative=yes', 'includeLocation=yes', 'dedication=a&dedication=b', 'includeToc=', 'narrative=true&narrative=false', 'diaryId=', 'diaryId=1.5', 'savedSearchId=0', 'interiorTheme=fancy', 'coverTheme=ocean&interiorTheme='])(
     'refuses %s with VALIDATION_FAILED',
     async (query) => {
       const response = await request(app.getHttpServer()).get(`/api/books/export?${query}`).expect(400);

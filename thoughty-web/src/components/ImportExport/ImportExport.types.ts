@@ -97,6 +97,8 @@ export interface BookOptions {
     weavingMode: BookWeavingMode;
     includeUntagged: boolean;
     includeDates: boolean;
+    /** Prints each entry's place under its date; places are private, so it is off until the writer ticks it. */
+    includeLocation: boolean;
     includeToc: boolean;
     narrative: boolean;
     chapterFraming: boolean;
@@ -122,6 +124,7 @@ export const DEFAULT_BOOK_OPTIONS: BookOptions = {
     weavingMode: 'strict',
     includeUntagged: true,
     includeDates: true,
+    includeLocation: false,
     includeToc: true,
     narrative: true,
     chapterFraming: false,

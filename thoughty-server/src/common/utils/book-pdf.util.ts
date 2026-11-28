@@ -153,6 +153,10 @@ function renderChapterBody(
       doc.font(style.fonts.italic).fontSize(style.dateSize).fillColor('#888888').text(formatBookEntryDate(entry, language));
       doc.moveDown(0.3);
     }
+    if (entry.place) {
+      doc.font(style.fonts.italic).fontSize(style.dateSize).fillColor('#888888').text(entry.place);
+      doc.moveDown(0.3);
+    }
     if (entry.title) {
       doc.font(style.fonts.bold).fontSize(style.entryTitleSize).fillColor('#000000').text(entry.title);
       doc.moveDown(0.3);

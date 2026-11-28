@@ -10,7 +10,7 @@ import {
   type TagScope,
 } from './book-model.util';
 import { compareErasChronologically, mostSpecificEra, type BookEra } from './book-era.util';
-import { bookCopy, formatBookMonth, type BookLanguage } from './book-language.util';
+import { bookCopy, formatBookMonth, formatBookPlace, type BookLanguage } from './book-language.util';
 import { writersDayOr } from './writers-day.util';
 
 // The book model and its Markdown and HTML renderers live in their own modules; this one builds
@@ -28,6 +28,9 @@ interface BookEntryInput {
   tags: string[];
   content: string;
   format?: 'plain' | 'markdown';
+  locationName?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   attachments?: Array<{
     id: number;
     originalFilename: string;
@@ -50,7 +53,11 @@ function sortChronologically(entries: BookEntry[]): BookEntry[] {
   });
 }
 
-function normalizeBookEntry(input: BookEntryInput): BookEntry {
+/** The entry as the book holds it; its place only when the book is made with places, in the book's language. */
+function normalizeBookEntry(input: BookEntryInput, options: Pick<BuildBookOptions, 'includeLocation' | 'language'>): BookEntry {
+  const place = options.includeLocation === true
+    ? formatBookPlace({ name: input.locationName, latitude: input.latitude, longitude: input.longitude }, options.language)
+    : undefined;
   return {
     id: input.id,
     date: normalizeDate(input.date),
@@ -61,6 +68,7 @@ function normalizeBookEntry(input: BookEntryInput): BookEntry {
     content: input.content || '',
     format: input.format === 'markdown' ? 'markdown' : 'plain',
     images: normalizeEmbeddedBookImages(input.attachments),
+    ...(place ? { place } : {}),
   };
 }
 
@@ -117,7 +125,7 @@ function buildChronologicalBook(
   entries: BookEntryInput[],
   options: BuildBookOptions & { chapterMode: CalendarChapterMode },
 ): Book {
-  const normalized = entries.map(normalizeBookEntry).filter((entry) => entry.content.trim());
+  const normalized = entries.map((entry) => normalizeBookEntry(entry, options)).filter((entry) => entry.content.trim());
   const chapterMap = new Map<string, BookChapter>();
 
   for (const entry of sortChronologically(normalized)) {
@@ -150,7 +158,7 @@ function buildEraBook(entries: BookEntryInput[], options: BuildBookOptions): Boo
   const byEra = new Map<BookEra, BookEntry[]>();
   const outside: BookEntry[] = [];
 
-  for (const entry of sortChronologically(entries.map(normalizeBookEntry).filter((item) => item.content.trim()))) {
+  for (const entry of sortChronologically(entries.map((item) => normalizeBookEntry(item, options)).filter((item) => item.content.trim()))) {
     const era = mostSpecificEra(eras, entry.date, generatedAt);
     if (era) {
       byEra.set(era, [...(byEra.get(era) ?? []), entry]);
@@ -193,7 +201,7 @@ export function buildBook(entries: BookEntryInput[], options: BuildBookOptions):
   const untagged: BookEntry[] = [];
 
   for (const input of entries) {
-    const entry = normalizeBookEntry(input);
+    const entry = normalizeBookEntry(input, options);
     if (!entry.content.trim()) {
       continue;
     }

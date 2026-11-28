@@ -136,6 +136,16 @@ export class BookQueryDto extends BookSourceQueryDto {
 
   @ApiPropertyOptional({
     description:
+      'Print each entry\'s place (its name, else its coordinates in the writer\'s language) under its date. Places ' +
+      'are private, so books leave them out unless asked; AI-woven chapters, which list no entries, never show them',
+    default: false,
+  })
+  @IsOptional()
+  @StrictBoolean()
+  includeLocation?: boolean;
+
+  @ApiPropertyOptional({
+    description:
       "Use AI to weave each chapter's entries into flowing prose (requires a configured AI key)",
     default: true,
   })

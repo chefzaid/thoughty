@@ -115,6 +115,7 @@ describe('ImportExport book section', () => {
         expect(screen.getByText('bookIncludeUntagged')).toBeInTheDocument();
         expect(screen.getByText('bookChapterFraming')).toBeInTheDocument();
         expect(screen.getByText('bookEmbedImages')).toBeInTheDocument();
+        expect(screen.getByRole('checkbox', { name: 'bookIncludeLocation' })).not.toBeChecked();
         expect(screen.getByRole('radiogroup', { name: 'bookCoverTheme' })).toBeInTheDocument();
         expect(screen.getByLabelText('bookCoverChooseImage')).toBeInTheDocument();
         expect(screen.getByText('previewBook')).toBeInTheDocument();

@@ -19,6 +19,8 @@ export interface BookEntry {
   content: string;
   format: 'plain' | 'markdown';
   images?: EmbeddedBookImage[];
+  /** The entry's place as the book prints it under its date; only in a book made with places included. */
+  place?: string;
 }
 
 export interface BookChapter {
@@ -65,6 +67,8 @@ export interface BuildBookOptions {
   today?: string;
   /** The writer's language, for the chapter titles the book writes itself (months, untagged, other). */
   language?: BookLanguage;
+  /** Print each entry's place under its date; places are private, so books leave them out unless asked. */
+  includeLocation?: boolean;
 }
 
 /** The entry's date, with its time of day when it has one, as books and documents print it in their language. */

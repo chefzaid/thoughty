@@ -43,3 +43,23 @@ export function mockBookMonth(month: string, language: MockBookLanguage): string
   const name = new Intl.DateTimeFormat(language, { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${month}-01T00:00:00Z`));
   return name.charAt(0).toLocaleUpperCase(language) + name.slice(1);
 }
+
+/** The compass letters after a coordinate, as the server's book writes them (French west is O). */
+const MOCK_COMPASS: Record<MockBookLanguage, { north: string; south: string; east: string; west: string }> = {
+  en: { north: "N", south: "S", east: "E", west: "W" },
+  fr: { north: "N", south: "S", east: "E", west: "O" },
+};
+
+/** An entry's place as `formatBookPlace` prints it: its name, else its coordinates in the book's language. */
+export function mockBookPlace(
+  location: { name: string | null; latitude: number | null; longitude: number | null } | null | undefined,
+  language: MockBookLanguage,
+): string | undefined {
+  const name = location?.name?.trim();
+  if (name) return name;
+  if (typeof location?.latitude !== "number" || typeof location.longitude !== "number") return undefined;
+  const compass = MOCK_COMPASS[language];
+  const degrees = (value: number, positive: string, negative: string) =>
+    `${new Intl.NumberFormat(language, { maximumFractionDigits: 4 }).format(Math.abs(value))}° ${value < 0 ? negative : positive}`;
+  return `${degrees(location.latitude, compass.north, compass.south)}, ${degrees(location.longitude, compass.east, compass.west)}`;
+}

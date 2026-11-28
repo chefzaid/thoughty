@@ -31,7 +31,7 @@ import type { SavedSearch } from '../../services/api/savedSearchesService';
 import type { BookSourceLoad } from './useBookSourceData';
 
 const BOOK_CHECKBOXES: ReadonlyArray<{
-    key: 'narrative' | 'chapterFraming' | 'embedImages' | 'includeUntagged' | 'includeDates' | 'includeToc';
+    key: 'narrative' | 'chapterFraming' | 'embedImages' | 'includeUntagged' | 'includeDates' | 'includeLocation' | 'includeToc';
     labelKey: string;
 }> = [
     { key: 'narrative', labelKey: 'bookNarrative' },
@@ -39,6 +39,7 @@ const BOOK_CHECKBOXES: ReadonlyArray<{
     { key: 'embedImages', labelKey: 'bookEmbedImages' },
     { key: 'includeUntagged', labelKey: 'bookIncludeUntagged' },
     { key: 'includeDates', labelKey: 'bookIncludeDates' },
+    { key: 'includeLocation', labelKey: 'bookIncludeLocation' },
     { key: 'includeToc', labelKey: 'bookIncludeToc' },
 ];
 

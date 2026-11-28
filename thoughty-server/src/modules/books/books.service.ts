@@ -120,6 +120,7 @@ export class BooksService {
       eras,
       today: query.today,
       language,
+      includeLocation: query.includeLocation === true,
     });
     // A diary that asks before each AI request is left out of AI weaving as well: a whole book has no single text to show
     const aiOffIds = new Set(entries.filter((entry) => entry.diaryAiOff || entry.diaryAiAsk).map((entry) => entry.id));

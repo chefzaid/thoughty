@@ -111,6 +111,39 @@ test.describe('Places on entries', () => {
     expect(state.lastExportRequestUrl?.searchParams.has('includeLocation')).toBe(false);
   });
 
+  test('prints places in a book only when asked, under each entry', async ({ page }) => {
+    const trail: MockEntry = { ...imported, id: 702, date: '2024-05-03', content: 'Lost on the trail.', location: { name: null, latitude: -33.8688, longitude: 151.2093 } };
+    const { state } = await setupMockApp(page, { startAuthenticated: true, initialEntries: [imported, trail] });
+    await page.goto('/import-export?diary=1&section=book');
+    const bookSection = page.locator('#book-section');
+    await bookSection.getByLabel('Weave thoughts into flowing prose with AI').uncheck();
+    const places = bookSection.getByRole('checkbox', { name: 'Show entry places' });
+    await expect(places).not.toBeChecked();
+
+    const chapterText = async () => {
+      await bookSection.getByRole('button', { name: 'Preview Book' }).click();
+      const dialog = page.getByRole('dialog', { name: 'Book preview' });
+      await dialog.getByLabel('Go to').selectOption({ label: 'Chapter 1: paris (page 3)' });
+      const text = dialog.getByTestId('book-preview-page-text');
+      await expect(text).toContainText('Lost on the trail.');
+      const content = await text.innerText();
+      await dialog.getByRole('button', { name: 'Close' }).click();
+      return content;
+    };
+
+    const without = await chapterText();
+    expect(without).not.toContain('Café de Flore');
+    expect(without).not.toContain('33.8688');
+    expect(state.bookExportRequestUrls.at(-1)!.searchParams.has('includeLocation')).toBe(false);
+
+    await places.check();
+    const placed = await chapterText();
+    expect(placed).toContain('Café de Flore, Paris, France');
+    expect(placed).toContain('33.8688° S, 151.2093° E');
+    expect(placed.indexOf('Café de Flore')).toBeLessThan(placed.indexOf('Coffee and a notebook.'));
+    expect(state.bookExportRequestUrls.at(-1)!.searchParams.get('includeLocation')).toBe('true');
+  });
+
   test('speaks French', async ({ page }) => {
     await setupMockApp(page, { startAuthenticated: true, config: { language: 'fr', entryLocation: true }, initialEntries: [imported] });
     await page.goto('/journal');
@@ -120,5 +153,8 @@ test.describe('Places on entries', () => {
     await expect(form.getByRole('button', { name: 'Utiliser ma position' })).toBeVisible();
     await page.locator('#entry-701').getByRole('button', { name: 'Modifier' }).click();
     await expect(page.locator('#entry-701').getByText('Coordonnées : 48,854° N, 2,3325° E')).toBeVisible();
+
+    await page.goto('/import-export?diary=1&section=book');
+    await expect(page.locator('#book-section').getByRole('checkbox', { name: 'Afficher les lieux des entrées' })).not.toBeChecked();
   });
 });

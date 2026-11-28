@@ -310,4 +310,38 @@ describeContract('books', (context) => {
     expect(html.text).toContain('<html lang="fr">');
     expect(html.text).toContain('<h2>Chapitre 2 : Pensées sans tag</h2>');
   });
+
+  it('prints each entry’s place under its date only in a book made with places', async () => {
+    const { alice } = context;
+    const created = await call('POST /api/entries', {
+      as: alice,
+      json: { text: 'Swam in the lake', tags: [], date: '2024-09-01', location: { name: 'Lake Annecy', latitude: 45.8992, longitude: 6.1294 } },
+      status: 201,
+    });
+    const coordinatesOnly = await call('POST /api/entries', {
+      as: alice,
+      json: { text: 'Lost on the trail', tags: [], date: '2024-09-02', location: { latitude: -33.86882, longitude: -151.20929 } },
+      status: 201,
+    });
+    const picked = [created, coordinatesOnly].map((response) => (response.body as { entryId: number }).entryId).join(',');
+    const query = { ...PLAIN_BOOK, source: 'entries', entryIds: picked, format: 'html' };
+
+    const without = await call('GET /api/books/export', { as: alice, query, status: 200, contentType: /^text\/html/ });
+    expect(without.text).not.toContain('Lake Annecy');
+    expect(without.text).not.toContain('class="entry-place"');
+    const placed = await call('GET /api/books/export', {
+      as: alice,
+      query: { ...query, includeLocation: 'true' },
+      status: 200,
+      contentType: /^text\/html/,
+    });
+    expect(placed.text).toContain('<div class="entry-date">September 1, 2024</div>\n<div class="entry-place">Lake Annecy</div>');
+    expect(placed.text).toContain('<div class="entry-place">33.8688° S, 151.2093° W</div>');
+    await call('GET /api/books/export', {
+      as: alice,
+      query: { ...query, includeLocation: 'somewhere' },
+      status: 400,
+      code: 'VALIDATION_FAILED',
+    });
+  });
 });

@@ -8874,6 +8874,16 @@
             }
           },
           {
+            "name": "includeLocation",
+            "required": false,
+            "in": "query",
+            "description": "Print each entry's place (its name, else its coordinates in the writer's language) under its date. Places are private, so books leave them out unless asked; AI-woven chapters, which list no entries, never show them",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
             "name": "narrative",
             "required": false,
             "in": "query",
@@ -9384,6 +9394,16 @@
             }
           },
           {
+            "name": "includeLocation",
+            "required": false,
+            "in": "query",
+            "description": "Print each entry's place (its name, else its coordinates in the writer's language) under its date. Places are private, so books leave them out unless asked; AI-woven chapters, which list no entries, never show them",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
             "name": "narrative",
             "required": false,
             "in": "query",
@@ -9741,6 +9761,16 @@
             }
           },
           {
+            "name": "includeLocation",
+            "required": false,
+            "in": "query",
+            "description": "Print each entry's place (its name, else its coordinates in the writer's language) under its date. Places are private, so books leave them out unless asked; AI-woven chapters, which list no entries, never show them",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
             "name": "narrative",
             "required": false,
             "in": "query",
@@ -10071,6 +10101,16 @@
             "description": "Include a table of contents",
             "schema": {
               "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "includeLocation",
+            "required": false,
+            "in": "query",
+            "description": "Print each entry's place (its name, else its coordinates in the writer's language) under its date. Places are private, so books leave them out unless asked; AI-woven chapters, which list no entries, never show them",
+            "schema": {
+              "default": false,
               "type": "boolean"
             }
           },
@@ -10423,6 +10463,16 @@
             "description": "Include a table of contents",
             "schema": {
               "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "includeLocation",
+            "required": false,
+            "in": "query",
+            "description": "Print each entry's place (its name, else its coordinates in the writer's language) under its date. Places are private, so books leave them out unless asked; AI-woven chapters, which list no entries, never show them",
+            "schema": {
+              "default": false,
               "type": "boolean"
             }
           },

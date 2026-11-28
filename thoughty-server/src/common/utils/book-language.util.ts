@@ -1,3 +1,5 @@
+import { normalizeEntryLocation, type EntryLocation } from './entry-location.util';
+
 /**
  * The words a book writes itself (around the writer's own entries), in the writer's app language:
  * books, and the journal documents built like them, in every format.
@@ -32,6 +34,8 @@ export interface BookCopy {
   /** The entry count, by the language's plural category of the count. */
   entryCount: (count: string, plural: Intl.LDMLPluralRule) => string;
   madeOn: (date: string) => string;
+  /** The letters after a coordinate's degrees: north, south, east and west. */
+  compass: { north: string; south: string; east: string; west: string };
 }
 
 const BOOK_COPY: Record<BookLanguage, BookCopy> = {
@@ -55,6 +59,7 @@ const BOOK_COPY: Record<BookLanguage, BookCopy> = {
     entriesBetween: (first, last) => `Entries from ${first} to ${last}`,
     entryCount: (count, plural) => (plural === 'one' ? `${count} entry` : `${count} entries`),
     madeOn: (date) => `Made with Thoughty on ${date}`,
+    compass: { north: 'N', south: 'S', east: 'E', west: 'W' },
   },
   fr: {
     byAuthor: (author) => `par ${author}`,
@@ -76,6 +81,7 @@ const BOOK_COPY: Record<BookLanguage, BookCopy> = {
     entriesBetween: (first, last) => `Entrées du ${first} au ${last}`,
     entryCount: (count, plural) => (plural === 'one' ? `${count} entrée` : `${count} entrées`),
     madeOn: (date) => `Fait avec Thoughty le ${date}`,
+    compass: { north: 'N', south: 'S', east: 'E', west: 'O' },
   },
 };
 
@@ -119,4 +125,28 @@ export function formatBookMonth(month: string, language: BookLanguage = 'en'): s
 export function formatBookEntryCount(count: number, language: BookLanguage = 'en'): string {
   const plural = new Intl.PluralRules(language).select(count);
   return bookCopy(language).entryCount(printable(new Intl.NumberFormat(language).format(count)), plural);
+}
+
+function formatCoordinate(value: number, positive: string, negative: string, language: BookLanguage): string {
+  const degrees = new Intl.NumberFormat(language, { maximumFractionDigits: 4 }).format(Math.abs(value));
+  return `${degrees}° ${value < 0 ? negative : positive}`;
+}
+
+/**
+ * An entry's place as a book prints it, the way the journal shows it: the name the writer gave it, else its
+ * coordinates in the book's language (`45.8992° N, 6.1294° E`, `45,8992° N, 6,1294° E`). Undefined without a place.
+ */
+export function formatBookPlace(location: Partial<EntryLocation> | null | undefined, language: BookLanguage = 'en'): string | undefined {
+  const place = normalizeEntryLocation(location);
+  if (!place) {
+    return undefined;
+  }
+  if (place.name) {
+    return place.name;
+  }
+  const { compass } = bookCopy(language);
+  return [
+    formatCoordinate(place.latitude as number, compass.north, compass.south, language),
+    formatCoordinate(place.longitude as number, compass.east, compass.west, language),
+  ].join(', ');
 }

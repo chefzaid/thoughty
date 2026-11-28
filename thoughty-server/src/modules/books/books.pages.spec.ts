@@ -95,6 +95,21 @@ describe('BooksService book pages', () => {
     expect(file.content).toContain('## À propos de ce livre\n\nEntrées du 10 janvier 2024 au 5 mars 2024\n\n2 entrées\n\nFait avec Thoughty le 1 novembre 2026');
   });
 
+  it('prints each entry’s place under its date only when the book is made with places', async () => {
+    entrySource.select.mockResolvedValue({
+      entries: [{ ...entries[0], locationName: 'Naples', latitude: 40.85, longitude: 14.27 }, { ...entries[1], latitude: 48.8566, longitude: 2.3522 }],
+      source: { kind: 'journal' },
+    });
+    config.getConfig.mockResolvedValue({ language: 'fr' });
+    const without = await service.export(1, { format: 'md', narrative: false });
+    const placed = await service.export(1, { format: 'md', narrative: false, includeLocation: true });
+
+    expect(without.content).not.toContain('Naples*');
+    expect(without.content).not.toContain('8566');
+    expect(placed.content).toContain('### 10 janvier 2024\n\n*Naples*\n\nPasta in Naples');
+    expect(placed.content).toContain(String.raw`### 5 mars 2024` + '\n\n' + String.raw`*48\,8566° N\, 2\,3522° E*` + '\n\nRandom thought');
+  });
+
   it('writes the book in English for any other language setting', async () => {
     config.getConfig.mockResolvedValue({ language: 'de' });
 

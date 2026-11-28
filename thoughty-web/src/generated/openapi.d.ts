@@ -20135,6 +20135,8 @@ export interface operations {
                 includeDates?: boolean;
                 /** @description Include a table of contents */
                 includeToc?: boolean;
+                /** @description Print each entry's place (its name, else its coordinates in the writer's language) under its date. Places are private, so books leave them out unless asked; AI-woven chapters, which list no entries, never show them */
+                includeLocation?: boolean;
                 /** @description Use AI to weave each chapter's entries into flowing prose (requires a configured AI key) */
                 narrative?: boolean;
                 /** @description Add AI-generated introductions and summaries around each chapter */
@@ -20366,6 +20368,8 @@ export interface operations {
                 includeDates?: boolean;
                 /** @description Include a table of contents */
                 includeToc?: boolean;
+                /** @description Print each entry's place (its name, else its coordinates in the writer's language) under its date. Places are private, so books leave them out unless asked; AI-woven chapters, which list no entries, never show them */
+                includeLocation?: boolean;
                 /** @description Use AI to weave each chapter's entries into flowing prose (requires a configured AI key) */
                 narrative?: boolean;
                 /** @description Add AI-generated introductions and summaries around each chapter */
@@ -20472,6 +20476,8 @@ export interface operations {
                 includeDates?: boolean;
                 /** @description Include a table of contents */
                 includeToc?: boolean;
+                /** @description Print each entry's place (its name, else its coordinates in the writer's language) under its date. Places are private, so books leave them out unless asked; AI-woven chapters, which list no entries, never show them */
+                includeLocation?: boolean;
                 /** @description Use AI to weave each chapter's entries into flowing prose (requires a configured AI key) */
                 narrative?: boolean;
                 /** @description Add AI-generated introductions and summaries around each chapter */
@@ -20560,6 +20566,8 @@ export interface operations {
                 includeDates?: boolean;
                 /** @description Include a table of contents */
                 includeToc?: boolean;
+                /** @description Print each entry's place (its name, else its coordinates in the writer's language) under its date. Places are private, so books leave them out unless asked; AI-woven chapters, which list no entries, never show them */
+                includeLocation?: boolean;
                 /** @description Use AI to weave each chapter's entries into flowing prose (requires a configured AI key) */
                 narrative?: boolean;
                 /** @description Add AI-generated introductions and summaries around each chapter */
@@ -20655,6 +20663,8 @@ export interface operations {
                 includeDates?: boolean;
                 /** @description Include a table of contents */
                 includeToc?: boolean;
+                /** @description Print each entry's place (its name, else its coordinates in the writer's language) under its date. Places are private, so books leave them out unless asked; AI-woven chapters, which list no entries, never show them */
+                includeLocation?: boolean;
                 /** @description Use AI to weave each chapter's entries into flowing prose (requires a configured AI key) */
                 narrative?: boolean;
                 /** @description Add AI-generated introductions and summaries around each chapter */

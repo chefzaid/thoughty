@@ -97,7 +97,7 @@ export const BOOK_INTERIOR_STYLES: Record<BookInteriorTheme, BookInteriorStyle> 
     photoHeight: 300,
     css: [
       'body{font-family:Verdana,Arial,Helvetica,sans-serif;font-size:1.3em;line-height:1.8;text-align:left}',
-      '.entry-date,.entry-image figcaption{font-size:0.95em}',
+      '.entry-date,.entry-place,.entry-image figcaption{font-size:0.95em}',
     ].join('\n'),
   },
 };

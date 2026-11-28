@@ -2,7 +2,7 @@ import { BOOK_COVER_PALETTES } from './book-cover-style.util';
 import { bookImageDataUri, escapeBookImageMarkdownText, type EmbeddedBookImage } from './book-image.util';
 import { bookEntryMarkdown, inlineImageCaption, layoutBookEntry } from './book-inline-image.util';
 import { escapeHtml } from './sanitize.util';
-import { bookClosingPageLines, bookPageMarkdownLines } from './book-pages.util';
+import { bookClosingPageLines, bookPageMarkdownLines, escapeBookMarkdownText } from './book-pages.util';
 import { bookCopy, formatBookDate, type BookLanguage } from './book-language.util';
 import { bookInteriorStyle } from './book-interior.util';
 import {
@@ -117,6 +117,7 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
     '.chapter-summary{border-top:1px solid #ccc;padding-top:1em}',
     '.entry{margin-bottom:1.6em}',
     '.entry-date{color:#888;font-size:0.85em;margin-bottom:0.3em}',
+    '.entry-place{color:#888;font-size:0.85em;font-style:italic;margin:-0.2em 0 0.3em}',
     '.entry-title{font-size:1.15em;margin:0 0 0.4em}',
     '.entry-content{white-space:pre-wrap}',
     '.entry-image{margin:1.2em 0;text-align:center}',
@@ -222,6 +223,9 @@ function renderMarkdownChapter(
       if (heading) {
         lines.push(`### ${heading}`, '');
       }
+      if (entry.place) {
+        lines.push(`*${escapeBookMarkdownText(entry.place)}*`, '');
+      }
       const { content, trailing } = bookEntryMarkdown(entry);
       lines.push(content, '');
       renderMarkdownEntryImages(lines, entry, language, trailing);
@@ -263,6 +267,9 @@ function renderHtmlChapter(
       parts.push('<article class="entry">');
       if (includeDates) {
         parts.push(`<div class="entry-date">${escapeHtml(formatBookEntryDate(entry, language))}</div>`);
+      }
+      if (entry.place) {
+        parts.push(`<div class="entry-place">${escapeHtml(entry.place)}</div>`);
       }
       if (entry.title) {
         parts.push(`<h3 class="entry-title">${escapeHtml(entry.title)}</h3>`);

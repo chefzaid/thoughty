@@ -23,7 +23,7 @@ export type EntryLocationTranslationKey =
 export const entryLocationTranslations: Record<Language, Record<EntryLocationTranslationKey, string>> = {
   en: {
     entryLocationSetting: "Places on entries",
-    entryLocationSettingDescription: "Offer a Place field when you write, which you type or fill from your device's location when you ask. Places stay private: never in the public feed, share links or books, and in exports only when you include them",
+    entryLocationSettingDescription: "Offer a Place field when you write, which you type or fill from your device's location when you ask. Places stay private: never in the public feed or an entry's share link, and in exports and books only when you include them",
     entryLocationLabel: "Place",
     entryLocationPlaceholder: "Where are you? (optional)",
     entryLocationUseCurrent: "Use my location",
@@ -42,7 +42,7 @@ export const entryLocationTranslations: Record<Language, Record<EntryLocationTra
   },
   fr: {
     entryLocationSetting: "Lieux des entrées",
-    entryLocationSettingDescription: "Proposer un champ Lieu quand vous écrivez, que vous saisissez ou remplissez avec la position de votre appareil quand vous le demandez. Les lieux restent privés : jamais dans le fil public, les liens de partage ou les livres, et dans les exports seulement si vous les incluez",
+    entryLocationSettingDescription: "Proposer un champ Lieu quand vous écrivez, que vous saisissez ou remplissez avec la position de votre appareil quand vous le demandez. Les lieux restent privés : jamais dans le fil public ni dans le lien de partage d'une entrée, et dans les exports et les livres seulement si vous les incluez",
     entryLocationLabel: "Lieu",
     entryLocationPlaceholder: "Où êtes-vous ? (facultatif)",
     entryLocationUseCurrent: "Utiliser ma position",

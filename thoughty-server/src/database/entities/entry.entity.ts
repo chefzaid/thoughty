@@ -86,7 +86,7 @@ export class Entry {
   /**
    * Optional place the entry was written, as the writer named it; with or without coordinates (`latitude` and
    * `longitude`, both or neither), which the browser or an imported app gave. It stays private: the public feed,
-   * share links, books and exports never carry it, unless the writer asks an export for it.
+   * share links, books and exports never carry it, unless the writer asks a JSON export or a book for it.
    */
   @Column({ name: 'location_name', type: 'varchar', length: 200, nullable: true })
   locationName: string | null;

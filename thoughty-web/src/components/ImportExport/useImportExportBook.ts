@@ -115,6 +115,7 @@ export function useImportExportBook({
         if (options.weavingMode !== 'strict') params.append('weavingMode', options.weavingMode);
         if (!options.includeUntagged) params.append('includeUntagged', 'false');
         if (!options.includeDates) params.append('includeDates', 'false');
+        if (options.includeLocation) params.append('includeLocation', 'true');
         if (!options.includeToc) params.append('includeToc', 'false');
         if (!options.narrative) params.append('narrative', 'false');
         if (options.chapterFraming) params.append('chapterFraming', 'true');

@@ -55,6 +55,19 @@ describe('useImportExportBook book pages', () => {
         expect(previewParams(authFetch).get('closingPage')).toBe('true');
     });
 
+    it('asks for the entries’ places only when they are included', async () => {
+        const authFetch = vi.fn<AuthFetch>(async () => json(preview));
+        const { result } = renderBook(authFetch);
+
+        await act(async () => { await result.current.handlePreview(); });
+        expect(previewParams(authFetch).has('includeLocation')).toBe(false);
+
+        authFetch.mockClear();
+        act(() => result.current.changeOption('includeLocation', true));
+        await act(async () => { await result.current.handlePreview(); });
+        expect(previewParams(authFetch).get('includeLocation')).toBe('true');
+    });
+
     it('says why the API refused a text that is too long, in the reader’s language', async () => {
         const authFetch = vi.fn<AuthFetch>(async (url) => (url.startsWith('/api/books/export')
             ? json({ code: 'BOOK_EPIGRAPH_TOO_LONG', message: 'The epigraph is too long' }, false)
